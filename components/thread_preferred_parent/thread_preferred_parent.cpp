@@ -25,8 +25,10 @@ void ThreadPreferredParentComponent::dump_config() {
   ESP_LOGCONFIG(TAG, "  Max attempts: %u", this->max_attempts_);
   ESP_LOGCONFIG(TAG, "  Retry interval: %u ms", this->retry_interval_ms_);
   ESP_LOGCONFIG(TAG, "  Selected attach timeout: %u ms", this->selected_attach_timeout_ms_);
+  ESP_LOGCONFIG(TAG, "  Parent Request unicast: %s", YESNO(this->parent_request_unicast_));
   ESP_LOGCONFIG(TAG, "  Require selected-parent hook: %s", YESNO(this->require_selected_parent_hook_));
   ESP_LOGCONFIG(TAG, "  Discovery hook available: %s", YESNO(this->discovery_hook_available_()));
+  ESP_LOGCONFIG(TAG, "  Discovery unicast hook available: %s", YESNO(this->discovery_unicast_hook_available_()));
   ESP_LOGCONFIG(TAG, "  Selected-parent hook available: %s", YESNO(this->selected_parent_hook_available_()));
   ESP_LOGCONFIG(TAG, "  Parent Response reporting hook registered: %s", YESNO(this->parent_response_callback_registered_));
   ESP_LOGCONFIG(TAG, "  Log Parent Responses: %s", YESNO(this->log_parent_responses_));
@@ -428,6 +430,29 @@ bool ThreadPreferredParentComponent::current_parent_matches_(otInstance *instanc
 }
 
 otError ThreadPreferredParentComponent::start_parent_discovery_(otInstance *instance) {
+  if (this->parent_request_unicast_) {
+    otExtAddress selected{};
+
+    if (this->target_type_ == TargetType::EXTADDR) {
+      selected = this->target_extaddr_;
+    } else if (this->target_type_ == TargetType::RLOC16) {
+      if (!this->resolve_rloc16_to_extaddr_(instance, this->target_rloc16_, &selected)) {
+        ESP_LOGW(TAG, "Parent Request unicast needs ExtAddr, but RLOC16 0x%04x is not resolved", this->target_rloc16_);
+        return OT_ERROR_NOT_FOUND;
+      }
+    } else {
+      return OT_ERROR_INVALID_ARGS;
+    }
+
+    if (thread_preferred_parent_ot_start_parent_discovery_unicast != nullptr) {
+      ESP_LOGI(TAG, "Starting non-disruptive unicast Parent Request discovery to ExtAddr %s for %s",
+               this->extaddr_to_string_(selected).c_str(), this->target_to_string_().c_str());
+      return this->start_parent_discovery_unicast_(instance, selected);
+    }
+
+    ESP_LOGW(TAG, "Unicast Parent Request discovery hook missing; falling back to multicast discovery");
+  }
+
   if (thread_preferred_parent_ot_start_parent_discovery != nullptr) {
     ESP_LOGI(TAG, "Starting non-disruptive multicast Parent Request discovery for %s", this->target_to_string_().c_str());
     return thread_preferred_parent_ot_start_parent_discovery(instance);
@@ -437,6 +462,13 @@ otError ThreadPreferredParentComponent::start_parent_discovery_(otInstance *inst
   // own, so the patched discovery-only hook is strongly preferred.
   ESP_LOGW(TAG, "Discovery-only OpenThread hook missing; falling back to otThreadSearchForBetterParent()");
   return otThreadSearchForBetterParent(instance);
+}
+
+otError ThreadPreferredParentComponent::start_parent_discovery_unicast_(otInstance *instance, const otExtAddress &extaddr) {
+  if (thread_preferred_parent_ot_start_parent_discovery_unicast == nullptr) {
+    return OT_ERROR_NOT_IMPLEMENTED;
+  }
+  return thread_preferred_parent_ot_start_parent_discovery_unicast(instance, &extaddr);
 }
 
 otError ThreadPreferredParentComponent::start_selected_parent_attach_(otInstance *instance) {
@@ -504,6 +536,10 @@ bool ThreadPreferredParentComponent::selected_parent_hook_available_() const {
 
 bool ThreadPreferredParentComponent::discovery_hook_available_() const {
   return thread_preferred_parent_ot_start_parent_discovery != nullptr;
+}
+
+bool ThreadPreferredParentComponent::discovery_unicast_hook_available_() const {
+  return thread_preferred_parent_ot_start_parent_discovery_unicast != nullptr;
 }
 
 bool ThreadPreferredParentComponent::request_selected_parent_attach_(otInstance *instance, const otExtAddress &extaddr) const {

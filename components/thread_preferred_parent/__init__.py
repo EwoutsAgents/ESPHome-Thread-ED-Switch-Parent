@@ -18,6 +18,7 @@ CONF_RETRY_INTERVAL = "retry_interval"
 CONF_SELECTED_ATTACH_TIMEOUT = "selected_attach_timeout"
 CONF_REQUIRE_SELECTED_PARENT_HOOK = "require_selected_parent_hook"
 CONF_LOG_PARENT_RESPONSES = "log_parent_responses"
+CONF_PARENT_REQUEST_UNICAST = "parent_request_unicast"
 
 SCRIPT_PATH = os.path.abspath(
     os.path.join(os.path.dirname(__file__), "apply-openthread-selected-parent-hook.py")
@@ -85,6 +86,7 @@ CONFIG_SCHEMA = cv.All(
             cv.Optional(CONF_SELECTED_ATTACH_TIMEOUT, default="16s"): cv.positive_time_period_milliseconds,
             cv.Optional(CONF_REQUIRE_SELECTED_PARENT_HOOK, default=True): cv.boolean,
             cv.Optional(CONF_LOG_PARENT_RESPONSES, default=True): cv.boolean,
+            cv.Optional(CONF_PARENT_REQUEST_UNICAST, default=False): cv.boolean,
         }
     ).extend(cv.COMPONENT_SCHEMA),
     validate_identifier,
@@ -110,3 +112,4 @@ async def to_code(config):
     cg.add(var.set_selected_attach_timeout(config[CONF_SELECTED_ATTACH_TIMEOUT].total_milliseconds))
     cg.add(var.set_require_selected_parent_hook(config[CONF_REQUIRE_SELECTED_PARENT_HOOK]))
     cg.add(var.set_log_parent_responses(config[CONF_LOG_PARENT_RESPONSES]))
+    cg.add(var.set_parent_request_unicast(config[CONF_PARENT_REQUEST_UNICAST]))

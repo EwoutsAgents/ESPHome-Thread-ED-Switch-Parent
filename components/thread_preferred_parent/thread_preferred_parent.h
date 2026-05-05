@@ -31,6 +31,13 @@ void thread_preferred_parent_ot_register_parent_response_callback(
 // current parent is not dropped during preflight.
 otError thread_preferred_parent_ot_start_parent_discovery(otInstance *aInstance) __attribute__((weak));
 
+// Non-disruptive unicast Parent Request discovery. When available, this sends
+// the discovery Parent Request directly to the configured target ExtAddr.
+otError thread_preferred_parent_ot_start_parent_discovery_unicast(
+    otInstance *aInstance,
+    const otExtAddress *aPreferredExtAddress
+) __attribute__((weak));
+
 // Preferred symbol exported by apply-openthread-selected-parent-hook.py.
 bool thread_preferred_parent_ot_request_selected_parent_attach(
     otInstance *aInstance,
@@ -72,6 +79,7 @@ class ThreadPreferredParentComponent : public Component {
   void set_selected_attach_timeout(uint32_t selected_attach_timeout_ms) { this->selected_attach_timeout_ms_ = selected_attach_timeout_ms; }
   void set_require_selected_parent_hook(bool required) { this->require_selected_parent_hook_ = required; }
   void set_log_parent_responses(bool enabled) { this->log_parent_responses_ = enabled; }
+  void set_parent_request_unicast(bool enabled) { this->parent_request_unicast_ = enabled; }
 
   void request_switch();
   void request_switch(uint16_t rloc16);
@@ -135,10 +143,12 @@ class ThreadPreferredParentComponent : public Component {
   bool request_selected_parent_attach_(otInstance *instance, const otExtAddress &extaddr) const;
   bool selected_parent_hook_available_() const;
   bool discovery_hook_available_() const;
+  bool discovery_unicast_hook_available_() const;
   bool parent_response_matches_target_(const otThreadParentResponseInfo &info) const;
   std::string extaddr_to_string_(const otExtAddress &addr) const;
   std::string target_to_string_() const;
   otError start_parent_discovery_(otInstance *instance);
+  otError start_parent_discovery_unicast_(otInstance *instance, const otExtAddress &extaddr);
   otError start_selected_parent_attach_(otInstance *instance);
   void clear_preferred_parent_in_ot_(otInstance *instance);
   void begin_switch_();
@@ -166,6 +176,7 @@ class ThreadPreferredParentComponent : public Component {
   bool active_{false};
   bool require_selected_parent_hook_{true};
   bool log_parent_responses_{true};
+  bool parent_request_unicast_{false};
   bool parent_response_callback_registered_{false};
   uint32_t parent_response_count_{0};
   uint32_t parent_response_last_dumped_count_{0};

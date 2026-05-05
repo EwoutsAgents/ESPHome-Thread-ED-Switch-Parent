@@ -30,6 +30,9 @@ thread_preferred_parent:
   max_attempts: 5
   retry_interval: 8s
   selected_attach_timeout: 16s
+  # Optional: send the preflight Parent Request directly to the target ExtAddr
+  # instead of multicast. Best used with parent_extaddr.
+  parent_request_unicast: false
   require_selected_parent_hook: true
   log_parent_responses: true
 

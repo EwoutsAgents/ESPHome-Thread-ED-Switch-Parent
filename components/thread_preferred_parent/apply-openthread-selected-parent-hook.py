@@ -24,6 +24,9 @@ v12 notes:
     Response from the target has populated mParentCandidate, bypassing generic
     "better parent" acceptance heuristics that can veto weaker-but-requested
     parents.
+  * optionally expose unicast Parent Request discovery, so ESPHome can send the
+    preflight Parent Request directly to the configured target ExtAddr instead
+    of the all-routers multicast address.
 """
 
 from __future__ import annotations
@@ -186,7 +189,14 @@ def patch_attach_method_force_detach(root: Path, *, dry_run: bool = False) -> st
 def patch_selected_parent_destination(root: Path, *, dry_run: bool = False) -> str:
     path = root / "thread/mle.cpp"
 
-    replacement = """if (aType == kToSelectedRouter)
+    replacement = """if (thread_preferred_parent_ot_parent_discovery_active && thread_preferred_parent_ot_parent_discovery_unicast)
+    {
+        // THREAD_PREFERRED_PARENT_DISCOVERY_UNICAST_HOOK
+        Mac::ExtAddress discoveryTarget;
+        discoveryTarget.Set(thread_preferred_parent_ot_parent_discovery_extaddr.m8);
+        destination.SetToLinkLocalAddress(discoveryTarget);
+    }
+    else if (aType == kToSelectedRouter)
     {
 #if OPENTHREAD_FTD && OPENTHREAD_CONFIG_PARENT_SEARCH_ENABLE
         TxMessage *messageToCurParent = static_cast<TxMessage *>(message->Clone());
@@ -214,22 +224,30 @@ def patch_selected_parent_destination(root: Path, *, dry_run: bool = False) -> s
         destination.SetToLinkLocalAllRoutersMulticast();
     }"""
 
-    # ESP-IDF 5.5.x / OpenThread compacted or normal formatting.
+    # ESP-IDF 5.5.x / OpenThread compacted or normal formatting. Also matches
+    # the older selected-parent-only replacement emitted by this patcher.
     pattern = (
+        r"(?:if\s*\(\s*thread_preferred_parent_ot_parent_discovery_active\s*&&\s*thread_preferred_parent_ot_parent_discovery_unicast\s*\)\s*\{.*?\}\s*else\s*)?"
+        r"if\s*\(\s*aType\s*==\s*kToSelectedRouter\s*\)\s*\{.*?"
+        r"destination\.SetToLinkLocalAllRoutersMulticast\s*\(\s*\)\s*;\s*\}"
+    )
+    legacy_pattern = (
         r"#if\s+OPENTHREAD_FTD\s*&&\s*OPENTHREAD_CONFIG_PARENT_SEARCH_ENABLE\s*\n\s*"
         r"if\s*\(\s*aType\s*==\s*kToSelectedRouter\s*\)\s*\{.*?"
         r"destination\.SetToLinkLocalAddress\s*\(\s*Get\s*\(\s*\)\s*\.\s*mParentSearch\s*\.\s*GetSelectedParent\s*\(\s*\)\s*\.\s*GetExtAddress\s*\(\s*\)\s*\)\s*;\s*"
         r"\}\s*else\s*#endif\s*\{\s*destination\.SetToLinkLocalAllRoutersMulticast\s*\(\s*\)\s*;\s*\}"
     )
-    return replace_regex(
-        path,
-        pattern,
-        replacement,
-        already="mParentCandidate.GetExtAddress()",
-        label="selected-router Parent Request destination block",
-        dry_run=dry_run,
-    )
+    text = normalize_newlines(path.read_text())
+    if "THREAD_PREFERRED_PARENT_DISCOVERY_UNICAST_HOOK" in text and "mParentCandidate.GetExtAddress()" in text:
+        return "already"
 
+    new, count = re.subn(pattern, replacement, text, count=1, flags=re.DOTALL | re.MULTILINE)
+    if count == 0:
+        new, count = re.subn(legacy_pattern, replacement, text, count=1, flags=re.DOTALL | re.MULTILINE)
+    if count == 0:
+        print("[thread_preferred_parent][detail] no regex match for selected-router/unicast destination block")
+        return "missing"
+    return write_if_changed(path, text, new, dry_run=dry_run)
 
 def patch_accept_selected_parent_without_current_parent_response(root: Path, *, dry_run: bool = False) -> str:
     path = root / "thread/mle.cpp"
@@ -299,6 +317,8 @@ extern "C" void thread_preferred_parent_ot_notify_parent_response(const otThread
 }
 
 extern "C" bool thread_preferred_parent_ot_parent_discovery_active = false;
+extern "C" bool thread_preferred_parent_ot_parent_discovery_unicast = false;
+extern "C" otExtAddress thread_preferred_parent_ot_parent_discovery_extaddr = {};
 
 extern "C" otError thread_preferred_parent_ot_start_parent_discovery(otInstance *aInstance)
 {
@@ -309,10 +329,33 @@ extern "C" otError thread_preferred_parent_ot_start_parent_discovery(otInstance 
     }
 
     thread_preferred_parent_ot_parent_discovery_active = true;
+    thread_preferred_parent_ot_parent_discovery_unicast = false;
     otError error = AsCoreType(aInstance).Get<Mle::Mle>().SearchForBetterParent();
     if (error != OT_ERROR_NONE)
     {
         thread_preferred_parent_ot_parent_discovery_active = false;
+        thread_preferred_parent_ot_parent_discovery_unicast = false;
+    }
+    return error;
+}
+
+extern "C" otError thread_preferred_parent_ot_start_parent_discovery_unicast(otInstance *aInstance,
+                                                                               const otExtAddress *aPreferredExtAddress)
+{
+    // THREAD_PREFERRED_PARENT_DISCOVERY_UNICAST_HOOK
+    if ((aInstance == nullptr) || (aPreferredExtAddress == nullptr))
+    {
+        return OT_ERROR_INVALID_ARGS;
+    }
+
+    thread_preferred_parent_ot_parent_discovery_extaddr = *aPreferredExtAddress;
+    thread_preferred_parent_ot_parent_discovery_active = true;
+    thread_preferred_parent_ot_parent_discovery_unicast = true;
+    otError error = AsCoreType(aInstance).Get<Mle::Mle>().SearchForBetterParent();
+    if (error != OT_ERROR_NONE)
+    {
+        thread_preferred_parent_ot_parent_discovery_active = false;
+        thread_preferred_parent_ot_parent_discovery_unicast = false;
     }
     return error;
 }
@@ -401,11 +444,11 @@ extern "C" void thread_preferred_parent_ot_notify_parent_response(const otThread
 def patch_thread_api_discovery_bridge(root: Path, *, dry_run: bool = False) -> str:
     path = root / "api/thread_api.cpp"
     text = normalize_newlines(path.read_text())
-    if "THREAD_PREFERRED_PARENT_DISCOVERY_ONLY_HOOK" in text:
-        return "already"
 
-    addition = """
+    fresh_addition = """
 extern \"C\" bool thread_preferred_parent_ot_parent_discovery_active = false;
+extern \"C\" bool thread_preferred_parent_ot_parent_discovery_unicast = false;
+extern \"C\" otExtAddress thread_preferred_parent_ot_parent_discovery_extaddr = {};
 
 extern \"C\" otError thread_preferred_parent_ot_start_parent_discovery(otInstance *aInstance)
 {
@@ -416,25 +459,103 @@ extern \"C\" otError thread_preferred_parent_ot_start_parent_discovery(otInstanc
     }
 
     thread_preferred_parent_ot_parent_discovery_active = true;
+    thread_preferred_parent_ot_parent_discovery_unicast = false;
     otError error = AsCoreType(aInstance).Get<Mle::Mle>().SearchForBetterParent();
     if (error != OT_ERROR_NONE)
     {
         thread_preferred_parent_ot_parent_discovery_active = false;
+        thread_preferred_parent_ot_parent_discovery_unicast = false;
+    }
+    return error;
+}
+
+extern \"C\" otError thread_preferred_parent_ot_start_parent_discovery_unicast(otInstance *aInstance,
+                                                                               const otExtAddress *aPreferredExtAddress)
+{
+    // THREAD_PREFERRED_PARENT_DISCOVERY_UNICAST_HOOK
+    if ((aInstance == nullptr) || (aPreferredExtAddress == nullptr))
+    {
+        return OT_ERROR_INVALID_ARGS;
+    }
+
+    thread_preferred_parent_ot_parent_discovery_extaddr = *aPreferredExtAddress;
+    thread_preferred_parent_ot_parent_discovery_active = true;
+    thread_preferred_parent_ot_parent_discovery_unicast = true;
+    otError error = AsCoreType(aInstance).Get<Mle::Mle>().SearchForBetterParent();
+    if (error != OT_ERROR_NONE)
+    {
+        thread_preferred_parent_ot_parent_discovery_active = false;
+        thread_preferred_parent_ot_parent_discovery_unicast = false;
     }
     return error;
 }
 
 """
+
+    if "THREAD_PREFERRED_PARENT_DISCOVERY_UNICAST_HOOK" in text:
+        return "already"
+
+    if "THREAD_PREFERRED_PARENT_DISCOVERY_ONLY_HOOK" in text:
+        new = text
+        if "thread_preferred_parent_ot_parent_discovery_unicast" not in new:
+            new = new.replace(
+                'extern "C" bool thread_preferred_parent_ot_parent_discovery_active = false;',
+                'extern "C" bool thread_preferred_parent_ot_parent_discovery_active = false;\n'
+                'extern "C" bool thread_preferred_parent_ot_parent_discovery_unicast = false;\n'
+                'extern "C" otExtAddress thread_preferred_parent_ot_parent_discovery_extaddr = {};',
+                1,
+            )
+        new = new.replace(
+            'thread_preferred_parent_ot_parent_discovery_active = true;\n    otError error = AsCoreType(aInstance).Get<Mle::Mle>().SearchForBetterParent();',
+            'thread_preferred_parent_ot_parent_discovery_active = true;\n    thread_preferred_parent_ot_parent_discovery_unicast = false;\n    otError error = AsCoreType(aInstance).Get<Mle::Mle>().SearchForBetterParent();',
+            1,
+        )
+        new = new.replace(
+            'thread_preferred_parent_ot_parent_discovery_active = false;\n    }\n    return error;\n}',
+            'thread_preferred_parent_ot_parent_discovery_active = false;\n        thread_preferred_parent_ot_parent_discovery_unicast = false;\n    }\n    return error;\n}',
+            1,
+        )
+        unicast_fn = """
+
+extern \"C\" otError thread_preferred_parent_ot_start_parent_discovery_unicast(otInstance *aInstance,
+                                                                               const otExtAddress *aPreferredExtAddress)
+{
+    // THREAD_PREFERRED_PARENT_DISCOVERY_UNICAST_HOOK
+    if ((aInstance == nullptr) || (aPreferredExtAddress == nullptr))
+    {
+        return OT_ERROR_INVALID_ARGS;
+    }
+
+    thread_preferred_parent_ot_parent_discovery_extaddr = *aPreferredExtAddress;
+    thread_preferred_parent_ot_parent_discovery_active = true;
+    thread_preferred_parent_ot_parent_discovery_unicast = true;
+    otError error = AsCoreType(aInstance).Get<Mle::Mle>().SearchForBetterParent();
+    if (error != OT_ERROR_NONE)
+    {
+        thread_preferred_parent_ot_parent_discovery_active = false;
+        thread_preferred_parent_ot_parent_discovery_unicast = false;
+    }
+    return error;
+}
+"""
+        pattern = (
+            r'(extern\s+"C"\s+otError\s+thread_preferred_parent_ot_start_parent_discovery\s*\(\s*otInstance\s*\*\s*aInstance\s*\)\s*\{.*?\n\})'
+        )
+        new, count = re.subn(pattern, lambda m: m.group(1) + unicast_fn, new, count=1, flags=re.DOTALL | re.MULTILINE)
+        if count == 0:
+            print("[thread_preferred_parent][detail] no regex match for discovery-only bridge upgrade")
+            return "missing"
+        return write_if_changed(path, text, new, dry_run=dry_run)
+
     pattern = r"(extern\s+\"C\"\s+bool\s+thread_preferred_parent_ot_request_selected_parent_attach\s*\()"
     return replace_regex(
         path,
         pattern,
-        lambda m: addition + m.group(1),
-        already="THREAD_PREFERRED_PARENT_DISCOVERY_ONLY_HOOK",
-        label="thread_api.cpp discovery-only bridge",
+        lambda m: fresh_addition + m.group(1),
+        already="THREAD_PREFERRED_PARENT_DISCOVERY_UNICAST_HOOK",
+        label="thread_api.cpp discovery-only/unicast bridge",
         dry_run=dry_run,
     )
-
 def patch_mle_parent_response_reporting_declaration(root: Path, *, dry_run: bool = False) -> str:
     path = root / "thread/mle.cpp"
     text = normalize_newlines(path.read_text())
@@ -448,8 +569,11 @@ def patch_mle_parent_response_reporting_declaration(root: Path, *, dry_run: bool
 
 extern \"C\" void thread_preferred_parent_ot_notify_parent_response(const otThreadParentResponseInfo *aInfo);
 extern \"C\" bool thread_preferred_parent_ot_parent_discovery_active;
+extern \"C\" bool thread_preferred_parent_ot_parent_discovery_unicast;
+extern \"C\" otExtAddress thread_preferred_parent_ot_parent_discovery_extaddr;
 // THREAD_PREFERRED_PARENT_PARENT_RESPONSE_REPORTING_HOOK
 // THREAD_PREFERRED_PARENT_DISCOVERY_ONLY_HOOK
+// THREAD_PREFERRED_PARENT_DISCOVERY_UNICAST_HOOK
 """
     return replace_literal(
         path,
@@ -464,22 +588,36 @@ def patch_mle_discovery_declaration(root: Path, *, dry_run: bool = False) -> str
     path = root / "thread/mle.cpp"
     text = normalize_newlines(path.read_text())
     if "extern \"C\" bool thread_preferred_parent_ot_parent_discovery_active" in text:
-        return "already"
+        if "thread_preferred_parent_ot_parent_discovery_unicast" in text:
+            return "already"
+        new = text.replace(
+            'extern "C" bool thread_preferred_parent_ot_parent_discovery_active;',
+            'extern "C" bool thread_preferred_parent_ot_parent_discovery_active;\n'
+            'extern "C" bool thread_preferred_parent_ot_parent_discovery_unicast;\n'
+            'extern "C" otExtAddress thread_preferred_parent_ot_parent_discovery_extaddr; // THREAD_PREFERRED_PARENT_DISCOVERY_UNICAST_HOOK',
+            1,
+        )
+        return write_if_changed(path, text, new, dry_run=dry_run)
     if "extern \"C\" void thread_preferred_parent_ot_notify_parent_response" in text:
         new = text.replace(
             "extern \"C\" void thread_preferred_parent_ot_notify_parent_response(const otThreadParentResponseInfo *aInfo);",
-            "extern \"C\" void thread_preferred_parent_ot_notify_parent_response(const otThreadParentResponseInfo *aInfo);\nextern \"C\" bool thread_preferred_parent_ot_parent_discovery_active; // THREAD_PREFERRED_PARENT_DISCOVERY_ONLY_HOOK",
+            "extern \"C\" void thread_preferred_parent_ot_notify_parent_response(const otThreadParentResponseInfo *aInfo);\nextern \"C\" bool thread_preferred_parent_ot_parent_discovery_active;\nextern \"C\" bool thread_preferred_parent_ot_parent_discovery_unicast;\nextern \"C\" otExtAddress thread_preferred_parent_ot_parent_discovery_extaddr; // THREAD_PREFERRED_PARENT_DISCOVERY_UNICAST_HOOK",
             1,
         )
         return write_if_changed(path, text, new, dry_run=dry_run)
     return "missing"
-
-
 def patch_mle_discovery_cancel(root: Path, *, dry_run: bool = False) -> str:
     path = root / "thread/mle.cpp"
     text = normalize_newlines(path.read_text())
     if "THREAD_PREFERRED_PARENT_DISCOVERY_ONLY_CANCEL" in text:
-        return "already"
+        if "thread_preferred_parent_ot_parent_discovery_unicast = false" in text:
+            return "already"
+        new = text.replace(
+            'thread_preferred_parent_ot_parent_discovery_active = false;\n        SetState(kStateIdle);',
+            'thread_preferred_parent_ot_parent_discovery_active = false;\n        thread_preferred_parent_ot_parent_discovery_unicast = false;\n        SetState(kStateIdle);',
+            1,
+        )
+        return write_if_changed(path, text, new, dry_run=dry_run)
 
     pattern = (
         r"(void\s+Mle::Attacher::HandleTimer\s*\(\s*void\s*\)\s*\{\s*"
@@ -493,11 +631,12 @@ def patch_mle_discovery_cancel(root: Path, *, dry_run: bool = False) -> str:
         (mState == kStateParentRequest))
     {
         // THREAD_PREFERRED_PARENT_DISCOVERY_ONLY_CANCEL
-        // The ESPHome component only wants the multicast Parent Responses in
-        // this phase. Do not proceed to Child ID Request or detach; keep the
-        // existing parent until the target was actually observed.
+        // The ESPHome component only wants the Parent Responses in this phase.
+        // Do not proceed to Child ID Request or detach; keep the existing
+        // parent until the target was actually observed.
         LogNote(\"ThreadPreferredParent discovery window complete\");
         thread_preferred_parent_ot_parent_discovery_active = false;
+        thread_preferred_parent_ot_parent_discovery_unicast = false;
         SetState(kStateIdle);
         mParentCandidate.Clear();
         ExitNow();
@@ -511,7 +650,6 @@ def patch_mle_discovery_cancel(root: Path, *, dry_run: bool = False) -> str:
         label="mle.cpp discovery-only cancel before Child ID Request",
         dry_run=dry_run,
     )
-
 def patch_mle_parent_response_reporting_call(root: Path, *, dry_run: bool = False) -> str:
     path = root / "thread/mle.cpp"
     text = normalize_newlines(path.read_text())

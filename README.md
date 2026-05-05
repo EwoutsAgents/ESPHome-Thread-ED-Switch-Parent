@@ -1,5 +1,7 @@
 # ESPHome Thread ED Switch Parent
 
+**v14 unicast discovery option:** add `parent_request_unicast: true` to send the preflight Parent Request directly to the configured parent ExtAddr instead of the all-routers multicast address. The selected-parent attach path remains the same.
+
 **v13 diagnostics cleanup:** live Parent Response rows now use ESPHome's normal `VERY_VERBOSE` logger level, replay output is curated, discovery windows emit compact summaries, and Parent Response timestamps are relative to the current attempt.
 
 **v12 targeted attach update:** this package now ports the important selected-parent attach lessons from ESPHome-biparental-ED: it keeps the child attached while attempting the selected-parent Child ID exchange, pre-seeds the target ExtAddr before `Attach(kSelectedParent)`, and forces `ChildIdRequest` for selected-parent mode once the target Parent Response has populated the OpenThread parent candidate. This is intended to fix the failure mode where the target appears in Parent Responses but OpenThread never completes the selected-parent attach.
@@ -8,7 +10,7 @@ ESPHome external component for testing controlled Thread end-device parent switc
 
 This version uses a safer two-phase flow:
 
-1. **Discovery/preflight**: send a multicast MLE Parent Request while staying attached to the current parent.
+1. **Discovery/preflight**: send an MLE Parent Request while staying attached to the current parent. By default this is multicast; set `parent_request_unicast: true` to unicast the Parent Request to the configured parent ExtAddr.
 2. Track every MLE Parent Response; live rows are shown only when `logger.level` is `VERY_VERBOSE`.
 3. If the configured target parent is observed, start the disruptive selected-parent attach.
 4. If the target is not observed, retry discovery without dropping the current Thread/API connection.
@@ -41,13 +43,14 @@ id(preferred_parent).request_switch();
 
 The component registers `apply-openthread-selected-parent-hook.py` automatically as a PlatformIO pre-build script. No manual `platformio_options.extra_scripts` entry is required.
 
-The patch adds three hooks to ESP-IDF's vendored OpenThread source:
+The patch adds four hooks to ESP-IDF's vendored OpenThread source:
 
 - `thread_preferred_parent_ot_register_parent_response_callback(...)`
 - `thread_preferred_parent_ot_start_parent_discovery(...)`
+- `thread_preferred_parent_ot_start_parent_discovery_unicast(...)`
 - `thread_preferred_parent_ot_request_selected_parent_attach(...)`
 
-The discovery hook starts `SearchForBetterParent()` but patches the MLE attacher so the discovery cycle is cancelled before Child ID Request. This lets the component collect candidate Parent Responses without detaching from the current parent.
+The discovery hook starts `SearchForBetterParent()` but patches the MLE attacher so the discovery cycle is cancelled before Child ID Request. This lets the component collect candidate Parent Responses without detaching from the current parent. With `parent_request_unicast: true`, the same discovery-only path is used, but the Parent Request destination is the configured target ExtAddr.
 
 ## Expected logs
 
@@ -56,6 +59,8 @@ With normal `INFO` logging, discovery now produces compact lifecycle and summary
 ```text
 Parent discovery attempt 1/5 for ExtAddr 32a4d516437f9abb
 Starting non-disruptive multicast Parent Request discovery ...
+# or, with parent_request_unicast: true:
+Starting non-disruptive unicast Parent Request discovery to ExtAddr 32a4d516437f9abb ...
 Discovery summary (discovery window complete): 11 Parent Responses, 1 target match(es), best target RLOC16 0xb000 RSSI -69
 Preferred parent ExtAddr 32a4d516437f9abb was observed; starting selected-parent attach
 Starting selected-parent attach to ExtAddr 32a4d516437f9abb
