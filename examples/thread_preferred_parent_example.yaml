@@ -64,17 +64,4 @@ text:
     mode: text
     set_action:
       - lambda: |-
-          std::string s = x;
-          if (s.rfind("0x", 0) == 0 || s.rfind("0X", 0) == 0) {
-            s = s.substr(2);
-          }
-
-          char *end = nullptr;
-          unsigned long value = strtoul(s.c_str(), &end, 16);
-          if (*end != '\0' || value > 0xFFFD) {
-            ESP_LOGW("thread_preferred_parent", "Invalid RLOC16: %s", x.c_str());
-            return;
-          }
-
-          id(preferred_parent).set_parent_rloc16(static_cast<uint16_t>(value));
-          ESP_LOGI("thread_preferred_parent", "Set preferred parent RLOC16 to 0x%04lx", value);
+          id(preferred_parent).set_parent_rloc16(x);

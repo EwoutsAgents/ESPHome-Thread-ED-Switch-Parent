@@ -70,7 +70,11 @@ class ThreadPreferredParentComponent : public Component {
   void dump_config() override;
 
   void set_parent_rloc16(uint16_t rloc16);
+  bool set_parent_rloc16(const std::string &rloc16);
+  bool set_parent_rloc16(const char *rloc16) { return this->set_parent_rloc16(std::string(rloc16)); }
   void set_parent_rloc(uint16_t rloc16) { this->set_parent_rloc16(rloc16); }
+  bool set_parent_rloc(const std::string &rloc16) { return this->set_parent_rloc16(rloc16); }
+  bool set_parent_rloc(const char *rloc16) { return this->set_parent_rloc16(std::string(rloc16)); }
   bool set_parent_extaddr(const std::string &extaddr);
   bool set_parent_extaddr(const char *extaddr) { return this->set_parent_extaddr(std::string(extaddr)); }
 
@@ -137,6 +141,7 @@ class ThreadPreferredParentComponent : public Component {
 
   bool current_parent_matches_(otInstance *instance) const;
   bool is_child_(otInstance *instance) const;
+  static bool parse_rloc16_(const std::string &text, uint16_t *out);
   bool parse_extaddr_(const std::string &text, otExtAddress *out) const;
   bool extaddr_matches_(const otExtAddress &a, const otExtAddress &b) const;
   bool resolve_rloc16_to_extaddr_(otInstance *instance, uint16_t rloc16, otExtAddress *out) const;

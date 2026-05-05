@@ -62,6 +62,58 @@ def write_if_changed(path: Path, old: str, new: str, *, dry_run: bool = False) -
     return "patched"
 
 
+def restore_truncated_mle_cpp_if_needed(root: Path, *, dry_run: bool = False) -> None:
+    """Recover from a previous over-broad regex patch that truncated mle.cpp.
+
+    Older v15 builds could leave SendParentRequest() without its exit block and
+    without the closing namespaces. When a .thread-preferred-parent.bak exists,
+    restore that original file before applying the safer patch sequence.
+    """
+    path = root / "thread/mle.cpp"
+    backup = path.with_suffix(path.suffix + ".thread-preferred-parent.bak")
+    if not path.exists() or not backup.exists():
+        return
+
+    text = normalize_newlines(path.read_text())
+    send_parent_idx = text.find("Mle::Attacher::SendParentRequest")
+    send_parent_truncated = False
+    if send_parent_idx >= 0:
+        tail = text[send_parent_idx:]
+        send_parent_truncated = "\nexit:" not in tail or "SendParentRequestDone" not in tail
+
+    brace_delta = text.count("{") - text.count("}")
+    missing_namespace_close = "} // namespace ot" not in text[-2000:]
+
+    if send_parent_truncated or brace_delta > 2 or missing_namespace_close:
+        print(f"[thread_preferred_parent][restore] restoring truncated mle.cpp from backup: {backup}")
+        if not dry_run:
+            shutil.copy2(backup, path)
+
+
+def find_function_span(text: str, signature_pattern: str) -> Optional[tuple[int, int, int, int]]:
+    """Return (signature_start, open_brace, close_brace, body_end)."""
+    match = re.search(signature_pattern, text, flags=re.MULTILINE)
+    if match is None:
+        return None
+
+    open_brace = text.find("{", match.end())
+    if open_brace < 0:
+        return None
+
+    depth = 0
+    i = open_brace
+    while i < len(text):
+        c = text[i]
+        if c == "{":
+            depth += 1
+        elif c == "}":
+            depth -= 1
+            if depth == 0:
+                return (match.start(), open_brace, i, i + 1)
+        i += 1
+    return None
+
+
 def replace_literal(path: Path, old: str, new: str, *, already: str, dry_run: bool = False) -> str:
     text = normalize_newlines(path.read_text())
     old = normalize_newlines(old)
@@ -187,9 +239,39 @@ def patch_attach_method_force_detach(root: Path, *, dry_run: bool = False) -> st
 
 
 def patch_selected_parent_destination(root: Path, *, dry_run: bool = False) -> str:
-    path = root / "thread/mle.cpp"
+    """Patch only the Parent Request destination-selection block.
 
-    replacement = """if (thread_preferred_parent_ot_parent_discovery_active && thread_preferred_parent_ot_parent_discovery_unicast)
+    v15 patched from AppendVersionTlv() to the next SendTo() anchor. On ESP-IDF
+    5.5.4 that can be too broad if the file has already been partially patched,
+    and it can leave SendParentRequest() without its exit block / namespace tail.
+    This version replaces only the compact destination branch immediately before
+    the final message->SendTo(destination) call.
+    """
+    path = root / "thread/mle.cpp"
+    text = normalize_newlines(path.read_text())
+
+    span = find_function_span(
+        text,
+        r"void\s+Mle::Attacher::SendParentRequest\s*\(\s*ParentRequestType\s+aType\s*\)",
+    )
+    if span is None:
+        print("[thread_preferred_parent][detail] no SendParentRequest function span found")
+        return "missing"
+
+    _sig_start, open_brace, close_brace, _body_end = span
+    body = text[open_brace:close_brace]
+
+    if "THREAD_PREFERRED_PARENT_DISCOVERY_UNICAST_HOOK" in body:
+        # Treat as already applied only if the function still has its normal exit
+        # block and final SendTo(). This avoids accepting a previously-truncated
+        # v15 patch as valid.
+        if "SuccessOrExit(error = message->SendTo(destination));" in body and "\nexit:" in body:
+            return "already"
+        print("[thread_preferred_parent][detail] existing SendParentRequest unicast hook looks incomplete")
+        return "missing"
+
+    replacement = """
+    if (thread_preferred_parent_ot_parent_discovery_active && thread_preferred_parent_ot_parent_discovery_unicast)
     {
         // THREAD_PREFERRED_PARENT_DISCOVERY_UNICAST_HOOK
         Mac::ExtAddress discoveryTarget;
@@ -222,32 +304,40 @@ def patch_selected_parent_destination(root: Path, *, dry_run: bool = False) -> s
     else
     {
         destination.SetToLinkLocalAllRoutersMulticast();
-    }"""
+    }
+"""
 
-    # ESP-IDF 5.5.x / OpenThread compacted or normal formatting. Also matches
-    # the older selected-parent-only replacement emitted by this patcher.
+    # Common OpenThread shape, immediately before the final send:
+    #   #if OPENTHREAD_FTD && OPENTHREAD_CONFIG_PARENT_SEARCH_ENABLE
+    #       if (aType == kToSelectedRouter) { ... } else
+    #   #endif
+    #       { destination.SetToLinkLocalAllRoutersMulticast(); }
+    #   SuccessOrExit(error = message->SendTo(destination));
     pattern = (
-        r"(?:if\s*\(\s*thread_preferred_parent_ot_parent_discovery_active\s*&&\s*thread_preferred_parent_ot_parent_discovery_unicast\s*\)\s*\{.*?\}\s*else\s*)?"
-        r"if\s*\(\s*aType\s*==\s*kToSelectedRouter\s*\)\s*\{.*?"
-        r"destination\.SetToLinkLocalAllRoutersMulticast\s*\(\s*\)\s*;\s*\}"
+        r"\n\s*#if\s+OPENTHREAD_FTD\s*&&\s*OPENTHREAD_CONFIG_PARENT_SEARCH_ENABLE\s*\n"
+        r"\s*if\s*\(\s*aType\s*==\s*kToSelectedRouter\s*\)\s*\{.*?\n\s*\}\s*\n"
+        r"\s*else\s*\n\s*#endif\s*\n"
+        r"\s*\{\s*\n\s*destination\.SetToLinkLocalAllRoutersMulticast\s*\(\s*\)\s*;\s*\n\s*\}\s*"
+        r"(?=\n\s*SuccessOrExit\s*\(\s*error\s*=\s*message->SendTo\s*\(\s*destination\s*\)\s*\)\s*;)"
     )
-    legacy_pattern = (
-        r"#if\s+OPENTHREAD_FTD\s*&&\s*OPENTHREAD_CONFIG_PARENT_SEARCH_ENABLE\s*\n\s*"
-        r"if\s*\(\s*aType\s*==\s*kToSelectedRouter\s*\)\s*\{.*?"
-        r"destination\.SetToLinkLocalAddress\s*\(\s*Get\s*\(\s*\)\s*\.\s*mParentSearch\s*\.\s*GetSelectedParent\s*\(\s*\)\s*\.\s*GetExtAddress\s*\(\s*\)\s*\)\s*;\s*"
-        r"\}\s*else\s*#endif\s*\{\s*destination\.SetToLinkLocalAllRoutersMulticast\s*\(\s*\)\s*;\s*\}"
-    )
-    text = normalize_newlines(path.read_text())
-    if "THREAD_PREFERRED_PARENT_DISCOVERY_UNICAST_HOOK" in text and "mParentCandidate.GetExtAddress()" in text:
-        return "already"
 
-    new, count = re.subn(pattern, replacement, text, count=1, flags=re.DOTALL | re.MULTILINE)
+    new_body, count = re.subn(pattern, "\n" + replacement.rstrip(), body, count=1, flags=re.DOTALL | re.MULTILINE)
     if count == 0:
-        new, count = re.subn(legacy_pattern, replacement, text, count=1, flags=re.DOTALL | re.MULTILINE)
+        # Fallback: ESP-IDF/OpenThread variants where the selected-router branch
+        # has already been edited but still uses the same final multicast block.
+        pattern = (
+            r"\n\s*if\s*\(\s*aType\s*==\s*kToSelectedRouter\s*\)\s*\{.*?\n\s*\}\s*\n"
+            r"\s*else\s*\n\s*\{\s*\n\s*destination\.SetToLinkLocalAllRoutersMulticast\s*\(\s*\)\s*;\s*\n\s*\}\s*"
+            r"(?=\n\s*SuccessOrExit\s*\(\s*error\s*=\s*message->SendTo\s*\(\s*destination\s*\)\s*\)\s*;)"
+        )
+        new_body, count = re.subn(pattern, "\n" + replacement.rstrip(), body, count=1, flags=re.DOTALL | re.MULTILINE)
+
     if count == 0:
-        print("[thread_preferred_parent][detail] no regex match for selected-router/unicast destination block")
+        print("[thread_preferred_parent][detail] no safe destination-selection block match in SendParentRequest")
         return "missing"
-    return write_if_changed(path, text, new, dry_run=dry_run)
+
+    new_text = text[:open_brace] + new_body + text[close_brace:]
+    return write_if_changed(path, text, new_text, dry_run=dry_run)
 
 def patch_accept_selected_parent_without_current_parent_response(root: Path, *, dry_run: bool = False) -> str:
     path = root / "thread/mle.cpp"
@@ -559,53 +649,64 @@ extern \"C\" otError thread_preferred_parent_ot_start_parent_discovery_unicast(o
 def patch_mle_parent_response_reporting_declaration(root: Path, *, dry_run: bool = False) -> str:
     path = root / "thread/mle.cpp"
     text = normalize_newlines(path.read_text())
-    if "thread_preferred_parent_ot_notify_parent_response" in text.split("namespace ot", 1)[0]:
+    namespace_idx = text.find("namespace ot")
+    prefix = text if namespace_idx < 0 else text[:namespace_idx]
+
+    required = [
+        'extern "C" void thread_preferred_parent_ot_notify_parent_response(const otThreadParentResponseInfo *aInfo);',
+        'extern "C" bool thread_preferred_parent_ot_parent_discovery_active;',
+        'extern "C" bool thread_preferred_parent_ot_parent_discovery_unicast;',
+        'extern "C" otExtAddress thread_preferred_parent_ot_parent_discovery_extaddr;',
+    ]
+    if all(item in prefix for item in required):
         return "already"
 
-    old = "#include \"utils/static_counter.hpp\"\n"
-    new = """#include \"utils/static_counter.hpp\"
+    include_old = '#include "utils/static_counter.hpp"\n'
+    include_new = '#include "utils/static_counter.hpp"\n\n#include <openthread/thread.h>\n\nextern "C" void thread_preferred_parent_ot_notify_parent_response(const otThreadParentResponseInfo *aInfo);\nextern "C" bool thread_preferred_parent_ot_parent_discovery_active;\nextern "C" bool thread_preferred_parent_ot_parent_discovery_unicast;\nextern "C" otExtAddress thread_preferred_parent_ot_parent_discovery_extaddr;\n// THREAD_PREFERRED_PARENT_PARENT_RESPONSE_REPORTING_HOOK\n// THREAD_PREFERRED_PARENT_DISCOVERY_ONLY_HOOK\n// THREAD_PREFERRED_PARENT_DISCOVERY_UNICAST_HOOK\n'
 
-#include <openthread/thread.h>
+    if required[0] in prefix:
+        insertion = "\n".join(item for item in required[1:] if item not in prefix)
+        if insertion:
+            new_text = text.replace(required[0], required[0] + "\n" + insertion, 1)
+            return write_if_changed(path, text, new_text, dry_run=dry_run)
+        return "already"
 
-extern \"C\" void thread_preferred_parent_ot_notify_parent_response(const otThreadParentResponseInfo *aInfo);
-extern \"C\" bool thread_preferred_parent_ot_parent_discovery_active;
-extern \"C\" bool thread_preferred_parent_ot_parent_discovery_unicast;
-extern \"C\" otExtAddress thread_preferred_parent_ot_parent_discovery_extaddr;
-// THREAD_PREFERRED_PARENT_PARENT_RESPONSE_REPORTING_HOOK
-// THREAD_PREFERRED_PARENT_DISCOVERY_ONLY_HOOK
-// THREAD_PREFERRED_PARENT_DISCOVERY_UNICAST_HOOK
-"""
-    return replace_literal(
-        path,
-        old,
-        new,
-        already="thread_preferred_parent_ot_notify_parent_response",
-        dry_run=dry_run,
-    )
-
+    if include_old not in text:
+        return "missing"
+    return write_if_changed(path, text, text.replace(include_old, include_new, 1), dry_run=dry_run)
 
 def patch_mle_discovery_declaration(root: Path, *, dry_run: bool = False) -> str:
     path = root / "thread/mle.cpp"
     text = normalize_newlines(path.read_text())
-    if "extern \"C\" bool thread_preferred_parent_ot_parent_discovery_active" in text:
-        if "thread_preferred_parent_ot_parent_discovery_unicast" in text:
-            return "already"
-        new = text.replace(
-            'extern "C" bool thread_preferred_parent_ot_parent_discovery_active;',
-            'extern "C" bool thread_preferred_parent_ot_parent_discovery_active;\n'
-            'extern "C" bool thread_preferred_parent_ot_parent_discovery_unicast;\n'
-            'extern "C" otExtAddress thread_preferred_parent_ot_parent_discovery_extaddr; // THREAD_PREFERRED_PARENT_DISCOVERY_UNICAST_HOOK',
+    namespace_idx = text.find("namespace ot")
+    prefix = text if namespace_idx < 0 else text[:namespace_idx]
+
+    active_decl = 'extern "C" bool thread_preferred_parent_ot_parent_discovery_active;'
+    unicast_decl = 'extern "C" bool thread_preferred_parent_ot_parent_discovery_unicast;'
+    extaddr_decl = 'extern "C" otExtAddress thread_preferred_parent_ot_parent_discovery_extaddr;'
+    notify_decl = 'extern "C" void thread_preferred_parent_ot_notify_parent_response(const otThreadParentResponseInfo *aInfo);'
+
+    if active_decl in prefix and unicast_decl in prefix and extaddr_decl in prefix:
+        return "already"
+
+    if active_decl in prefix:
+        addition = ""
+        if unicast_decl not in prefix:
+            addition += "\n" + unicast_decl
+        if extaddr_decl not in prefix:
+            addition += "\n" + extaddr_decl + " // THREAD_PREFERRED_PARENT_DISCOVERY_UNICAST_HOOK"
+        new_text = text.replace(active_decl, active_decl + addition, 1)
+        return write_if_changed(path, text, new_text, dry_run=dry_run)
+
+    if notify_decl in prefix:
+        new_text = text.replace(
+            notify_decl,
+            notify_decl + "\n" + active_decl + "\n" + unicast_decl + "\n" + extaddr_decl + " // THREAD_PREFERRED_PARENT_DISCOVERY_UNICAST_HOOK",
             1,
         )
-        return write_if_changed(path, text, new, dry_run=dry_run)
-    if "extern \"C\" void thread_preferred_parent_ot_notify_parent_response" in text:
-        new = text.replace(
-            "extern \"C\" void thread_preferred_parent_ot_notify_parent_response(const otThreadParentResponseInfo *aInfo);",
-            "extern \"C\" void thread_preferred_parent_ot_notify_parent_response(const otThreadParentResponseInfo *aInfo);\nextern \"C\" bool thread_preferred_parent_ot_parent_discovery_active;\nextern \"C\" bool thread_preferred_parent_ot_parent_discovery_unicast;\nextern \"C\" otExtAddress thread_preferred_parent_ot_parent_discovery_extaddr; // THREAD_PREFERRED_PARENT_DISCOVERY_UNICAST_HOOK",
-            1,
-        )
-        return write_if_changed(path, text, new, dry_run=dry_run)
+        return write_if_changed(path, text, new_text, dry_run=dry_run)
     return "missing"
+
 def patch_mle_discovery_cancel(root: Path, *, dry_run: bool = False) -> str:
     path = root / "thread/mle.cpp"
     text = normalize_newlines(path.read_text())
@@ -1122,6 +1223,8 @@ def apply_patches(root: Path, *, dry_run: bool = False) -> int:
     if not root.exists():
         print(f"[thread_preferred_parent][missing-root] {root}")
         return 1
+
+    restore_truncated_mle_cpp_if_needed(root, dry_run=dry_run)
 
     patches = [
         ("mle.hpp declaration", root / "thread/mle.hpp", patch_mle_hpp, True),

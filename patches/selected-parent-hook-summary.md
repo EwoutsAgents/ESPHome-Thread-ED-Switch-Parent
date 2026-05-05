@@ -24,3 +24,7 @@ The selected-parent patch now removes the earlier forced `BecomeDetached()` bloc
 ## v12 fix
 
 This package fixes a clean-build ordering issue where ESP-IDF/OpenThread 5.5.4 could report `mle.cpp selected-parent candidate preseed` as missing while the old force-detach block was still present. The pre-build patcher now removes the old block before applying the preseed patch and also tolerates the legacy block if encountered.
+
+## v16 fix
+
+The parent-request-unicast patcher now replaces only the destination-selection branch inside `Mle::Attacher::SendParentRequest()` instead of a broad range from `AppendVersionTlv()` to `SendTo()`. This prevents the ESP-IDF/OpenThread 5.5.4 failure where `mle.cpp` could be left with an unterminated `#if`. The script also restores a previously truncated `mle.cpp` from the `.thread-preferred-parent.bak` backup before reapplying patches, and ensures the unicast discovery bridge declarations are injected before `HandleTimer()` and `SendParentRequest()` reference them.

@@ -42,6 +42,18 @@ void ThreadPreferredParentComponent::set_parent_rloc16(uint16_t rloc16) {
   ESP_LOGI(TAG, "Configured preferred parent by RLOC16: 0x%04x", this->target_rloc16_);
 }
 
+bool ThreadPreferredParentComponent::set_parent_rloc16(const std::string &rloc16) {
+  uint16_t parsed = 0;
+  if (!parse_rloc16_(rloc16, &parsed)) {
+    ESP_LOGW(TAG, "Invalid preferred-parent RLOC16: %s", rloc16.c_str());
+    this->set_status_(Status::INVALID_TARGET);
+    return false;
+  }
+
+  this->set_parent_rloc16(parsed);
+  return true;
+}
+
 bool ThreadPreferredParentComponent::set_parent_extaddr(const std::string &extaddr) {
   otExtAddress parsed{};
   if (!this->parse_extaddr_(extaddr, &parsed)) {
@@ -575,6 +587,49 @@ void ThreadPreferredParentComponent::clear_preferred_parent_in_ot_(otInstance *i
   if (otThreadClearPreferredParentRloc16 != nullptr) {
     otThreadClearPreferredParentRloc16(instance);
   }
+}
+
+
+bool ThreadPreferredParentComponent::parse_rloc16_(const std::string &text, uint16_t *out) {
+  if (out == nullptr) {
+    return false;
+  }
+
+  const size_t first = text.find_first_not_of(" \t\r\n");
+  if (first == std::string::npos) {
+    return false;
+  }
+  const size_t last = text.find_last_not_of(" \t\r\n");
+
+  size_t pos = first;
+  if ((last - pos + 1) >= 2 && text[pos] == '0' && (text[pos + 1] == 'x' || text[pos + 1] == 'X')) {
+    pos += 2;
+  }
+
+  if (pos > last) {
+    return false;
+  }
+
+  uint32_t value = 0;
+  size_t digits = 0;
+  for (size_t i = pos; i <= last; i++) {
+    const int nibble = hex_to_nibble_(text[i]);
+    if (nibble < 0) {
+      return false;
+    }
+    digits++;
+    if (digits > 4) {
+      return false;
+    }
+    value = (value << 4) | static_cast<uint32_t>(nibble);
+  }
+
+  if (digits == 0 || value > 0xFFFD) {
+    return false;
+  }
+
+  *out = static_cast<uint16_t>(value);
+  return true;
 }
 
 bool ThreadPreferredParentComponent::parse_extaddr_(const std::string &text, otExtAddress *out) const {
