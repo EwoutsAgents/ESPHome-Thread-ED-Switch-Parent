@@ -254,6 +254,171 @@ extern "C" bool thread_preferred_parent_ot_request_selected_parent_attach(otInst
     )
 
 
+
+def patch_parent_response_challenge_log(root: Path, *, dry_run: bool = False) -> str:
+    path = root / "thread/mle.cpp"
+    old = "    SuccessOrExit(error = aRxInfo.mMessage.ReadAndMatchResponseTlvWith(mParentRequestChallenge));\n"
+    new = """    error = aRxInfo.mMessage.ReadAndMatchResponseTlvWith(mParentRequestChallenge);
+    if (error != kErrorNone)
+    {
+        if (mMode == kSelectedParent)
+        {
+            LogWarn(\"SelectedParent ParentResponse challenge mismatch err=%s keyseq=%lu frame=%lu\",
+                    ErrorToString(error), ToUlong(aRxInfo.mKeySequence), ToUlong(aRxInfo.mFrameCounter));
+        }
+        ExitNow();
+    }
+"""
+    return replace_literal(path, old, new, already="SelectedParent ParentResponse challenge mismatch", dry_run=dry_run)
+
+
+def patch_parent_response_rx_log(root: Path, *, dry_run: bool = False) -> str:
+    path = root / "thread/mle.cpp"
+    old = """    aRxInfo.mClass = RxInfo::kAuthoritativeMessage;
+
+#if OPENTHREAD_FTD
+"""
+    new = """    aRxInfo.mClass = RxInfo::kAuthoritativeMessage;
+    if (mMode == kSelectedParent)
+    {
+        LogNote(\"SelectedParent ParentResponse rx src=0x%04x rss=%d\", sourceAddress, rss);
+    }
+
+#if OPENTHREAD_FTD
+"""
+    return replace_literal(path, old, new, already="SelectedParent ParentResponse rx", dry_run=dry_run)
+
+
+def patch_child_id_request_sent_log(root: Path, *, dry_run: bool = False) -> str:
+    path = root / "thread/mle.cpp"
+    old = """        if (HasAcceptableParentCandidate() && (SendChildIdRequest() == kErrorNone))
+        {
+            SetState(kStateChildIdRequest);
+"""
+    new = """        if (HasAcceptableParentCandidate() && (SendChildIdRequest() == kErrorNone))
+        {
+            if (mMode == kSelectedParent)
+            {
+                LogNote(\"SelectedParent ChildIdRequest sent cand=0x%04x timeout=%lu\",
+                        mParentCandidate.GetRloc16(), ToUlong(kChildIdResponseTimeout));
+            }
+            SetState(kStateChildIdRequest);
+"""
+    if old not in normalize_newlines(path.read_text()):
+        # ESP-IDF 5.5.x may include jitter and decrement after SetState; this regex targets the common prefix only.
+        return replace_regex(
+            path,
+            r"(if\s*\(\s*HasAcceptableParentCandidate\s*\(\s*\)\s*&&\s*\(\s*SendChildIdRequest\s*\(\s*\)\s*==\s*kErrorNone\s*\)\s*\)\s*\{\s*)(SetState\s*\(\s*kStateChildIdRequest\s*\)\s*;)",
+            lambda m: m.group(1) + "\n            if (mMode == kSelectedParent)\n            {\n                LogNote(\"SelectedParent ChildIdRequest sent cand=0x%04x timeout=%lu\",\n                        mParentCandidate.GetRloc16(), ToUlong(kChildIdResponseTimeout));\n            }\n            " + m.group(2),
+            already="SelectedParent ChildIdRequest sent",
+            label="selected-parent ChildIdRequest sent log",
+            dry_run=dry_run,
+        )
+    return replace_literal(path, old, new, already="SelectedParent ChildIdRequest sent", dry_run=dry_run)
+
+
+def patch_child_id_request_send_fail_log(root: Path, *, dry_run: bool = False) -> str:
+    path = root / "thread/mle.cpp"
+    old = """exit:
+    FreeMessageOnError(message, error);
+    return error;
+}
+"""
+    new = """exit:
+    if ((error != kErrorNone) && (mMode == kSelectedParent))
+    {
+        LogWarn(\"SelectedParent ChildIdRequest send failed err=%s cand=0x%04x\",
+                ErrorToString(error), mParentCandidate.GetRloc16());
+    }
+    FreeMessageOnError(message, error);
+    return error;
+}
+"""
+    # This exact exit block exists in multiple functions. Restrict to the SendChildIdRequest function.
+    text = normalize_newlines(path.read_text())
+    if "SelectedParent ChildIdRequest send failed" in text:
+        return "already"
+    pattern = r"(Error\s+Mle::Attacher::SendChildIdRequest\s*\([^)]*\)\s*\{.*?)(exit:\s*\n\s*FreeMessageOnError\s*\(\s*message\s*,\s*error\s*\)\s*;\s*\n\s*return\s+error\s*;\s*\n\s*\})"
+    def repl(m):
+        block = "exit:\n    if ((error != kErrorNone) && (mMode == kSelectedParent))\n    {\n        LogWarn(\"SelectedParent ChildIdRequest send failed err=%s cand=0x%04x\",\n                ErrorToString(error), mParentCandidate.GetRloc16());\n    }\n    FreeMessageOnError(message, error);\n    return error;\n}"
+        return m.group(1) + block
+    return replace_regex(path, pattern, repl, already="SelectedParent ChildIdRequest send failed", label="selected-parent ChildIdRequest send failure log", dry_run=dry_run)
+
+
+def patch_child_id_request_timeout_log(root: Path, *, dry_run: bool = False) -> str:
+    path = root / "thread/mle.cpp"
+    old = """    case kStateChildIdRequest:
+        SetState(kStateIdle);
+        mParentCandidate.Clear();
+        delay = Reattach();
+        break;
+"""
+    new = """    case kStateChildIdRequest:
+        if (mMode == kSelectedParent)
+        {
+            LogWarn(\"SelectedParent ChildIdRequest timed out cand=0x%04x\", mParentCandidate.GetRloc16());
+        }
+        SetState(kStateIdle);
+        mParentCandidate.Clear();
+        delay = Reattach();
+        break;
+"""
+    return replace_literal(path, old, new, already="SelectedParent ChildIdRequest timed out", dry_run=dry_run)
+
+
+def patch_child_id_response_security_log(root: Path, *, dry_run: bool = False) -> str:
+    path = root / "thread/mle.cpp"
+    old = """    VerifyOrExit(aRxInfo.IsNeighborStateValid(), error = kErrorSecurity);
+    VerifyOrExit(mState == kStateChildIdRequest);
+"""
+    new = """    if ((mMode == kSelectedParent) && !aRxInfo.IsNeighborStateValid())
+    {
+        LogWarn(\"SelectedParent ChildIdResponse neighbor invalid src=0x%04x keyseq=%lu frame=%lu\",
+                sourceAddress, ToUlong(aRxInfo.mKeySequence), ToUlong(aRxInfo.mFrameCounter));
+        ExitNow(error = kErrorSecurity);
+    }
+    VerifyOrExit(aRxInfo.IsNeighborStateValid(), error = kErrorSecurity);
+    VerifyOrExit(mState == kStateChildIdRequest);
+"""
+    return replace_literal(path, old, new, already="SelectedParent ChildIdResponse neighbor invalid", dry_run=dry_run)
+
+
+def patch_child_id_response_accept_log(root: Path, *, dry_run: bool = False) -> str:
+    path = root / "thread/mle.cpp"
+    old = """    Get().SetStateChild(shortAddress);
+"""
+    new = """    Get().SetStateChild(shortAddress);
+    if (mMode == kSelectedParent)
+    {
+        LogNote(\"SelectedParent ChildIdResponse accepted parent=0x%04x child=0x%04x\", sourceAddress, shortAddress);
+    }
+"""
+    return replace_literal(path, old, new, already="SelectedParent ChildIdResponse accepted", dry_run=dry_run)
+
+
+def patch_child_id_response_reject_log(root: Path, *, dry_run: bool = False) -> str:
+    path = root / "thread/mle.cpp"
+    text = normalize_newlines(path.read_text())
+    if "SelectedParent ChildIdResponse reject" in text:
+        return "already"
+    pattern = r"(void\s+Mle::Attacher::HandleChildIdResponse\s*\([^)]*\)\s*\{.*?)(exit:\s*\n\s*LogProcessError\s*\(\s*kTypeChildIdResponse\s*,\s*error\s*\)\s*;\s*\n\s*\})"
+    def repl(m):
+        block = "exit:\n    if ((error != kErrorNone) && (mMode == kSelectedParent))\n    {\n        LogWarn(\"SelectedParent ChildIdResponse reject err=%s src=0x%04x short=0x%04x\",\n                ErrorToString(error), sourceAddress, shortAddress);\n    }\n    LogProcessError(kTypeChildIdResponse, error);\n}"
+        return m.group(1) + block
+    return replace_regex(path, pattern, repl, already="SelectedParent ChildIdResponse reject", label="selected-parent ChildIdResponse reject log", dry_run=dry_run)
+
+
+def patch_parent_response_reject_log(root: Path, *, dry_run: bool = False) -> str:
+    path = root / "thread/mle.cpp"
+    text = normalize_newlines(path.read_text())
+    if "SelectedParent ParentResponse reject" in text:
+        return "already"
+    pattern = r"(void\s+Mle::Attacher::HandleParentResponse\s*\([^)]*\)\s*\{.*?)(exit:\s*\n\s*LogProcessError\s*\(\s*kTypeParentResponse\s*,\s*error\s*\)\s*;\s*\n\s*\})"
+    def repl(m):
+        block = "exit:\n    if ((error != kErrorNone) && (mMode == kSelectedParent))\n    {\n        LogWarn(\"SelectedParent ParentResponse reject err=%s src=0x%04x rss=%d cand=0x%04x\",\n                ErrorToString(error), sourceAddress, rss, mParentCandidate.GetRloc16());\n    }\n    LogProcessError(kTypeParentResponse, error);\n}"
+        return m.group(1) + block
+    return replace_regex(path, pattern, repl, already="SelectedParent ParentResponse reject", label="selected-parent ParentResponse reject log", dry_run=dry_run)
+
 def apply_patches(root: Path, *, dry_run: bool = False) -> int:
     root = root.expanduser().resolve()
     print(f"[thread_preferred_parent] OpenThread src/core: {root}")
@@ -263,28 +428,46 @@ def apply_patches(root: Path, *, dry_run: bool = False) -> int:
         return 1
 
     patches = [
-        ("mle.hpp declaration", root / "thread/mle.hpp", patch_mle_hpp),
-        ("mle.cpp AttachToSelectedParent", root / "thread/mle.cpp", patch_attach_method),
-        ("mle.cpp selected-router destination", root / "thread/mle.cpp", patch_selected_parent_destination),
-        ("mle.cpp selected-parent bypass", root / "thread/mle.cpp", patch_accept_selected_parent_without_current_parent_response),
-        ("thread_api.cpp bridge", root / "api/thread_api.cpp", patch_thread_api),
+        ("mle.hpp declaration", root / "thread/mle.hpp", patch_mle_hpp, True),
+        ("mle.cpp AttachToSelectedParent", root / "thread/mle.cpp", patch_attach_method, True),
+        ("mle.cpp selected-router destination", root / "thread/mle.cpp", patch_selected_parent_destination, True),
+        ("mle.cpp selected-parent bypass", root / "thread/mle.cpp", patch_accept_selected_parent_without_current_parent_response, True),
+        ("thread_api.cpp bridge", root / "api/thread_api.cpp", patch_thread_api, True),
+        ("diag ParentResponse challenge", root / "thread/mle.cpp", patch_parent_response_challenge_log, False),
+        ("diag ParentResponse rx", root / "thread/mle.cpp", patch_parent_response_rx_log, False),
+        ("diag ParentResponse reject", root / "thread/mle.cpp", patch_parent_response_reject_log, False),
+        ("diag ChildIdRequest sent", root / "thread/mle.cpp", patch_child_id_request_sent_log, False),
+        ("diag ChildIdRequest send fail", root / "thread/mle.cpp", patch_child_id_request_send_fail_log, False),
+        ("diag ChildIdRequest timeout", root / "thread/mle.cpp", patch_child_id_request_timeout_log, False),
+        ("diag ChildIdResponse security", root / "thread/mle.cpp", patch_child_id_response_security_log, False),
+        ("diag ChildIdResponse reject", root / "thread/mle.cpp", patch_child_id_response_reject_log, False),
+        ("diag ChildIdResponse accepted", root / "thread/mle.cpp", patch_child_id_response_accept_log, False),
     ]
 
     rc = 0
-    for label, path, func in patches:
+    optional_missing = 0
+    for label, path, func, required in patches:
         if not path.exists():
             print(f"[thread_preferred_parent][missing-file] {path}")
-            rc = 1
+            if required:
+                rc = 1
+            else:
+                optional_missing += 1
             continue
         state = func(root, dry_run=dry_run)
         print(f"[thread_preferred_parent][{state}] {label}: {path}")
         if state == "missing":
-            rc = 1
+            if required:
+                rc = 1
+            else:
+                optional_missing += 1
 
     if rc == 0:
         print("[thread_preferred_parent] OpenThread selected-parent hook is installed.")
+        if optional_missing:
+            print(f"[thread_preferred_parent] {optional_missing} optional diagnostic patch(es) did not match this OpenThread revision.")
     else:
-        print("[thread_preferred_parent] Patch did not match this OpenThread revision.")
+        print("[thread_preferred_parent] Required patch did not match this OpenThread revision.")
     return rc
 
 

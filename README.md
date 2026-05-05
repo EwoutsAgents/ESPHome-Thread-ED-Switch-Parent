@@ -99,3 +99,7 @@ For `parent_rloc`:
 ## Notes
 
 RLOC16 values are topology-derived and may change. Extended address is the better long-lived identifier for parent targeting.
+
+## v3 selected-parent diagnostics
+
+This version also injects optional OpenThread MLE diagnostics for the selected-parent path. Look for log lines containing `SelectedParent` from the OpenThread `Mle` module. They show whether the target Parent Response is received, rejected, whether the Child ID Request is sent, times out, or succeeds.
