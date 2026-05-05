@@ -1,3 +1,5 @@
+import os
+
 import esphome.codegen as cg
 import esphome.config_validation as cv
 from esphome.const import CONF_ID
@@ -14,6 +16,10 @@ CONF_PARENT_EXTADDR = "parent_extaddr"
 CONF_MAX_ATTEMPTS = "max_attempts"
 CONF_RETRY_INTERVAL = "retry_interval"
 CONF_REQUIRE_SELECTED_PARENT_HOOK = "require_selected_parent_hook"
+
+SCRIPT_PATH = os.path.abspath(
+    os.path.join(os.path.dirname(__file__), "apply-openthread-selected-parent-hook.py")
+)
 
 
 def validate_rloc16(value):
@@ -82,6 +88,11 @@ CONFIG_SCHEMA = cv.All(
 
 
 async def to_code(config):
+    # Register the PlatformIO pre-build script automatically. This lets Home
+    # Assistant ESPHome add-on users consume the external component directly
+    # without manually copying scripts into /config/esphome/scripts.
+    cg.add_platformio_option("extra_scripts", [f"pre:{SCRIPT_PATH}"])
+
     var = cg.new_Pvariable(config[CONF_ID])
     await cg.register_component(var, config)
 

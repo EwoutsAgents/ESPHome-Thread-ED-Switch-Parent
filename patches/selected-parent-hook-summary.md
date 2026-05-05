@@ -1,10 +1,14 @@
 # Selected-parent OpenThread hook summary
 
-The authoritative patch mechanism for this version is:
+The patch script now lives inside the external component:
 
-```bash
-scripts/apply-openthread-selected-parent-hook.py
+```text
+components/thread_preferred_parent/apply-openthread-selected-parent-hook.py
 ```
+
+`components/thread_preferred_parent/__init__.py` registers it automatically as a PlatformIO pre-build script using `cg.add_platformio_option("extra_scripts", ...)`.
+
+Manual YAML `platformio_options.extra_scripts` is no longer needed.
 
 The script modifies ESP-IDF's vendored OpenThread core under `src/core`:
 
