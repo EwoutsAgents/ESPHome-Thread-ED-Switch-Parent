@@ -563,6 +563,54 @@ def patch_mle_parent_response_reporting_is_attached_fix(root: Path, *, dry_run: 
         return "missing"
     return write_if_changed(path, text, text.replace(bad, good), dry_run=dry_run)
 
+
+def patch_selected_parent_parent_response_filter(root: Path, *, dry_run: bool = False) -> str:
+    """During selected-parent attach, ignore Parent Responses from all non-target parents.
+
+    The preflight discovery phase intentionally accepts/logs multicast Parent
+    Responses. Once the component starts selected-parent attach, however, the
+    attacher must not allow OpenThread's normal parent-selection heuristic to
+    choose a different candidate.
+    """
+    path = root / "thread/mle.cpp"
+    text = normalize_newlines(path.read_text())
+    if "THREAD_PREFERRED_PARENT_SELECTED_PARENT_RESPONSE_FILTER" in text:
+        return "already"
+
+    filter_block = """
+    if ((mMode == kSelectedParent) && !(extAddress == mParentCandidate.GetExtAddress()))
+    {
+        // THREAD_PREFERRED_PARENT_SELECTED_PARENT_RESPONSE_FILTER
+        LogNote("SelectedParent ParentResponse ignored non-target src=0x%04x", sourceAddress);
+        ExitNow(error = kErrorDrop);
+    }
+"""
+
+    # Best insertion point: immediately after the component's parent-response
+    # reporting call. At this point extAddress, sourceAddress, RSSI, and
+    # connectivity TLVs are parsed, but before OpenThread updates the parent
+    # candidate with the received response.
+    result = replace_regex(
+        path,
+        r"(thread_preferred_parent_ot_notify_parent_response\s*\(\s*&parentinfo\s*\)\s*;\s*\n\s*\}\s*)",
+        lambda m: m.group(1).rstrip() + "\n" + filter_block,
+        already="THREAD_PREFERRED_PARENT_SELECTED_PARENT_RESPONSE_FILTER",
+        label="selected-parent non-target Parent Response filter after reporting call",
+        dry_run=dry_run,
+    )
+    if result != "missing":
+        return result
+
+    # Fallback for a source tree where the reporting patch did not land yet.
+    return replace_regex(
+        path,
+        r"(aRxInfo\.mClass\s*=\s*RxInfo::kAuthoritativeMessage\s*;)",
+        lambda m: filter_block + "\n    " + m.group(1),
+        already="THREAD_PREFERRED_PARENT_SELECTED_PARENT_RESPONSE_FILTER",
+        label="selected-parent non-target Parent Response filter before authoritative class",
+        dry_run=dry_run,
+    )
+
 def patch_parent_response_challenge_log(root: Path, *, dry_run: bool = False) -> str:
     path = root / "thread/mle.cpp"
     old = "    SuccessOrExit(error = aRxInfo.mMessage.ReadAndMatchResponseTlvWith(mParentRequestChallenge));\n"

@@ -66,3 +66,8 @@ Selected-parent attach hook returned YES
 ```
 
 During the selected-parent attach, the ESPHome API may temporarily disconnect if the node is connected over Thread. Use USB serial logs for uninterrupted MLE diagnostics.
+
+
+### v9 behavior
+
+The selected-parent attach phase now filters MLE Parent Responses: after preflight discovery observes the requested ExtAddr/RLOC16, OpenThread ignores non-target Parent Responses during the disruptive selected-parent attach. This prevents the normal parent-selection heuristic from falling back to the old or strongest parent.

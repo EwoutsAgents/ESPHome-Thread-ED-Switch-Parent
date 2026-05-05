@@ -9,3 +9,8 @@ The patch adds:
 3. A selected-parent attach bridge that forces an attach to a chosen parent extended address after the target was observed.
 
 The discovery-only path prevents the disruptive selected-parent attach from being attempted when the requested parent is not present.
+
+
+## v9 selected-parent response filter
+
+During selected-parent attach, `Mle::Attacher::HandleParentResponse()` now drops Parent Responses whose ExtAddr does not match `mParentCandidate.GetExtAddress()`. Preflight discovery remains multicast and non-disruptive; filtering is only active when `mMode == kSelectedParent`.
