@@ -52,6 +52,7 @@ thread_preferred_parent:
   max_attempts: 5
   retry_interval: 8s
   require_selected_parent_hook: true
+  log_parent_responses: true
 
 button:
   - platform: template
@@ -103,3 +104,27 @@ RLOC16 values are topology-derived and may change. Extended address is the bette
 ## v3 selected-parent diagnostics
 
 This version also injects optional OpenThread MLE diagnostics for the selected-parent path. Look for log lines containing `SelectedParent` from the OpenThread `Mle` module. They show whether the target Parent Response is received, rejected, whether the Child ID Request is sent, times out, or succeeds.
+
+## v4 note
+
+This version adds two diagnostics/fixes for selected-parent attach testing:
+
+- The OpenThread hook forces `BecomeDetached()` before starting selected-parent attach.
+- The ESPHome component logs the current parent before every attempt and logs whether the selected-parent hook returned true.
+
+## v5 Parent Response reporting
+
+This version also reports every MLE Parent Response that OpenThread receives during attach/search. The patch adds a small C callback bridge inside OpenThread and the ESPHome component registers a callback at setup.
+
+Expected runtime log example:
+
+```text
+Parent Response #1: ExtAddr e2f3ec457a4c6d17 RLOC16 0x4400 RSSI -54 priority 0 LQ3/LQ2/LQ1 8/1/0 attached=YES target_match=YES
+```
+
+You can disable this logging with:
+
+```yaml
+thread_preferred_parent:
+  log_parent_responses: false
+```

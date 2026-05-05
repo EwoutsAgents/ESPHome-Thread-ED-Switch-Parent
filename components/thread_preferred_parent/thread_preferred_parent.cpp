@@ -7,6 +7,15 @@ static const char *const TAG = "thread_preferred_parent";
 
 void ThreadPreferredParentComponent::setup() {
   ESP_LOGI(TAG, "Thread preferred-parent component initialized");
+
+  if (thread_preferred_parent_ot_register_parent_response_callback != nullptr) {
+    thread_preferred_parent_ot_register_parent_response_callback(
+        &ThreadPreferredParentComponent::parent_response_callback_, this);
+    this->parent_response_callback_registered_ = true;
+    ESP_LOGI(TAG, "OpenThread Parent Response reporting hook registered");
+  } else {
+    ESP_LOGW(TAG, "OpenThread Parent Response reporting hook is not available; patch script may not be applied yet");
+  }
 }
 
 void ThreadPreferredParentComponent::dump_config() {
@@ -17,6 +26,8 @@ void ThreadPreferredParentComponent::dump_config() {
   ESP_LOGCONFIG(TAG, "  Retry interval: %u ms", this->retry_interval_ms_);
   ESP_LOGCONFIG(TAG, "  Require selected-parent hook: %s", YESNO(this->require_selected_parent_hook_));
   ESP_LOGCONFIG(TAG, "  Selected-parent hook available: %s", YESNO(this->selected_parent_hook_available_()));
+  ESP_LOGCONFIG(TAG, "  Parent Response reporting hook registered: %s", YESNO(this->parent_response_callback_registered_));
+  ESP_LOGCONFIG(TAG, "  Log Parent Responses: %s", YESNO(this->log_parent_responses_));
   ESP_LOGCONFIG(TAG, "  Status: %s", status_to_string_(this->status_));
 }
 
@@ -136,6 +147,11 @@ void ThreadPreferredParentComponent::loop() {
   }
 
   this->attempts_++;
+  otRouterInfo current_parent{};
+  if (otThreadGetParentInfo(instance, &current_parent) == OT_ERROR_NONE) {
+    ESP_LOGI(TAG, "Current parent before attempt: RLOC16 0x%04x ExtAddr %s", current_parent.mRloc16,
+             this->extaddr_to_string_(current_parent.mExtAddress).c_str());
+  }
   ESP_LOGI(TAG, "Preferred-parent attach attempt %u/%u for %s", this->attempts_, this->max_attempts_,
            this->target_to_string_().c_str());
 
@@ -159,6 +175,41 @@ void ThreadPreferredParentComponent::loop() {
   } else {
     this->next_attempt_ms_ = now + this->retry_interval_ms_;
   }
+}
+
+
+void ThreadPreferredParentComponent::parent_response_callback_(const otThreadParentResponseInfo *info, void *context) {
+  if (context == nullptr) {
+    return;
+  }
+  static_cast<ThreadPreferredParentComponent *>(context)->handle_parent_response_(info);
+}
+
+void ThreadPreferredParentComponent::handle_parent_response_(const otThreadParentResponseInfo *info) {
+  if (!this->log_parent_responses_ || info == nullptr) {
+    return;
+  }
+
+  this->parent_response_count_++;
+
+  bool target_match = false;
+  switch (this->target_type_) {
+    case TargetType::RLOC16:
+      target_match = info->mRloc16 == this->target_rloc16_;
+      break;
+    case TargetType::EXTADDR:
+      target_match = this->extaddr_matches_(info->mExtAddr, this->target_extaddr_);
+      break;
+    case TargetType::NONE:
+      break;
+  }
+
+  ESP_LOGI(TAG,
+           "Parent Response #%lu: ExtAddr %s RLOC16 0x%04x RSSI %d priority %d LQ3/LQ2/LQ1 %u/%u/%u "
+           "attached=%s target_match=%s",
+           static_cast<unsigned long>(this->parent_response_count_), this->extaddr_to_string_(info->mExtAddr).c_str(),
+           info->mRloc16, info->mRssi, info->mPriority, info->mLinkQuality3, info->mLinkQuality2, info->mLinkQuality1,
+           YESNO(info->mIsAttached), YESNO(target_match));
 }
 
 bool ThreadPreferredParentComponent::is_child_(otInstance *instance) const {
@@ -188,7 +239,9 @@ otError ThreadPreferredParentComponent::start_preferred_parent_search_(otInstanc
       if (this->selected_parent_hook_available_()) {
         ESP_LOGI(TAG, "Starting selected-parent attach to ExtAddr %s",
                  this->extaddr_to_string_(this->target_extaddr_).c_str());
-        return this->request_selected_parent_attach_(instance, this->target_extaddr_) ? OT_ERROR_NONE : OT_ERROR_FAILED;
+        const bool accepted = this->request_selected_parent_attach_(instance, this->target_extaddr_);
+        ESP_LOGI(TAG, "Selected-parent attach hook returned %s", YESNO(accepted));
+        return accepted ? OT_ERROR_NONE : OT_ERROR_FAILED;
       }
 
       if (this->require_selected_parent_hook_) {
@@ -217,7 +270,9 @@ otError ThreadPreferredParentComponent::start_preferred_parent_search_(otInstanc
       if (this->selected_parent_hook_available_() && this->resolve_rloc16_to_extaddr_(instance, this->target_rloc16_, &resolved)) {
         ESP_LOGI(TAG, "Resolved RLOC16 0x%04x to ExtAddr %s; starting selected-parent attach", this->target_rloc16_,
                  this->extaddr_to_string_(resolved).c_str());
-        return this->request_selected_parent_attach_(instance, resolved) ? OT_ERROR_NONE : OT_ERROR_FAILED;
+        const bool accepted = this->request_selected_parent_attach_(instance, resolved);
+        ESP_LOGI(TAG, "Selected-parent attach hook returned %s", YESNO(accepted));
+        return accepted ? OT_ERROR_NONE : OT_ERROR_FAILED;
       }
 
       if (otThreadSearchForPreferredParentRloc16 != nullptr) {

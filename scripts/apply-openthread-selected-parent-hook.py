@@ -135,6 +135,39 @@ exit:
     )
 
 
+def patch_attach_method_force_detach(root: Path, *, dry_run: bool = False) -> str:
+    path = root / "thread/mle.cpp"
+    text = normalize_newlines(path.read_text())
+    if "THREAD_PREFERRED_PARENT_FORCE_DETACH_BEFORE_ATTACH" in text:
+        return "already"
+
+    pattern = (
+        r"(Error\s+Mle::AttachToSelectedParent\s*\(\s*const\s+Mac::ExtAddress\s*&\s*aExtAddress\s*\)\s*\{.*?"
+        r"VerifyOrExit\s*\(\s*!IsAttaching\s*\(\s*\)\s*,\s*error\s*=\s*kErrorBusy\s*\)\s*;\s*)"
+        r"(mAttacher\.Attach\s*\(\s*kSelectedParent\s*\)\s*;)"
+    )
+
+    def repl(m):
+        return (
+            m.group(1)
+            + "\n    // THREAD_PREFERRED_PARENT_FORCE_DETACH_BEFORE_ATTACH\n"
+            + "    // Force the ED to leave its current parent before starting the\n"
+            + "    // selected-parent attach flow. Without this, some OpenThread\n"
+            + "    // revisions accept the request but remain attached to the old parent.\n"
+            + "    (void)BecomeDetached();\n\n    "
+            + m.group(2)
+        )
+
+    return replace_regex(
+        path,
+        pattern,
+        repl,
+        already="THREAD_PREFERRED_PARENT_FORCE_DETACH_BEFORE_ATTACH",
+        label="selected-parent force detach before attach",
+        dry_run=dry_run,
+    )
+
+
 def patch_selected_parent_destination(root: Path, *, dry_run: bool = False) -> str:
     path = root / "thread/mle.cpp"
 
@@ -227,6 +260,29 @@ def patch_accept_selected_parent_without_current_parent_response(root: Path, *, 
 def patch_thread_api(root: Path, *, dry_run: bool = False) -> str:
     path = root / "api/thread_api.cpp"
     bridge = """
+using thread_preferred_parent_parent_response_callback_t = void (*)(const otThreadParentResponseInfo *aInfo, void *aContext);
+
+static thread_preferred_parent_parent_response_callback_t sThreadPreferredParentParentResponseCallback = nullptr;
+static void *sThreadPreferredParentParentResponseCallbackContext = nullptr;
+
+extern "C" void thread_preferred_parent_ot_register_parent_response_callback(
+    thread_preferred_parent_parent_response_callback_t aCallback,
+    void *aContext)
+{
+    // THREAD_PREFERRED_PARENT_PARENT_RESPONSE_REPORTING_HOOK
+    sThreadPreferredParentParentResponseCallback = aCallback;
+    sThreadPreferredParentParentResponseCallbackContext = aContext;
+}
+
+extern "C" void thread_preferred_parent_ot_notify_parent_response(const otThreadParentResponseInfo *aInfo)
+{
+    // THREAD_PREFERRED_PARENT_PARENT_RESPONSE_REPORTING_HOOK
+    if ((sThreadPreferredParentParentResponseCallback != nullptr) && (aInfo != nullptr))
+    {
+        sThreadPreferredParentParentResponseCallback(aInfo, sThreadPreferredParentParentResponseCallbackContext);
+    }
+}
+
 extern "C" bool thread_preferred_parent_ot_request_selected_parent_attach(otInstance *aInstance,
                                                                              const otExtAddress *aPreferredExtAddress)
 {
@@ -253,6 +309,131 @@ extern "C" bool thread_preferred_parent_ot_request_selected_parent_attach(otInst
         dry_run=dry_run,
     )
 
+
+def patch_thread_api_parent_response_reporting(root: Path, *, dry_run: bool = False) -> str:
+    path = root / "api/thread_api.cpp"
+    text = normalize_newlines(path.read_text())
+    if "THREAD_PREFERRED_PARENT_PARENT_RESPONSE_REPORTING_HOOK" in text:
+        return "already"
+
+    addition = """
+using thread_preferred_parent_parent_response_callback_t = void (*)(const otThreadParentResponseInfo *aInfo, void *aContext);
+
+static thread_preferred_parent_parent_response_callback_t sThreadPreferredParentParentResponseCallback = nullptr;
+static void *sThreadPreferredParentParentResponseCallbackContext = nullptr;
+
+extern "C" void thread_preferred_parent_ot_register_parent_response_callback(
+    thread_preferred_parent_parent_response_callback_t aCallback,
+    void *aContext)
+{
+    // THREAD_PREFERRED_PARENT_PARENT_RESPONSE_REPORTING_HOOK
+    sThreadPreferredParentParentResponseCallback = aCallback;
+    sThreadPreferredParentParentResponseCallbackContext = aContext;
+}
+
+extern "C" void thread_preferred_parent_ot_notify_parent_response(const otThreadParentResponseInfo *aInfo)
+{
+    // THREAD_PREFERRED_PARENT_PARENT_RESPONSE_REPORTING_HOOK
+    if ((sThreadPreferredParentParentResponseCallback != nullptr) && (aInfo != nullptr))
+    {
+        sThreadPreferredParentParentResponseCallback(aInfo, sThreadPreferredParentParentResponseCallbackContext);
+    }
+}
+
+"""
+
+    # If an earlier v4 patch already inserted the selected-parent bridge, place
+    # the reporting functions immediately before it. Otherwise a fresh patch gets
+    # the reporting bridge through patch_thread_api().
+    pattern = r"(extern\s+\"C\"\s+bool\s+thread_preferred_parent_ot_request_selected_parent_attach\s*\()"
+    return replace_regex(
+        path,
+        pattern,
+        lambda m: addition + m.group(1),
+        already="THREAD_PREFERRED_PARENT_PARENT_RESPONSE_REPORTING_HOOK",
+        label="thread_api.cpp parent-response reporting bridge",
+        dry_run=dry_run,
+    )
+
+
+def patch_mle_parent_response_reporting_declaration(root: Path, *, dry_run: bool = False) -> str:
+    path = root / "thread/mle.cpp"
+    text = normalize_newlines(path.read_text())
+    if "thread_preferred_parent_ot_notify_parent_response" in text.split("namespace ot", 1)[0]:
+        return "already"
+
+    old = "#include \"utils/static_counter.hpp\"\n"
+    new = """#include \"utils/static_counter.hpp\"
+
+#include <openthread/thread.h>
+
+extern \"C\" void thread_preferred_parent_ot_notify_parent_response(const otThreadParentResponseInfo *aInfo);
+// THREAD_PREFERRED_PARENT_PARENT_RESPONSE_REPORTING_HOOK
+"""
+    return replace_literal(
+        path,
+        old,
+        new,
+        already="thread_preferred_parent_ot_notify_parent_response",
+        dry_run=dry_run,
+    )
+
+
+def patch_mle_parent_response_reporting_call(root: Path, *, dry_run: bool = False) -> str:
+    path = root / "thread/mle.cpp"
+    text = normalize_newlines(path.read_text())
+    if "thread_preferred_parent_ot_notify_parent_response(&parentinfo)" in text:
+        return "already"
+
+    call_block = """
+    {
+        otThreadParentResponseInfo parentinfo;
+        parentinfo.mExtAddr = extAddress;
+        parentinfo.mRloc16 = sourceAddress;
+        parentinfo.mRssi = rss;
+        parentinfo.mPriority = connectivityTlv.GetParentPriority();
+        parentinfo.mLinkQuality3 = connectivityTlv.GetLinkQuality3();
+        parentinfo.mLinkQuality2 = connectivityTlv.GetLinkQuality2();
+        parentinfo.mLinkQuality1 = connectivityTlv.GetLinkQuality1();
+        parentinfo.mIsAttached = Get().IsAttached();
+        thread_preferred_parent_ot_notify_parent_response(&parentinfo);
+    }
+"""
+
+    # Preferred insertion point: after OpenThread's optional parent-response
+    # callback block, once source address, ExtAddr, RSSI and connectivity TLV
+    # have all been parsed.
+    pattern = (
+        r"(#if\s+OPENTHREAD_CONFIG_MLE_PARENT_RESPONSE_CALLBACK_API_ENABLE\s*\n"
+        r"\s*if\s*\(\s*mParentResponseCallback\.IsSet\s*\(\s*\)\s*\)\s*\{.*?"
+        r"mParentResponseCallback\.Invoke\s*\(\s*&parentinfo\s*\)\s*;\s*\}\s*\n"
+        r"#endif\s*)"
+    )
+
+    def repl(m):
+        return m.group(1).rstrip() + "\n" + call_block
+
+    result = replace_regex(
+        path,
+        pattern,
+        repl,
+        already="thread_preferred_parent_ot_notify_parent_response(&parentinfo)",
+        label="mle.cpp parent-response reporting call after optional OT callback",
+        dry_run=dry_run,
+    )
+    if result != "missing":
+        return result
+
+    # Fallback insertion point for OpenThread revisions without the optional
+    # callback block in the source.
+    return replace_regex(
+        path,
+        r"(aRxInfo\.mClass\s*=\s*RxInfo::kAuthoritativeMessage\s*;)",
+        lambda m: call_block + "\n    " + m.group(1),
+        already="thread_preferred_parent_ot_notify_parent_response(&parentinfo)",
+        label="mle.cpp parent-response reporting call before authoritative class",
+        dry_run=dry_run,
+    )
 
 
 def patch_parent_response_challenge_log(root: Path, *, dry_run: bool = False) -> str:
@@ -430,9 +611,13 @@ def apply_patches(root: Path, *, dry_run: bool = False) -> int:
     patches = [
         ("mle.hpp declaration", root / "thread/mle.hpp", patch_mle_hpp, True),
         ("mle.cpp AttachToSelectedParent", root / "thread/mle.cpp", patch_attach_method, True),
+        ("mle.cpp force detach before selected-parent attach", root / "thread/mle.cpp", patch_attach_method_force_detach, True),
         ("mle.cpp selected-router destination", root / "thread/mle.cpp", patch_selected_parent_destination, True),
         ("mle.cpp selected-parent bypass", root / "thread/mle.cpp", patch_accept_selected_parent_without_current_parent_response, True),
         ("thread_api.cpp bridge", root / "api/thread_api.cpp", patch_thread_api, True),
+        ("thread_api.cpp parent-response reporting bridge", root / "api/thread_api.cpp", patch_thread_api_parent_response_reporting, True),
+        ("mle.cpp parent-response reporting declaration", root / "thread/mle.cpp", patch_mle_parent_response_reporting_declaration, True),
+        ("mle.cpp parent-response reporting call", root / "thread/mle.cpp", patch_mle_parent_response_reporting_call, True),
         ("diag ParentResponse challenge", root / "thread/mle.cpp", patch_parent_response_challenge_log, False),
         ("diag ParentResponse rx", root / "thread/mle.cpp", patch_parent_response_rx_log, False),
         ("diag ParentResponse reject", root / "thread/mle.cpp", patch_parent_response_reject_log, False),
