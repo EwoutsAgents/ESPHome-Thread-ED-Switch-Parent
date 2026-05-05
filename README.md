@@ -1,6 +1,6 @@
 # ESPHome Thread ED Switch Parent
 
-**v11 targeted attach update:** this package now ports the important selected-parent attach lessons from ESPHome-biparental-ED: it keeps the child attached while attempting the selected-parent Child ID exchange, pre-seeds the target ExtAddr before `Attach(kSelectedParent)`, and forces `ChildIdRequest` for selected-parent mode once the target Parent Response has populated the OpenThread parent candidate. This is intended to fix the failure mode where the target appears in Parent Responses but OpenThread never completes the selected-parent attach.
+**v12 targeted attach update:** this package now ports the important selected-parent attach lessons from ESPHome-biparental-ED: it keeps the child attached while attempting the selected-parent Child ID exchange, pre-seeds the target ExtAddr before `Attach(kSelectedParent)`, and forces `ChildIdRequest` for selected-parent mode once the target Parent Response has populated the OpenThread parent candidate. This is intended to fix the failure mode where the target appears in Parent Responses but OpenThread never completes the selected-parent attach.
 
 ESPHome external component for testing controlled Thread end-device parent switching.
 
@@ -67,9 +67,14 @@ Starting selected-parent attach to ExtAddr e2f3ec457a4c6d17
 Selected-parent attach hook returned YES
 ```
 
-During the selected-parent attach, the ESPHome API may temporarily disconnect if the OpenThread stack drops/rebuilds the Thread route. v11 tries to keep the node attached during the selected-parent Child ID exchange, but USB serial logs are still recommended for uninterrupted MLE diagnostics.
+During the selected-parent attach, the ESPHome API may temporarily disconnect if the OpenThread stack drops/rebuilds the Thread route. v12 tries to keep the node attached during the selected-parent Child ID exchange, but USB serial logs are still recommended for uninterrupted MLE diagnostics.
 
 
 ### v10 behavior
 
 The selected-parent attach phase now filters MLE Parent Responses: after preflight discovery observes the requested ExtAddr/RLOC16, OpenThread ignores non-target Parent Responses during the disruptive selected-parent attach. This prevents the normal parent-selection heuristic from falling back to the old or strongest parent.
+
+
+## v12 fix
+
+This package fixes a clean-build ordering issue where ESP-IDF/OpenThread 5.5.4 could report `mle.cpp selected-parent candidate preseed` as missing while the old force-detach block was still present. The pre-build patcher now removes the old block before applying the preseed patch and also tolerates the legacy block if encountered.

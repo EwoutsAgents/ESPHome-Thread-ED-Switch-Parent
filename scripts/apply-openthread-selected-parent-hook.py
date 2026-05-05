@@ -10,7 +10,10 @@ vendored OpenThread core with a small C bridge:
 The patcher intentionally uses tolerant regular expressions because ESPHome /
 PlatformIO may install slightly different ESP-IDF/OpenThread revisions.
 
-v11 notes:
+v12 notes:
+  * fix clean-build ordering: remove the legacy force-detach block before
+    applying candidate preseed, so ESP-IDF/OpenThread 5.5.4 does not fail
+    with a required preseed regex miss.
   * keep the node attached during targeted BetterParent/selected-parent attach;
     this matches the biparental targeted-attach boundary and avoids racing the
     selected attach against a generic detach/reattach to the old parent.
@@ -814,6 +817,7 @@ def patch_attach_method_preseed_candidate(root: Path, *, dry_run: bool = False) 
     pattern = (
         r"(Error\s+Mle::AttachToSelectedParent\s*\(\s*const\s+Mac::ExtAddress\s*&\s*aExtAddress\s*\)\s*\{.*?"
         r"VerifyOrExit\s*\(\s*!IsAttaching\s*\(\s*\)\s*,\s*error\s*=\s*kErrorBusy\s*\)\s*;\s*)"
+        r"(?:\s*//\s*THREAD_PREFERRED_PARENT_FORCE_DETACH_BEFORE_ATTACH\n(?:\s*//[^\n]*\n)*\s*\(void\)BecomeDetached\s*\(\s*\)\s*;\s*)?"
         r"(mAttacher\.Attach\s*\(\s*kSelectedParent\s*\)\s*;\s*)"
         r"(mAttacher\.GetParentCandidate\s*\(\s*\)\.SetExtAddress\s*\(\s*aExtAddress\s*\)\s*;)"
     )
@@ -984,8 +988,8 @@ def apply_patches(root: Path, *, dry_run: bool = False) -> int:
     patches = [
         ("mle.hpp declaration", root / "thread/mle.hpp", patch_mle_hpp, True),
         ("mle.cpp AttachToSelectedParent", root / "thread/mle.cpp", patch_attach_method, True),
-        ("mle.cpp selected-parent candidate preseed", root / "thread/mle.cpp", patch_attach_method_preseed_candidate, True),
         ("mle.cpp remove old force-detach selected-parent block", root / "thread/mle.cpp", patch_remove_force_detach_before_attach, True),
+        ("mle.cpp selected-parent candidate preseed", root / "thread/mle.cpp", patch_attach_method_preseed_candidate, True),
         ("mle.cpp selected-router destination", root / "thread/mle.cpp", patch_selected_parent_destination, True),
         ("mle.cpp selected-parent bypass", root / "thread/mle.cpp", patch_accept_selected_parent_without_current_parent_response, True),
         ("mle.cpp selected-parent force Child ID Request", root / "thread/mle.cpp", patch_selected_parent_child_id_request_bypass, True),
