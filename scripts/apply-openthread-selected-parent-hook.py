@@ -797,6 +797,7 @@ def apply_patches(root: Path, *, dry_run: bool = False) -> int:
         ("mle.cpp discovery-only cancel", root / "thread/mle.cpp", patch_mle_discovery_cancel, True),
         ("mle.cpp parent-response reporting call", root / "thread/mle.cpp", patch_mle_parent_response_reporting_call, True),
         ("mle.cpp parent-response reporting IsAttached fix", root / "thread/mle.cpp", patch_mle_parent_response_reporting_is_attached_fix, True),
+        ("mle.cpp selected-parent non-target Parent Response filter", root / "thread/mle.cpp", patch_selected_parent_parent_response_filter, True),
         ("diag ParentResponse challenge", root / "thread/mle.cpp", patch_parent_response_challenge_log, False),
         ("diag ParentResponse rx", root / "thread/mle.cpp", patch_parent_response_rx_log, False),
         ("diag ParentResponse reject", root / "thread/mle.cpp", patch_parent_response_reject_log, False),
