@@ -69,6 +69,7 @@ class ThreadPreferredParentComponent : public Component {
 
   void set_max_attempts(uint8_t attempts) { this->max_attempts_ = attempts; }
   void set_retry_interval(uint32_t retry_interval_ms) { this->retry_interval_ms_ = retry_interval_ms; }
+  void set_selected_attach_timeout(uint32_t selected_attach_timeout_ms) { this->selected_attach_timeout_ms_ = selected_attach_timeout_ms; }
   void set_require_selected_parent_hook(bool required) { this->require_selected_parent_hook_ = required; }
   void set_log_parent_responses(bool enabled) { this->log_parent_responses_ = enabled; }
 
@@ -153,6 +154,7 @@ class ThreadPreferredParentComponent : public Component {
   uint8_t max_attempts_{5};
   uint8_t attempts_{0};
   uint32_t retry_interval_ms_{8000};
+  uint32_t selected_attach_timeout_ms_{16000};
   uint32_t phase_deadline_ms_{0};
   bool active_{false};
   bool require_selected_parent_hook_{true};

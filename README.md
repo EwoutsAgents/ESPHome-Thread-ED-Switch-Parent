@@ -1,5 +1,7 @@
 # ESPHome Thread ED Switch Parent
 
+**v11 targeted attach update:** this package now ports the important selected-parent attach lessons from ESPHome-biparental-ED: it keeps the child attached while attempting the selected-parent Child ID exchange, pre-seeds the target ExtAddr before `Attach(kSelectedParent)`, and forces `ChildIdRequest` for selected-parent mode once the target Parent Response has populated the OpenThread parent candidate. This is intended to fix the failure mode where the target appears in Parent Responses but OpenThread never completes the selected-parent attach.
+
 ESPHome external component for testing controlled Thread end-device parent switching.
 
 This version uses a safer two-phase flow:
@@ -65,7 +67,7 @@ Starting selected-parent attach to ExtAddr e2f3ec457a4c6d17
 Selected-parent attach hook returned YES
 ```
 
-During the selected-parent attach, the ESPHome API may temporarily disconnect if the node is connected over Thread. Use USB serial logs for uninterrupted MLE diagnostics.
+During the selected-parent attach, the ESPHome API may temporarily disconnect if the OpenThread stack drops/rebuilds the Thread route. v11 tries to keep the node attached during the selected-parent Child ID exchange, but USB serial logs are still recommended for uninterrupted MLE diagnostics.
 
 
 ### v10 behavior

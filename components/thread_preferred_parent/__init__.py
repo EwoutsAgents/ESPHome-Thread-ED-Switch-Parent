@@ -15,6 +15,7 @@ CONF_PARENT_RLOC = "parent_rloc"
 CONF_PARENT_EXTADDR = "parent_extaddr"
 CONF_MAX_ATTEMPTS = "max_attempts"
 CONF_RETRY_INTERVAL = "retry_interval"
+CONF_SELECTED_ATTACH_TIMEOUT = "selected_attach_timeout"
 CONF_REQUIRE_SELECTED_PARENT_HOOK = "require_selected_parent_hook"
 CONF_LOG_PARENT_RESPONSES = "log_parent_responses"
 
@@ -81,6 +82,7 @@ CONFIG_SCHEMA = cv.All(
             cv.Optional(CONF_PARENT_EXTADDR): validate_extaddr,
             cv.Optional(CONF_MAX_ATTEMPTS, default=5): cv.int_range(min=1, max=20),
             cv.Optional(CONF_RETRY_INTERVAL, default="8s"): cv.positive_time_period_milliseconds,
+            cv.Optional(CONF_SELECTED_ATTACH_TIMEOUT, default="16s"): cv.positive_time_period_milliseconds,
             cv.Optional(CONF_REQUIRE_SELECTED_PARENT_HOOK, default=True): cv.boolean,
             cv.Optional(CONF_LOG_PARENT_RESPONSES, default=True): cv.boolean,
         }
@@ -105,5 +107,6 @@ async def to_code(config):
 
     cg.add(var.set_max_attempts(config[CONF_MAX_ATTEMPTS]))
     cg.add(var.set_retry_interval(config[CONF_RETRY_INTERVAL].total_milliseconds))
+    cg.add(var.set_selected_attach_timeout(config[CONF_SELECTED_ATTACH_TIMEOUT].total_milliseconds))
     cg.add(var.set_require_selected_parent_hook(config[CONF_REQUIRE_SELECTED_PARENT_HOOK]))
     cg.add(var.set_log_parent_responses(config[CONF_LOG_PARENT_RESPONSES]))

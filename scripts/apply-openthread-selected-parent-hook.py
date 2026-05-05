@@ -9,6 +9,18 @@ vendored OpenThread core with a small C bridge:
 
 The patcher intentionally uses tolerant regular expressions because ESPHome /
 PlatformIO may install slightly different ESP-IDF/OpenThread revisions.
+
+v11 notes:
+  * keep the node attached during targeted BetterParent/selected-parent attach;
+    this matches the biparental targeted-attach boundary and avoids racing the
+    selected attach against a generic detach/reattach to the old parent.
+  * pre-seed the selected parent candidate before Attach(kSelectedParent) so
+    OpenThread revisions that synchronously build the Parent Request see the
+    requested ExtAddr immediately.
+  * for selected-parent attach only, force the Child ID Request once a Parent
+    Response from the target has populated mParentCandidate, bypassing generic
+    "better parent" acceptance heuristics that can veto weaker-but-requested
+    parents.
 """
 
 from __future__ import annotations
@@ -312,6 +324,14 @@ extern "C" bool thread_preferred_parent_ot_request_selected_parent_attach(otInst
     }
 
     return AsCoreType(aInstance).Get<Mle::Mle>().AttachToSelectedParent(AsCoreType(aPreferredExtAddress)) == kErrorNone;
+}
+
+extern "C" bool biparental_ot_request_selected_parent_attach(otInstance *aInstance,
+                                                              const otExtAddress *aPreferredExtAddress)
+{
+    // THREAD_PREFERRED_PARENT_SELECTED_PARENT_HOOK
+    // Compatibility alias for ESPHome-biparental-ED diagnostics/tools.
+    return thread_preferred_parent_ot_request_selected_parent_attach(aInstance, aPreferredExtAddress);
 }
 
 """
@@ -775,6 +795,184 @@ def patch_parent_response_reject_log(root: Path, *, dry_run: bool = False) -> st
         return m.group(1) + block
     return replace_regex(path, pattern, repl, already="SelectedParent ParentResponse reject", label="selected-parent ParentResponse reject log", dry_run=dry_run)
 
+
+
+def patch_attach_method_preseed_candidate(root: Path, *, dry_run: bool = False) -> str:
+    """Pre-seed the selected parent candidate before Attach(kSelectedParent).
+
+    Some OpenThread revisions synchronously construct/send the Parent Request
+    during Attach(kSelectedParent). The original hook set the ExtAddr only after
+    Attach(), which is safe for asynchronous revisions but can be too late for
+    synchronous ones. We set it before and after Attach(); the second assignment
+    preserves the value if Attach() clears the candidate during initialization.
+    """
+    path = root / "thread/mle.cpp"
+    text = normalize_newlines(path.read_text())
+    if "THREAD_PREFERRED_PARENT_PRESEED_SELECTED_PARENT" in text:
+        return "already"
+
+    pattern = (
+        r"(Error\s+Mle::AttachToSelectedParent\s*\(\s*const\s+Mac::ExtAddress\s*&\s*aExtAddress\s*\)\s*\{.*?"
+        r"VerifyOrExit\s*\(\s*!IsAttaching\s*\(\s*\)\s*,\s*error\s*=\s*kErrorBusy\s*\)\s*;\s*)"
+        r"(mAttacher\.Attach\s*\(\s*kSelectedParent\s*\)\s*;\s*)"
+        r"(mAttacher\.GetParentCandidate\s*\(\s*\)\.SetExtAddress\s*\(\s*aExtAddress\s*\)\s*;)"
+    )
+
+    def repl(m):
+        return (
+            m.group(1)
+            + "\n    // THREAD_PREFERRED_PARENT_PRESEED_SELECTED_PARENT\n"
+            + "    // Make the target ExtAddr visible before Attach(kSelectedParent)\n"
+            + "    // in case this OpenThread revision sends the Parent Request\n"
+            + "    // synchronously from Attach(). Repeat after Attach() because\n"
+            + "    // Attach() may clear/reinitialize the parent candidate.\n"
+            + "    mAttacher.GetParentCandidate().SetExtAddress(aExtAddress);\n\n    "
+            + m.group(2)
+            + "    "
+            + m.group(3)
+        )
+
+    return replace_regex(
+        path,
+        pattern,
+        repl,
+        already="THREAD_PREFERRED_PARENT_PRESEED_SELECTED_PARENT",
+        label="selected-parent candidate preseed before Attach",
+        dry_run=dry_run,
+    )
+
+
+def patch_remove_force_detach_before_attach(root: Path, *, dry_run: bool = False) -> str:
+    """Remove the older force-detach block from v10 builds.
+
+    The biparental targeted attach path keeps the child attached while the
+    selected-parent Child ID exchange is attempted. Forcing BecomeDetached()
+    first can race the targeted attach against OpenThread's generic reattach
+    path and frequently returns to the old, stronger parent before the selected
+    parent completes.
+    """
+    path = root / "thread/mle.cpp"
+    text = normalize_newlines(path.read_text())
+    marker = "THREAD_PREFERRED_PARENT_FORCE_DETACH_BEFORE_ATTACH"
+    if marker not in text:
+        return "already"
+
+    pattern = (
+        r"\n\s*//\s*THREAD_PREFERRED_PARENT_FORCE_DETACH_BEFORE_ATTACH\n"
+        r"(?:\s*//[^\n]*\n)*"
+        r"\s*\(void\)BecomeDetached\s*\(\s*\)\s*;\n+"
+    )
+    new, count = re.subn(pattern, "\n", text, count=1, flags=re.MULTILINE)
+    if count == 0:
+        print("[thread_preferred_parent][detail] no regex match for old force-detach block")
+        return "missing"
+    return write_if_changed(path, text, new, dry_run=dry_run)
+
+
+def patch_selected_parent_child_id_request_bypass(root: Path, *, dry_run: bool = False) -> str:
+    """For selected-parent mode, send Child ID Request once the target responded.
+
+    The observed failure mode is: the target Parent Response is seen, selected
+    attach starts, but no selected-parent Child ID Request/Response completion is
+    observed. The generic HasAcceptableParentCandidate() path can still reject a
+    requested parent because it is not "better" than the current one. For the
+    explicit selected-parent path, a matching Parent Response is enough to try
+    Child ID Request; success is still verified by the final attached parent.
+    """
+    path = root / "thread/mle.cpp"
+    text = normalize_newlines(path.read_text())
+    if "THREAD_PREFERRED_PARENT_SELECTED_PARENT_FORCE_CHILD_ID" in text:
+        return "already"
+
+    block = """
+        if ((mMode == kSelectedParent) && mParentCandidate.IsStateParentResponse())
+        {
+            // THREAD_PREFERRED_PARENT_SELECTED_PARENT_FORCE_CHILD_ID
+            // In selected-parent mode the target has already been constrained
+            // by ExtAddr and a Parent Response has populated mParentCandidate.
+            // Do not let generic \"better parent\" heuristics veto the explicit
+            // user-requested parent merely because the old parent has stronger
+            // RSSI/link metrics.
+            Error childIdError = SendChildIdRequest();
+            if (childIdError == kErrorNone)
+            {
+                LogNote(\"SelectedParent ChildIdRequest forced cand=0x%04x timeout=%lu\",
+                        mParentCandidate.GetRloc16(), ToUlong(kChildIdResponseTimeout));
+                SetState(kStateChildIdRequest);
+                delay = kChildIdResponseTimeout;
+                ExitNow();
+            }
+
+            LogWarn(\"SelectedParent ChildIdRequest forced send failed err=%s cand=0x%04x\",
+                    ErrorToString(childIdError), mParentCandidate.GetRloc16());
+        }
+
+"""
+
+    pattern = (
+        r"(\n\s*if\s*\(\s*HasAcceptableParentCandidate\s*\(\s*\)\s*&&\s*"
+        r"\(\s*SendChildIdRequest\s*\(\s*\)\s*==\s*kErrorNone\s*\)\s*\)\s*\{)"
+    )
+    return replace_regex(
+        path,
+        pattern,
+        lambda m: "\n" + block.rstrip() + m.group(1),
+        already="THREAD_PREFERRED_PARENT_SELECTED_PARENT_FORCE_CHILD_ID",
+        label="selected-parent force Child ID Request after target Parent Response",
+        dry_run=dry_run,
+    )
+
+
+def patch_child_id_response_security_log_regex(root: Path, *, dry_run: bool = False) -> str:
+    """Fallback diagnostic patch for ESP-IDF/OpenThread revisions with changed formatting."""
+    path = root / "thread/mle.cpp"
+    text = normalize_newlines(path.read_text())
+    if "SelectedParent ChildIdResponse neighbor invalid" in text:
+        return "already"
+
+    pattern = (
+        r"(VerifyOrExit\s*\(\s*aRxInfo\.IsNeighborStateValid\s*\(\s*\)\s*,\s*error\s*=\s*kErrorSecurity\s*\)\s*;\s*\n\s*"
+        r"VerifyOrExit\s*\(\s*mState\s*==\s*kStateChildIdRequest\s*\)\s*;)"
+    )
+    block = """if ((mMode == kSelectedParent) && !aRxInfo.IsNeighborStateValid())
+    {
+        LogWarn(\"SelectedParent ChildIdResponse neighbor invalid src=0x%04x keyseq=%lu frame=%lu\",
+                sourceAddress, ToUlong(aRxInfo.mKeySequence), ToUlong(aRxInfo.mFrameCounter));
+        ExitNow(error = kErrorSecurity);
+    }
+    """
+    return replace_regex(
+        path,
+        pattern,
+        lambda m: block + m.group(1),
+        already="SelectedParent ChildIdResponse neighbor invalid",
+        label="selected-parent ChildIdResponse security diagnostics regex",
+        dry_run=dry_run,
+    )
+
+
+def patch_child_id_response_accept_log_regex(root: Path, *, dry_run: bool = False) -> str:
+    """Fallback accepted-log patch for both Get().SetStateChild and Get<Mle>().SetStateChild."""
+    path = root / "thread/mle.cpp"
+    text = normalize_newlines(path.read_text())
+    if "SelectedParent ChildIdResponse accepted" in text:
+        return "already"
+
+    pattern = r"((?:Get\s*(?:<\s*Mle\s*>)?\s*\(\s*\)\s*\.\s*)?SetStateChild\s*\(\s*shortAddress\s*\)\s*;)"
+    block = """
+    if (mMode == kSelectedParent)
+    {
+        LogNote(\"SelectedParent ChildIdResponse accepted parent=0x%04x child=0x%04x\", sourceAddress, shortAddress);
+    }"""
+    return replace_regex(
+        path,
+        pattern,
+        lambda m: m.group(1) + block,
+        already="SelectedParent ChildIdResponse accepted",
+        label="selected-parent ChildIdResponse accepted diagnostics regex",
+        dry_run=dry_run,
+    )
+
 def apply_patches(root: Path, *, dry_run: bool = False) -> int:
     root = root.expanduser().resolve()
     print(f"[thread_preferred_parent] OpenThread src/core: {root}")
@@ -786,9 +984,11 @@ def apply_patches(root: Path, *, dry_run: bool = False) -> int:
     patches = [
         ("mle.hpp declaration", root / "thread/mle.hpp", patch_mle_hpp, True),
         ("mle.cpp AttachToSelectedParent", root / "thread/mle.cpp", patch_attach_method, True),
-        ("mle.cpp force detach before selected-parent attach", root / "thread/mle.cpp", patch_attach_method_force_detach, True),
+        ("mle.cpp selected-parent candidate preseed", root / "thread/mle.cpp", patch_attach_method_preseed_candidate, True),
+        ("mle.cpp remove old force-detach selected-parent block", root / "thread/mle.cpp", patch_remove_force_detach_before_attach, True),
         ("mle.cpp selected-router destination", root / "thread/mle.cpp", patch_selected_parent_destination, True),
         ("mle.cpp selected-parent bypass", root / "thread/mle.cpp", patch_accept_selected_parent_without_current_parent_response, True),
+        ("mle.cpp selected-parent force Child ID Request", root / "thread/mle.cpp", patch_selected_parent_child_id_request_bypass, True),
         ("thread_api.cpp bridge", root / "api/thread_api.cpp", patch_thread_api, True),
         ("thread_api.cpp parent-response reporting bridge", root / "api/thread_api.cpp", patch_thread_api_parent_response_reporting, True),
         ("mle.cpp parent-response reporting declaration", root / "thread/mle.cpp", patch_mle_parent_response_reporting_declaration, True),
@@ -805,8 +1005,10 @@ def apply_patches(root: Path, *, dry_run: bool = False) -> int:
         ("diag ChildIdRequest send fail", root / "thread/mle.cpp", patch_child_id_request_send_fail_log, False),
         ("diag ChildIdRequest timeout", root / "thread/mle.cpp", patch_child_id_request_timeout_log, False),
         ("diag ChildIdResponse security", root / "thread/mle.cpp", patch_child_id_response_security_log, False),
+        ("diag ChildIdResponse security regex fallback", root / "thread/mle.cpp", patch_child_id_response_security_log_regex, False),
         ("diag ChildIdResponse reject", root / "thread/mle.cpp", patch_child_id_response_reject_log, False),
         ("diag ChildIdResponse accepted", root / "thread/mle.cpp", patch_child_id_response_accept_log, False),
+        ("diag ChildIdResponse accepted regex fallback", root / "thread/mle.cpp", patch_child_id_response_accept_log_regex, False),
     ]
 
     rc = 0

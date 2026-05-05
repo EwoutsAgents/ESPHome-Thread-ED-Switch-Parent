@@ -14,3 +14,8 @@ The discovery-only path prevents the disruptive selected-parent attach from bein
 ## v9 selected-parent response filter
 
 During selected-parent attach, `Mle::Attacher::HandleParentResponse()` now drops Parent Responses whose ExtAddr does not match `mParentCandidate.GetExtAddress()`. Preflight discovery remains multicast and non-disruptive; filtering is only active when `mMode == kSelectedParent`.
+
+
+## v11 update
+
+The selected-parent patch now removes the earlier forced `BecomeDetached()` block, pre-seeds the selected parent ExtAddr before `Attach(kSelectedParent)`, and adds a selected-parent-only Child ID Request bypass once the target Parent Response has populated `mParentCandidate`. This follows the biparental repository lesson that the actual control boundary is the internal OpenThread selected-parent Child ID attach, not merely observing a target Parent Response.

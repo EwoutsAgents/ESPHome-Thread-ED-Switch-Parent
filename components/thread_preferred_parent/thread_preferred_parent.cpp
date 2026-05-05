@@ -24,6 +24,7 @@ void ThreadPreferredParentComponent::dump_config() {
   ESP_LOGCONFIG(TAG, "  Target: %s", this->target_to_string_().c_str());
   ESP_LOGCONFIG(TAG, "  Max attempts: %u", this->max_attempts_);
   ESP_LOGCONFIG(TAG, "  Retry interval: %u ms", this->retry_interval_ms_);
+  ESP_LOGCONFIG(TAG, "  Selected attach timeout: %u ms", this->selected_attach_timeout_ms_);
   ESP_LOGCONFIG(TAG, "  Require selected-parent hook: %s", YESNO(this->require_selected_parent_hook_));
   ESP_LOGCONFIG(TAG, "  Discovery hook available: %s", YESNO(this->discovery_hook_available_()));
   ESP_LOGCONFIG(TAG, "  Selected-parent hook available: %s", YESNO(this->selected_parent_hook_available_()));
@@ -167,7 +168,7 @@ void ThreadPreferredParentComponent::loop() {
           otError attach_error = this->start_selected_parent_attach_(instance);
           if (attach_error == OT_ERROR_NONE) {
             this->phase_ = SwitchPhase::ATTACHING;
-            this->phase_deadline_ms_ = now + this->retry_interval_ms_;
+            this->phase_deadline_ms_ = now + this->selected_attach_timeout_ms_;
             this->set_status_(Status::ATTACHING);
             return;
           }
@@ -240,7 +241,19 @@ void ThreadPreferredParentComponent::loop() {
       if (this->phase_deadline_ms_ != 0 && static_cast<int32_t>(now - this->phase_deadline_ms_) < 0) {
         return;
       }
-      ESP_LOGW(TAG, "Selected-parent attach did not complete for %s; returning to discovery", this->target_to_string_().c_str());
+      {
+        const otDeviceRole role = otThreadGetDeviceRole(instance);
+        otRouterInfo parent_info{};
+        if (otThreadGetParentInfo(instance, &parent_info) == OT_ERROR_NONE) {
+          ESP_LOGW(TAG,
+                   "Selected-parent attach did not complete for %s; role=%s current_parent=0x%04x/%s; returning to discovery",
+                   this->target_to_string_().c_str(), device_role_to_string_(role), parent_info.mRloc16,
+                   this->extaddr_to_string_(parent_info.mExtAddress).c_str());
+        } else {
+          ESP_LOGW(TAG, "Selected-parent attach did not complete for %s; role=%s current_parent=none; returning to discovery",
+                   this->target_to_string_().c_str(), device_role_to_string_(role));
+        }
+      }
       this->phase_ = SwitchPhase::DISCOVERING;
       this->phase_deadline_ms_ = 0;
       this->set_status_(Status::DISCOVERING);
