@@ -395,7 +395,7 @@ def patch_mle_parent_response_reporting_call(root: Path, *, dry_run: bool = Fals
         parentinfo.mLinkQuality3 = connectivityTlv.GetLinkQuality3();
         parentinfo.mLinkQuality2 = connectivityTlv.GetLinkQuality2();
         parentinfo.mLinkQuality1 = connectivityTlv.GetLinkQuality1();
-        parentinfo.mIsAttached = Get().IsAttached();
+        parentinfo.mIsAttached = Get<Mle>().IsAttached();
         thread_preferred_parent_ot_notify_parent_response(&parentinfo);
     }
 """
@@ -435,6 +435,23 @@ def patch_mle_parent_response_reporting_call(root: Path, *, dry_run: bool = Fals
         dry_run=dry_run,
     )
 
+
+
+def patch_mle_parent_response_reporting_is_attached_fix(root: Path, *, dry_run: bool = False) -> str:
+    """Fix v5-generated parent response reporting code for Attacher context.
+
+    Inside Mle::Attacher there is no untyped Get(); the OpenThread locator
+    requires Get<Mle>() to access the owning MLE object.
+    """
+    path = root / "thread/mle.cpp"
+    text = normalize_newlines(path.read_text())
+    bad = "parentinfo.mIsAttached = Get().IsAttached();"
+    good = "parentinfo.mIsAttached = Get<Mle>().IsAttached();"
+    if good in text:
+        return "already"
+    if bad not in text:
+        return "missing"
+    return write_if_changed(path, text, text.replace(bad, good), dry_run=dry_run)
 
 def patch_parent_response_challenge_log(root: Path, *, dry_run: bool = False) -> str:
     path = root / "thread/mle.cpp"
@@ -618,6 +635,7 @@ def apply_patches(root: Path, *, dry_run: bool = False) -> int:
         ("thread_api.cpp parent-response reporting bridge", root / "api/thread_api.cpp", patch_thread_api_parent_response_reporting, True),
         ("mle.cpp parent-response reporting declaration", root / "thread/mle.cpp", patch_mle_parent_response_reporting_declaration, True),
         ("mle.cpp parent-response reporting call", root / "thread/mle.cpp", patch_mle_parent_response_reporting_call, True),
+        ("mle.cpp parent-response reporting IsAttached fix", root / "thread/mle.cpp", patch_mle_parent_response_reporting_is_attached_fix, True),
         ("diag ParentResponse challenge", root / "thread/mle.cpp", patch_parent_response_challenge_log, False),
         ("diag ParentResponse rx", root / "thread/mle.cpp", patch_parent_response_rx_log, False),
         ("diag ParentResponse reject", root / "thread/mle.cpp", patch_parent_response_reject_log, False),
