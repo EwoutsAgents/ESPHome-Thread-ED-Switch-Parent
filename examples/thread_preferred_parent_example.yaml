@@ -1,0 +1,61 @@
+esphome:
+  name: thread-preferred-parent-test
+  friendly_name: Thread Preferred Parent Test
+
+esp32:
+  board: esp32h2-devkitm-1
+  framework:
+    type: esp-idf
+
+logger:
+
+api:
+
+ota:
+  platform: esphome
+
+openthread:
+
+external_components:
+  - source:
+      type: local
+      path: ../components
+
+thread_preferred_parent:
+  id: preferred_parent
+  # Configure exactly one static target here, or leave both unset and set the
+  # target from Home Assistant through the template number/text entities below.
+  # parent_rloc: 0x5800
+  # parent_extaddr: "00124b0001abcdef"
+  max_attempts: 5
+  retry_interval: 8s
+
+button:
+  - platform: template
+    name: "Switch Thread Parent"
+    on_press:
+      - lambda: |-
+          id(preferred_parent).request_switch();
+
+number:
+  - platform: template
+    name: "Thread Preferred Parent RLOC16"
+    min_value: 0
+    max_value: 65534
+    step: 1
+    optimistic: true
+    set_action:
+      - lambda: |-
+          id(preferred_parent).set_parent_rloc16(static_cast<uint16_t>(x));
+
+text:
+  - platform: template
+    id: preferred_parent_extaddr
+    name: "Thread Preferred Parent ExtAddr"
+    optimistic: true
+    min_length: 0
+    max_length: 23
+    mode: text
+    set_action:
+      - lambda: |-
+          id(preferred_parent).set_parent_extaddr(x);
