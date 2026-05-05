@@ -3,7 +3,7 @@ esphome:
   friendly_name: Thread Preferred Parent Test
 
 esp32:
-  board: esp32c6
+  board: esp32h2-devkitm-1
   framework:
     type: esp-idf
 
@@ -18,11 +18,8 @@ openthread:
 
 external_components:
   - source:
-      type: git
-      url: https://github.com/EwoutBergsma/ESPHome-Thread-ED-Switch-Parent
-      ref: main
-    components: [thread_preferred_parent]
-    refresh: 0s
+      type: local
+      path: ../components
 
 thread_preferred_parent:
   id: preferred_parent
