@@ -1,5 +1,7 @@
 # ESPHome Thread ED Switch Parent
 
+**v13 diagnostics cleanup:** live Parent Response rows now use ESPHome's normal `VERY_VERBOSE` logger level, replay output is curated, discovery windows emit compact summaries, and Parent Response timestamps are relative to the current attempt.
+
 **v12 targeted attach update:** this package now ports the important selected-parent attach lessons from ESPHome-biparental-ED: it keeps the child attached while attempting the selected-parent Child ID exchange, pre-seeds the target ExtAddr before `Attach(kSelectedParent)`, and forces `ChildIdRequest` for selected-parent mode once the target Parent Response has populated the OpenThread parent candidate. This is intended to fix the failure mode where the target appears in Parent Responses but OpenThread never completes the selected-parent attach.
 
 ESPHome external component for testing controlled Thread end-device parent switching.
@@ -7,7 +9,7 @@ ESPHome external component for testing controlled Thread end-device parent switc
 This version uses a safer two-phase flow:
 
 1. **Discovery/preflight**: send a multicast MLE Parent Request while staying attached to the current parent.
-2. Log every MLE Parent Response received.
+2. Track every MLE Parent Response; live rows are shown only when `logger.level` is `VERY_VERBOSE`.
 3. If the configured target parent is observed, start the disruptive selected-parent attach.
 4. If the target is not observed, retry discovery without dropping the current Thread/API connection.
 
@@ -49,23 +51,35 @@ The discovery hook starts `SearchForBetterParent()` but patches the MLE attacher
 
 ## Expected logs
 
-For a missing target:
+With normal `INFO` logging, discovery now produces compact lifecycle and summary rows instead of replaying every Parent Response:
 
 ```text
 Parent discovery attempt 1/5 for ExtAddr 32a4d516437f9abb
 Starting non-disruptive multicast Parent Request discovery ...
-Parent Response live #1: ExtAddr ... RLOC16 ... target_match=NO
-Preferred parent ExtAddr 32a4d516437f9abb was not observed during discovery attempt 1/5
+Discovery summary (discovery window complete): 11 Parent Responses, 1 target match(es), best target RLOC16 0xb000 RSSI -69
+Preferred parent ExtAddr 32a4d516437f9abb was observed; starting selected-parent attach
+Starting selected-parent attach to ExtAddr 32a4d516437f9abb
+Selected-parent attach hook returned YES
+Attach result: success after 3498 ms; ExtAddr 32a4d516437f9abb selected
+Parent Response replay (success target replay): showing 2 buffered response(s)
+Parent Response replay #4 attempt_t+680ms: ExtAddr 32a4d516437f9abb RLOC16 0xb000 RSSI -69 ... device_attached=YES target_match=YES
 ```
 
-For a visible target:
+Set the normal ESPHome logger to `VERY_VERBOSE` when you want every live Parent Response row:
+
+```yaml
+logger:
+  level: VERY_VERBOSE
+```
+
+At `VERY_VERBOSE`, live rows look like this:
 
 ```text
-Parent Response live #2: ExtAddr e2f3ec457a4c6d17 RLOC16 0x4400 ... target_match=YES
-Preferred parent ExtAddr e2f3ec457a4c6d17 was observed; starting selected-parent attach
-Starting selected-parent attach to ExtAddr e2f3ec457a4c6d17
-Selected-parent attach hook returned YES
+Parent Response live #4 attempt_t+680ms: ExtAddr cec5115b300418f0 RLOC16 0xb000 RSSI -69 ... device_attached=YES target_match=YES
 ```
+
+On failure, the final replay still shows all buffered candidates at `INFO`, because that is the useful forensic case.
+
 
 During the selected-parent attach, the ESPHome API may temporarily disconnect if the OpenThread stack drops/rebuilds the Thread route. v12 tries to keep the node attached during the selected-parent Child ID exchange, but USB serial logs are still recommended for uninterrupted MLE diagnostics.
 

@@ -88,9 +88,12 @@ void ThreadPreferredParentComponent::request_switch(const std::string &extaddr) 
 void ThreadPreferredParentComponent::reset_parent_response_tracking_() {
   this->parent_response_count_ = 0;
   this->parent_response_last_dumped_count_ = 0;
-  this->parent_response_dump_at_ms_ = 0;
-  this->parent_response_dump_pending_ = false;
+  this->parent_response_target_count_ = 0;
   this->parent_response_buffer_head_ = 0;
+  this->current_attempt_start_ms_ = millis();
+  this->best_target_rssi_valid_ = false;
+  this->best_target_rssi_ = -128;
+  this->best_target_rloc16_ = 0xFFFE;
   for (auto &entry : this->parent_response_buffer_) {
     entry = BufferedParentResponse{};
   }
@@ -101,6 +104,7 @@ void ThreadPreferredParentComponent::begin_switch_() {
   this->active_ = true;
   this->phase_ = SwitchPhase::DISCOVERING;
   this->phase_deadline_ms_ = 0;
+  this->attach_start_ms_ = 0;
   this->target_observed_this_attempt_ = false;
   std::memset(&this->observed_target_extaddr_, 0, sizeof(this->observed_target_extaddr_));
   this->reset_parent_response_tracking_();
@@ -126,13 +130,6 @@ void ThreadPreferredParentComponent::clear_target() {
 void ThreadPreferredParentComponent::loop() {
   const uint32_t now = millis();
 
-  if (this->parent_response_dump_pending_ &&
-      this->parent_response_dump_at_ms_ != 0 &&
-      static_cast<int32_t>(now - this->parent_response_dump_at_ms_) >= 0) {
-    this->dump_buffered_parent_responses_("delayed replay");
-    this->parent_response_dump_pending_ = false;
-  }
-
   if (!this->active_) {
     return;
   }
@@ -145,8 +142,11 @@ void ThreadPreferredParentComponent::loop() {
   otInstance *instance = lock->get_instance();
 
   if (this->current_parent_matches_(instance)) {
+    const uint32_t attach_elapsed_ms = this->attach_start_ms_ == 0 ? 0 : now - this->attach_start_ms_;
     ESP_LOGI(TAG, "Thread parent switch succeeded; current parent is %s", this->target_to_string_().c_str());
-    this->dump_buffered_parent_responses_("success replay");
+    ESP_LOGI(TAG, "Attach result: success after %lu ms; %s selected",
+             static_cast<unsigned long>(attach_elapsed_ms), this->target_to_string_().c_str());
+    this->dump_buffered_parent_responses_("success target replay", ReplayMode::INFO_TARGET_ONLY);
     this->active_ = false;
     this->phase_ = SwitchPhase::IDLE;
     this->clear_preferred_parent_in_ot_(instance);
@@ -161,13 +161,14 @@ void ThreadPreferredParentComponent::loop() {
       }
 
       if (this->phase_deadline_ms_ != 0) {
-        this->dump_buffered_parent_responses_("discovery window complete");
+        this->log_discovery_summary_("discovery window complete");
 
         if (this->target_observed_this_attempt_) {
           ESP_LOGI(TAG, "Preferred parent %s was observed; starting selected-parent attach", this->target_to_string_().c_str());
           otError attach_error = this->start_selected_parent_attach_(instance);
           if (attach_error == OT_ERROR_NONE) {
             this->phase_ = SwitchPhase::ATTACHING;
+            this->attach_start_ms_ = millis();
             this->phase_deadline_ms_ = now + this->selected_attach_timeout_ms_;
             this->set_status_(Status::ATTACHING);
             return;
@@ -189,9 +190,9 @@ void ThreadPreferredParentComponent::loop() {
       }
 
       if (this->attempts_ >= this->max_attempts_) {
-        this->dump_buffered_parent_responses_("final replay before failure");
-        ESP_LOGW(TAG, "Preferred parent %s was not selected after %u discovery attempts", this->target_to_string_().c_str(),
-                 this->attempts_);
+        this->dump_buffered_parent_responses_("failure replay", ReplayMode::INFO_ALL);
+        ESP_LOGW(TAG, "Attach result: failed after %u discovery attempts; %s was not selected",
+                 this->attempts_, this->target_to_string_().c_str());
         this->active_ = false;
         this->phase_ = SwitchPhase::IDLE;
         this->clear_preferred_parent_in_ot_(instance);
@@ -246,12 +247,14 @@ void ThreadPreferredParentComponent::loop() {
         otRouterInfo parent_info{};
         if (otThreadGetParentInfo(instance, &parent_info) == OT_ERROR_NONE) {
           ESP_LOGW(TAG,
-                   "Selected-parent attach did not complete for %s; role=%s current_parent=0x%04x/%s; returning to discovery",
-                   this->target_to_string_().c_str(), device_role_to_string_(role), parent_info.mRloc16,
+                   "Attach result: timed out after %lu ms for %s; role=%s current_parent=0x%04x/%s; returning to discovery",
+                   static_cast<unsigned long>(now - this->attach_start_ms_), this->target_to_string_().c_str(),
+                   device_role_to_string_(role), parent_info.mRloc16,
                    this->extaddr_to_string_(parent_info.mExtAddress).c_str());
         } else {
-          ESP_LOGW(TAG, "Selected-parent attach did not complete for %s; role=%s current_parent=none; returning to discovery",
-                   this->target_to_string_().c_str(), device_role_to_string_(role));
+          ESP_LOGW(TAG, "Attach result: timed out after %lu ms for %s; role=%s current_parent=none; returning to discovery",
+                   static_cast<unsigned long>(now - this->attach_start_ms_), this->target_to_string_().c_str(),
+                   device_role_to_string_(role));
         }
       }
       this->phase_ = SwitchPhase::DISCOVERING;
@@ -294,36 +297,64 @@ void ThreadPreferredParentComponent::handle_parent_response_(const otThreadParen
   if (target_match) {
     this->target_observed_this_attempt_ = true;
     this->observed_target_extaddr_ = info->mExtAddr;
+    this->parent_response_target_count_++;
+    if (!this->best_target_rssi_valid_ || info->mRssi > this->best_target_rssi_) {
+      this->best_target_rssi_valid_ = true;
+      this->best_target_rssi_ = info->mRssi;
+      this->best_target_rloc16_ = info->mRloc16;
+    }
   }
 
+  const uint32_t now = millis();
   BufferedParentResponse &entry = this->parent_response_buffer_[this->parent_response_buffer_head_];
   entry.valid = true;
   entry.sequence = this->parent_response_count_;
-  entry.timestamp_ms = millis();
+  entry.timestamp_ms = now - this->current_attempt_start_ms_;
   entry.info = *info;
   entry.target_match = target_match;
   this->parent_response_buffer_head_ = (this->parent_response_buffer_head_ + 1) % PARENT_RESPONSE_BUFFER_SIZE;
 
   if (this->log_parent_responses_) {
-    this->log_parent_response_(entry, "live");
+    this->log_parent_response_vv_(entry, "live");
   }
-
-  this->parent_response_dump_pending_ = true;
-  this->parent_response_dump_at_ms_ = millis() + 3000;
 }
 
-void ThreadPreferredParentComponent::log_parent_response_(const BufferedParentResponse &entry, const char *prefix) const {
+void ThreadPreferredParentComponent::log_parent_response_info_(const BufferedParentResponse &entry, const char *prefix) const {
   const otThreadParentResponseInfo &info = entry.info;
   ESP_LOGI(TAG,
-           "Parent Response %s #%lu t+%lums: ExtAddr %s RLOC16 0x%04x RSSI %d priority %d "
-           "LQ3/LQ2/LQ1 %u/%u/%u attached=%s target_match=%s",
+           "Parent Response %s #%lu attempt_t+%lums: ExtAddr %s RLOC16 0x%04x RSSI %d priority %d "
+           "LQ3/LQ2/LQ1 %u/%u/%u device_attached=%s target_match=%s",
            prefix, static_cast<unsigned long>(entry.sequence), static_cast<unsigned long>(entry.timestamp_ms),
            this->extaddr_to_string_(info.mExtAddr).c_str(), info.mRloc16, info.mRssi, info.mPriority,
            info.mLinkQuality3, info.mLinkQuality2, info.mLinkQuality1, YESNO(info.mIsAttached),
            YESNO(entry.target_match));
 }
 
-void ThreadPreferredParentComponent::dump_buffered_parent_responses_(const char *reason) {
+void ThreadPreferredParentComponent::log_parent_response_vv_(const BufferedParentResponse &entry, const char *prefix) const {
+  const otThreadParentResponseInfo &info = entry.info;
+  ESP_LOGVV(TAG,
+            "Parent Response %s #%lu attempt_t+%lums: ExtAddr %s RLOC16 0x%04x RSSI %d priority %d "
+            "LQ3/LQ2/LQ1 %u/%u/%u device_attached=%s target_match=%s",
+            prefix, static_cast<unsigned long>(entry.sequence), static_cast<unsigned long>(entry.timestamp_ms),
+            this->extaddr_to_string_(info.mExtAddr).c_str(), info.mRloc16, info.mRssi, info.mPriority,
+            info.mLinkQuality3, info.mLinkQuality2, info.mLinkQuality1, YESNO(info.mIsAttached),
+            YESNO(entry.target_match));
+}
+
+void ThreadPreferredParentComponent::log_discovery_summary_(const char *reason) const {
+  if (this->best_target_rssi_valid_) {
+    ESP_LOGI(TAG,
+             "Discovery summary (%s): %lu Parent Responses, %lu target match(es), best target RLOC16 0x%04x RSSI %d",
+             reason, static_cast<unsigned long>(this->parent_response_count_),
+             static_cast<unsigned long>(this->parent_response_target_count_), this->best_target_rloc16_,
+             this->best_target_rssi_);
+  } else {
+    ESP_LOGI(TAG, "Discovery summary (%s): %lu Parent Responses, 0 target matches", reason,
+             static_cast<unsigned long>(this->parent_response_count_));
+  }
+}
+
+void ThreadPreferredParentComponent::dump_buffered_parent_responses_(const char *reason, ReplayMode mode) {
   if (!this->log_parent_responses_) {
     return;
   }
@@ -333,18 +364,42 @@ void ThreadPreferredParentComponent::dump_buffered_parent_responses_(const char 
     return;
   }
 
-  ESP_LOGI(TAG, "Parent Response replay (%s): showing buffered responses %lu..%lu", reason,
-           static_cast<unsigned long>(this->parent_response_last_dumped_count_ + 1),
-           static_cast<unsigned long>(this->parent_response_count_));
+  const bool target_only = mode == ReplayMode::INFO_TARGET_ONLY;
+  uint32_t shown_count = 0;
 
   const uint32_t first_sequence =
       this->parent_response_count_ > PARENT_RESPONSE_BUFFER_SIZE ? this->parent_response_count_ - PARENT_RESPONSE_BUFFER_SIZE + 1 : 1;
 
   for (uint32_t sequence = first_sequence; sequence <= this->parent_response_count_; sequence++) {
     for (const auto &entry : this->parent_response_buffer_) {
-      if (entry.valid && entry.sequence == sequence && entry.sequence > this->parent_response_last_dumped_count_) {
-        this->log_parent_response_(entry, "replay");
+      if (!entry.valid || entry.sequence != sequence || entry.sequence <= this->parent_response_last_dumped_count_) {
+        continue;
       }
+      if (target_only && !entry.target_match) {
+        continue;
+      }
+      shown_count++;
+    }
+  }
+
+  if (shown_count == 0) {
+    ESP_LOGI(TAG, "Parent Response replay (%s): no matching responses to show", reason);
+    this->parent_response_last_dumped_count_ = this->parent_response_count_;
+    return;
+  }
+
+  ESP_LOGI(TAG, "Parent Response replay (%s): showing %lu buffered response(s)", reason,
+           static_cast<unsigned long>(shown_count));
+
+  for (uint32_t sequence = first_sequence; sequence <= this->parent_response_count_; sequence++) {
+    for (const auto &entry : this->parent_response_buffer_) {
+      if (!entry.valid || entry.sequence != sequence || entry.sequence <= this->parent_response_last_dumped_count_) {
+        continue;
+      }
+      if (target_only && !entry.target_match) {
+        continue;
+      }
+      this->log_parent_response_info_(entry, "replay");
     }
   }
 

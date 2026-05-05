@@ -107,6 +107,11 @@ class ThreadPreferredParentComponent : public Component {
     RLOC_UNRESOLVED,
   };
 
+  enum class ReplayMode : uint8_t {
+    INFO_ALL,
+    INFO_TARGET_ONLY,
+  };
+
   struct BufferedParentResponse {
     bool valid{false};
     uint32_t sequence{0};
@@ -140,8 +145,10 @@ class ThreadPreferredParentComponent : public Component {
   void reset_parent_response_tracking_();
   void set_status_(Status status);
   void handle_parent_response_(const otThreadParentResponseInfo *info);
-  void log_parent_response_(const BufferedParentResponse &entry, const char *prefix) const;
-  void dump_buffered_parent_responses_(const char *reason);
+  void log_parent_response_info_(const BufferedParentResponse &entry, const char *prefix) const;
+  void log_parent_response_vv_(const BufferedParentResponse &entry, const char *prefix) const;
+  void log_discovery_summary_(const char *reason) const;
+  void dump_buffered_parent_responses_(const char *reason, ReplayMode mode);
 
   static constexpr uint8_t PARENT_RESPONSE_BUFFER_SIZE = 16;
 
@@ -162,8 +169,12 @@ class ThreadPreferredParentComponent : public Component {
   bool parent_response_callback_registered_{false};
   uint32_t parent_response_count_{0};
   uint32_t parent_response_last_dumped_count_{0};
-  uint32_t parent_response_dump_at_ms_{0};
-  bool parent_response_dump_pending_{false};
+  uint32_t parent_response_target_count_{0};
+  uint32_t current_attempt_start_ms_{0};
+  uint32_t attach_start_ms_{0};
+  bool best_target_rssi_valid_{false};
+  int8_t best_target_rssi_{-128};
+  uint16_t best_target_rloc16_{0xFFFE};
   uint8_t parent_response_buffer_head_{0};
   BufferedParentResponse parent_response_buffer_[PARENT_RESPONSE_BUFFER_SIZE]{};
   Status status_{Status::IDLE};
