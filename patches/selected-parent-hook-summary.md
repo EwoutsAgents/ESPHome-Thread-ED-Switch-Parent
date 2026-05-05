@@ -1,42 +1,11 @@
-# Selected-parent OpenThread hook summary
+# OpenThread patch summary
 
-The patch script lives inside the external component:
+This component auto-patches ESP-IDF's vendored OpenThread core during the PlatformIO build.
 
-```text
-components/thread_preferred_parent/apply-openthread-selected-parent-hook.py
-```
+The patch adds:
 
-`components/thread_preferred_parent/__init__.py` registers it automatically as a PlatformIO pre-build script using `cg.add_platformio_option("extra_scripts", ...)`.
+1. A parent-response callback bridge so ESPHome can log every received MLE Parent Response.
+2. A discovery-only bridge that starts multicast Parent Request discovery without detaching from the current parent.
+3. A selected-parent attach bridge that forces an attach to a chosen parent extended address after the target was observed.
 
-Manual YAML `platformio_options.extra_scripts` is not needed.
-
-The script modifies ESP-IDF's vendored OpenThread core under `src/core`:
-
-- `thread/mle.hpp`
-- `thread/mle.cpp`
-- `api/thread_api.cpp`
-
-It adds `Mle::AttachToSelectedParent(const Mac::ExtAddress &)` and exports:
-
-```cpp
-extern "C" bool thread_preferred_parent_ot_request_selected_parent_attach(
-    otInstance *aInstance,
-    const otExtAddress *aPreferredExtAddress
-);
-```
-
-It also adds a Parent Response reporting bridge:
-
-```cpp
-typedef void (*thread_preferred_parent_parent_response_callback_t)(
-    const otThreadParentResponseInfo *aInfo,
-    void *aContext
-);
-
-extern "C" void thread_preferred_parent_ot_register_parent_response_callback(
-    thread_preferred_parent_parent_response_callback_t aCallback,
-    void *aContext
-);
-```
-
-OpenThread calls the reporting bridge from `Mle::Attacher::HandleParentResponse()` after it parses the parent response source RLOC16, ExtAddr, RSSI, priority and link-quality fields. The ESPHome component logs every reported candidate parent.
+The discovery-only path prevents the disruptive selected-parent attach from being attempted when the requested parent is not present.

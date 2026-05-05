@@ -14,13 +14,8 @@
 #include <cstring>
 #include <string>
 
-// These symbols are intentionally weak. The ESPHome component can compile
-// against an unpatched OpenThread build, but it will log a clear runtime error
-// until the OpenThread selected-parent hook is linked in.
 extern "C" {
 
-// Callback type used by the OpenThread patch to publish every MLE Parent Response
-// to the ESPHome component.
 typedef void (*thread_preferred_parent_parent_response_callback_t)(
     const otThreadParentResponseInfo *aInfo,
     void *aContext
@@ -31,7 +26,12 @@ void thread_preferred_parent_ot_register_parent_response_callback(
     void *aContext
 ) __attribute__((weak));
 
-// Preferred symbol exported by scripts/apply-openthread-selected-parent-hook.py.
+// Non-disruptive multicast Parent Request discovery. The OpenThread patch starts
+// a SearchForBetterParent cycle but cancels it before Child ID Request, so the
+// current parent is not dropped during preflight.
+otError thread_preferred_parent_ot_start_parent_discovery(otInstance *aInstance) __attribute__((weak));
+
+// Preferred symbol exported by apply-openthread-selected-parent-hook.py.
 bool thread_preferred_parent_ot_request_selected_parent_attach(
     otInstance *aInstance,
     const otExtAddress *aPreferredExtAddress
@@ -72,10 +72,7 @@ class ThreadPreferredParentComponent : public Component {
   void set_require_selected_parent_hook(bool required) { this->require_selected_parent_hook_ = required; }
   void set_log_parent_responses(bool enabled) { this->log_parent_responses_ = enabled; }
 
-  // Call from a Home Assistant/ESPHome template button using the configured target.
   void request_switch();
-
-  // Call from lambdas if the target is supplied dynamically.
   void request_switch(uint16_t rloc16);
   void request_switch(const std::string &extaddr);
   void request_switch(const char *extaddr) { this->request_switch(std::string(extaddr)); }
@@ -89,8 +86,16 @@ class ThreadPreferredParentComponent : public Component {
     EXTADDR,
   };
 
+  enum class SwitchPhase : uint8_t {
+    IDLE,
+    DISCOVERING,
+    ATTACHING,
+  };
+
   enum class Status : uint8_t {
     IDLE,
+    DISCOVERING,
+    ATTACHING,
     WAITING,
     SUCCESS,
     FAILED,
@@ -101,9 +106,18 @@ class ThreadPreferredParentComponent : public Component {
     RLOC_UNRESOLVED,
   };
 
+  struct BufferedParentResponse {
+    bool valid{false};
+    uint32_t sequence{0};
+    uint32_t timestamp_ms{0};
+    otThreadParentResponseInfo info{};
+    bool target_match{false};
+  };
+
   static const char *status_to_string_(Status status);
   static const char *target_type_to_string_(TargetType type);
   static const char *ot_error_to_string_(otError error);
+  static const char *device_role_to_string_(otDeviceRole role);
   static int hex_to_nibble_(char c);
   static void parent_response_callback_(const otThreadParentResponseInfo *info, void *context);
 
@@ -114,26 +128,42 @@ class ThreadPreferredParentComponent : public Component {
   bool resolve_rloc16_to_extaddr_(otInstance *instance, uint16_t rloc16, otExtAddress *out) const;
   bool request_selected_parent_attach_(otInstance *instance, const otExtAddress &extaddr) const;
   bool selected_parent_hook_available_() const;
+  bool discovery_hook_available_() const;
+  bool parent_response_matches_target_(const otThreadParentResponseInfo &info) const;
   std::string extaddr_to_string_(const otExtAddress &addr) const;
   std::string target_to_string_() const;
-  otError start_preferred_parent_search_(otInstance *instance);
+  otError start_parent_discovery_(otInstance *instance);
+  otError start_selected_parent_attach_(otInstance *instance);
   void clear_preferred_parent_in_ot_(otInstance *instance);
   void begin_switch_();
+  void reset_parent_response_tracking_();
   void set_status_(Status status);
   void handle_parent_response_(const otThreadParentResponseInfo *info);
+  void log_parent_response_(const BufferedParentResponse &entry, const char *prefix) const;
+  void dump_buffered_parent_responses_(const char *reason);
+
+  static constexpr uint8_t PARENT_RESPONSE_BUFFER_SIZE = 16;
 
   TargetType target_type_{TargetType::NONE};
+  SwitchPhase phase_{SwitchPhase::IDLE};
   uint16_t target_rloc16_{0xFFFE};
   otExtAddress target_extaddr_{};
+  otExtAddress observed_target_extaddr_{};
+  bool target_observed_this_attempt_{false};
   uint8_t max_attempts_{5};
   uint8_t attempts_{0};
   uint32_t retry_interval_ms_{8000};
-  uint32_t next_attempt_ms_{0};
+  uint32_t phase_deadline_ms_{0};
   bool active_{false};
   bool require_selected_parent_hook_{true};
   bool log_parent_responses_{true};
   bool parent_response_callback_registered_{false};
   uint32_t parent_response_count_{0};
+  uint32_t parent_response_last_dumped_count_{0};
+  uint32_t parent_response_dump_at_ms_{0};
+  bool parent_response_dump_pending_{false};
+  uint8_t parent_response_buffer_head_{0};
+  BufferedParentResponse parent_response_buffer_[PARENT_RESPONSE_BUFFER_SIZE]{};
   Status status_{Status::IDLE};
 };
 

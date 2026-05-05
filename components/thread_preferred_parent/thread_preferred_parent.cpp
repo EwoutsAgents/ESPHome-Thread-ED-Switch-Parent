@@ -25,6 +25,7 @@ void ThreadPreferredParentComponent::dump_config() {
   ESP_LOGCONFIG(TAG, "  Max attempts: %u", this->max_attempts_);
   ESP_LOGCONFIG(TAG, "  Retry interval: %u ms", this->retry_interval_ms_);
   ESP_LOGCONFIG(TAG, "  Require selected-parent hook: %s", YESNO(this->require_selected_parent_hook_));
+  ESP_LOGCONFIG(TAG, "  Discovery hook available: %s", YESNO(this->discovery_hook_available_()));
   ESP_LOGCONFIG(TAG, "  Selected-parent hook available: %s", YESNO(this->selected_parent_hook_available_()));
   ESP_LOGCONFIG(TAG, "  Parent Response reporting hook registered: %s", YESNO(this->parent_response_callback_registered_));
   ESP_LOGCONFIG(TAG, "  Log Parent Responses: %s", YESNO(this->log_parent_responses_));
@@ -83,18 +84,35 @@ void ThreadPreferredParentComponent::request_switch(const std::string &extaddr) 
   this->request_switch();
 }
 
+void ThreadPreferredParentComponent::reset_parent_response_tracking_() {
+  this->parent_response_count_ = 0;
+  this->parent_response_last_dumped_count_ = 0;
+  this->parent_response_dump_at_ms_ = 0;
+  this->parent_response_dump_pending_ = false;
+  this->parent_response_buffer_head_ = 0;
+  for (auto &entry : this->parent_response_buffer_) {
+    entry = BufferedParentResponse{};
+  }
+}
+
 void ThreadPreferredParentComponent::begin_switch_() {
   this->attempts_ = 0;
   this->active_ = true;
-  this->next_attempt_ms_ = 0;
-  this->set_status_(Status::WAITING);
+  this->phase_ = SwitchPhase::DISCOVERING;
+  this->phase_deadline_ms_ = 0;
+  this->target_observed_this_attempt_ = false;
+  std::memset(&this->observed_target_extaddr_, 0, sizeof(this->observed_target_extaddr_));
+  this->reset_parent_response_tracking_();
+  this->set_status_(Status::DISCOVERING);
 }
 
 void ThreadPreferredParentComponent::clear_target() {
   this->target_type_ = TargetType::NONE;
   this->target_rloc16_ = 0xFFFE;
   std::memset(&this->target_extaddr_, 0, sizeof(this->target_extaddr_));
+  std::memset(&this->observed_target_extaddr_, 0, sizeof(this->observed_target_extaddr_));
   this->active_ = false;
+  this->phase_ = SwitchPhase::IDLE;
   this->attempts_ = 0;
   this->set_status_(Status::IDLE);
 
@@ -105,6 +123,15 @@ void ThreadPreferredParentComponent::clear_target() {
 }
 
 void ThreadPreferredParentComponent::loop() {
+  const uint32_t now = millis();
+
+  if (this->parent_response_dump_pending_ &&
+      this->parent_response_dump_at_ms_ != 0 &&
+      static_cast<int32_t>(now - this->parent_response_dump_at_ms_) >= 0) {
+    this->dump_buffered_parent_responses_("delayed replay");
+    this->parent_response_dump_pending_ = false;
+  }
+
   if (!this->active_) {
     return;
   }
@@ -116,67 +143,113 @@ void ThreadPreferredParentComponent::loop() {
 
   otInstance *instance = lock->get_instance();
 
-  if (!this->is_child_(instance)) {
-    ESP_LOGW(TAG, "Preferred-parent switch requires the Thread role to be CHILD");
-    this->active_ = false;
-    this->clear_preferred_parent_in_ot_(instance);
-    this->set_status_(Status::NOT_CHILD);
-    return;
-  }
-
   if (this->current_parent_matches_(instance)) {
     ESP_LOGI(TAG, "Thread parent switch succeeded; current parent is %s", this->target_to_string_().c_str());
+    this->dump_buffered_parent_responses_("success replay");
     this->active_ = false;
+    this->phase_ = SwitchPhase::IDLE;
     this->clear_preferred_parent_in_ot_(instance);
     this->set_status_(Status::SUCCESS);
     return;
   }
 
-  const uint32_t now = millis();
-  if (this->next_attempt_ms_ != 0 && static_cast<int32_t>(now - this->next_attempt_ms_) < 0) {
-    return;
-  }
+  switch (this->phase_) {
+    case SwitchPhase::DISCOVERING: {
+      if (this->phase_deadline_ms_ != 0 && static_cast<int32_t>(now - this->phase_deadline_ms_) < 0) {
+        return;
+      }
 
-  if (this->attempts_ >= this->max_attempts_) {
-    ESP_LOGW(TAG, "Preferred parent %s was not selected after %u attempts", this->target_to_string_().c_str(),
-             this->attempts_);
-    this->active_ = false;
-    this->clear_preferred_parent_in_ot_(instance);
-    this->set_status_(Status::FAILED);
-    return;
-  }
+      if (this->phase_deadline_ms_ != 0) {
+        this->dump_buffered_parent_responses_("discovery window complete");
 
-  this->attempts_++;
-  otRouterInfo current_parent{};
-  if (otThreadGetParentInfo(instance, &current_parent) == OT_ERROR_NONE) {
-    ESP_LOGI(TAG, "Current parent before attempt: RLOC16 0x%04x ExtAddr %s", current_parent.mRloc16,
-             this->extaddr_to_string_(current_parent.mExtAddress).c_str());
-  }
-  ESP_LOGI(TAG, "Preferred-parent attach attempt %u/%u for %s", this->attempts_, this->max_attempts_,
-           this->target_to_string_().c_str());
+        if (this->target_observed_this_attempt_) {
+          ESP_LOGI(TAG, "Preferred parent %s was observed; starting selected-parent attach", this->target_to_string_().c_str());
+          otError attach_error = this->start_selected_parent_attach_(instance);
+          if (attach_error == OT_ERROR_NONE) {
+            this->phase_ = SwitchPhase::ATTACHING;
+            this->phase_deadline_ms_ = now + this->retry_interval_ms_;
+            this->set_status_(Status::ATTACHING);
+            return;
+          }
 
-  otError error = this->start_preferred_parent_search_(instance);
-  if (error == OT_ERROR_NONE) {
-    this->next_attempt_ms_ = now + this->retry_interval_ms_;
-    this->set_status_(Status::WAITING);
-    return;
-  }
+          ESP_LOGW(TAG, "Selected-parent attach could not start after discovery: %s", ot_error_to_string_(attach_error));
+          if (attach_error == OT_ERROR_NOT_IMPLEMENTED) {
+            this->active_ = false;
+            this->phase_ = SwitchPhase::IDLE;
+            this->set_status_(Status::API_MISSING);
+            return;
+          }
+        } else {
+          ESP_LOGW(TAG, "Preferred parent %s was not observed during discovery attempt %u/%u",
+                   this->target_to_string_().c_str(), this->attempts_, this->max_attempts_);
+        }
 
-  ESP_LOGW(TAG, "Preferred-parent attach could not start: %s", ot_error_to_string_(error));
-  if (error == OT_ERROR_NOT_IMPLEMENTED) {
-    this->active_ = false;
-    this->set_status_(Status::API_MISSING);
-  } else if (error == OT_ERROR_NOT_FOUND) {
-    this->next_attempt_ms_ = now + this->retry_interval_ms_;
-    this->set_status_(Status::RLOC_UNRESOLVED);
-  } else if (error == OT_ERROR_BUSY) {
-    this->next_attempt_ms_ = now + this->retry_interval_ms_;
-    this->set_status_(Status::BUSY);
-  } else {
-    this->next_attempt_ms_ = now + this->retry_interval_ms_;
+        this->phase_deadline_ms_ = 0;
+      }
+
+      if (this->attempts_ >= this->max_attempts_) {
+        this->dump_buffered_parent_responses_("final replay before failure");
+        ESP_LOGW(TAG, "Preferred parent %s was not selected after %u discovery attempts", this->target_to_string_().c_str(),
+                 this->attempts_);
+        this->active_ = false;
+        this->phase_ = SwitchPhase::IDLE;
+        this->clear_preferred_parent_in_ot_(instance);
+        this->set_status_(Status::FAILED);
+        return;
+      }
+
+      this->attempts_++;
+      this->target_observed_this_attempt_ = false;
+      std::memset(&this->observed_target_extaddr_, 0, sizeof(this->observed_target_extaddr_));
+      this->reset_parent_response_tracking_();
+
+      const otDeviceRole role = otThreadGetDeviceRole(instance);
+      ESP_LOGI(TAG, "Thread role before discovery: %s", device_role_to_string_(role));
+      otRouterInfo current_parent{};
+      if (otThreadGetParentInfo(instance, &current_parent) == OT_ERROR_NONE) {
+        ESP_LOGI(TAG, "Current parent before discovery: RLOC16 0x%04x ExtAddr %s", current_parent.mRloc16,
+                 this->extaddr_to_string_(current_parent.mExtAddress).c_str());
+      } else {
+        ESP_LOGI(TAG, "Current parent before discovery: none");
+      }
+
+      ESP_LOGI(TAG, "Parent discovery attempt %u/%u for %s", this->attempts_, this->max_attempts_,
+               this->target_to_string_().c_str());
+      otError discovery_error = this->start_parent_discovery_(instance);
+      if (discovery_error == OT_ERROR_NONE) {
+        this->phase_deadline_ms_ = now + this->retry_interval_ms_;
+        this->set_status_(Status::DISCOVERING);
+        return;
+      }
+
+      ESP_LOGW(TAG, "Parent discovery could not start: %s", ot_error_to_string_(discovery_error));
+      if (discovery_error == OT_ERROR_NOT_IMPLEMENTED) {
+        this->active_ = false;
+        this->phase_ = SwitchPhase::IDLE;
+        this->set_status_(Status::API_MISSING);
+      } else if (discovery_error == OT_ERROR_BUSY) {
+        this->phase_deadline_ms_ = now + this->retry_interval_ms_;
+        this->set_status_(Status::BUSY);
+      } else {
+        this->phase_deadline_ms_ = now + this->retry_interval_ms_;
+      }
+      return;
+    }
+
+    case SwitchPhase::ATTACHING:
+      if (this->phase_deadline_ms_ != 0 && static_cast<int32_t>(now - this->phase_deadline_ms_) < 0) {
+        return;
+      }
+      ESP_LOGW(TAG, "Selected-parent attach did not complete for %s; returning to discovery", this->target_to_string_().c_str());
+      this->phase_ = SwitchPhase::DISCOVERING;
+      this->phase_deadline_ms_ = 0;
+      this->set_status_(Status::DISCOVERING);
+      return;
+
+    case SwitchPhase::IDLE:
+      return;
   }
 }
-
 
 void ThreadPreferredParentComponent::parent_response_callback_(const otThreadParentResponseInfo *info, void *context) {
   if (context == nullptr) {
@@ -185,31 +258,84 @@ void ThreadPreferredParentComponent::parent_response_callback_(const otThreadPar
   static_cast<ThreadPreferredParentComponent *>(context)->handle_parent_response_(info);
 }
 
+bool ThreadPreferredParentComponent::parent_response_matches_target_(const otThreadParentResponseInfo &info) const {
+  switch (this->target_type_) {
+    case TargetType::RLOC16:
+      return info.mRloc16 == this->target_rloc16_;
+    case TargetType::EXTADDR:
+      return this->extaddr_matches_(info.mExtAddr, this->target_extaddr_);
+    case TargetType::NONE:
+      return false;
+  }
+  return false;
+}
+
 void ThreadPreferredParentComponent::handle_parent_response_(const otThreadParentResponseInfo *info) {
-  if (!this->log_parent_responses_ || info == nullptr) {
+  if (info == nullptr) {
     return;
   }
 
   this->parent_response_count_++;
+  const bool target_match = this->parent_response_matches_target_(*info);
 
-  bool target_match = false;
-  switch (this->target_type_) {
-    case TargetType::RLOC16:
-      target_match = info->mRloc16 == this->target_rloc16_;
-      break;
-    case TargetType::EXTADDR:
-      target_match = this->extaddr_matches_(info->mExtAddr, this->target_extaddr_);
-      break;
-    case TargetType::NONE:
-      break;
+  if (target_match) {
+    this->target_observed_this_attempt_ = true;
+    this->observed_target_extaddr_ = info->mExtAddr;
   }
 
+  BufferedParentResponse &entry = this->parent_response_buffer_[this->parent_response_buffer_head_];
+  entry.valid = true;
+  entry.sequence = this->parent_response_count_;
+  entry.timestamp_ms = millis();
+  entry.info = *info;
+  entry.target_match = target_match;
+  this->parent_response_buffer_head_ = (this->parent_response_buffer_head_ + 1) % PARENT_RESPONSE_BUFFER_SIZE;
+
+  if (this->log_parent_responses_) {
+    this->log_parent_response_(entry, "live");
+  }
+
+  this->parent_response_dump_pending_ = true;
+  this->parent_response_dump_at_ms_ = millis() + 3000;
+}
+
+void ThreadPreferredParentComponent::log_parent_response_(const BufferedParentResponse &entry, const char *prefix) const {
+  const otThreadParentResponseInfo &info = entry.info;
   ESP_LOGI(TAG,
-           "Parent Response #%lu: ExtAddr %s RLOC16 0x%04x RSSI %d priority %d LQ3/LQ2/LQ1 %u/%u/%u "
-           "attached=%s target_match=%s",
-           static_cast<unsigned long>(this->parent_response_count_), this->extaddr_to_string_(info->mExtAddr).c_str(),
-           info->mRloc16, info->mRssi, info->mPriority, info->mLinkQuality3, info->mLinkQuality2, info->mLinkQuality1,
-           YESNO(info->mIsAttached), YESNO(target_match));
+           "Parent Response %s #%lu t+%lums: ExtAddr %s RLOC16 0x%04x RSSI %d priority %d "
+           "LQ3/LQ2/LQ1 %u/%u/%u attached=%s target_match=%s",
+           prefix, static_cast<unsigned long>(entry.sequence), static_cast<unsigned long>(entry.timestamp_ms),
+           this->extaddr_to_string_(info.mExtAddr).c_str(), info.mRloc16, info.mRssi, info.mPriority,
+           info.mLinkQuality3, info.mLinkQuality2, info.mLinkQuality1, YESNO(info.mIsAttached),
+           YESNO(entry.target_match));
+}
+
+void ThreadPreferredParentComponent::dump_buffered_parent_responses_(const char *reason) {
+  if (!this->log_parent_responses_) {
+    return;
+  }
+
+  if (this->parent_response_count_ == this->parent_response_last_dumped_count_) {
+    ESP_LOGI(TAG, "Parent Response replay (%s): no new responses", reason);
+    return;
+  }
+
+  ESP_LOGI(TAG, "Parent Response replay (%s): showing buffered responses %lu..%lu", reason,
+           static_cast<unsigned long>(this->parent_response_last_dumped_count_ + 1),
+           static_cast<unsigned long>(this->parent_response_count_));
+
+  const uint32_t first_sequence =
+      this->parent_response_count_ > PARENT_RESPONSE_BUFFER_SIZE ? this->parent_response_count_ - PARENT_RESPONSE_BUFFER_SIZE + 1 : 1;
+
+  for (uint32_t sequence = first_sequence; sequence <= this->parent_response_count_; sequence++) {
+    for (const auto &entry : this->parent_response_buffer_) {
+      if (entry.valid && entry.sequence == sequence && entry.sequence > this->parent_response_last_dumped_count_) {
+        this->log_parent_response_(entry, "replay");
+      }
+    }
+  }
+
+  this->parent_response_last_dumped_count_ = this->parent_response_count_;
 }
 
 bool ThreadPreferredParentComponent::is_child_(otInstance *instance) const {
@@ -233,22 +359,43 @@ bool ThreadPreferredParentComponent::current_parent_matches_(otInstance *instanc
   return false;
 }
 
-otError ThreadPreferredParentComponent::start_preferred_parent_search_(otInstance *instance) {
+otError ThreadPreferredParentComponent::start_parent_discovery_(otInstance *instance) {
+  if (thread_preferred_parent_ot_start_parent_discovery != nullptr) {
+    ESP_LOGI(TAG, "Starting non-disruptive multicast Parent Request discovery for %s", this->target_to_string_().c_str());
+    return thread_preferred_parent_ot_start_parent_discovery(instance);
+  }
+
+  // Fallback: OpenThread public API. This may switch to a better parent on its
+  // own, so the patched discovery-only hook is strongly preferred.
+  ESP_LOGW(TAG, "Discovery-only OpenThread hook missing; falling back to otThreadSearchForBetterParent()");
+  return otThreadSearchForBetterParent(instance);
+}
+
+otError ThreadPreferredParentComponent::start_selected_parent_attach_(otInstance *instance) {
+  otExtAddress selected{};
+
+  if (this->target_observed_this_attempt_) {
+    selected = this->observed_target_extaddr_;
+  } else if (this->target_type_ == TargetType::EXTADDR) {
+    selected = this->target_extaddr_;
+  } else if (!this->resolve_rloc16_to_extaddr_(instance, this->target_rloc16_, &selected)) {
+    ESP_LOGW(TAG, "RLOC16 0x%04x is not resolved to an ExtAddr", this->target_rloc16_);
+    return OT_ERROR_NOT_FOUND;
+  }
+
+  if (this->selected_parent_hook_available_()) {
+    ESP_LOGI(TAG, "Starting selected-parent attach to ExtAddr %s", this->extaddr_to_string_(selected).c_str());
+    const bool accepted = this->request_selected_parent_attach_(instance, selected);
+    ESP_LOGI(TAG, "Selected-parent attach hook returned %s", YESNO(accepted));
+    return accepted ? OT_ERROR_NONE : OT_ERROR_FAILED;
+  }
+
+  if (this->require_selected_parent_hook_) {
+    return OT_ERROR_NOT_IMPLEMENTED;
+  }
+
   switch (this->target_type_) {
     case TargetType::EXTADDR:
-      if (this->selected_parent_hook_available_()) {
-        ESP_LOGI(TAG, "Starting selected-parent attach to ExtAddr %s",
-                 this->extaddr_to_string_(this->target_extaddr_).c_str());
-        const bool accepted = this->request_selected_parent_attach_(instance, this->target_extaddr_);
-        ESP_LOGI(TAG, "Selected-parent attach hook returned %s", YESNO(accepted));
-        return accepted ? OT_ERROR_NONE : OT_ERROR_FAILED;
-      }
-
-      if (this->require_selected_parent_hook_) {
-        return OT_ERROR_NOT_IMPLEMENTED;
-      }
-
-      // Backwards-compatible fallback for the earlier response-filtering patch design.
       if (otThreadSearchForPreferredParentExtAddress != nullptr) {
         return otThreadSearchForPreferredParentExtAddress(instance, &this->target_extaddr_);
       }
@@ -259,22 +406,8 @@ otError ThreadPreferredParentComponent::start_preferred_parent_search_(otInstanc
         }
         return otThreadSearchForBetterParent(instance);
       }
-      return OT_ERROR_NOT_IMPLEMENTED;
-
-    case TargetType::RLOC16: {
-      // Selected-parent attach needs the parent's extended address. Try to resolve
-      // the requested RLOC16 from OpenThread's neighbor table first. This usually
-      // works for known neighbors; if the router is not in the neighbor table yet,
-      // use the older RLOC16 response-filtering API if available.
-      otExtAddress resolved{};
-      if (this->selected_parent_hook_available_() && this->resolve_rloc16_to_extaddr_(instance, this->target_rloc16_, &resolved)) {
-        ESP_LOGI(TAG, "Resolved RLOC16 0x%04x to ExtAddr %s; starting selected-parent attach", this->target_rloc16_,
-                 this->extaddr_to_string_(resolved).c_str());
-        const bool accepted = this->request_selected_parent_attach_(instance, resolved);
-        ESP_LOGI(TAG, "Selected-parent attach hook returned %s", YESNO(accepted));
-        return accepted ? OT_ERROR_NONE : OT_ERROR_FAILED;
-      }
-
+      break;
+    case TargetType::RLOC16:
       if (otThreadSearchForPreferredParentRloc16 != nullptr) {
         return otThreadSearchForPreferredParentRloc16(instance, this->target_rloc16_);
       }
@@ -288,16 +421,7 @@ otError ThreadPreferredParentComponent::start_preferred_parent_search_(otInstanc
         }
         return otThreadSearchForBetterParent(instance);
       }
-
-      if (this->selected_parent_hook_available_()) {
-        ESP_LOGW(TAG, "RLOC16 0x%04x is not in the neighbor table; set parent_extaddr for direct selected-parent attach",
-                 this->target_rloc16_);
-        return OT_ERROR_NOT_FOUND;
-      }
-
-      return OT_ERROR_NOT_IMPLEMENTED;
-    }
-
+      break;
     case TargetType::NONE:
       return OT_ERROR_INVALID_ARGS;
   }
@@ -308,6 +432,10 @@ otError ThreadPreferredParentComponent::start_preferred_parent_search_(otInstanc
 bool ThreadPreferredParentComponent::selected_parent_hook_available_() const {
   return thread_preferred_parent_ot_request_selected_parent_attach != nullptr ||
          biparental_ot_request_selected_parent_attach != nullptr;
+}
+
+bool ThreadPreferredParentComponent::discovery_hook_available_() const {
+  return thread_preferred_parent_ot_start_parent_discovery != nullptr;
 }
 
 bool ThreadPreferredParentComponent::request_selected_parent_attach_(otInstance *instance, const otExtAddress &extaddr) const {
@@ -335,9 +463,6 @@ bool ThreadPreferredParentComponent::resolve_rloc16_to_extaddr_(otInstance *inst
 }
 
 void ThreadPreferredParentComponent::clear_preferred_parent_in_ot_(otInstance *instance) {
-  // The selected-parent hook does not keep application-level target state, so no
-  // cleanup is required for it. Keep these calls for compatibility with earlier
-  // response-filtering patch revisions.
   if (otThreadClearPreferredParent != nullptr) {
     otThreadClearPreferredParent(instance);
     return;
@@ -420,6 +545,22 @@ void ThreadPreferredParentComponent::set_status_(Status status) {
   }
 }
 
+const char *ThreadPreferredParentComponent::device_role_to_string_(otDeviceRole role) {
+  switch (role) {
+    case OT_DEVICE_ROLE_DISABLED:
+      return "disabled";
+    case OT_DEVICE_ROLE_DETACHED:
+      return "detached";
+    case OT_DEVICE_ROLE_CHILD:
+      return "child";
+    case OT_DEVICE_ROLE_ROUTER:
+      return "router";
+    case OT_DEVICE_ROLE_LEADER:
+      return "leader";
+  }
+  return "unknown";
+}
+
 const char *ThreadPreferredParentComponent::target_type_to_string_(TargetType type) {
   switch (type) {
     case TargetType::NONE:
@@ -436,6 +577,10 @@ const char *ThreadPreferredParentComponent::status_to_string_(Status status) {
   switch (status) {
     case Status::IDLE:
       return "idle";
+    case Status::DISCOVERING:
+      return "discovering parents";
+    case Status::ATTACHING:
+      return "selected-parent attach in progress";
     case Status::WAITING:
       return "waiting";
     case Status::SUCCESS:
@@ -443,7 +588,7 @@ const char *ThreadPreferredParentComponent::status_to_string_(Status status) {
     case Status::FAILED:
       return "failed";
     case Status::API_MISSING:
-      return "selected-parent OpenThread hook missing";
+      return "OpenThread hook missing";
     case Status::NOT_CHILD:
       return "not child";
     case Status::BUSY:

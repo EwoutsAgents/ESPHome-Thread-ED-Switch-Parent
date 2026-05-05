@@ -283,6 +283,25 @@ extern "C" void thread_preferred_parent_ot_notify_parent_response(const otThread
     }
 }
 
+extern "C" bool thread_preferred_parent_ot_parent_discovery_active = false;
+
+extern "C" otError thread_preferred_parent_ot_start_parent_discovery(otInstance *aInstance)
+{
+    // THREAD_PREFERRED_PARENT_DISCOVERY_ONLY_HOOK
+    if (aInstance == nullptr)
+    {
+        return OT_ERROR_INVALID_ARGS;
+    }
+
+    thread_preferred_parent_ot_parent_discovery_active = true;
+    otError error = AsCoreType(aInstance).Get<Mle::Mle>().SearchForBetterParent();
+    if (error != OT_ERROR_NONE)
+    {
+        thread_preferred_parent_ot_parent_discovery_active = false;
+    }
+    return error;
+}
+
 extern "C" bool thread_preferred_parent_ot_request_selected_parent_attach(otInstance *aInstance,
                                                                              const otExtAddress *aPreferredExtAddress)
 {
@@ -356,6 +375,43 @@ extern "C" void thread_preferred_parent_ot_notify_parent_response(const otThread
     )
 
 
+def patch_thread_api_discovery_bridge(root: Path, *, dry_run: bool = False) -> str:
+    path = root / "api/thread_api.cpp"
+    text = normalize_newlines(path.read_text())
+    if "THREAD_PREFERRED_PARENT_DISCOVERY_ONLY_HOOK" in text:
+        return "already"
+
+    addition = """
+extern \"C\" bool thread_preferred_parent_ot_parent_discovery_active = false;
+
+extern \"C\" otError thread_preferred_parent_ot_start_parent_discovery(otInstance *aInstance)
+{
+    // THREAD_PREFERRED_PARENT_DISCOVERY_ONLY_HOOK
+    if (aInstance == nullptr)
+    {
+        return OT_ERROR_INVALID_ARGS;
+    }
+
+    thread_preferred_parent_ot_parent_discovery_active = true;
+    otError error = AsCoreType(aInstance).Get<Mle::Mle>().SearchForBetterParent();
+    if (error != OT_ERROR_NONE)
+    {
+        thread_preferred_parent_ot_parent_discovery_active = false;
+    }
+    return error;
+}
+
+"""
+    pattern = r"(extern\s+\"C\"\s+bool\s+thread_preferred_parent_ot_request_selected_parent_attach\s*\()"
+    return replace_regex(
+        path,
+        pattern,
+        lambda m: addition + m.group(1),
+        already="THREAD_PREFERRED_PARENT_DISCOVERY_ONLY_HOOK",
+        label="thread_api.cpp discovery-only bridge",
+        dry_run=dry_run,
+    )
+
 def patch_mle_parent_response_reporting_declaration(root: Path, *, dry_run: bool = False) -> str:
     path = root / "thread/mle.cpp"
     text = normalize_newlines(path.read_text())
@@ -368,7 +424,9 @@ def patch_mle_parent_response_reporting_declaration(root: Path, *, dry_run: bool
 #include <openthread/thread.h>
 
 extern \"C\" void thread_preferred_parent_ot_notify_parent_response(const otThreadParentResponseInfo *aInfo);
+extern \"C\" bool thread_preferred_parent_ot_parent_discovery_active;
 // THREAD_PREFERRED_PARENT_PARENT_RESPONSE_REPORTING_HOOK
+// THREAD_PREFERRED_PARENT_DISCOVERY_ONLY_HOOK
 """
     return replace_literal(
         path,
@@ -378,6 +436,58 @@ extern \"C\" void thread_preferred_parent_ot_notify_parent_response(const otThre
         dry_run=dry_run,
     )
 
+
+def patch_mle_discovery_declaration(root: Path, *, dry_run: bool = False) -> str:
+    path = root / "thread/mle.cpp"
+    text = normalize_newlines(path.read_text())
+    if "extern \"C\" bool thread_preferred_parent_ot_parent_discovery_active" in text:
+        return "already"
+    if "extern \"C\" void thread_preferred_parent_ot_notify_parent_response" in text:
+        new = text.replace(
+            "extern \"C\" void thread_preferred_parent_ot_notify_parent_response(const otThreadParentResponseInfo *aInfo);",
+            "extern \"C\" void thread_preferred_parent_ot_notify_parent_response(const otThreadParentResponseInfo *aInfo);\nextern \"C\" bool thread_preferred_parent_ot_parent_discovery_active; // THREAD_PREFERRED_PARENT_DISCOVERY_ONLY_HOOK",
+            1,
+        )
+        return write_if_changed(path, text, new, dry_run=dry_run)
+    return "missing"
+
+
+def patch_mle_discovery_cancel(root: Path, *, dry_run: bool = False) -> str:
+    path = root / "thread/mle.cpp"
+    text = normalize_newlines(path.read_text())
+    if "THREAD_PREFERRED_PARENT_DISCOVERY_ONLY_CANCEL" in text:
+        return "already"
+
+    pattern = (
+        r"(void\s+Mle::Attacher::HandleTimer\s*\(\s*void\s*\)\s*\{\s*"
+        r"uint32_t\s+delay\s*=\s*0\s*;\s*"
+        r"bool\s+shouldAnnounce\s*=\s*true\s*;\s*"
+        r"ParentRequestType\s+type\s*;\s*)"
+    )
+    block = """
+
+    if (thread_preferred_parent_ot_parent_discovery_active && (mMode == kBetterParent) &&
+        (mState == kStateParentRequest))
+    {
+        // THREAD_PREFERRED_PARENT_DISCOVERY_ONLY_CANCEL
+        // The ESPHome component only wants the multicast Parent Responses in
+        // this phase. Do not proceed to Child ID Request or detach; keep the
+        // existing parent until the target was actually observed.
+        LogNote(\"ThreadPreferredParent discovery window complete\");
+        thread_preferred_parent_ot_parent_discovery_active = false;
+        SetState(kStateIdle);
+        mParentCandidate.Clear();
+        ExitNow();
+    }
+"""
+    return replace_regex(
+        path,
+        pattern,
+        lambda m: m.group(1) + block,
+        already="THREAD_PREFERRED_PARENT_DISCOVERY_ONLY_CANCEL",
+        label="mle.cpp discovery-only cancel before Child ID Request",
+        dry_run=dry_run,
+    )
 
 def patch_mle_parent_response_reporting_call(root: Path, *, dry_run: bool = False) -> str:
     path = root / "thread/mle.cpp"
@@ -634,6 +744,9 @@ def apply_patches(root: Path, *, dry_run: bool = False) -> int:
         ("thread_api.cpp bridge", root / "api/thread_api.cpp", patch_thread_api, True),
         ("thread_api.cpp parent-response reporting bridge", root / "api/thread_api.cpp", patch_thread_api_parent_response_reporting, True),
         ("mle.cpp parent-response reporting declaration", root / "thread/mle.cpp", patch_mle_parent_response_reporting_declaration, True),
+        ("thread_api.cpp discovery-only bridge", root / "api/thread_api.cpp", patch_thread_api_discovery_bridge, True),
+        ("mle.cpp discovery-only declaration", root / "thread/mle.cpp", patch_mle_discovery_declaration, True),
+        ("mle.cpp discovery-only cancel", root / "thread/mle.cpp", patch_mle_discovery_cancel, True),
         ("mle.cpp parent-response reporting call", root / "thread/mle.cpp", patch_mle_parent_response_reporting_call, True),
         ("mle.cpp parent-response reporting IsAttached fix", root / "thread/mle.cpp", patch_mle_parent_response_reporting_is_attached_fix, True),
         ("diag ParentResponse challenge", root / "thread/mle.cpp", patch_parent_response_challenge_log, False),
