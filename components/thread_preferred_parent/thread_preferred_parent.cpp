@@ -5,6 +5,10 @@ namespace thread_preferred_parent {
 
 static const char *const TAG = "thread_preferred_parent";
 
+static bool is_blank_string_(const std::string &text) {
+  return text.find_first_not_of(" \t\r\n") == std::string::npos;
+}
+
 void ThreadPreferredParentComponent::setup() {
   ESP_LOGI(TAG, "Thread preferred-parent component initialized");
 
@@ -43,6 +47,16 @@ void ThreadPreferredParentComponent::set_parent_rloc16(uint16_t rloc16) {
 }
 
 bool ThreadPreferredParentComponent::set_parent_rloc16(const std::string &rloc16) {
+  if (is_blank_string_(rloc16)) {
+    if (this->target_type_ == TargetType::RLOC16) {
+      this->clear_target();
+    } else {
+      this->target_rloc16_ = 0xFFFE;
+    }
+    ESP_LOGI(TAG, "Cleared preferred-parent RLOC16 target");
+    return true;
+  }
+
   uint16_t parsed = 0;
   if (!parse_rloc16_(rloc16, &parsed)) {
     ESP_LOGW(TAG, "Invalid preferred-parent RLOC16: %s", rloc16.c_str());
@@ -449,20 +463,24 @@ otError ThreadPreferredParentComponent::start_parent_discovery_(otInstance *inst
       selected = this->target_extaddr_;
     } else if (this->target_type_ == TargetType::RLOC16) {
       if (!this->resolve_rloc16_to_extaddr_(instance, this->target_rloc16_, &selected)) {
-        ESP_LOGW(TAG, "Parent Request unicast needs ExtAddr, but RLOC16 0x%04x is not resolved", this->target_rloc16_);
-        return OT_ERROR_NOT_FOUND;
+        ESP_LOGW(TAG, "Parent Request unicast needs ExtAddr, but RLOC16 0x%04x is not resolved; falling back to multicast discovery",
+                 this->target_rloc16_);
+        selected = otExtAddress{};
       }
     } else {
       return OT_ERROR_INVALID_ARGS;
     }
 
-    if (thread_preferred_parent_ot_start_parent_discovery_unicast != nullptr) {
+    if (thread_preferred_parent_ot_start_parent_discovery_unicast != nullptr &&
+        !this->extaddr_matches_(selected, otExtAddress{})) {
       ESP_LOGI(TAG, "Starting non-disruptive unicast Parent Request discovery to ExtAddr %s for %s",
                this->extaddr_to_string_(selected).c_str(), this->target_to_string_().c_str());
       return this->start_parent_discovery_unicast_(instance, selected);
     }
 
-    ESP_LOGW(TAG, "Unicast Parent Request discovery hook missing; falling back to multicast discovery");
+    if (thread_preferred_parent_ot_start_parent_discovery_unicast == nullptr) {
+      ESP_LOGW(TAG, "Unicast Parent Request discovery hook missing; falling back to multicast discovery");
+    }
   }
 
   if (thread_preferred_parent_ot_start_parent_discovery != nullptr) {
