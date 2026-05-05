@@ -13,21 +13,24 @@ CONF_PARENT_RLOC = "parent_rloc"
 CONF_PARENT_EXTADDR = "parent_extaddr"
 CONF_MAX_ATTEMPTS = "max_attempts"
 CONF_RETRY_INTERVAL = "retry_interval"
+CONF_REQUIRE_SELECTED_PARENT_HOOK = "require_selected_parent_hook"
 
 
 def validate_rloc16(value):
     """Validate an RLOC16 as either 0x1234 / 1234 hex string or integer."""
     if isinstance(value, int):
-        return cv.int_range(min=0x0000, max=0xFFFE)(value)
+        return cv.int_range(min=0x0000, max=0xFFFD)(value)
 
     value = cv.string_strict(value).strip().lower()
     if value.startswith("0x"):
         value = value[2:]
+
     try:
         parsed = int(value, 16)
     except ValueError as err:
-        raise cv.Invalid("RLOC16 must be a 16-bit value, e.g. 0x5800") from err
-    return cv.int_range(min=0x0000, max=0xFFFE)(parsed)
+        raise cv.Invalid("RLOC16 must be a 16-bit hex value, e.g. 0x5800 or 5800") from err
+
+    return cv.int_range(min=0x0000, max=0xFFFD)(parsed)
 
 
 def validate_extaddr(value):
@@ -71,6 +74,7 @@ CONFIG_SCHEMA = cv.All(
             cv.Optional(CONF_PARENT_EXTADDR): validate_extaddr,
             cv.Optional(CONF_MAX_ATTEMPTS, default=5): cv.int_range(min=1, max=20),
             cv.Optional(CONF_RETRY_INTERVAL, default="8s"): cv.positive_time_period_milliseconds,
+            cv.Optional(CONF_REQUIRE_SELECTED_PARENT_HOOK, default=True): cv.boolean,
         }
     ).extend(cv.COMPONENT_SCHEMA),
     validate_identifier,
@@ -88,3 +92,4 @@ async def to_code(config):
 
     cg.add(var.set_max_attempts(config[CONF_MAX_ATTEMPTS]))
     cg.add(var.set_retry_interval(config[CONF_RETRY_INTERVAL].total_milliseconds))
+    cg.add(var.set_require_selected_parent_hook(config[CONF_REQUIRE_SELECTED_PARENT_HOOK]))

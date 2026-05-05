@@ -14,18 +14,30 @@
 #include <cstring>
 #include <string>
 
-// These symbols are intentionally weak: the ESPHome component can compile
+// These symbols are intentionally weak. The ESPHome component can compile
 // against an unpatched OpenThread build, but it will log a clear runtime error
-// until the OpenThread extension patch is linked in.
+// until the OpenThread selected-parent hook is linked in.
 extern "C" {
+
+// Preferred symbol exported by scripts/apply-openthread-selected-parent-hook.py.
+bool thread_preferred_parent_ot_request_selected_parent_attach(
+    otInstance *aInstance,
+    const otExtAddress *aPreferredExtAddress
+) __attribute__((weak));
+
+// Compatibility with ESPHome-biparental-ED if that patch is already applied.
+bool biparental_ot_request_selected_parent_attach(
+    otInstance *aInstance,
+    const otExtAddress *aPreferredExtAddress
+) __attribute__((weak));
+
+// Optional backwards-compatible symbols from the earlier response-filtering patch.
 otError otThreadSetPreferredParentRloc16(otInstance *aInstance, uint16_t aRloc16) __attribute__((weak));
 otError otThreadSetPreferredParentExtAddress(otInstance *aInstance, const otExtAddress *aExtAddress) __attribute__((weak));
 void otThreadClearPreferredParent(otInstance *aInstance) __attribute__((weak));
 void otThreadClearPreferredParentRloc16(otInstance *aInstance) __attribute__((weak));
 otError otThreadSearchForPreferredParentRloc16(otInstance *aInstance, uint16_t aRloc16) __attribute__((weak));
 otError otThreadSearchForPreferredParentExtAddress(otInstance *aInstance, const otExtAddress *aExtAddress) __attribute__((weak));
-
-// Backwards-compatible name from the first starter patch revision.
 otError otThreadSearchForPreferredParent(otInstance *aInstance, uint16_t aRloc16) __attribute__((weak));
 }
 
@@ -45,6 +57,7 @@ class ThreadPreferredParentComponent : public Component {
 
   void set_max_attempts(uint8_t attempts) { this->max_attempts_ = attempts; }
   void set_retry_interval(uint32_t retry_interval_ms) { this->retry_interval_ms_ = retry_interval_ms; }
+  void set_require_selected_parent_hook(bool required) { this->require_selected_parent_hook_ = required; }
 
   // Call from a Home Assistant/ESPHome template button using the configured target.
   void request_switch();
@@ -72,6 +85,7 @@ class ThreadPreferredParentComponent : public Component {
     NOT_CHILD,
     BUSY,
     INVALID_TARGET,
+    RLOC_UNRESOLVED,
   };
 
   static const char *status_to_string_(Status status);
@@ -83,6 +97,9 @@ class ThreadPreferredParentComponent : public Component {
   bool is_child_(otInstance *instance) const;
   bool parse_extaddr_(const std::string &text, otExtAddress *out) const;
   bool extaddr_matches_(const otExtAddress &a, const otExtAddress &b) const;
+  bool resolve_rloc16_to_extaddr_(otInstance *instance, uint16_t rloc16, otExtAddress *out) const;
+  bool request_selected_parent_attach_(otInstance *instance, const otExtAddress &extaddr) const;
+  bool selected_parent_hook_available_() const;
   std::string extaddr_to_string_(const otExtAddress &addr) const;
   std::string target_to_string_() const;
   otError start_preferred_parent_search_(otInstance *instance);
@@ -98,6 +115,7 @@ class ThreadPreferredParentComponent : public Component {
   uint32_t retry_interval_ms_{8000};
   uint32_t next_attempt_ms_{0};
   bool active_{false};
+  bool require_selected_parent_hook_{true};
   Status status_{Status::IDLE};
 };
 

@@ -15,12 +15,15 @@ void ThreadPreferredParentComponent::dump_config() {
   ESP_LOGCONFIG(TAG, "  Target: %s", this->target_to_string_().c_str());
   ESP_LOGCONFIG(TAG, "  Max attempts: %u", this->max_attempts_);
   ESP_LOGCONFIG(TAG, "  Retry interval: %u ms", this->retry_interval_ms_);
+  ESP_LOGCONFIG(TAG, "  Require selected-parent hook: %s", YESNO(this->require_selected_parent_hook_));
+  ESP_LOGCONFIG(TAG, "  Selected-parent hook available: %s", YESNO(this->selected_parent_hook_available_()));
   ESP_LOGCONFIG(TAG, "  Status: %s", status_to_string_(this->status_));
 }
 
 void ThreadPreferredParentComponent::set_parent_rloc16(uint16_t rloc16) {
   this->target_type_ = TargetType::RLOC16;
   this->target_rloc16_ = rloc16;
+  std::memset(&this->target_extaddr_, 0, sizeof(this->target_extaddr_));
   ESP_LOGI(TAG, "Configured preferred parent by RLOC16: 0x%04x", this->target_rloc16_);
 }
 
@@ -33,8 +36,10 @@ bool ThreadPreferredParentComponent::set_parent_extaddr(const std::string &extad
   }
 
   this->target_type_ = TargetType::EXTADDR;
+  this->target_rloc16_ = 0xFFFE;
   this->target_extaddr_ = parsed;
-  ESP_LOGI(TAG, "Configured preferred parent by extended address: %s", this->extaddr_to_string_(this->target_extaddr_).c_str());
+  ESP_LOGI(TAG, "Configured preferred parent by extended address: %s",
+           this->extaddr_to_string_(this->target_extaddr_).c_str());
   return true;
 }
 
@@ -131,7 +136,7 @@ void ThreadPreferredParentComponent::loop() {
   }
 
   this->attempts_++;
-  ESP_LOGI(TAG, "Preferred-parent search attempt %u/%u for %s", this->attempts_, this->max_attempts_,
+  ESP_LOGI(TAG, "Preferred-parent attach attempt %u/%u for %s", this->attempts_, this->max_attempts_,
            this->target_to_string_().c_str());
 
   otError error = this->start_preferred_parent_search_(instance);
@@ -141,10 +146,13 @@ void ThreadPreferredParentComponent::loop() {
     return;
   }
 
-  ESP_LOGW(TAG, "Preferred-parent search could not start: %s", ot_error_to_string_(error));
+  ESP_LOGW(TAG, "Preferred-parent attach could not start: %s", ot_error_to_string_(error));
   if (error == OT_ERROR_NOT_IMPLEMENTED) {
     this->active_ = false;
     this->set_status_(Status::API_MISSING);
+  } else if (error == OT_ERROR_NOT_FOUND) {
+    this->next_attempt_ms_ = now + this->retry_interval_ms_;
+    this->set_status_(Status::RLOC_UNRESOLVED);
   } else if (error == OT_ERROR_BUSY) {
     this->next_attempt_ms_ = now + this->retry_interval_ms_;
     this->set_status_(Status::BUSY);
@@ -176,7 +184,42 @@ bool ThreadPreferredParentComponent::current_parent_matches_(otInstance *instanc
 
 otError ThreadPreferredParentComponent::start_preferred_parent_search_(otInstance *instance) {
   switch (this->target_type_) {
-    case TargetType::RLOC16:
+    case TargetType::EXTADDR:
+      if (this->selected_parent_hook_available_()) {
+        ESP_LOGI(TAG, "Starting selected-parent attach to ExtAddr %s",
+                 this->extaddr_to_string_(this->target_extaddr_).c_str());
+        return this->request_selected_parent_attach_(instance, this->target_extaddr_) ? OT_ERROR_NONE : OT_ERROR_FAILED;
+      }
+
+      if (this->require_selected_parent_hook_) {
+        return OT_ERROR_NOT_IMPLEMENTED;
+      }
+
+      // Backwards-compatible fallback for the earlier response-filtering patch design.
+      if (otThreadSearchForPreferredParentExtAddress != nullptr) {
+        return otThreadSearchForPreferredParentExtAddress(instance, &this->target_extaddr_);
+      }
+      if (otThreadSetPreferredParentExtAddress != nullptr) {
+        otError error = otThreadSetPreferredParentExtAddress(instance, &this->target_extaddr_);
+        if (error != OT_ERROR_NONE) {
+          return error;
+        }
+        return otThreadSearchForBetterParent(instance);
+      }
+      return OT_ERROR_NOT_IMPLEMENTED;
+
+    case TargetType::RLOC16: {
+      // Selected-parent attach needs the parent's extended address. Try to resolve
+      // the requested RLOC16 from OpenThread's neighbor table first. This usually
+      // works for known neighbors; if the router is not in the neighbor table yet,
+      // use the older RLOC16 response-filtering API if available.
+      otExtAddress resolved{};
+      if (this->selected_parent_hook_available_() && this->resolve_rloc16_to_extaddr_(instance, this->target_rloc16_, &resolved)) {
+        ESP_LOGI(TAG, "Resolved RLOC16 0x%04x to ExtAddr %s; starting selected-parent attach", this->target_rloc16_,
+                 this->extaddr_to_string_(resolved).c_str());
+        return this->request_selected_parent_attach_(instance, resolved) ? OT_ERROR_NONE : OT_ERROR_FAILED;
+      }
+
       if (otThreadSearchForPreferredParentRloc16 != nullptr) {
         return otThreadSearchForPreferredParentRloc16(instance, this->target_rloc16_);
       }
@@ -190,20 +233,15 @@ otError ThreadPreferredParentComponent::start_preferred_parent_search_(otInstanc
         }
         return otThreadSearchForBetterParent(instance);
       }
-      break;
 
-    case TargetType::EXTADDR:
-      if (otThreadSearchForPreferredParentExtAddress != nullptr) {
-        return otThreadSearchForPreferredParentExtAddress(instance, &this->target_extaddr_);
+      if (this->selected_parent_hook_available_()) {
+        ESP_LOGW(TAG, "RLOC16 0x%04x is not in the neighbor table; set parent_extaddr for direct selected-parent attach",
+                 this->target_rloc16_);
+        return OT_ERROR_NOT_FOUND;
       }
-      if (otThreadSetPreferredParentExtAddress != nullptr) {
-        otError error = otThreadSetPreferredParentExtAddress(instance, &this->target_extaddr_);
-        if (error != OT_ERROR_NONE) {
-          return error;
-        }
-        return otThreadSearchForBetterParent(instance);
-      }
-      break;
+
+      return OT_ERROR_NOT_IMPLEMENTED;
+    }
 
     case TargetType::NONE:
       return OT_ERROR_INVALID_ARGS;
@@ -212,13 +250,44 @@ otError ThreadPreferredParentComponent::start_preferred_parent_search_(otInstanc
   return OT_ERROR_NOT_IMPLEMENTED;
 }
 
+bool ThreadPreferredParentComponent::selected_parent_hook_available_() const {
+  return thread_preferred_parent_ot_request_selected_parent_attach != nullptr ||
+         biparental_ot_request_selected_parent_attach != nullptr;
+}
+
+bool ThreadPreferredParentComponent::request_selected_parent_attach_(otInstance *instance, const otExtAddress &extaddr) const {
+  if (thread_preferred_parent_ot_request_selected_parent_attach != nullptr) {
+    return thread_preferred_parent_ot_request_selected_parent_attach(instance, &extaddr);
+  }
+  if (biparental_ot_request_selected_parent_attach != nullptr) {
+    return biparental_ot_request_selected_parent_attach(instance, &extaddr);
+  }
+  return false;
+}
+
+bool ThreadPreferredParentComponent::resolve_rloc16_to_extaddr_(otInstance *instance, uint16_t rloc16, otExtAddress *out) const {
+  otNeighborInfoIterator iterator = OT_NEIGHBOR_INFO_ITERATOR_INIT;
+  otNeighborInfo neighbor_info{};
+
+  while (otThreadGetNextNeighborInfo(instance, &iterator, &neighbor_info) == OT_ERROR_NONE) {
+    if (neighbor_info.mRloc16 == rloc16) {
+      *out = neighbor_info.mExtAddress;
+      return true;
+    }
+  }
+
+  return false;
+}
+
 void ThreadPreferredParentComponent::clear_preferred_parent_in_ot_(otInstance *instance) {
+  // The selected-parent hook does not keep application-level target state, so no
+  // cleanup is required for it. Keep these calls for compatibility with earlier
+  // response-filtering patch revisions.
   if (otThreadClearPreferredParent != nullptr) {
     otThreadClearPreferredParent(instance);
     return;
   }
 
-  // Backwards-compatible cleanup for the first starter patch revision.
   if (otThreadClearPreferredParentRloc16 != nullptr) {
     otThreadClearPreferredParentRloc16(instance);
   }
@@ -319,13 +388,15 @@ const char *ThreadPreferredParentComponent::status_to_string_(Status status) {
     case Status::FAILED:
       return "failed";
     case Status::API_MISSING:
-      return "patched OpenThread API missing";
+      return "selected-parent OpenThread hook missing";
     case Status::NOT_CHILD:
       return "not child";
     case Status::BUSY:
       return "busy";
     case Status::INVALID_TARGET:
       return "invalid target";
+    case Status::RLOC_UNRESOLVED:
+      return "rloc16 not resolved to extaddr";
   }
   return "unknown";
 }
@@ -344,6 +415,8 @@ const char *ThreadPreferredParentComponent::ot_error_to_string_(otError error) {
       return "OT_ERROR_NO_BUFS";
     case OT_ERROR_BUSY:
       return "OT_ERROR_BUSY";
+    case OT_ERROR_NOT_FOUND:
+      return "OT_ERROR_NOT_FOUND";
     case OT_ERROR_NOT_IMPLEMENTED:
       return "OT_ERROR_NOT_IMPLEMENTED";
     default:

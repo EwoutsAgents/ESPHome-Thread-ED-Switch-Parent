@@ -26,11 +26,12 @@ external_components:
 
 thread_preferred_parent:
   id: preferred_parent
-  # Choose one, or set dynamically from Home Assistant.
-  # parent_rloc: 0x5800
+  # Prefer parent_extaddr for the selected-parent OpenThread hook.
   # parent_extaddr: "00124b0001abcdef"
+  # parent_rloc: 0x5800
   max_attempts: 5
   retry_interval: 8s
+  require_selected_parent_hook: true
 
 button:
   - platform: template
@@ -41,29 +42,7 @@ button:
 
 text:
   - platform: template
-    name: "Thread Preferred Parent RLOC16"
-    id: preferred_parent_rloc16_text
-    optimistic: true
-    mode: text
-    set_action:
-      - lambda: |-
-          std::string s = x;
-
-          if (s.rfind("0x", 0) == 0 || s.rfind("0X", 0) == 0) {
-            s = s.substr(2);
-          }
-
-          char *end = nullptr;
-          unsigned long value = strtoul(s.c_str(), &end, 16);
-
-          if (*end != '\0' || value > 0xFFFF) {
-            ESP_LOGW("thread_preferred_parent", "Invalid RLOC16: %s", x.c_str());
-            return;
-          }
-
-          id(preferred_parent).set_parent_rloc16(static_cast<uint16_t>(value));
-          ESP_LOGI("thread_preferred_parent", "Set preferred parent RLOC16 to 0x%04lx", value);
-  - platform: template
+    id: preferred_parent_extaddr
     name: "Thread Preferred Parent ExtAddr"
     optimistic: true
     min_length: 0
@@ -73,3 +52,26 @@ text:
       - lambda: |-
           id(preferred_parent).set_parent_extaddr(x);
 
+  - platform: template
+    id: preferred_parent_rloc16_text
+    name: "Thread Preferred Parent RLOC16"
+    optimistic: true
+    min_length: 0
+    max_length: 6
+    mode: text
+    set_action:
+      - lambda: |-
+          std::string s = x;
+          if (s.rfind("0x", 0) == 0 || s.rfind("0X", 0) == 0) {
+            s = s.substr(2);
+          }
+
+          char *end = nullptr;
+          unsigned long value = strtoul(s.c_str(), &end, 16);
+          if (*end != '\0' || value > 0xFFFD) {
+            ESP_LOGW("thread_preferred_parent", "Invalid RLOC16: %s", x.c_str());
+            return;
+          }
+
+          id(preferred_parent).set_parent_rloc16(static_cast<uint16_t>(value));
+          ESP_LOGI("thread_preferred_parent", "Set preferred parent RLOC16 to 0x%04lx", value);
