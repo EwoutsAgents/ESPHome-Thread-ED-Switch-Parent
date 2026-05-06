@@ -109,3 +109,7 @@ The selected-parent attach phase now filters MLE Parent Responses: after preflig
 ## v12 fix
 
 This package fixes a clean-build ordering issue where ESP-IDF/OpenThread 5.5.4 could report `mle.cpp selected-parent candidate preseed` as missing while the old force-detach block was still present. The pre-build patcher now removes the old block before applying the preseed patch and also tolerates the legacy block if encountered.
+### Busy guard and handoff diagnostics
+
+Version v20 ignores a new `Switch Thread Parent` request while a switch is already active. This protects the early-attach path from accidental double button presses in Home Assistant. It also adds one handoff diagnostic log before selected-parent attach starts, showing discovery elapsed time, buffered Parent Response count, and target-match count.
+

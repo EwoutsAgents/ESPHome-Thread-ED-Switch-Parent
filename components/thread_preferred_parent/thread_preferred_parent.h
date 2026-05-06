@@ -135,6 +135,7 @@ class ThreadPreferredParentComponent : public Component {
   };
 
   static const char *status_to_string_(Status status);
+  static const char *phase_to_string_(SwitchPhase phase);
   static const char *target_type_to_string_(TargetType type);
   static const char *ot_error_to_string_(otError error);
   static const char *device_role_to_string_(otDeviceRole role);

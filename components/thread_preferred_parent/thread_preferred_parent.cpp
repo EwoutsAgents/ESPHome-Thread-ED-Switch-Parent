@@ -87,6 +87,14 @@ bool ThreadPreferredParentComponent::set_parent_extaddr(const std::string &extad
 }
 
 void ThreadPreferredParentComponent::request_switch() {
+  if (this->active_) {
+    ESP_LOGW(TAG,
+             "Ignoring preferred-parent switch request while busy: phase=%s status=%s active_target=%s attempt=%u/%u",
+             phase_to_string_(this->phase_), status_to_string_(this->status_), this->target_to_string_().c_str(),
+             this->attempts_, this->max_attempts_);
+    return;
+  }
+
   if (this->target_type_ == TargetType::NONE) {
     ESP_LOGW(TAG, "Refusing preferred-parent switch without a configured target identifier");
     this->set_status_(Status::INVALID_TARGET);
@@ -211,6 +219,11 @@ void ThreadPreferredParentComponent::loop() {
                      static_cast<unsigned long>(this->discovery_target_observed_ms_),
                      static_cast<unsigned long>(discovery_elapsed_ms));
           }
+          ESP_LOGI(TAG,
+                   "Discovery-to-attach handoff: closing discovery attempt after %lu ms; buffered=%lu target_matches=%lu; in-flight Parent Responses may still be logged",
+                   static_cast<unsigned long>(discovery_elapsed_ms),
+                   static_cast<unsigned long>(this->parent_response_count_),
+                   static_cast<unsigned long>(this->parent_response_target_count_));
           ESP_LOGI(TAG, "Preferred parent %s was observed; starting selected-parent attach", this->target_to_string_().c_str());
           otError attach_error = this->start_selected_parent_attach_(instance);
           if (attach_error == OT_ERROR_NONE) {
@@ -771,6 +784,18 @@ const char *ThreadPreferredParentComponent::device_role_to_string_(otDeviceRole 
       return "router";
     case OT_DEVICE_ROLE_LEADER:
       return "leader";
+  }
+  return "unknown";
+}
+
+const char *ThreadPreferredParentComponent::phase_to_string_(SwitchPhase phase) {
+  switch (phase) {
+    case SwitchPhase::IDLE:
+      return "idle";
+    case SwitchPhase::DISCOVERING:
+      return "discovering";
+    case SwitchPhase::ATTACHING:
+      return "attaching";
   }
   return "unknown";
 }
