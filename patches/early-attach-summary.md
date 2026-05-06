@@ -1,6 +1,6 @@
-# v18 early attach summary
+# v19 early attach summary
 
-This update adds target-triggered early attach for both multicast and unicast discovery.
+This update adds target-triggered early attach for both multicast and unicast discovery. v19 also fixes the OpenThread patcher so the early-attach interrupt block does not declare an initialized local variable below a `VerifyOrExit(...)` macro; this avoids the ESP-IDF/OpenThread compile error `jump to label exit crosses initialization`.
 
 ## YAML
 

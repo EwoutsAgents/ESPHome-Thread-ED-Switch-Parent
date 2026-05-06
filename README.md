@@ -1,5 +1,7 @@
 # ESPHome Thread ED Switch Parent
 
+**v19 build fix:** fixes the early-attach OpenThread patch so `AttachToSelectedParent()` no longer declares an initialized local variable after a `VerifyOrExit(...)` macro. This avoids the C++ compile error where `goto exit` crosses initialization of `threadPreferredParentDiscoveryActive`.
+
 **v18 early-attach:** adds `early_attach_on_target` and `early_attach_delay`. When the requested parent responds during discovery, the component now schedules selected-parent attach after the configured debounce instead of waiting for the full `retry_interval`. The OpenThread selected-parent hook also interrupts an active discovery-only pass so early attach does not bounce with `kErrorBusy`. Discovery logs now include a timer for target-observed time and total discovery time before attach.
 
 **v16 build fix:** repairs the `parent_request_unicast` OpenThread patcher so `mle.cpp` is not truncated, restores a previously truncated patched `mle.cpp` from the `.thread-preferred-parent.bak` backup when present, and always declares the unicast discovery bridge symbols before use.

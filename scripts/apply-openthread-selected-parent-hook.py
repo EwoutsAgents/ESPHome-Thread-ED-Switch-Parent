@@ -269,13 +269,15 @@ def patch_attach_method_interrupt_discovery(root: Path, *, dry_run: bool = False
         print("[thread_preferred_parent][detail] no IsAttaching guard found in AttachToSelectedParent")
         return "missing"
 
-    replacement = """    const bool threadPreferredParentDiscoveryActive = thread_preferred_parent_ot_parent_discovery_active;
-    if (threadPreferredParentDiscoveryActive)
+    replacement = """    if (thread_preferred_parent_ot_parent_discovery_active)
     {
         // THREAD_PREFERRED_PARENT_INTERRUPT_DISCOVERY_BEFORE_ATTACH
         // A requested target was already observed by ESPHome. Interrupt the
         // discovery-only Parent Request window and immediately begin the
         // selected-parent attach flow instead of returning kErrorBusy.
+        // Do not declare a local variable here: AttachToSelectedParent() uses
+        // VerifyOrExit()/goto exit, and C++ rejects jumps across initialized
+        // locals in this function on ESP-IDF/OpenThread builds.
         thread_preferred_parent_ot_parent_discovery_active = false;
         thread_preferred_parent_ot_parent_discovery_unicast = false;
     }
