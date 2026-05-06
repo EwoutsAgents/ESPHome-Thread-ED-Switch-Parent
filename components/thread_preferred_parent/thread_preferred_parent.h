@@ -84,6 +84,8 @@ class ThreadPreferredParentComponent : public Component {
   void set_require_selected_parent_hook(bool required) { this->require_selected_parent_hook_ = required; }
   void set_log_parent_responses(bool enabled) { this->log_parent_responses_ = enabled; }
   void set_parent_request_unicast(bool enabled) { this->parent_request_unicast_ = enabled; }
+  void set_early_attach_on_target(bool enabled) { this->early_attach_on_target_ = enabled; }
+  void set_early_attach_delay(uint32_t early_attach_delay_ms) { this->early_attach_delay_ms_ = early_attach_delay_ms; }
 
   void request_switch();
   void request_switch(uint16_t rloc16);
@@ -188,6 +190,10 @@ class ThreadPreferredParentComponent : public Component {
   uint32_t parent_response_target_count_{0};
   uint32_t current_attempt_start_ms_{0};
   uint32_t attach_start_ms_{0};
+  uint32_t discovery_target_observed_ms_{0};
+  bool early_attach_on_target_{true};
+  bool early_attach_pending_{false};
+  uint32_t early_attach_delay_ms_{250};
   bool best_target_rssi_valid_{false};
   int8_t best_target_rssi_{-128};
   uint16_t best_target_rloc16_{0xFFFE};

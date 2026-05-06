@@ -238,6 +238,56 @@ def patch_attach_method_force_detach(root: Path, *, dry_run: bool = False) -> st
     )
 
 
+
+
+def patch_attach_method_interrupt_discovery(root: Path, *, dry_run: bool = False) -> str:
+    """Allow selected-parent attach to interrupt an active discovery-only pass.
+
+    Early-attach can call AttachToSelectedParent() while SearchForBetterParent()
+    is still in its Parent Request collection window. That is intentional: the
+    ESPHome component has already observed the requested target and does not need
+    to wait for the discovery-only timer. Treat this specific in-progress state
+    as interruptible instead of returning kErrorBusy.
+    """
+    path = root / "thread/mle.cpp"
+    text = normalize_newlines(path.read_text())
+    if "THREAD_PREFERRED_PARENT_INTERRUPT_DISCOVERY_BEFORE_ATTACH" in text:
+        return "already"
+
+    span = find_function_span(
+        text,
+        r"Error\s+Mle::AttachToSelectedParent\s*\(\s*const\s+Mac::ExtAddress\s*&\s*aExtAddress\s*\)",
+    )
+    if span is None:
+        print("[thread_preferred_parent][detail] no AttachToSelectedParent function span found")
+        return "missing"
+
+    _sig_start, open_brace, close_brace, _body_end = span
+    body = text[open_brace:close_brace]
+    needle = "    VerifyOrExit(!IsAttaching(), error = kErrorBusy);"
+    if needle not in body:
+        print("[thread_preferred_parent][detail] no IsAttaching guard found in AttachToSelectedParent")
+        return "missing"
+
+    replacement = """    const bool threadPreferredParentDiscoveryActive = thread_preferred_parent_ot_parent_discovery_active;
+    if (threadPreferredParentDiscoveryActive)
+    {
+        // THREAD_PREFERRED_PARENT_INTERRUPT_DISCOVERY_BEFORE_ATTACH
+        // A requested target was already observed by ESPHome. Interrupt the
+        // discovery-only Parent Request window and immediately begin the
+        // selected-parent attach flow instead of returning kErrorBusy.
+        thread_preferred_parent_ot_parent_discovery_active = false;
+        thread_preferred_parent_ot_parent_discovery_unicast = false;
+    }
+    else
+    {
+        VerifyOrExit(!IsAttaching(), error = kErrorBusy);
+    }"""
+
+    new_body = body.replace(needle, replacement, 1)
+    new = text[:open_brace] + new_body + text[close_brace:]
+    return write_if_changed(path, text, new, dry_run=dry_run)
+
 def patch_selected_parent_destination(root: Path, *, dry_run: bool = False) -> str:
     """Patch only the Parent Request destination-selection block.
 
@@ -1239,6 +1289,7 @@ def apply_patches(root: Path, *, dry_run: bool = False) -> int:
         ("mle.cpp parent-response reporting declaration", root / "thread/mle.cpp", patch_mle_parent_response_reporting_declaration, True),
         ("thread_api.cpp discovery-only bridge", root / "api/thread_api.cpp", patch_thread_api_discovery_bridge, True),
         ("mle.cpp discovery-only declaration", root / "thread/mle.cpp", patch_mle_discovery_declaration, True),
+        ("mle.cpp selected-parent interrupt discovery", root / "thread/mle.cpp", patch_attach_method_interrupt_discovery, True),
         ("mle.cpp discovery-only cancel", root / "thread/mle.cpp", patch_mle_discovery_cancel, True),
         ("mle.cpp parent-response reporting call", root / "thread/mle.cpp", patch_mle_parent_response_reporting_call, True),
         ("mle.cpp parent-response reporting IsAttached fix", root / "thread/mle.cpp", patch_mle_parent_response_reporting_is_attached_fix, True),

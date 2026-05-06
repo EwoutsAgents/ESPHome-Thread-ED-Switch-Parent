@@ -19,6 +19,8 @@ CONF_SELECTED_ATTACH_TIMEOUT = "selected_attach_timeout"
 CONF_REQUIRE_SELECTED_PARENT_HOOK = "require_selected_parent_hook"
 CONF_LOG_PARENT_RESPONSES = "log_parent_responses"
 CONF_PARENT_REQUEST_UNICAST = "parent_request_unicast"
+CONF_EARLY_ATTACH_ON_TARGET = "early_attach_on_target"
+CONF_EARLY_ATTACH_DELAY = "early_attach_delay"
 
 SCRIPT_PATH = os.path.abspath(
     os.path.join(os.path.dirname(__file__), "apply-openthread-selected-parent-hook.py")
@@ -87,6 +89,8 @@ CONFIG_SCHEMA = cv.All(
             cv.Optional(CONF_REQUIRE_SELECTED_PARENT_HOOK, default=True): cv.boolean,
             cv.Optional(CONF_LOG_PARENT_RESPONSES, default=True): cv.boolean,
             cv.Optional(CONF_PARENT_REQUEST_UNICAST, default=False): cv.boolean,
+            cv.Optional(CONF_EARLY_ATTACH_ON_TARGET, default=True): cv.boolean,
+            cv.Optional(CONF_EARLY_ATTACH_DELAY, default="250ms"): cv.positive_time_period_milliseconds,
         }
     ).extend(cv.COMPONENT_SCHEMA),
     validate_identifier,
@@ -113,3 +117,5 @@ async def to_code(config):
     cg.add(var.set_require_selected_parent_hook(config[CONF_REQUIRE_SELECTED_PARENT_HOOK]))
     cg.add(var.set_log_parent_responses(config[CONF_LOG_PARENT_RESPONSES]))
     cg.add(var.set_parent_request_unicast(config[CONF_PARENT_REQUEST_UNICAST]))
+    cg.add(var.set_early_attach_on_target(config[CONF_EARLY_ATTACH_ON_TARGET]))
+    cg.add(var.set_early_attach_delay(config[CONF_EARLY_ATTACH_DELAY].total_milliseconds))

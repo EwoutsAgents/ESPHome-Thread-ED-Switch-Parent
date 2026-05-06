@@ -1,5 +1,7 @@
 # ESPHome Thread ED Switch Parent
 
+**v18 early-attach:** adds `early_attach_on_target` and `early_attach_delay`. When the requested parent responds during discovery, the component now schedules selected-parent attach after the configured debounce instead of waiting for the full `retry_interval`. The OpenThread selected-parent hook also interrupts an active discovery-only pass so early attach does not bounce with `kErrorBusy`. Discovery logs now include a timer for target-observed time and total discovery time before attach.
+
 **v16 build fix:** repairs the `parent_request_unicast` OpenThread patcher so `mle.cpp` is not truncated, restores a previously truncated patched `mle.cpp` from the `.thread-preferred-parent.bak` backup when present, and always declares the unicast discovery bridge symbols before use.
 
 **v15 unicast discovery option:** add `parent_request_unicast: true` to send the preflight Parent Request directly to the configured parent ExtAddr instead of the all-routers multicast address. The selected-parent attach path remains the same.
@@ -14,8 +16,9 @@ This version uses a safer two-phase flow:
 
 1. **Discovery/preflight**: send an MLE Parent Request while staying attached to the current parent. By default this is multicast; set `parent_request_unicast: true` to unicast the Parent Request to the configured parent ExtAddr.
 2. Track every MLE Parent Response; live rows are shown only when `logger.level` is `VERY_VERBOSE`.
-3. If the configured target parent is observed, start the disruptive selected-parent attach.
-4. If the target is not observed, retry discovery without dropping the current Thread/API connection.
+3. If the configured target parent is observed and `early_attach_on_target: true`, wait `early_attach_delay` and start selected-parent attach without waiting for the full `retry_interval`.
+4. If early attach is disabled, wait for the full discovery window before attaching.
+5. If the target is not observed, retry discovery without dropping the current Thread/API connection.
 
 The target can be specified as either:
 
@@ -23,6 +26,9 @@ The target can be specified as either:
 thread_preferred_parent:
   id: preferred_parent
   parent_extaddr: "00124b0001abcdef"
+  parent_request_unicast: false
+  early_attach_on_target: true
+  early_attach_delay: 250ms
 ```
 
 or:
@@ -52,7 +58,7 @@ The patch adds four hooks to ESP-IDF's vendored OpenThread source:
 - `thread_preferred_parent_ot_start_parent_discovery_unicast(...)`
 - `thread_preferred_parent_ot_request_selected_parent_attach(...)`
 
-The discovery hook starts `SearchForBetterParent()` but patches the MLE attacher so the discovery cycle is cancelled before Child ID Request. This lets the component collect candidate Parent Responses without detaching from the current parent. With `parent_request_unicast: true`, the same discovery-only path is used, but the Parent Request destination is the configured target ExtAddr.
+The discovery hook starts `SearchForBetterParent()` but patches the MLE attacher so the discovery cycle is cancelled before Child ID Request. This lets the component collect candidate Parent Responses without detaching from the current parent. With `parent_request_unicast: true`, the same discovery-only path is used, but the Parent Request destination is the configured target ExtAddr. With `early_attach_on_target: true`, the selected-parent attach hook can also interrupt an active discovery-only pass once the target has been observed.
 
 ## Expected logs
 
@@ -63,7 +69,9 @@ Parent discovery attempt 1/5 for ExtAddr 32a4d516437f9abb
 Starting non-disruptive multicast Parent Request discovery ...
 # or, with parent_request_unicast: true:
 Starting non-disruptive unicast Parent Request discovery to ExtAddr 32a4d516437f9abb ...
-Discovery summary (discovery window complete): 11 Parent Responses, 1 target match(es), best target RLOC16 0xb000 RSSI -69
+Target Parent Response observed after 680 ms during discovery; early selected-parent attach scheduled in 250 ms
+Discovery summary (early target debounce complete): 11 Parent Responses, 1 target match(es), best target RLOC16 0xb000 RSSI -69
+Discovery result: target observed after 680 ms; starting selected-parent attach after 930 ms total discovery time (250 ms early-attach delay)
 Preferred parent ExtAddr 32a4d516437f9abb was observed; starting selected-parent attach
 Starting selected-parent attach to ExtAddr 32a4d516437f9abb
 Selected-parent attach hook returned YES

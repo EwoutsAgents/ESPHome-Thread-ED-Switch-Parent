@@ -33,6 +33,10 @@ thread_preferred_parent:
   # Optional: send the preflight Parent Request directly to the target ExtAddr
   # instead of multicast. Best used with parent_extaddr.
   parent_request_unicast: false
+  # Start selected-parent attach shortly after the requested target responds,
+  # instead of waiting for the full retry_interval discovery window.
+  early_attach_on_target: true
+  early_attach_delay: 250ms
   require_selected_parent_hook: true
   log_parent_responses: true
 
