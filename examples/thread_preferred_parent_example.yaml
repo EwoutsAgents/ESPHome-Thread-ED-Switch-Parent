@@ -3,40 +3,54 @@ esphome:
   friendly_name: Thread Preferred Parent Test
 
 esp32:
-  board: esp32h2-devkitm-1
+  board: esp32c6  # Change to your Thread-capable ESP32 board
   framework:
     type: esp-idf
 
 logger:
-  level: VERY_VERBOSE
+  level: VERY_VERBOSE  # Optional, VERY_VERBOSE should not be used production: https://esphome.io/components/logger/
 
 api:
 
 ota:
-  platform: esphome
+  - platform: esphome
 
 openthread:
+  device_type: MTD  # Necessary (as FTDs do not have a parent), but BE CAREFUL, requires a full wipe of the non-violatile storage to go back to FTD: https://esphome.io/components/openthread/
+  tlv: "<PUT_YOUR_TLV HERE>"
+
 
 external_components:
   - source:
-      type: local
-      path: ../components
+      type: git
+      url: https://github.com/EwoutBergsma/ESPHome-Thread-ED-Switch-Parent
+      ref: main
+    components: [thread_preferred_parent]
+    refresh: 0s
 
 thread_preferred_parent:
   id: preferred_parent
-  # Prefer parent_extaddr for the selected-parent OpenThread hook.
-  # parent_extaddr: "00124b0001abcdef"
+
+  # Preferred: target the parent by IEEE 802.15.4 extended address.
+  parent_extaddr: "00124b0001abcdef"
+
+  # Alternative: target the parent by RLOC16 instead.
+  # Do not configure parent_extaddr and parent_rloc at the same time.
   # parent_rloc: 0x5800
-  max_attempts: 5
+
+  max_attempts: 3
   retry_interval: 8s
   selected_attach_timeout: 16s
+
   # Optional: send the preflight Parent Request directly to the target ExtAddr
-  # instead of multicast. Best used with parent_extaddr.
+  # instead of the all-routers multicast address.
   parent_request_unicast: false
-  # Start selected-parent attach shortly after the requested target responds,
+
+  # Optional: start selected-parent attach shortly after the target responds,
   # instead of waiting for the full retry_interval discovery window.
   early_attach_on_target: true
-  early_attach_delay: 250ms
+  early_attach_delay: 500ms
+
   require_selected_parent_hook: true
   log_parent_responses: true
 
