@@ -17,6 +17,9 @@ case "$SCENARIO" in
   stock)
     CONFIG="testing/configs/child_stock.yaml"
     ;;
+  stock-observed)
+    CONFIG="testing/configs/child_stock_observed.yaml"
+    ;;
   variant-mcast)
     CONFIG="testing/configs/child_variant_multicast.yaml"
     ;;
@@ -24,7 +27,7 @@ case "$SCENARIO" in
     CONFIG="testing/configs/child_variant_unicast.yaml"
     ;;
   *)
-    echo "Unknown scenario: $SCENARIO (use: stock|variant-mcast|variant-ucast)" >&2
+    echo "Unknown scenario: $SCENARIO (use: stock|stock-observed|variant-mcast|variant-ucast)" >&2
     exit 1
     ;;
 esac
