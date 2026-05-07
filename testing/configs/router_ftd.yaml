@@ -1,0 +1,27 @@
+esphome:
+  name: thread-router
+  friendly_name: Thread Router
+
+esp32:
+  board: esp32c6
+  framework:
+    type: esp-idf
+
+logger:
+  level: VERY_VERBOSE
+
+api:
+
+ota:
+  - platform: esphome
+
+openthread:
+  device_type: FTD
+  tlv: "<PUT_YOUR_TLV_HERE>"
+
+text_sensor:
+  - platform: template
+    name: "Role hint"
+    lambda: |-
+      return {"Router/Leader node for parent-switch benchmark"};
+    update_interval: 60s

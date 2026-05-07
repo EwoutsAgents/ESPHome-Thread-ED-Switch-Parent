@@ -1,0 +1,36 @@
+esphome:
+  name: thread-child-stock
+  friendly_name: Thread Child Stock
+
+esp32:
+  board: esp32c6
+  framework:
+    type: esp-idf
+
+logger:
+  level: VERY_VERBOSE
+
+api:
+
+ota:
+  - platform: esphome
+
+openthread:
+  device_type: MTD
+  tlv: "<PUT_YOUR_TLV_HERE>"
+
+button:
+  - platform: template
+    name: "Stock: Search for better parent"
+    on_press:
+      - lambda: |-
+          using esphome::openthread::InstanceLock;
+          auto lock = InstanceLock::try_acquire(0);
+          if (!lock.has_value()) {
+            ESP_LOGW("stock_switch", "T0 request ignored; could not lock OpenThread instance");
+            return;
+          }
+          otInstance *instance = lock->get_instance();
+          ESP_LOGI("stock_switch", "T0 request; calling otThreadSearchForBetterParent()");
+          otError err = otThreadSearchForBetterParent(instance);
+          ESP_LOGI("stock_switch", "T1 search started; status=%d", static_cast<int>(err));

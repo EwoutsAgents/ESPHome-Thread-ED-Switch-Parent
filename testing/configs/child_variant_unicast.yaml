@@ -1,0 +1,46 @@
+esphome:
+  name: thread-child-variant-b-ucast
+  friendly_name: Thread Child Variant B Unicast
+
+esp32:
+  board: esp32c6
+  framework:
+    type: esp-idf
+
+logger:
+  level: VERY_VERBOSE
+
+api:
+
+ota:
+  - platform: esphome
+
+openthread:
+  device_type: MTD
+  tlv: "<PUT_YOUR_TLV_HERE>"
+
+external_components:
+  - source:
+      type: local
+      path: ../../
+    components: [thread_preferred_parent]
+
+thread_preferred_parent:
+  id: preferred_parent
+  parent_extaddr: "00124b0001abcdef"
+  max_attempts: 3
+  retry_interval: 8s
+  selected_attach_timeout: 16s
+  parent_request_unicast: true
+  early_attach_on_target: true
+  early_attach_delay: 500ms
+  require_selected_parent_hook: true
+  log_parent_responses: true
+
+button:
+  - platform: template
+    name: "Variant B (unicast): Switch parent"
+    on_press:
+      - lambda: |-
+          ESP_LOGI("variant_b", "T0 request; variant=B unicast");
+          id(preferred_parent).request_switch();
