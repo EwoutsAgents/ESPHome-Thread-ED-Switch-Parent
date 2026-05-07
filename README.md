@@ -1,115 +1,217 @@
 # ESPHome Thread ED Switch Parent
 
-**v19 build fix:** fixes the early-attach OpenThread patch so `AttachToSelectedParent()` no longer declares an initialized local variable after a `VerifyOrExit(...)` macro. This avoids the C++ compile error where `goto exit` crosses initialization of `threadPreferredParentDiscoveryActive`.
+ESPHome external component for experimenting with controlled parent switching on Thread end devices.
 
-**v18 early-attach:** adds `early_attach_on_target` and `early_attach_delay`. When the requested parent responds during discovery, the component now schedules selected-parent attach after the configured debounce instead of waiting for the full `retry_interval`. The OpenThread selected-parent hook also interrupts an active discovery-only pass so early attach does not bounce with `kErrorBusy`. Discovery logs now include a timer for target-observed time and total discovery time before attach.
+This component lets an ESPHome Thread end device request a specific Thread parent, identified either by the parent router's IEEE 802.15.4 extended address or by its RLOC16. It is mainly intended for testing, diagnostics, and controlled experiments with Thread parent selection behavior.
 
-**v16 build fix:** repairs the `parent_request_unicast` OpenThread patcher so `mle.cpp` is not truncated, restores a previously truncated patched `mle.cpp` from the `.thread-preferred-parent.bak` backup when present, and always declares the unicast discovery bridge symbols before use.
+The component uses a two-phase flow:
 
-**v15 unicast discovery option:** add `parent_request_unicast: true` to send the preflight Parent Request directly to the configured parent ExtAddr instead of the all-routers multicast address. The selected-parent attach path remains the same.
+1. **Discovery / preflight**: send an MLE Parent Request (multicast *or* unicast) while keeping the device attached to its current parent. During this phase, the component collects Parent Responses, logs candidates, checks whether the configured target parent appears, and retries discovery if the target is not visible.
+2. **Selected-parent attach**: when the target parent is observed, invoke the patched OpenThread hook to start an attach attempt toward that selected parent. This bypasses the normal parent-selection step and directs the attach attempt toward the observed target parent.
 
-**v13 diagnostics cleanup:** live Parent Response rows now use ESPHome's normal `VERY_VERBOSE` logger level, replay output is curated, discovery windows emit compact summaries, and Parent Response timestamps are relative to the current attempt.
+> [!WARNING] This is an experimental component. It patches ESP-IDF's vendored OpenThread source during the PlatformIO build. Use it for testing and diagnostics, not as a general-purpose production Thread parent-selection mechanism.
 
-**v12 targeted attach update:** this package now ports the important selected-parent attach lessons from ESPHome-biparental-ED: it keeps the child attached while attempting the selected-parent Child ID exchange, pre-seeds the target ExtAddr before `Attach(kSelectedParent)`, and forces `ChildIdRequest` for selected-parent mode once the target Parent Response has populated the OpenThread parent candidate. This is intended to fix the failure mode where the target appears in Parent Responses but OpenThread never completes the selected-parent attach.
+## Features
 
-ESPHome external component for testing controlled Thread end-device parent switching.
+- Select a preferred Thread parent by `parent_extaddr` or `parent_rloc`.
+  - `parent_extaddr` is advised (especially in combination with a unicast parent request).
+- Perform non-disruptive preflight discovery before attempting a selected-parent attach.
+- Send Parent Request as multicast *or* unicast.
+  - OpenThread exclusively uses multicast for Parent Requests. This external component also allows unicast Parent Requests. This decreases the amount of (potential) Parent Responses.
+- Start selected-parent attach shortly after the target responds with `early_attach_on_target`.
+  - This feature is still a work in progress, but preliminary tests have been stable when using `early_attach_delay: 500ms`.
+- Retry discovery when the target parent is not visible.
+- Expose runtime controls through ESPHome lambdas, buttons, and text entities.
+- Log Parent Response diagnostics for debugging Thread parent selection.
+- Automatically registers the OpenThread patch script as a PlatformIO pre-build script.
+- Provides safeguards such as attach timeouts and a busy guard for repeated switch requests.
 
-This version uses a safer two-phase flow:
+## Requirements
 
-1. **Discovery/preflight**: send an MLE Parent Request while staying attached to the current parent. By default this is multicast; set `parent_request_unicast: true` to unicast the Parent Request to the configured parent ExtAddr.
-2. Track every MLE Parent Response; live rows are shown only when `logger.level` is `VERY_VERBOSE`.
-3. If the configured target parent is observed and `early_attach_on_target: true`, wait `early_attach_delay` and start selected-parent attach without waiting for the full `retry_interval`.
-4. If early attach is disabled, wait for the full discovery window before attaching.
-5. If the target is not observed, retry discovery without dropping the current Thread/API connection.
+- ESPHome with ESP-IDF framework support.
+- An ESP32 Thread-capable target, such as an ESP32-H2 or ESP32-C6 board.
+  - Note: testing has exclusively been done on ESP32-C6.
+- ESPHome `openthread:` enabled in the device configuration.
+- USB serial logging is recommended while testing, because the ESPHome API can temporarily disconnect during a selected-parent attach.
 
-The target can be specified as either:
+## Example configuration
 
 ```yaml
+esphome:
+  name: thread-preferred-parent-test
+  friendly_name: Thread Preferred Parent Test
+
+esp32:
+  board: esp32c6  # Change to your Thread-capable ESP32 board
+  framework:
+    type: esp-idf
+
+logger:
+  level: VERY_VERBOSE  # Optional, VERY_VERBOSE should not be used production: https://esphome.io/components/logger/
+
+api:
+
+ota:
+  - platform: esphome
+
+openthread:
+  device_type: MTD  # Necessary (as FTDs do not have a parent), but BE CAREFUL, requires a full wipe of the non-violatile storage to go back to FTD: https://esphome.io/components/openthread/
+  tlv: "<PUT_YOUR_TLV HERE>"
+
+
+external_components:
+  - source:
+      type: git
+      url: https://github.com/EwoutBergsma/ESPHome-Thread-ED-Switch-Parent
+      ref: main
+    components: [thread_preferred_parent]
+    refresh: 0s
+
 thread_preferred_parent:
   id: preferred_parent
+
+  # Preferred: target the parent by IEEE 802.15.4 extended address.
   parent_extaddr: "00124b0001abcdef"
+
+  # Alternative: target the parent by RLOC16 instead.
+  # Do not configure parent_extaddr and parent_rloc at the same time.
+  # parent_rloc: 0x5800
+
+  max_attempts: 3
+  retry_interval: 8s
+  selected_attach_timeout: 16s
+
+  # Optional: send the preflight Parent Request directly to the target ExtAddr
+  # instead of the all-routers multicast address.
   parent_request_unicast: false
+
+  # Optional: start selected-parent attach shortly after the target responds,
+  # instead of waiting for the full retry_interval discovery window.
   early_attach_on_target: true
-  early_attach_delay: 250ms
+  early_attach_delay: 500ms
+
+  require_selected_parent_hook: true
+  log_parent_responses: true
+
+button:
+  - platform: template
+    name: "Switch Thread Parent"
+    on_press:
+      - lambda: |-
+          id(preferred_parent).request_switch();
+
+text:
+  - platform: template
+    id: preferred_parent_extaddr
+    name: "Thread Preferred Parent ExtAddr"
+    optimistic: true
+    min_length: 0
+    max_length: 23
+    mode: text
+    set_action:
+      - lambda: |-
+          id(preferred_parent).set_parent_extaddr(x);
+
+  - platform: template
+    id: preferred_parent_rloc16_text
+    name: "Thread Preferred Parent RLOC16"
+    optimistic: true
+    min_length: 0
+    max_length: 6
+    mode: text
+    set_action:
+      - lambda: |-
+          id(preferred_parent).set_parent_rloc16(x);
 ```
 
-or:
+## Configuration options
+
+| Option                         | Default  | Description                                                                               |
+| ------------------------------ | -------- | ----------------------------------------------------------------------------------------- |
+| `id`                           | Required | Component ID used from ESPHome lambdas.                                                   |
+| `parent_extaddr`               | Optional | Preferred parent IEEE 802.15.4 extended address. Recommended for selected-parent attach.  |
+| `parent_rloc`                  | Optional | Preferred parent RLOC16, for example `0x5800`. Do not use together with `parent_extaddr`. |
+| `max_attempts`                 | `5`      | Maximum number of discovery / attach attempts before giving up.                           |
+| `retry_interval`               | `8s`     | Discovery window and delay between attempts.                                              |
+| `selected_attach_timeout`      | `16s`    | Timeout for the selected-parent attach phase.                                             |
+| `parent_request_unicast`       | `false`  | When `true`, send preflight Parent Request directly to the configured `parent_extaddr`.   |
+| `early_attach_on_target`       | `true`   | When `true`, start selected-parent attach soon after the target parent responds.          |
+| `early_attach_delay`           | `250ms`  | Debounce delay before early attach after the target response is observed.                 |
+| `require_selected_parent_hook` | `true`   | Require the OpenThread selected-parent hook to be available before switching.             |
+| `log_parent_responses`         | `true`   | Enable Parent Response diagnostics. Use `VERY_VERBOSE` logging for live response rows.    |
+
+`parent_extaddr` accepts these formats:
 
 ```yaml
-thread_preferred_parent:
-  id: preferred_parent
-  parent_rloc: 0x4400
+parent_extaddr: "00124b0001abcdef"
+parent_extaddr: "00:12:4b:00:01:ab:cd:ef"
+parent_extaddr: "00-12-4b-00-01-ab-cd-ef"
+parent_extaddr: "0x00124b0001abcdef"
 ```
 
-Runtime Home Assistant text entities can also call:
+`parent_rloc` accepts integer or hexadecimal-style values:
+
+```yaml
+parent_rloc: 0x5800
+parent_rloc: "5800"
+```
+
+## Runtime control
+
+You can change the target parent at runtime from ESPHome lambdas, template text entities, or Home Assistant controls:
 
 ```cpp
 id(preferred_parent).set_parent_extaddr(x);
-id(preferred_parent).set_parent_rloc16(value);
+id(preferred_parent).set_parent_rloc16(x);
 id(preferred_parent).request_switch();
 ```
 
-## OpenThread patching
+A common setup is to expose:
 
-The component registers `apply-openthread-selected-parent-hook.py` automatically as a PlatformIO pre-build script. No manual `platformio_options.extra_scripts` entry is required.
+- a button that calls `request_switch()`;
+- a text entity for the target extended address;
+- a text entity for the target RLOC16.
 
-The patch adds four hooks to ESP-IDF's vendored OpenThread source:
+## Logging
 
-- `thread_preferred_parent_ot_register_parent_response_callback(...)`
-- `thread_preferred_parent_ot_start_parent_discovery(...)`
-- `thread_preferred_parent_ot_start_parent_discovery_unicast(...)`
-- `thread_preferred_parent_ot_request_selected_parent_attach(...)`
+At normal log levels, the component logs the switch lifecycle: discovery attempts, target detection, attach start, attach result, and summaries.
 
-The discovery hook starts `SearchForBetterParent()` but patches the MLE attacher so the discovery cycle is cancelled before Child ID Request. This lets the component collect candidate Parent Responses without detaching from the current parent. With `parent_request_unicast: true`, the same discovery-only path is used, but the Parent Request destination is the configured target ExtAddr. With `early_attach_on_target: true`, the selected-parent attach hook can also interrupt an active discovery-only pass once the target has been observed.
-
-## Expected logs
-
-With normal `INFO` logging, discovery now produces compact lifecycle and summary rows instead of replaying every Parent Response:
-
-```text
-Parent discovery attempt 1/5 for ExtAddr 32a4d516437f9abb
-Starting non-disruptive multicast Parent Request discovery ...
-# or, with parent_request_unicast: true:
-Starting non-disruptive unicast Parent Request discovery to ExtAddr 32a4d516437f9abb ...
-Target Parent Response observed after 680 ms during discovery; early selected-parent attach scheduled in 250 ms
-Discovery summary (early target debounce complete): 11 Parent Responses, 1 target match(es), best target RLOC16 0xb000 RSSI -69
-Discovery result: target observed after 680 ms; starting selected-parent attach after 930 ms total discovery time (250 ms early-attach delay)
-Preferred parent ExtAddr 32a4d516437f9abb was observed; starting selected-parent attach
-Starting selected-parent attach to ExtAddr 32a4d516437f9abb
-Selected-parent attach hook returned YES
-Attach result: success after 3498 ms; ExtAddr 32a4d516437f9abb selected
-Parent Response replay (success target replay): showing 2 buffered response(s)
-Parent Response replay #4 attempt_t+680ms: ExtAddr 32a4d516437f9abb RLOC16 0xb000 RSSI -69 ... device_attached=YES target_match=YES
-```
-
-Set the normal ESPHome logger to `VERY_VERBOSE` when you want every live Parent Response row:
+For detailed MLE diagnostics, enable very verbose logging:
 
 ```yaml
 logger:
   level: VERY_VERBOSE
 ```
 
-At `VERY_VERBOSE`, live rows look like this:
+With `VERY_VERBOSE`, the component logs live Parent Response rows, including target matches and timing information. This is useful when checking whether the target router is visible before attempting selected-parent attach.
+
+During the selected-parent attach phase, the ESPHome API may briefly disconnect if the node is connected over Thread. Use USB serial logs for uninterrupted diagnostics.
+
+## OpenThread patching
+
+The component automatically registers `apply-openthread-selected-parent-hook.py` as a PlatformIO pre-build script. You do not need to add a manual `platformio_options.extra_scripts` entry.
+
+The patch adds OpenThread hooks used to:
+
+- report MLE Parent Responses back to the ESPHome component;
+- start a non-disruptive discovery-only Parent Request cycle;
+- optionally perform unicast Parent Request discovery;
+- request selected-parent attach to the observed target parent.
+
+## Notes and limitations
+
+- This component is designed for experimentation with Thread parent selection.
+- Prefer `parent_extaddr` when possible. RLOC16 values can be convenient for diagnostics, but extended addresses are a better stable identifier for a specific parent.
+- The selected parent must be visible during discovery before the attach phase is started.
+- If the OpenThread patch does not apply cleanly against the ESP-IDF/OpenThread version in your build, selected-parent switching will not work.
+- Keep a serial console attached while developing or debugging, especially if the device's ESPHome API connection depends on Thread connectivity.
+
+## Repository layout
 
 ```text
-Parent Response live #4 attempt_t+680ms: ExtAddr cec5115b300418f0 RLOC16 0xb000 RSSI -69 ... device_attached=YES target_match=YES
+components/thread_preferred_parent/   ESPHome external component and OpenThread patch script
+examples/                             Example ESPHome configuration
+patches/                              OpenThread patch reference
+scripts/                              Helper scripts
 ```
-
-On failure, the final replay still shows all buffered candidates at `INFO`, because that is the useful forensic case.
-
-
-During the selected-parent attach, the ESPHome API may temporarily disconnect if the OpenThread stack drops/rebuilds the Thread route. v12 tries to keep the node attached during the selected-parent Child ID exchange, but USB serial logs are still recommended for uninterrupted MLE diagnostics.
-
-
-### v10 behavior
-
-The selected-parent attach phase now filters MLE Parent Responses: after preflight discovery observes the requested ExtAddr/RLOC16, OpenThread ignores non-target Parent Responses during the disruptive selected-parent attach. This prevents the normal parent-selection heuristic from falling back to the old or strongest parent.
-
-
-## v12 fix
-
-This package fixes a clean-build ordering issue where ESP-IDF/OpenThread 5.5.4 could report `mle.cpp selected-parent candidate preseed` as missing while the old force-detach block was still present. The pre-build patcher now removes the old block before applying the preseed patch and also tolerates the legacy block if encountered.
-### Busy guard and handoff diagnostics
-
-Version v20 ignores a new `Switch Thread Parent` request while a switch is already active. This protects the early-attach path from accidental double button presses in Home Assistant. It also adds one handoff diagnostic log before selected-parent attach starts, showing discovery elapsed time, buffered Parent Response count, and target-match count.
 
