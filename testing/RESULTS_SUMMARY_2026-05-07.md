@@ -59,13 +59,25 @@ Artifacts:
 - `testing/logs/variant-mcast-steady-20260507-174248.log` and `testing/logs/variant-mcast-steady-20260507-174248.csv`
 - `testing/logs/variant-ucast-steady-20260507-174538.log` and `testing/logs/variant-ucast-steady-20260507-174538.csv`
 
-## Aggregate timing statistics (delta from T0)
+## Aggregate timing statistics by variant (delta from T0)
 
-| Measurement | N | Average (ms) | Std. dev (ms) |
-|---|---:|---:|---:|
-| `T1_discovery_start` | 8 | 29.9 | 20.0 |
-| `T2_target_observed` | 2 | 673.0 | 903.7 |
-| `T3_attach_start` | 2 | 673.0 | 903.7 |
-| `T4_child_id_req` | 2 | 698.5 | 939.7 |
-| `T5_attach_done` | 2 | 1834.0 | 2545.6 |
-| `T6_parent_match` | 2 | 1834.0 | 2545.6 |
+| Variant | Measurement | N | Average (ms) | Std. dev (ms) |
+|---|---|---:|---:|---:|
+| `stock` | `T1_discovery_start` | 3 | 3.0 | 0.0 |
+|  | `T2_target_observed` | 0 | — | — |
+|  | `T3_attach_start` | 0 | — | — |
+|  | `T4_child_id_req` | 0 | — | — |
+|  | `T5_attach_done` | 0 | — | — |
+|  | `T6_parent_match` | 0 | — | — |
+| `variant-mcast` | `T1_discovery_start` | 3 | 44.0 | 0.0 |
+|  | `T2_target_observed` | 1 | 1312.0 | 0.0 |
+|  | `T3_attach_start` | 1 | 1312.0 | 0.0 |
+|  | `T4_child_id_req` | 1 | 1363.0 | 0.0 |
+|  | `T5_attach_done` | 1 | 3634.0 | 0.0 |
+|  | `T6_parent_match` | 1 | 3634.0 | 0.0 |
+| `variant-ucast` | `T1_discovery_start` | 3 | 33.7 | 18.8 |
+|  | `T2_target_observed` | 1 | 34.0 | 0.0 |
+|  | `T3_attach_start` | 1 | 34.0 | 0.0 |
+|  | `T4_child_id_req` | 1 | 34.0 | 0.0 |
+|  | `T5_attach_done` | 1 | 34.0 | 0.0 |
+|  | `T6_parent_match` | 1 | 34.0 | 0.0 |
