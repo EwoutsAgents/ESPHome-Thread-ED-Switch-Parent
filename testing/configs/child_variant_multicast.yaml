@@ -1,6 +1,12 @@
 substitutions:
   # Fixed benchmark profile (keep identical across all scenarios)
-  thread_tlv: "<THREAD_TLV_SHARED_BY_ALL_NODES>"
+  thread_channel: "15"
+  thread_pan_id: "0x1234"
+  thread_network_key: "0x00112233445566778899aabbccddeeff"
+  thread_ext_pan_id: "0x1111222233334444"
+  thread_network_name: "OpenClawBench"
+  thread_pskc: "0x445566778899aabbccddeeff00112233"
+  thread_mesh_local_prefix: "fd11:22::/64"
   target_parent_extaddr: "00124b0001abcdef"
 
 esphome:
@@ -8,12 +14,15 @@ esphome:
   friendly_name: Thread Child Variant B Multicast
 
 esp32:
-  board: esp32c6
+  board: esp32-c6-devkitm-1
   framework:
     type: esp-idf
 
 logger:
   level: VERY_VERBOSE
+
+network:
+  enable_ipv6: true
 
 api:
 
@@ -22,12 +31,18 @@ ota:
 
 openthread:
   device_type: MTD
-  tlv: "${thread_tlv}"
+  channel: ${thread_channel}
+  pan_id: ${thread_pan_id}
+  network_key: ${thread_network_key}
+  ext_pan_id: ${thread_ext_pan_id}
+  network_name: "${thread_network_name}"
+  pskc: ${thread_pskc}
+  mesh_local_prefix: ${thread_mesh_local_prefix}
 
 external_components:
   - source:
       type: local
-      path: ../../
+      path: ../../components
     components: [thread_preferred_parent]
 
 thread_preferred_parent:
