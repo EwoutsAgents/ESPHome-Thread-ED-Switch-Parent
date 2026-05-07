@@ -58,6 +58,7 @@ Target parent set to discovered ExtAddr `da97557943a05aac`.
 Artifacts:
 - `testing/logs/variant-mcast-steady-20260507-174248.log` and `testing/logs/variant-mcast-steady-20260507-174248.csv`
 - `testing/logs/variant-ucast-steady-20260507-174538.log` and `testing/logs/variant-ucast-steady-20260507-174538.csv`
+- `testing/logs/stock-steady-20260507-191205.log` and `testing/logs/stock-steady-20260507-191205.csv` (stock compatibility marker validation; T0..T6 all present)
 
 ## Aggregate timing statistics by variant (delta from T0)
 
