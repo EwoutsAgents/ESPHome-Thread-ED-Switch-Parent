@@ -230,6 +230,11 @@ def patch_attach_method_force_detach(root: Path, *, dry_run: bool = False) -> st
     )
 
     def repl(m):
+        """Run repl.
+
+        Returns:
+            Result for this helper function.
+        """
         return (
             m.group(1)
             + "\n    // THREAD_PREFERRED_PARENT_FORCE_DETACH_BEFORE_ATTACH\n"
@@ -405,6 +410,15 @@ def patch_selected_parent_destination(root: Path, *, dry_run: bool = False) -> s
     return write_if_changed(path, text, new_text, dry_run=dry_run)
 
 def patch_accept_selected_parent_without_current_parent_response(root: Path, *, dry_run: bool = False) -> str:
+    """Patch accept selected parent without current parent response in the OpenThread sources.
+
+    Args:
+        root: OpenThread src/core root directory.
+        dry_run: Whether to report changes without writing files.
+
+    Returns:
+        Patch state string such as "already", "missing", or "patched".
+    """
     path = root / "thread/mle.cpp"
 
     replacement = """case kAnyPartition:
@@ -446,6 +460,15 @@ def patch_accept_selected_parent_without_current_parent_response(root: Path, *, 
 
 
 def patch_thread_api(root: Path, *, dry_run: bool = False) -> str:
+    """Patch thread api in the OpenThread sources.
+
+    Args:
+        root: OpenThread src/core root directory.
+        dry_run: Whether to report changes without writing files.
+
+    Returns:
+        Patch state string such as "already", "missing", or "patched".
+    """
     path = root / "api/thread_api.cpp"
     bridge = """
 using thread_preferred_parent_parent_response_callback_t = void (*)(const otThreadParentResponseInfo *aInfo, void *aContext);
@@ -551,6 +574,15 @@ extern "C" bool biparental_ot_request_selected_parent_attach(otInstance *aInstan
 
 
 def patch_thread_api_parent_response_reporting(root: Path, *, dry_run: bool = False) -> str:
+    """Patch thread api parent response reporting in the OpenThread sources.
+
+    Args:
+        root: OpenThread src/core root directory.
+        dry_run: Whether to report changes without writing files.
+
+    Returns:
+        Patch state string such as "already", "missing", or "patched".
+    """
     path = root / "api/thread_api.cpp"
     text = normalize_newlines(path.read_text())
     if "THREAD_PREFERRED_PARENT_PARENT_RESPONSE_REPORTING_HOOK" in text:
@@ -597,6 +629,15 @@ extern "C" void thread_preferred_parent_ot_notify_parent_response(const otThread
 
 
 def patch_thread_api_discovery_bridge(root: Path, *, dry_run: bool = False) -> str:
+    """Patch thread api discovery bridge in the OpenThread sources.
+
+    Args:
+        root: OpenThread src/core root directory.
+        dry_run: Whether to report changes without writing files.
+
+    Returns:
+        Patch state string such as "already", "missing", or "patched".
+    """
     path = root / "api/thread_api.cpp"
     text = normalize_newlines(path.read_text())
 
@@ -712,6 +753,15 @@ extern \"C\" otError thread_preferred_parent_ot_start_parent_discovery_unicast(o
         dry_run=dry_run,
     )
 def patch_mle_parent_response_reporting_declaration(root: Path, *, dry_run: bool = False) -> str:
+    """Patch mle parent response reporting declaration in the OpenThread sources.
+
+    Args:
+        root: OpenThread src/core root directory.
+        dry_run: Whether to report changes without writing files.
+
+    Returns:
+        Patch state string such as "already", "missing", or "patched".
+    """
     path = root / "thread/mle.cpp"
     text = normalize_newlines(path.read_text())
     namespace_idx = text.find("namespace ot")
@@ -741,6 +791,15 @@ def patch_mle_parent_response_reporting_declaration(root: Path, *, dry_run: bool
     return write_if_changed(path, text, text.replace(include_old, include_new, 1), dry_run=dry_run)
 
 def patch_mle_discovery_declaration(root: Path, *, dry_run: bool = False) -> str:
+    """Patch mle discovery declaration in the OpenThread sources.
+
+    Args:
+        root: OpenThread src/core root directory.
+        dry_run: Whether to report changes without writing files.
+
+    Returns:
+        Patch state string such as "already", "missing", or "patched".
+    """
     path = root / "thread/mle.cpp"
     text = normalize_newlines(path.read_text())
     namespace_idx = text.find("namespace ot")
@@ -773,6 +832,15 @@ def patch_mle_discovery_declaration(root: Path, *, dry_run: bool = False) -> str
     return "missing"
 
 def patch_mle_discovery_cancel(root: Path, *, dry_run: bool = False) -> str:
+    """Patch mle discovery cancel in the OpenThread sources.
+
+    Args:
+        root: OpenThread src/core root directory.
+        dry_run: Whether to report changes without writing files.
+
+    Returns:
+        Patch state string such as "already", "missing", or "patched".
+    """
     path = root / "thread/mle.cpp"
     text = normalize_newlines(path.read_text())
     if "THREAD_PREFERRED_PARENT_DISCOVERY_ONLY_CANCEL" in text:
@@ -817,6 +885,15 @@ def patch_mle_discovery_cancel(root: Path, *, dry_run: bool = False) -> str:
         dry_run=dry_run,
     )
 def patch_mle_parent_response_reporting_call(root: Path, *, dry_run: bool = False) -> str:
+    """Patch mle parent response reporting call in the OpenThread sources.
+
+    Args:
+        root: OpenThread src/core root directory.
+        dry_run: Whether to report changes without writing files.
+
+    Returns:
+        Patch state string such as "already", "missing", or "patched".
+    """
     path = root / "thread/mle.cpp"
     text = normalize_newlines(path.read_text())
     if "thread_preferred_parent_ot_notify_parent_response(&parentinfo)" in text:
@@ -848,6 +925,11 @@ def patch_mle_parent_response_reporting_call(root: Path, *, dry_run: bool = Fals
     )
 
     def repl(m):
+        """Run repl.
+
+        Returns:
+            Result for this helper function.
+        """
         return m.group(1).rstrip() + "\n" + call_block
 
     result = replace_regex(
@@ -939,6 +1021,15 @@ def patch_selected_parent_parent_response_filter(root: Path, *, dry_run: bool = 
     )
 
 def patch_parent_response_challenge_log(root: Path, *, dry_run: bool = False) -> str:
+    """Patch parent response challenge log in the OpenThread sources.
+
+    Args:
+        root: OpenThread src/core root directory.
+        dry_run: Whether to report changes without writing files.
+
+    Returns:
+        Patch state string such as "already", "missing", or "patched".
+    """
     path = root / "thread/mle.cpp"
     old = "    SuccessOrExit(error = aRxInfo.mMessage.ReadAndMatchResponseTlvWith(mParentRequestChallenge));\n"
     new = """    error = aRxInfo.mMessage.ReadAndMatchResponseTlvWith(mParentRequestChallenge);
@@ -956,6 +1047,15 @@ def patch_parent_response_challenge_log(root: Path, *, dry_run: bool = False) ->
 
 
 def patch_parent_response_rx_log(root: Path, *, dry_run: bool = False) -> str:
+    """Patch parent response rx log in the OpenThread sources.
+
+    Args:
+        root: OpenThread src/core root directory.
+        dry_run: Whether to report changes without writing files.
+
+    Returns:
+        Patch state string such as "already", "missing", or "patched".
+    """
     path = root / "thread/mle.cpp"
     old = """    aRxInfo.mClass = RxInfo::kAuthoritativeMessage;
 
@@ -973,6 +1073,15 @@ def patch_parent_response_rx_log(root: Path, *, dry_run: bool = False) -> str:
 
 
 def patch_child_id_request_sent_log(root: Path, *, dry_run: bool = False) -> str:
+    """Patch child id request sent log in the OpenThread sources.
+
+    Args:
+        root: OpenThread src/core root directory.
+        dry_run: Whether to report changes without writing files.
+
+    Returns:
+        Patch state string such as "already", "missing", or "patched".
+    """
     path = root / "thread/mle.cpp"
     old = """        if (HasAcceptableParentCandidate() && (SendChildIdRequest() == kErrorNone))
         {
@@ -1001,6 +1110,15 @@ def patch_child_id_request_sent_log(root: Path, *, dry_run: bool = False) -> str
 
 
 def patch_child_id_request_send_fail_log(root: Path, *, dry_run: bool = False) -> str:
+    """Patch child id request send fail log in the OpenThread sources.
+
+    Args:
+        root: OpenThread src/core root directory.
+        dry_run: Whether to report changes without writing files.
+
+    Returns:
+        Patch state string such as "already", "missing", or "patched".
+    """
     path = root / "thread/mle.cpp"
     old = """exit:
     FreeMessageOnError(message, error);
@@ -1023,12 +1141,26 @@ def patch_child_id_request_send_fail_log(root: Path, *, dry_run: bool = False) -
         return "already"
     pattern = r"(Error\s+Mle::Attacher::SendChildIdRequest\s*\([^)]*\)\s*\{.*?)(exit:\s*\n\s*FreeMessageOnError\s*\(\s*message\s*,\s*error\s*\)\s*;\s*\n\s*return\s+error\s*;\s*\n\s*\})"
     def repl(m):
+        """Run repl.
+
+        Returns:
+            Result for this helper function.
+        """
         block = "exit:\n    if ((error != kErrorNone) && (mMode == kSelectedParent))\n    {\n        LogWarn(\"SelectedParent ChildIdRequest send failed err=%s cand=0x%04x\",\n                ErrorToString(error), mParentCandidate.GetRloc16());\n    }\n    FreeMessageOnError(message, error);\n    return error;\n}"
         return m.group(1) + block
     return replace_regex(path, pattern, repl, already="SelectedParent ChildIdRequest send failed", label="selected-parent ChildIdRequest send failure log", dry_run=dry_run)
 
 
 def patch_child_id_request_timeout_log(root: Path, *, dry_run: bool = False) -> str:
+    """Patch child id request timeout log in the OpenThread sources.
+
+    Args:
+        root: OpenThread src/core root directory.
+        dry_run: Whether to report changes without writing files.
+
+    Returns:
+        Patch state string such as "already", "missing", or "patched".
+    """
     path = root / "thread/mle.cpp"
     old = """    case kStateChildIdRequest:
         SetState(kStateIdle);
@@ -1050,6 +1182,15 @@ def patch_child_id_request_timeout_log(root: Path, *, dry_run: bool = False) -> 
 
 
 def patch_child_id_response_security_log(root: Path, *, dry_run: bool = False) -> str:
+    """Patch child id response security log in the OpenThread sources.
+
+    Args:
+        root: OpenThread src/core root directory.
+        dry_run: Whether to report changes without writing files.
+
+    Returns:
+        Patch state string such as "already", "missing", or "patched".
+    """
     path = root / "thread/mle.cpp"
     old = """    VerifyOrExit(aRxInfo.IsNeighborStateValid(), error = kErrorSecurity);
     VerifyOrExit(mState == kStateChildIdRequest);
@@ -1067,6 +1208,15 @@ def patch_child_id_response_security_log(root: Path, *, dry_run: bool = False) -
 
 
 def patch_child_id_response_accept_log(root: Path, *, dry_run: bool = False) -> str:
+    """Patch child id response accept log in the OpenThread sources.
+
+    Args:
+        root: OpenThread src/core root directory.
+        dry_run: Whether to report changes without writing files.
+
+    Returns:
+        Patch state string such as "already", "missing", or "patched".
+    """
     path = root / "thread/mle.cpp"
     old = """    Get().SetStateChild(shortAddress);
 """
@@ -1080,24 +1230,52 @@ def patch_child_id_response_accept_log(root: Path, *, dry_run: bool = False) -> 
 
 
 def patch_child_id_response_reject_log(root: Path, *, dry_run: bool = False) -> str:
+    """Patch child id response reject log in the OpenThread sources.
+
+    Args:
+        root: OpenThread src/core root directory.
+        dry_run: Whether to report changes without writing files.
+
+    Returns:
+        Patch state string such as "already", "missing", or "patched".
+    """
     path = root / "thread/mle.cpp"
     text = normalize_newlines(path.read_text())
     if "SelectedParent ChildIdResponse reject" in text:
         return "already"
     pattern = r"(void\s+Mle::Attacher::HandleChildIdResponse\s*\([^)]*\)\s*\{.*?)(exit:\s*\n\s*LogProcessError\s*\(\s*kTypeChildIdResponse\s*,\s*error\s*\)\s*;\s*\n\s*\})"
     def repl(m):
+        """Run repl.
+
+        Returns:
+            Result for this helper function.
+        """
         block = "exit:\n    if ((error != kErrorNone) && (mMode == kSelectedParent))\n    {\n        LogWarn(\"SelectedParent ChildIdResponse reject err=%s src=0x%04x short=0x%04x\",\n                ErrorToString(error), sourceAddress, shortAddress);\n    }\n    LogProcessError(kTypeChildIdResponse, error);\n}"
         return m.group(1) + block
     return replace_regex(path, pattern, repl, already="SelectedParent ChildIdResponse reject", label="selected-parent ChildIdResponse reject log", dry_run=dry_run)
 
 
 def patch_parent_response_reject_log(root: Path, *, dry_run: bool = False) -> str:
+    """Patch parent response reject log in the OpenThread sources.
+
+    Args:
+        root: OpenThread src/core root directory.
+        dry_run: Whether to report changes without writing files.
+
+    Returns:
+        Patch state string such as "already", "missing", or "patched".
+    """
     path = root / "thread/mle.cpp"
     text = normalize_newlines(path.read_text())
     if "SelectedParent ParentResponse reject" in text:
         return "already"
     pattern = r"(void\s+Mle::Attacher::HandleParentResponse\s*\([^)]*\)\s*\{.*?)(exit:\s*\n\s*LogProcessError\s*\(\s*kTypeParentResponse\s*,\s*error\s*\)\s*;\s*\n\s*\})"
     def repl(m):
+        """Run repl.
+
+        Returns:
+            Result for this helper function.
+        """
         block = "exit:\n    if ((error != kErrorNone) && (mMode == kSelectedParent))\n    {\n        LogWarn(\"SelectedParent ParentResponse reject err=%s src=0x%04x rss=%d cand=0x%04x\",\n                ErrorToString(error), sourceAddress, rss, mParentCandidate.GetRloc16());\n    }\n    LogProcessError(kTypeParentResponse, error);\n}"
         return m.group(1) + block
     return replace_regex(path, pattern, repl, already="SelectedParent ParentResponse reject", label="selected-parent ParentResponse reject log", dry_run=dry_run)
@@ -1127,6 +1305,11 @@ def patch_attach_method_preseed_candidate(root: Path, *, dry_run: bool = False) 
     )
 
     def repl(m):
+        """Run repl.
+
+        Returns:
+            Result for this helper function.
+        """
         return (
             m.group(1)
             + "\n    // THREAD_PREFERRED_PARENT_PRESEED_SELECTED_PARENT\n"
