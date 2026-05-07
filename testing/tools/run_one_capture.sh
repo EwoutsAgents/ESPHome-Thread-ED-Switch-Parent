@@ -40,18 +40,27 @@ echo "[run] router-primary(R1)=$ROUTER_PRIMARY_PORT"
 echo "[run] router-secondary(R2)=$ROUTER_SECONDARY_PORT"
 
 if [[ "$MODE" == "forced-failover" ]]; then
-  echo "[action] Ensure child is initially attached to R1."
-  echo "[action] Trigger the switch command, then power off/disconnect R1 shortly after trigger."
-  read -r -p "Press Enter to start capture when ready..." _
+  echo "[prep] flashing R1 with forced-failover router profile"
+  if ! .venv/bin/esphome run testing/configs/router_ftd_failover.yaml --device "$ROUTER_PRIMARY_PORT" --no-logs; then
+    echo "[warn] forced-failover router profile flash failed; continuing with current R1 firmware"
+  fi
+fi
+
+CAPTURE_ARGS=(
+  --config "$CONFIG"
+  --duration "$DURATION"
+  --out "$LOG"
+  --node child="$CHILD_PORT"
+  --node router1="$ROUTER_PRIMARY_PORT"
+  --node router2="$ROUTER_SECONDARY_PORT"
+)
+
+if [[ "$MODE" == "forced-failover" ]]; then
+  CAPTURE_ARGS+=(--reset-label child --reset-label router1)
 fi
 
 python3 testing/tools/capture_logs.py \
-  --config "$CONFIG" \
-  --duration "$DURATION" \
-  --out "$LOG" \
-  --node child="$CHILD_PORT" \
-  --node router1="$ROUTER_PRIMARY_PORT" \
-  --node router2="$ROUTER_SECONDARY_PORT"
+  "${CAPTURE_ARGS[@]}"
 
 python3 testing/tools/extract_switch_timings.py --in "$LOG" --label child --out "$CSV"
 

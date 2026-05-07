@@ -1,0 +1,55 @@
+substitutions:
+  # Keep dataset identical to all scenarios
+  thread_channel: "15"
+  thread_pan_id: "0x1234"
+  thread_network_key: "0x00112233445566778899aabbccddeeff"
+  thread_ext_pan_id: "0x1111222233334444"
+  thread_network_name: "OpenClawBench"
+  thread_pskc: "0x445566778899aabbccddeeff00112233"
+  thread_mesh_local_prefix: "fd11:22::/64"
+  failover_drop_delay: "28s"
+
+esphome:
+  name: thread-router-failover
+  friendly_name: Thread Router Failover
+  on_boot:
+    priority: -100
+    then:
+      - delay: ${failover_drop_delay}
+      - lambda: |-
+          using esphome::openthread::InstanceLock;
+          auto lock = InstanceLock::try_acquire(0);
+          if (!lock.has_value()) {
+            ESP_LOGW("router_failover", "Could not lock OpenThread instance for forced failover");
+            return;
+          }
+          otInstance *instance = lock->get_instance();
+          otError err = otThreadSetEnabled(instance, false);
+          ESP_LOGI("router_failover", "Forced failover: otThreadSetEnabled(false), status=%d", static_cast<int>(err));
+
+esp32:
+  board: esp32-c6-devkitm-1
+  framework:
+    type: esp-idf
+
+logger:
+  level: VERY_VERBOSE
+  hardware_uart: UART0
+
+network:
+  enable_ipv6: true
+
+api:
+
+ota:
+  - platform: esphome
+
+openthread:
+  device_type: FTD
+  channel: ${thread_channel}
+  pan_id: ${thread_pan_id}
+  network_key: ${thread_network_key}
+  ext_pan_id: ${thread_ext_pan_id}
+  network_name: "${thread_network_name}"
+  pskc: ${thread_pskc}
+  mesh_local_prefix: ${thread_mesh_local_prefix}
