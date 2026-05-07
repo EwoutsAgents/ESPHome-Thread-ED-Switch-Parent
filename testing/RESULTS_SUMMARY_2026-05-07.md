@@ -58,3 +58,14 @@ Target parent set to discovered ExtAddr `da97557943a05aac`.
 Artifacts:
 - `testing/logs/variant-mcast-steady-20260507-174248.log` and `testing/logs/variant-mcast-steady-20260507-174248.csv`
 - `testing/logs/variant-ucast-steady-20260507-174538.log` and `testing/logs/variant-ucast-steady-20260507-174538.csv`
+
+## Aggregate timing statistics (delta from T0)
+
+| Measurement | N | Average (ms) | Std. dev (ms) |
+|---|---:|---:|---:|
+| `T1_discovery_start` | 8 | 29.9 | 20.0 |
+| `T2_target_observed` | 2 | 673.0 | 903.7 |
+| `T3_attach_start` | 2 | 673.0 | 903.7 |
+| `T4_child_id_req` | 2 | 698.5 | 939.7 |
+| `T5_attach_done` | 2 | 1834.0 | 2545.6 |
+| `T6_parent_match` | 2 | 1834.0 | 2545.6 |
