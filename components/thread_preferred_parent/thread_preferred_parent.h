@@ -16,6 +16,8 @@
 
 extern "C" {
 
+// Callback bridge used by the OpenThread patch to report parsed Parent
+// Responses back into the ESPHome component during discovery.
 typedef void (*thread_preferred_parent_parent_response_callback_t)(
     const otThreadParentResponseInfo *aInfo,
     void *aContext
@@ -63,6 +65,9 @@ otError otThreadSearchForPreferredParent(otInstance *aInstance, uint16_t aRloc16
 namespace esphome {
 namespace thread_preferred_parent {
 
+// Coordinates a two-phase preferred-parent handoff:
+//   1. discover candidate Parent Responses without detaching first
+//   2. start a targeted selected-parent attach once the requested parent is seen
 class ThreadPreferredParentComponent : public Component {
  public:
   void setup() override;
@@ -95,18 +100,21 @@ class ThreadPreferredParentComponent : public Component {
   void clear_target();
 
  protected:
+  // How the preferred parent is identified by the user configuration.
   enum class TargetType : uint8_t {
     NONE,
     RLOC16,
     EXTADDR,
   };
 
+  // High-level state for a single preferred-parent switch attempt.
   enum class SwitchPhase : uint8_t {
     IDLE,
     DISCOVERING,
     ATTACHING,
   };
 
+  // User-visible status values surfaced through logging and dump_config().
   enum class Status : uint8_t {
     IDLE,
     DISCOVERING,
@@ -121,11 +129,15 @@ class ThreadPreferredParentComponent : public Component {
     RLOC_UNRESOLVED,
   };
 
+  // Controls whether replay logging shows all buffered Parent Responses or only
+  // the responses that matched the configured target.
   enum class ReplayMode : uint8_t {
     INFO_ALL,
     INFO_TARGET_ONLY,
   };
 
+  // Small ring-buffer entry used to preserve recent Parent Responses for later
+  // replay when a discovery or attach attempt succeeds or fails.
   struct BufferedParentResponse {
     bool valid{false};
     uint32_t sequence{0};
@@ -168,6 +180,8 @@ class ThreadPreferredParentComponent : public Component {
   void log_discovery_summary_(const char *reason) const;
   void dump_buffered_parent_responses_(const char *reason, ReplayMode mode);
 
+  // Keep a short history so failures can still be explained without spamming
+  // the live log at INFO level for every response.
   static constexpr uint8_t PARENT_RESPONSE_BUFFER_SIZE = 16;
 
   TargetType target_type_{TargetType::NONE};

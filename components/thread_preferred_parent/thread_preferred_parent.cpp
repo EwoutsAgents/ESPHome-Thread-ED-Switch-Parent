@@ -5,6 +5,7 @@ namespace thread_preferred_parent {
 
 static const char *const TAG = "thread_preferred_parent";
 
+// Treat all-whitespace strings as an explicit "clear this setting" request.
 static bool is_blank_string_(const std::string &text) {
   return text.find_first_not_of(" \t\r\n") == std::string::npos;
 }
@@ -124,6 +125,7 @@ void ThreadPreferredParentComponent::request_switch(const std::string &extaddr) 
 }
 
 void ThreadPreferredParentComponent::reset_parent_response_tracking_() {
+  // Reset per-attempt observation state before each discovery cycle.
   this->parent_response_count_ = 0;
   this->parent_response_last_dumped_count_ = 0;
   this->parent_response_target_count_ = 0;
@@ -140,6 +142,7 @@ void ThreadPreferredParentComponent::reset_parent_response_tracking_() {
 }
 
 void ThreadPreferredParentComponent::begin_switch_() {
+  // Start a fresh preferred-parent handoff attempt from the discovery phase.
   this->attempts_ = 0;
   this->active_ = true;
   this->phase_ = SwitchPhase::DISCOVERING;
@@ -198,11 +201,14 @@ void ThreadPreferredParentComponent::loop() {
 
   switch (this->phase_) {
     case SwitchPhase::DISCOVERING: {
+      // Wait until the active discovery window or early-attach debounce expires.
       if (this->phase_deadline_ms_ != 0 && static_cast<int32_t>(now - this->phase_deadline_ms_) < 0) {
         return;
       }
 
       if (this->phase_deadline_ms_ != 0) {
+        // The current discovery window has ended; decide whether to attach or
+        // schedule another discovery pass.
         const uint32_t discovery_elapsed_ms = now - this->current_attempt_start_ms_;
         const bool early_attach_deadline = this->early_attach_pending_ && this->target_observed_this_attempt_;
         this->log_discovery_summary_(early_attach_deadline ? "early target debounce complete" : "discovery window complete");
@@ -251,6 +257,8 @@ void ThreadPreferredParentComponent::loop() {
         this->early_attach_pending_ = false;
       }
 
+      // No suitable target was acted on during the last window, so either try
+      // again or fail after the configured retry budget is exhausted.
       if (this->attempts_ >= this->max_attempts_) {
         this->dump_buffered_parent_responses_("failure replay", ReplayMode::INFO_ALL);
         ESP_LOGW(TAG, "Attach result: failed after %u discovery attempts; %s was not selected",
@@ -262,6 +270,7 @@ void ThreadPreferredParentComponent::loop() {
         return;
       }
 
+      // Begin another non-disruptive Parent Request sweep.
       this->attempts_++;
       this->target_observed_this_attempt_ = false;
       std::memset(&this->observed_target_extaddr_, 0, sizeof(this->observed_target_extaddr_));
@@ -303,6 +312,8 @@ void ThreadPreferredParentComponent::loop() {
     }
 
     case SwitchPhase::ATTACHING:
+      // While attaching, only act once the selected-parent deadline expires or
+      // the current parent changes to the requested target.
       if (this->phase_deadline_ms_ != 0 && static_cast<int32_t>(now - this->phase_deadline_ms_) < 0) {
         return;
       }
@@ -355,6 +366,8 @@ void ThreadPreferredParentComponent::handle_parent_response_(const otThreadParen
     return;
   }
 
+  // Every Parent Response is tracked so discovery behavior can be summarized
+  // even when the live log is running at a lower verbosity.
   this->parent_response_count_++;
   const bool target_match = this->parent_response_matches_target_(*info);
 
@@ -370,6 +383,9 @@ void ThreadPreferredParentComponent::handle_parent_response_(const otThreadParen
     }
 
     if (first_target_response) {
+      // When enabled, shorten the discovery window once the requested parent is
+      // observed so attach can begin quickly without waiting for the full retry
+      // interval to elapse.
       const uint32_t observed_ms = millis() - this->current_attempt_start_ms_;
       this->discovery_target_observed_ms_ = observed_ms;
       if (this->active_ && this->phase_ == SwitchPhase::DISCOVERING && this->early_attach_on_target_ &&
@@ -538,8 +554,10 @@ otError ThreadPreferredParentComponent::start_parent_discovery_(otInstance *inst
     return thread_preferred_parent_ot_start_parent_discovery(instance);
   }
 
-  // Fallback: OpenThread public API. This may switch to a better parent on its
-  // own, so the patched discovery-only hook is strongly preferred.
+  // Final fallback: use OpenThread's public better-parent search API. This can
+  // be disruptive because upstream OpenThread is free to continue into a real
+  // reattach flow, so the patched discovery-only hooks are preferred whenever
+  // they are available.
   ESP_LOGW(TAG, "Discovery-only OpenThread hook missing; falling back to otThreadSearchForBetterParent()");
   return otThreadSearchForBetterParent(instance);
 }
@@ -564,6 +582,8 @@ otError ThreadPreferredParentComponent::start_selected_parent_attach_(otInstance
   }
 
   if (this->selected_parent_hook_available_()) {
+    // Prefer the custom selected-parent bridge because it directly constrains
+    // the attach attempt to the observed or configured target ExtAddr.
     ESP_LOGI(TAG, "Starting selected-parent attach to ExtAddr %s", this->extaddr_to_string_(selected).c_str());
     const bool accepted = this->request_selected_parent_attach_(instance, selected);
     ESP_LOGI(TAG, "Selected-parent attach hook returned %s", YESNO(accepted));
@@ -576,6 +596,8 @@ otError ThreadPreferredParentComponent::start_selected_parent_attach_(otInstance
 
   switch (this->target_type_) {
     case TargetType::EXTADDR:
+      // Older patch variants exposed different helper symbols; try the most
+      // specific ones first, then fall back to the generic better-parent flow.
       if (otThreadSearchForPreferredParentExtAddress != nullptr) {
         return otThreadSearchForPreferredParentExtAddress(instance, &this->target_extaddr_);
       }
@@ -670,6 +692,8 @@ bool ThreadPreferredParentComponent::parse_rloc16_(const std::string &text, uint
   const size_t last = text.find_last_not_of(" \t\r\n");
 
   size_t pos = first;
+  // Accept both bare hex and 0x-prefixed forms for convenience in YAML and
+  // runtime service calls.
   if ((last - pos + 1) >= 2 && text[pos] == '0' && (text[pos + 1] == 'x' || text[pos + 1] == 'X')) {
     pos += 2;
   }
@@ -724,6 +748,7 @@ bool ThreadPreferredParentComponent::parse_extaddr_(const std::string &text, otE
     return false;
   }
 
+  // Convert the normalized 16 hex digits into the 8-byte ExtAddr structure.
   for (size_t i = 0; i < sizeof(out->m8); i++) {
     int high = hex_to_nibble_(hex[i * 2]);
     int low = hex_to_nibble_(hex[i * 2 + 1]);

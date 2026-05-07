@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""PlatformIO/ESPHome pre-build script for Thread selected-parent OpenThread hook.
+"""Patch ESP-IDF's vendored OpenThread sources for preferred-parent support.
 
 This script is placed inside the ESPHome external component and is registered
 from components/thread_preferred_parent/__init__.py. It patches ESP-IDF's
@@ -10,7 +10,7 @@ vendored OpenThread core with a small C bridge:
 The patcher intentionally uses tolerant regular expressions because ESPHome /
 PlatformIO may install slightly different ESP-IDF/OpenThread revisions.
 
-v12 notes:
+Current patch notes:
   * fix clean-build ordering: remove the legacy force-detach block before
     applying candidate preseed, so ESP-IDF/OpenThread 5.5.4 does not fail
     with a required preseed regex miss.
@@ -44,16 +44,19 @@ MARKER = "THREAD_PREFERRED_PARENT_SELECTED_PARENT_HOOK"
 
 
 def normalize_newlines(text: str) -> str:
+    """Normalize file content to LF so patch matching is platform-independent."""
     return text.replace("\r\n", "\n")
 
 
 def backup_once(path: Path) -> None:
+    """Create a one-time sibling backup before the first in-place patch."""
     backup = path.with_suffix(path.suffix + ".thread-preferred-parent.bak")
     if not backup.exists():
         shutil.copy2(path, backup)
 
 
 def write_if_changed(path: Path, old: str, new: str, *, dry_run: bool = False) -> str:
+    """Write a patched file only when content actually changed."""
     if old == new:
         return "already"
     if not dry_run:
@@ -115,6 +118,7 @@ def find_function_span(text: str, signature_pattern: str) -> Optional[tuple[int,
 
 
 def replace_literal(path: Path, old: str, new: str, *, already: str, dry_run: bool = False) -> str:
+    """Replace a single exact snippet while remaining idempotent."""
     text = normalize_newlines(path.read_text())
     old = normalize_newlines(old)
     new = normalize_newlines(new)
@@ -135,6 +139,7 @@ def replace_regex(
     label: str,
     dry_run: bool = False,
 ) -> str:
+    """Apply one regex-based patch and report whether it matched."""
     text = normalize_newlines(path.read_text())
     if already in text:
         return "already"
@@ -147,6 +152,7 @@ def replace_regex(
 
 
 def patch_mle_hpp(root: Path, *, dry_run: bool = False) -> str:
+    """Declare the selected-parent attach entry point in mle.hpp."""
     path = root / "thread/mle.hpp"
     declaration = """    /**
      * Starts targeted attach flow to a selected parent by extended address.
@@ -172,6 +178,7 @@ def patch_mle_hpp(root: Path, *, dry_run: bool = False) -> str:
 
 
 def patch_attach_method(root: Path, *, dry_run: bool = False) -> str:
+    """Add Mle::AttachToSelectedParent() to mle.cpp."""
     path = root / "thread/mle.cpp"
     method = """
 Error Mle::AttachToSelectedParent(const Mac::ExtAddress &aExtAddress)
@@ -206,6 +213,11 @@ exit:
 
 
 def patch_attach_method_force_detach(root: Path, *, dry_run: bool = False) -> str:
+    """Legacy patch: insert a detach before selected-parent attach.
+
+    Newer revisions remove this behavior again, but the helper remains so older
+    partially-patched trees can still be recognized or upgraded safely.
+    """
     path = root / "thread/mle.cpp"
     text = normalize_newlines(path.read_text())
     if "THREAD_PREFERRED_PARENT_FORCE_DETACH_BEFORE_ATTACH" in text:
@@ -359,7 +371,8 @@ def patch_selected_parent_destination(root: Path, *, dry_run: bool = False) -> s
     }
 """
 
-    # Common OpenThread shape, immediately before the final send:
+    # Match the compact destination-selection branch immediately before the
+    # final message send, rather than replacing a wider section of the function.
     #   #if OPENTHREAD_FTD && OPENTHREAD_CONFIG_PARENT_SEARCH_ENABLE
     #       if (aType == kToSelectedRouter) { ... } else
     #   #endif
@@ -825,7 +838,7 @@ def patch_mle_parent_response_reporting_call(root: Path, *, dry_run: bool = Fals
 """
 
     # Preferred insertion point: after OpenThread's optional parent-response
-    # callback block, once source address, ExtAddr, RSSI and connectivity TLV
+    # callback block, once source address, ExtAddr, RSSI, and connectivity TLV
     # have all been parsed.
     pattern = (
         r"(#if\s+OPENTHREAD_CONFIG_MLE_PARENT_RESPONSE_CALLBACK_API_ENABLE\s*\n"
@@ -902,8 +915,8 @@ def patch_selected_parent_parent_response_filter(root: Path, *, dry_run: bool = 
 
     # Best insertion point: immediately after the component's parent-response
     # reporting call. At this point extAddress, sourceAddress, RSSI, and
-    # connectivity TLVs are parsed, but before OpenThread updates the parent
-    # candidate with the received response.
+    # connectivity TLVs are parsed, but OpenThread has not yet promoted the
+    # received response into the active parent candidate.
     result = replace_regex(
         path,
         r"(thread_preferred_parent_ot_notify_parent_response\s*\(\s*&parentinfo\s*\)\s*;\s*\n\s*\}\s*)",
@@ -1269,6 +1282,7 @@ def patch_child_id_response_accept_log_regex(root: Path, *, dry_run: bool = Fals
     )
 
 def apply_patches(root: Path, *, dry_run: bool = False) -> int:
+    """Apply the full preferred-parent patch set to an OpenThread src/core tree."""
     root = root.expanduser().resolve()
     print(f"[thread_preferred_parent] OpenThread src/core: {root}")
 
@@ -1352,6 +1366,7 @@ def platformio_package_root() -> Optional[Path]:
 
 
 def run_as_platformio_script() -> Optional[int]:
+    """Patch the active PlatformIO framework package when imported as a hook."""
     packages_dir = platformio_package_root()
     if packages_dir is None:
         return None
@@ -1364,6 +1379,7 @@ def run_as_platformio_script() -> Optional[int]:
 
 
 def main() -> int:
+    """CLI entry point for manually patching a chosen OpenThread source tree."""
     parser = argparse.ArgumentParser(description="Patch ESP-IDF's vendored OpenThread core.")
     parser.add_argument("root", nargs="?", type=Path, default=DEFAULT_ROOT, help="OpenThread src/core root to patch")
     parser.add_argument("--dry-run", action="store_true", help="Report what would be patched without writing files")

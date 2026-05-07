@@ -1,3 +1,10 @@
+"""ESPHome configuration glue for the Thread preferred-parent component.
+
+This module validates YAML options, wires the generated C++ component into the
+ESPHome codegen pipeline, and automatically registers the pre-build script that
+patches the vendored OpenThread sources when the external component is used.
+"""
+
 import os
 
 import esphome.codegen as cg
@@ -11,6 +18,7 @@ ThreadPreferredParentComponent = thread_preferred_parent_ns.class_(
     "ThreadPreferredParentComponent", cg.Component
 )
 
+# Configuration keys exposed in YAML.
 CONF_PARENT_RLOC = "parent_rloc"
 CONF_PARENT_EXTADDR = "parent_extaddr"
 CONF_MAX_ATTEMPTS = "max_attempts"
@@ -70,6 +78,11 @@ def validate_extaddr(value):
 
 
 def validate_identifier(config):
+    """Require exactly zero or one preferred-parent identifier fields.
+
+    The component can target a parent by either RLOC16 or extended address, but
+    not both at the same time.
+    """
     has_rloc = CONF_PARENT_RLOC in config
     has_extaddr = CONF_PARENT_EXTADDR in config
     if has_rloc and has_extaddr:
@@ -98,9 +111,11 @@ CONFIG_SCHEMA = cv.All(
 
 
 async def to_code(config):
-    # Register the PlatformIO pre-build script automatically. This lets Home
-    # Assistant ESPHome add-on users consume the external component directly
-    # without manually copying scripts into /config/esphome/scripts.
+    """Generate the C++ component and register its OpenThread patch script."""
+
+    # Register the pre-build hook automatically so Home Assistant / ESPHome
+    # add-on users can consume the external component without manually copying
+    # helper scripts into their local ESPHome project.
     cg.add_platformio_option("extra_scripts", [f"pre:{SCRIPT_PATH}"])
 
     var = cg.new_Pvariable(config[CONF_ID])
