@@ -7,10 +7,16 @@ substitutions:
   thread_network_name: "OpenClawBench"
   thread_pskc: "0x445566778899aabbccddeeff00112233"
   thread_mesh_local_prefix: "fd11:22::/64"
+  auto_trigger_switch: "true"
+  auto_trigger_delay: "25s"
 
 esphome:
   name: thread-child-stock
   friendly_name: Thread Child Stock
+  on_boot:
+    priority: -100
+    then:
+      - script.execute: stock_trigger_switch
 
 esp32:
   board: esp32-c6-devkitm-1
@@ -19,6 +25,7 @@ esp32:
 
 logger:
   level: VERY_VERBOSE
+  hardware_uart: UART0
 
 network:
   enable_ipv6: true
@@ -38,8 +45,32 @@ openthread:
   pskc: ${thread_pskc}
   mesh_local_prefix: ${thread_mesh_local_prefix}
 
+globals:
+  - id: stock_switch_requested_once
+    type: bool
+    restore_value: no
+    initial_value: "false"
+
+script:
+  - id: stock_trigger_switch
+    mode: single
+    then:
+      - if:
+          condition:
+            lambda: 'return ${auto_trigger_switch};'
+          then:
+            - delay: ${auto_trigger_delay}
+            - if:
+                condition:
+                  lambda: 'return !id(stock_switch_requested_once);'
+                then:
+                  - lambda: 'id(stock_switch_requested_once) = true;'
+                  - logger.log: "AUTO trigger: pressing stock switch button"
+                  - button.press: stock_switch_button
+
 button:
   - platform: template
+    id: stock_switch_button
     name: "Stock: Search for better parent"
     on_press:
       - lambda: |-

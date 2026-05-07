@@ -34,6 +34,12 @@ def main() -> int:
         default=Path('testing/configs/child_variant_multicast.yaml'),
         help='ESPHome YAML used by `esphome logs`.',
     )
+    parser.add_argument(
+        '--reset-label',
+        action='append',
+        default=['child'],
+        help='Node label(s) that should be reset before log streaming (default: child).',
+    )
     args = parser.parse_args()
 
     args.out.parent.mkdir(parents=True, exist_ok=True)
@@ -44,6 +50,8 @@ def main() -> int:
             raise SystemExit(f'Invalid --node value: {item}')
         label, port = item.split('=', 1)
         mappings.append((label.strip(), port.strip()))
+
+    reset_labels = {x.strip() for x in args.reset_label if x.strip()}
 
     procs: list[tuple[str, subprocess.Popen]] = []
     threads: list[threading.Thread] = []
@@ -63,6 +71,8 @@ def main() -> int:
                 '--device',
                 port,
             ]
+            if label in reset_labels:
+                cmd.append('--reset')
             proc = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True, bufsize=1)
             procs.append((label, proc))
             t = threading.Thread(target=stream_reader, args=(f'[{label}]', proc, out), daemon=True)

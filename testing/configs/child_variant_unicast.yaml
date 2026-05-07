@@ -8,10 +8,16 @@ substitutions:
   thread_pskc: "0x445566778899aabbccddeeff00112233"
   thread_mesh_local_prefix: "fd11:22::/64"
   target_parent_extaddr: "00124b0001abcdef"
+  auto_trigger_switch: "true"
+  auto_trigger_delay: "25s"
 
 esphome:
   name: thread-child-variant-b-ucast
   friendly_name: Thread Child Variant B Unicast
+  on_boot:
+    priority: -100
+    then:
+      - script.execute: variant_b_ucast_trigger_switch
 
 esp32:
   board: esp32-c6-devkitm-1
@@ -20,6 +26,7 @@ esp32:
 
 logger:
   level: VERY_VERBOSE
+  hardware_uart: UART0
 
 network:
   enable_ipv6: true
@@ -57,8 +64,32 @@ thread_preferred_parent:
   require_selected_parent_hook: true
   log_parent_responses: true
 
+globals:
+  - id: variant_b_ucast_switch_requested_once
+    type: bool
+    restore_value: no
+    initial_value: "false"
+
+script:
+  - id: variant_b_ucast_trigger_switch
+    mode: single
+    then:
+      - if:
+          condition:
+            lambda: 'return ${auto_trigger_switch};'
+          then:
+            - delay: ${auto_trigger_delay}
+            - if:
+                condition:
+                  lambda: 'return !id(variant_b_ucast_switch_requested_once);'
+                then:
+                  - lambda: 'id(variant_b_ucast_switch_requested_once) = true;'
+                  - logger.log: "AUTO trigger: pressing Variant B unicast switch button"
+                  - button.press: variant_b_ucast_switch_button
+
 button:
   - platform: template
+    id: variant_b_ucast_switch_button
     name: "Variant B (unicast): Switch parent"
     on_press:
       - lambda: |-
