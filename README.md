@@ -27,6 +27,21 @@ The component uses a two-phase flow:
 - Automatically registers the OpenThread patch script as a PlatformIO pre-build script.
 - Provides safeguards such as attach timeouts and a busy guard for repeated switch requests.
 
+## Parent switching process
+
+In a typical Thread network, an End Device is attached to exactly one parent router. During a normal attach or parent-search process, the End Device sends an multicast MLE Parent Request, receives Parent Responses from nearby routers or REEDs, lets the Thread stack evaluate the available candidates, and then attaches to the parent selected by the stack. This selection is normally based on network and link-quality criteria such as link quality (RSSI based), router connectivity, and child capacity. In other words, the application cannot directly tell the Thread stack: “attach to this exact parent now.”
+
+This component implements a more controlled process for parent switching. Instead of immediately detaching or forcing a blind reattach, it first performs a discovery/preflight phase while the device remains attached to its current parent. During this phase, it sends an MLE Parent Request, either multicast or unicast, records the Parent Response(s) (to check whether the configured target parent is in reach).
+
+If the target parent is observed, the component starts a selected-parent attach using the patched OpenThread hook. This bypasses the normal candidate-selection step and attempts to attach specifically to the observed target parent, identified by extended address or RLOC16. If the target is not observed, or if the selected-parent attach does not complete within the configured timeout, the component retries according to `max_attempts` and `retry_interval`.
+
+This makes the component useful for controlled experiments, diagnostics, and repeatable parent-selection tests. It should not be treated as a general-purpose production parent-selection mechanism, because it relies on patched OpenThread internals and intentionally overrides part of the normal Thread parent-selection behavior.
+
+Note, the component does not continuously alter OpenThread's normal parent switching behavior while idle. Normal mechanisms such as periodic parent search, reattach after parent loss, and Child Supervision remain OpenThread-controlled.
+
+The patched behavior is only intended to take effect during an explicit `request_switch()` operation. During that operation, the component temporarily uses OpenThread's parent-search machinery for discovery/preflight and then starts a selected-parent attach toward the configured target. This selected-parent attach intentionally bypasses the normal better-parent comparison for that attach attempt.
+
+
 ## Requirements
 
 - ESPHome with ESP-IDF framework support.
