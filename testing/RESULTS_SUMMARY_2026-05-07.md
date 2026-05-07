@@ -52,6 +52,7 @@ Target parent set to discovered ExtAddr `da97557943a05aac`.
 
 | Scenario | Mode | T0 | T1 | T2 | T3 | T4 | T5 | T6 | Key timing |
 |---|---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|---|
+| `stock` | `steady` | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | T2@11ms, T5@40ms |
 | `variant-mcast` | `steady` | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | T2@1312ms, T5@3634ms |
 | `variant-ucast` | `steady` | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | T2@34ms, T5@34ms |
 
