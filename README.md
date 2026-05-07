@@ -9,7 +9,8 @@ The component uses a two-phase flow:
 1. **Discovery / preflight**: send an MLE Parent Request (multicast *or* unicast) while keeping the device attached to its current parent. During this phase, the component collects Parent Responses, logs candidates, checks whether the configured target parent appears, and retries discovery if the target is not visible.
 2. **Selected-parent attach**: when the target parent is observed, invoke the patched OpenThread hook to start an attach attempt toward that selected parent. This bypasses the normal parent-selection step and directs the attach attempt toward the observed target parent.
 
-> [!WARNING] This is an experimental component. It patches ESP-IDF's vendored OpenThread source during the PlatformIO build. Use it for testing and diagnostics, not as a general-purpose production Thread parent-selection mechanism.
+> [!WARNING]
+> This is an experimental component. It patches ESP-IDF's vendored OpenThread source during the PlatformIO build. Use it for testing and diagnostics, not as a general-purpose production Thread parent-selection mechanism.
 
 ## Features
 
