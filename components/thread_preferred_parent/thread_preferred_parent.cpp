@@ -13,6 +13,10 @@ static bool is_blank_string_(const std::string &text) {
 void ThreadPreferredParentComponent::setup() {
   ESP_LOGI(TAG, "Thread preferred-parent component initialized");
 
+  // The OpenThread patch optionally exports a Parent Response callback bridge.
+  // When present, it gives this component visibility into every Parent
+  // Response seen during discovery so we can decide when to trigger the
+  // selected-parent attach and later explain what happened in the logs.
   if (thread_preferred_parent_ot_register_parent_response_callback != nullptr) {
     thread_preferred_parent_ot_register_parent_response_callback(
         &ThreadPreferredParentComponent::parent_response_callback_, this);
@@ -43,6 +47,9 @@ void ThreadPreferredParentComponent::dump_config() {
 }
 
 void ThreadPreferredParentComponent::set_parent_rloc16(uint16_t rloc16) {
+  // Switching to an RLOC16 target invalidates any previously configured
+  // extended-address target. The component always treats exactly one target
+  // identifier as authoritative.
   this->target_type_ = TargetType::RLOC16;
   this->target_rloc16_ = rloc16;
   std::memset(&this->target_extaddr_, 0, sizeof(this->target_extaddr_));
@@ -51,6 +58,8 @@ void ThreadPreferredParentComponent::set_parent_rloc16(uint16_t rloc16) {
 
 bool ThreadPreferredParentComponent::set_parent_rloc16(const std::string &rloc16) {
   if (is_blank_string_(rloc16)) {
+    // A blank string is treated as an explicit clear request so service calls
+    // and YAML templating can remove the current target without a separate API.
     if (this->target_type_ == TargetType::RLOC16) {
       this->clear_target();
     } else {
@@ -79,6 +88,8 @@ bool ThreadPreferredParentComponent::set_parent_extaddr(const std::string &extad
     return false;
   }
 
+  // As with the RLOC16 setter, selecting an ExtAddr target clears the other
+  // identifier form so downstream matching logic has a single source of truth.
   this->target_type_ = TargetType::EXTADDR;
   this->target_rloc16_ = 0xFFFE;
   this->target_extaddr_ = parsed;
@@ -88,6 +99,8 @@ bool ThreadPreferredParentComponent::set_parent_extaddr(const std::string &extad
 }
 
 void ThreadPreferredParentComponent::request_switch() {
+  // Only one switch workflow may run at a time because discovery state,
+  // buffered Parent Responses, and target-observation flags are all per-run.
   if (this->active_) {
     ESP_LOGW(TAG,
              "Ignoring preferred-parent switch request while busy: phase=%s status=%s active_target=%s attempt=%u/%u",
@@ -157,6 +170,8 @@ void ThreadPreferredParentComponent::begin_switch_() {
 }
 
 void ThreadPreferredParentComponent::clear_target() {
+  // Reset all local targeting state first so any subsequent loop iteration sees
+  // the component as fully idle even if OpenThread cleanup below cannot run.
   this->target_type_ = TargetType::NONE;
   this->target_rloc16_ = 0xFFFE;
   std::memset(&this->target_extaddr_, 0, sizeof(this->target_extaddr_));
@@ -168,6 +183,8 @@ void ThreadPreferredParentComponent::clear_target() {
 
   auto lock = esphome::openthread::InstanceLock::try_acquire(0);
   if (lock.has_value()) {
+    // Best-effort cleanup: remove any preferred-parent hint that an older or
+    // alternate patch may have left inside the OpenThread instance.
     this->clear_preferred_parent_in_ot_(lock->get_instance());
   }
 }
@@ -175,10 +192,14 @@ void ThreadPreferredParentComponent::clear_target() {
 void ThreadPreferredParentComponent::loop() {
   const uint32_t now = millis();
 
+  // Most iterations are intentionally cheap. The component becomes active only
+  // while a requested parent switch is in progress.
   if (!this->active_) {
     return;
   }
 
+  // OpenThread access is serialized through InstanceLock. If we cannot acquire
+  // it right now, simply try again on the next loop without disturbing state.
   auto lock = esphome::openthread::InstanceLock::try_acquire(0);
   if (!lock.has_value()) {
     return;
@@ -186,6 +207,9 @@ void ThreadPreferredParentComponent::loop() {
 
   otInstance *instance = lock->get_instance();
 
+  // Success is defined by the device's actual current parent, not merely by
+  // whether an attach request was accepted. This keeps the component grounded
+  // in observed Thread state instead of optimistic API return values.
   if (this->current_parent_matches_(instance)) {
     const uint32_t attach_elapsed_ms = this->attach_start_ms_ == 0 ? 0 : now - this->attach_start_ms_;
     ESP_LOGI(TAG, "Thread parent switch succeeded; current parent is %s", this->target_to_string_().c_str());
@@ -214,6 +238,9 @@ void ThreadPreferredParentComponent::loop() {
         this->log_discovery_summary_(early_attach_deadline ? "early target debounce complete" : "discovery window complete");
 
         if (this->target_observed_this_attempt_) {
+          // We saw at least one Parent Response from the requested target during
+          // this attempt, so discovery has done its job. The next step is to
+          // convert that observation into a constrained selected-parent attach.
           if (early_attach_deadline) {
             ESP_LOGI(TAG,
                      "Discovery result: target observed after %lu ms; starting selected-parent attach after %lu ms total discovery time (%u ms early-attach delay)",
@@ -233,6 +260,9 @@ void ThreadPreferredParentComponent::loop() {
           ESP_LOGI(TAG, "Preferred parent %s was observed; starting selected-parent attach", this->target_to_string_().c_str());
           otError attach_error = this->start_selected_parent_attach_(instance);
           if (attach_error == OT_ERROR_NONE) {
+            // Discovery and attach use separate deadlines because the first is
+            // a passive observation window, while the second waits for the real
+            // Thread parent relationship to change.
             this->phase_ = SwitchPhase::ATTACHING;
             this->attach_start_ms_ = millis();
             this->phase_deadline_ms_ = now + this->selected_attach_timeout_ms_;
@@ -277,6 +307,8 @@ void ThreadPreferredParentComponent::loop() {
       this->reset_parent_response_tracking_();
 
       const otDeviceRole role = otThreadGetDeviceRole(instance);
+      // Capture the current role/parent before starting discovery so the logs
+      // show what the node was attached to at the beginning of each attempt.
       ESP_LOGI(TAG, "Thread role before discovery: %s", device_role_to_string_(role));
       otRouterInfo current_parent{};
       if (otThreadGetParentInfo(instance, &current_parent) == OT_ERROR_NONE) {
@@ -290,6 +322,9 @@ void ThreadPreferredParentComponent::loop() {
                this->target_to_string_().c_str());
       otError discovery_error = this->start_parent_discovery_(instance);
       if (discovery_error == OT_ERROR_NONE) {
+        // When early attach is not already armed by a just-arrived target
+        // response, keep the standard discovery window open for the configured
+        // retry interval.
         if (!this->early_attach_pending_) {
           this->phase_deadline_ms_ = now + this->retry_interval_ms_;
         }
@@ -318,6 +353,8 @@ void ThreadPreferredParentComponent::loop() {
         return;
       }
       {
+        // The attach request was launched, but the device never actually moved
+        // to the requested parent before the timeout expired.
         const otDeviceRole role = otThreadGetDeviceRole(instance);
         otRouterInfo parent_info{};
         if (otThreadGetParentInfo(instance, &parent_info) == OT_ERROR_NONE) {
@@ -343,6 +380,8 @@ void ThreadPreferredParentComponent::loop() {
 }
 
 void ThreadPreferredParentComponent::parent_response_callback_(const otThreadParentResponseInfo *info, void *context) {
+  // The C callback exported by the patch forwards back into the owning C++
+  // component instance. A null context means registration never completed.
   if (context == nullptr) {
     return;
   }
@@ -350,6 +389,8 @@ void ThreadPreferredParentComponent::parent_response_callback_(const otThreadPar
 }
 
 bool ThreadPreferredParentComponent::parent_response_matches_target_(const otThreadParentResponseInfo &info) const {
+  // Match using whichever identifier form the user configured. Discovery may
+  // observe many candidates, but only one of them is considered the target.
   switch (this->target_type_) {
     case TargetType::RLOC16:
       return info.mRloc16 == this->target_rloc16_;
@@ -400,6 +441,8 @@ void ThreadPreferredParentComponent::handle_parent_response_(const otThreadParen
   }
 
   const uint32_t now = millis();
+  // Preserve the latest responses in sequence order so timeout and failure logs
+  // can replay what discovery actually saw, even if the live VV log was off.
   BufferedParentResponse &entry = this->parent_response_buffer_[this->parent_response_buffer_head_];
   entry.valid = true;
   entry.sequence = this->parent_response_count_;
@@ -436,6 +479,8 @@ void ThreadPreferredParentComponent::log_parent_response_vv_(const BufferedParen
 }
 
 void ThreadPreferredParentComponent::log_discovery_summary_(const char *reason) const {
+  // Summarize discovery at INFO level so normal logs still reveal whether the
+  // requested target was ever seen and, if so, how strong its best RSSI was.
   if (this->best_target_rssi_valid_) {
     ESP_LOGI(TAG,
              "Discovery summary (%s): %lu Parent Responses, %lu target match(es), best target RLOC16 0x%04x RSSI %d",
@@ -453,6 +498,8 @@ void ThreadPreferredParentComponent::dump_buffered_parent_responses_(const char 
     return;
   }
 
+  // Avoid replaying the same buffered responses multiple times across repeated
+  // timeout/failure/success paths.
   if (this->parent_response_count_ == this->parent_response_last_dumped_count_) {
     ESP_LOGI(TAG, "Parent Response replay (%s): no new responses", reason);
     return;
@@ -464,6 +511,8 @@ void ThreadPreferredParentComponent::dump_buffered_parent_responses_(const char 
   const uint32_t first_sequence =
       this->parent_response_count_ > PARENT_RESPONSE_BUFFER_SIZE ? this->parent_response_count_ - PARENT_RESPONSE_BUFFER_SIZE + 1 : 1;
 
+  // First count what would be shown so the replay header can describe the
+  // output accurately before the detailed entries are emitted.
   for (uint32_t sequence = first_sequence; sequence <= this->parent_response_count_; sequence++) {
     for (const auto &entry : this->parent_response_buffer_) {
       if (!entry.valid || entry.sequence != sequence || entry.sequence <= this->parent_response_last_dumped_count_) {
@@ -526,8 +575,11 @@ otError ThreadPreferredParentComponent::start_parent_discovery_(otInstance *inst
     otExtAddress selected{};
 
     if (this->target_type_ == TargetType::EXTADDR) {
+      // ExtAddr targets can be used directly for unicast Parent Requests.
       selected = this->target_extaddr_;
     } else if (this->target_type_ == TargetType::RLOC16) {
+      // Unicast discovery still needs an ExtAddr on the wire, so resolve the
+      // configured RLOC16 against the current neighbor table first.
       if (!this->resolve_rloc16_to_extaddr_(instance, this->target_rloc16_, &selected)) {
         ESP_LOGW(TAG, "Parent Request unicast needs ExtAddr, but RLOC16 0x%04x is not resolved; falling back to multicast discovery",
                  this->target_rloc16_);
@@ -563,6 +615,8 @@ otError ThreadPreferredParentComponent::start_parent_discovery_(otInstance *inst
 }
 
 otError ThreadPreferredParentComponent::start_parent_discovery_unicast_(otInstance *instance, const otExtAddress &extaddr) {
+  // Kept as a tiny wrapper so the rest of the component can treat the weak
+  // symbol like a normal method call with a consistent OT_ERROR contract.
   if (thread_preferred_parent_ot_start_parent_discovery_unicast == nullptr) {
     return OT_ERROR_NOT_IMPLEMENTED;
   }
@@ -573,8 +627,11 @@ otError ThreadPreferredParentComponent::start_selected_parent_attach_(otInstance
   otExtAddress selected{};
 
   if (this->target_observed_this_attempt_) {
+    // Prefer the address observed in the live Parent Response because it is
+    // guaranteed to match what discovery just saw on the network.
     selected = this->observed_target_extaddr_;
   } else if (this->target_type_ == TargetType::EXTADDR) {
+    // If no live observation was captured, fall back to the configured target.
     selected = this->target_extaddr_;
   } else if (!this->resolve_rloc16_to_extaddr_(instance, this->target_rloc16_, &selected)) {
     ESP_LOGW(TAG, "RLOC16 0x%04x is not resolved to an ExtAddr", this->target_rloc16_);
@@ -591,6 +648,8 @@ otError ThreadPreferredParentComponent::start_selected_parent_attach_(otInstance
   }
 
   if (this->require_selected_parent_hook_) {
+    // In strict mode, do not silently degrade to older APIs because they may
+    // not preserve the intended targeted-attach semantics.
     return OT_ERROR_NOT_IMPLEMENTED;
   }
 
@@ -610,6 +669,8 @@ otError ThreadPreferredParentComponent::start_selected_parent_attach_(otInstance
       }
       break;
     case TargetType::RLOC16:
+      // RLOC16 support historically existed under several helper names across
+      // experiments, so probe them in most-specific-to-most-generic order.
       if (otThreadSearchForPreferredParentRloc16 != nullptr) {
         return otThreadSearchForPreferredParentRloc16(instance, this->target_rloc16_);
       }
@@ -632,6 +693,8 @@ otError ThreadPreferredParentComponent::start_selected_parent_attach_(otInstance
 }
 
 bool ThreadPreferredParentComponent::selected_parent_hook_available_() const {
+  // Support both this component's native symbol and the older biparental
+  // variant so the repo can coexist with earlier patch experiments.
   return thread_preferred_parent_ot_request_selected_parent_attach != nullptr ||
          biparental_ot_request_selected_parent_attach != nullptr;
 }
@@ -645,6 +708,9 @@ bool ThreadPreferredParentComponent::discovery_unicast_hook_available_() const {
 }
 
 bool ThreadPreferredParentComponent::request_selected_parent_attach_(otInstance *instance, const otExtAddress &extaddr) const {
+  // Prefer the native symbol name, but fall back to the compatibility hook
+  // when running against an environment that already carries the biparental
+  // patch instead of this component's exact bridge symbol.
   if (thread_preferred_parent_ot_request_selected_parent_attach != nullptr) {
     return thread_preferred_parent_ot_request_selected_parent_attach(instance, &extaddr);
   }
@@ -658,6 +724,8 @@ bool ThreadPreferredParentComponent::resolve_rloc16_to_extaddr_(otInstance *inst
   otNeighborInfoIterator iterator = OT_NEIGHBOR_INFO_ITERATOR_INIT;
   otNeighborInfo neighbor_info{};
 
+  // OpenThread does not expose a direct "RLOC16 to ExtAddr" lookup here, so
+  // walk the current neighbor table and return the first matching entry.
   while (otThreadGetNextNeighborInfo(instance, &iterator, &neighbor_info) == OT_ERROR_NONE) {
     if (neighbor_info.mRloc16 == rloc16) {
       *out = neighbor_info.mExtAddress;
@@ -669,6 +737,9 @@ bool ThreadPreferredParentComponent::resolve_rloc16_to_extaddr_(otInstance *inst
 }
 
 void ThreadPreferredParentComponent::clear_preferred_parent_in_ot_(otInstance *instance) {
+  // Different patch generations exported different cleanup helpers. Calling
+  // whichever one is available keeps follow-up runs from inheriting stale
+  // preferred-parent hints inside the OpenThread instance.
   if (otThreadClearPreferredParent != nullptr) {
     otThreadClearPreferredParent(instance);
     return;
@@ -729,6 +800,8 @@ bool ThreadPreferredParentComponent::parse_extaddr_(const std::string &text, otE
   size_t count = 0;
   size_t start = 0;
 
+  // Accept optional 0x prefix plus common separators so users can pass the
+  // address in whichever notation they already have available.
   if (text.size() >= 2 && text[0] == '0' && (text[1] == 'x' || text[1] == 'X')) {
     start = 2;
   }
@@ -762,6 +835,8 @@ bool ThreadPreferredParentComponent::parse_extaddr_(const std::string &text, otE
 }
 
 bool ThreadPreferredParentComponent::extaddr_matches_(const otExtAddress &a, const otExtAddress &b) const {
+  // otExtAddress is a plain 8-byte value type, so a byte-for-byte comparison is
+  // both sufficient and easier to reason about than per-field matching.
   return std::memcmp(a.m8, b.m8, sizeof(a.m8)) == 0;
 }
 
@@ -769,6 +844,8 @@ std::string ThreadPreferredParentComponent::extaddr_to_string_(const otExtAddres
   static const char *const hex = "0123456789abcdef";
   std::string out;
   out.reserve(16);
+  // Use compact lowercase hex because it fits naturally into log lines and can
+  // be fed back into the parser without any additional normalization.
   for (uint8_t byte : addr.m8) {
     out.push_back(hex[(byte >> 4) & 0x0f]);
     out.push_back(hex[byte & 0x0f]);
@@ -778,6 +855,8 @@ std::string ThreadPreferredParentComponent::extaddr_to_string_(const otExtAddres
 
 std::string ThreadPreferredParentComponent::target_to_string_() const {
   char buffer[32];
+  // Centralize target formatting so every log line describes the active target
+  // in the same shape regardless of where it originates.
   switch (this->target_type_) {
     case TargetType::RLOC16:
       std::snprintf(buffer, sizeof(buffer), "RLOC16 0x%04x", this->target_rloc16_);
@@ -792,6 +871,8 @@ std::string ThreadPreferredParentComponent::target_to_string_() const {
 
 void ThreadPreferredParentComponent::set_status_(Status status) {
   if (this->status_ != status) {
+    // Log only real transitions to keep high-frequency loop iterations from
+    // producing duplicate status chatter.
     this->status_ = status;
     ESP_LOGD(TAG, "Status changed to %s", status_to_string_(status));
   }
