@@ -81,3 +81,20 @@ Artifacts:
 |  | `T4_child_id_req` | 1 | 34.0 | 0.0 |
 |  | `T5_attach_done` | 1 | 34.0 | 0.0 |
 |  | `T6_parent_match` | 1 | 34.0 | 0.0 |
+
+## Common metrics by variant (same schema for all variants)
+
+| Variant | Measurement | N | Average (ms) | Std. dev (ms) |
+|---|---|---:|---:|---:|
+| `stock` | `C1_workflow_start` | 3 | 3.0 | 0.0 |
+|  | `C2_switch_success` | 0 | — | — |
+|  | `C3_final_parent_match` | 0 | — | — |
+|  | `success_rate` | 0/6 | 0.0% | — |
+| `variant-mcast` | `C1_workflow_start` | 3 | 11.0 | 0.0 |
+|  | `C2_switch_success` | 1 | 3634.0 | 0.0 |
+|  | `C3_final_parent_match` | 1 | 3634.0 | 0.0 |
+|  | `success_rate` | 1/3 | 33.3% | — |
+| `variant-ucast` | `C1_workflow_start` | 3 | 11.3 | 0.6 |
+|  | `C2_switch_success` | 1 | 34.0 | 0.0 |
+|  | `C3_final_parent_match` | 1 | 34.0 | 0.0 |
+|  | `success_rate` | 1/3 | 33.3% | — |
