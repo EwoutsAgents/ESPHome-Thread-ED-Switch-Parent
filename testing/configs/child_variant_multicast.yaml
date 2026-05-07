@@ -1,3 +1,8 @@
+substitutions:
+  # Fixed benchmark profile (keep identical across all scenarios)
+  thread_tlv: "<THREAD_TLV_SHARED_BY_ALL_NODES>"
+  target_parent_extaddr: "00124b0001abcdef"
+
 esphome:
   name: thread-child-variant-b-mcast
   friendly_name: Thread Child Variant B Multicast
@@ -17,7 +22,7 @@ ota:
 
 openthread:
   device_type: MTD
-  tlv: "<PUT_YOUR_TLV_HERE>"
+  tlv: "${thread_tlv}"
 
 external_components:
   - source:
@@ -27,7 +32,7 @@ external_components:
 
 thread_preferred_parent:
   id: preferred_parent
-  parent_extaddr: "00124b0001abcdef"
+  parent_extaddr: "${target_parent_extaddr}"
   max_attempts: 3
   retry_interval: 8s
   selected_attach_timeout: 16s

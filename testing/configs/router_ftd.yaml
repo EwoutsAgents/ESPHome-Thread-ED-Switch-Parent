@@ -1,3 +1,7 @@
+substitutions:
+  # Fixed benchmark profile (keep identical across all scenarios)
+  thread_tlv: "<THREAD_TLV_SHARED_BY_ALL_NODES>"
+
 esphome:
   name: thread-router
   friendly_name: Thread Router
@@ -17,7 +21,7 @@ ota:
 
 openthread:
   device_type: FTD
-  tlv: "<PUT_YOUR_TLV_HERE>"
+  tlv: "${thread_tlv}"
 
 text_sensor:
   - platform: template
