@@ -45,3 +45,16 @@ Legend: ✅ present, — missing
 1. Replace preferred parent target with a real discovered parent extaddr (or use an RLOC target).
 2. Re-run one quick validation capture to confirm T2..T6 appear.
 3. Then re-run full matrix for timing comparison.
+
+## Follow-up validation after T2..T6 fix
+
+Target parent set to discovered ExtAddr `da97557943a05aac`.
+
+| Scenario | Mode | T0 | T1 | T2 | T3 | T4 | T5 | T6 | Key timing |
+|---|---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|---|
+| `variant-mcast` | `steady` | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | T2@1312ms, T5@3634ms |
+| `variant-ucast` | `steady` | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | T2@34ms, T5@34ms |
+
+Artifacts:
+- `testing/logs/variant-mcast-steady-20260507-174248.log` and `testing/logs/variant-mcast-steady-20260507-174248.csv`
+- `testing/logs/variant-ucast-steady-20260507-174538.log` and `testing/logs/variant-ucast-steady-20260507-174538.csv`
