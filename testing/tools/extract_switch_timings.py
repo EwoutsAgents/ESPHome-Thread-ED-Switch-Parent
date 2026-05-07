@@ -17,14 +17,6 @@ PATTERNS = {
     'T6_parent_match': re.compile(r'(current parent is)'),
 }
 
-# Common cross-variant metrics (same schema for stock + variant-mcast + variant-ucast)
-COMMON_PATTERNS = {
-    'C0_request': re.compile(r'(T0 request|Requested Thread parent switch)'),
-    'C1_workflow_start': re.compile(r'(T1 search started|Status changed to discovering parents|Parent discovery attempt)'),
-    'C2_switch_success': re.compile(r'(Thread parent switch succeeded|Attach result: success)'),
-    'C3_final_parent_match': re.compile(r'(current parent is)'),
-}
-
 TS_PREFIX = re.compile(r'^(?P<ts>\d{4}-\d{2}-\d{2}T[^ ]+)\s+\[(?P<label>[^\]]+)\]\s+(?P<msg>.*)$')
 
 
@@ -53,19 +45,13 @@ def main() -> int:
         for key, pattern in PATTERNS.items():
             if key not in events and pattern.search(msg):
                 events[key] = ts
-        for key, pattern in COMMON_PATTERNS.items():
-            if key not in events and pattern.search(msg):
-                events[key] = ts
 
     args.out.parent.mkdir(parents=True, exist_ok=True)
     with args.out.open('w', newline='', encoding='utf-8') as f:
         writer = csv.writer(f)
         writer.writerow(['checkpoint', 'timestamp_utc', 'delta_ms_from_t0'])
         t0 = events.get('T0_request')
-        for key in [
-            'T0_request', 'T1_discovery_start', 'T2_target_observed', 'T3_attach_start', 'T4_child_id_req', 'T5_attach_done', 'T6_parent_match',
-            'C0_request', 'C1_workflow_start', 'C2_switch_success', 'C3_final_parent_match',
-        ]:
+        for key in ['T0_request', 'T1_discovery_start', 'T2_target_observed', 'T3_attach_start', 'T4_child_id_req', 'T5_attach_done', 'T6_parent_match']:
             ts = events.get(key)
             if ts is None:
                 writer.writerow([key, '', ''])
@@ -74,7 +60,7 @@ def main() -> int:
                 writer.writerow([key, ts.isoformat(), delta])
 
     print(f'Wrote {args.out}')
-    for k in [*PATTERNS.keys(), *COMMON_PATTERNS.keys()]:
+    for k in PATTERNS:
         print(f'{k}: {events.get(k).isoformat() if k in events else "<missing>"}')
     return 0
 
