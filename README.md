@@ -6,17 +6,20 @@ This component lets an ESPHome Thread end device attempt to connect to a specifi
 
 The component uses a two-phase flow:
 
-1. **Discovery / preflight**: send an MLE Parent Request while keeping the device attached to its current parent. During this phase, the component collects Parent Responses, logs candidates, checks whether the configured target parent appears, and retries discovery if the target is not visible.
-2. **Selected-parent attach**: when the target parent is observed, invoke the patched OpenThread hook to start an attach attempt toward that selected parent.
+1. **Discovery / preflight**: send an MLE Parent Request (multicast *or* unicast) while keeping the device attached to its current parent. During this phase, the component collects Parent Responses, logs candidates, checks whether the configured target parent appears, and retries discovery if the target is not visible.
+2. **Selected-parent attach**: when the target parent is observed, invoke the patched OpenThread hook to start an attach attempt toward that selected parent. This bypasses the normal parent-selection step and directs the attach attempt toward the observed target parent.
 
 > [!WARNING] This is an experimental component. It patches ESP-IDF's vendored OpenThread source during the PlatformIO build. Use it for testing and diagnostics, not as a general-purpose production Thread parent-selection mechanism.
 
 ## Features
 
 - Select a preferred Thread parent by `parent_extaddr` or `parent_rloc`.
+  - `parent_extaddr` is advised (especially in combination with a unicast parent request).
 - Perform non-disruptive preflight discovery before attempting a selected-parent attach.
-- Optionally send the preflight Parent Request as multicast or unicast.
+- Send Parent Request as multicast *or* unicast.
+  - OpenThread exclusively uses multicast for Parent Requests. This external component also allows unicast Parent Requests. This decreases the amount of (potential) Parent Responses.
 - Start selected-parent attach shortly after the target responds with `early_attach_on_target`.
+  - This feature is still a work in progress, but preliminary tests have been stable when using `early_attach_delay: 500ms`.
 - Retry discovery when the target parent is not visible.
 - Expose runtime controls through ESPHome lambdas, buttons, and text entities.
 - Log Parent Response diagnostics for debugging Thread parent selection.
@@ -27,6 +30,7 @@ The component uses a two-phase flow:
 
 - ESPHome with ESP-IDF framework support.
 - An ESP32 Thread-capable target, such as an ESP32-H2 or ESP32-C6 board.
+  - Note: testing has exclusively been done on ESP32-C6.
 - ESPHome `openthread:` enabled in the device configuration.
 - USB serial logging is recommended while testing, because the ESPHome API can temporarily disconnect during a selected-parent attach.
 
@@ -38,12 +42,12 @@ esphome:
   friendly_name: Thread Preferred Parent Test
 
 esp32:
-  board: esp32h2-devkitm-1  # Change to your Thread-capable ESP32 board
+  board: esp32c6  # Change to your Thread-capable ESP32 board
   framework:
     type: esp-idf
 
 logger:
-  level: VERY_VERBOSE  # Optional, useful for Parent Response diagnostics
+  level: VERY_VERBOSE  # Optional, VERY_VERBOSE should not be used production: https://esphome.io/components/logger/
 
 api:
 
@@ -51,6 +55,9 @@ ota:
   - platform: esphome
 
 openthread:
+  device_type: MTD  # Necessary (as FTDs do not have a parent), but BE CAREFUL, requires a full wipe of the non-violatile storage to go back to FTD: https://esphome.io/components/openthread/
+  tlv: "<PUT_YOUR_TLV HERE>"
+
 
 external_components:
   - source:
@@ -70,7 +77,7 @@ thread_preferred_parent:
   # Do not configure parent_extaddr and parent_rloc at the same time.
   # parent_rloc: 0x5800
 
-  max_attempts: 5
+  max_attempts: 3
   retry_interval: 8s
   selected_attach_timeout: 16s
 
@@ -81,7 +88,7 @@ thread_preferred_parent:
   # Optional: start selected-parent attach shortly after the target responds,
   # instead of waiting for the full retry_interval discovery window.
   early_attach_on_target: true
-  early_attach_delay: 250ms
+  early_attach_delay: 500ms
 
   require_selected_parent_hook: true
   log_parent_responses: true
