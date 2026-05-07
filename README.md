@@ -17,8 +17,8 @@ The component uses a two-phase flow:
   - `parent_extaddr` is advised (especially in combination with a unicast parent request).
 - Perform non-disruptive preflight discovery before attempting a selected-parent attach.
 - Send Parent Request as multicast *or* unicast.
-  - OpenThread exclusively uses multicast for Parent Requests. This external component also allows unicast Parent Requests. This decreases the amount of (potential) Parent Responses.
-- Start selected-parent attach shortly after the target responds with `early_attach_on_target`.
+  - OpenThread exclusively uses multicast for Parent Requests, whereas this external component also permits unicast Parent Requests. This approach reduces the number of potential Parent Responses.
+- Start selected-parent attach shortly after the target responds with `early_attach_on_target: true`. 
   - This feature is still a work in progress, but preliminary tests have been stable when using `early_attach_delay: 500ms`.
 - Retry discovery when the target parent is not visible.
 - Expose runtime controls through ESPHome lambdas, buttons, and text entities.
