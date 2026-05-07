@@ -65,21 +65,21 @@ Artifacts:
 
 | Variant | Measurement | N | Average (ms) | Std. dev (ms) |
 |---|---|---:|---:|---:|
-| `stock` | `T1_discovery_start` | 1 | 11.0 | 0.0 |
-|  | `T2_target_observed` | 1 | 11.0 | 0.0 |
-|  | `T3_attach_start` | 1 | 22.0 | 0.0 |
-|  | `T4_child_id_req` | 1 | 33.0 | 0.0 |
-|  | `T5_attach_done` | 1 | 40.0 | 0.0 |
-|  | `T6_parent_match` | 1 | 40.0 | 0.0 |
-| `variant-mcast` | `T1_discovery_start` | 1 | 11.0 | 0.0 |
-|  | `T2_target_observed` | 1 | 1312.0 | 0.0 |
-|  | `T3_attach_start` | 1 | 1312.0 | 0.0 |
-|  | `T4_child_id_req` | 1 | 1363.0 | 0.0 |
-|  | `T5_attach_done` | 1 | 3634.0 | 0.0 |
-|  | `T6_parent_match` | 1 | 3634.0 | 0.0 |
-| `variant-ucast` | `T1_discovery_start` | 1 | 12.0 | 0.0 |
-|  | `T2_target_observed` | 1 | 34.0 | 0.0 |
-|  | `T3_attach_start` | 1 | 34.0 | 0.0 |
-|  | `T4_child_id_req` | 1 | 34.0 | 0.0 |
-|  | `T5_attach_done` | 1 | 34.0 | 0.0 |
-|  | `T6_parent_match` | 1 | 34.0 | 0.0 |
+| `stock` | `T1_discovery_start` | 3 | 11.0 | 0.0 |
+|  | `T2_target_observed` | 3 | 11.3 | 0.6 |
+|  | `T3_attach_start` | 3 | 22.7 | 0.6 |
+|  | `T4_child_id_req` | 3 | 33.7 | 0.6 |
+|  | `T5_attach_done` | 3 | 40.7 | 0.6 |
+|  | `T6_parent_match` | 3 | 40.7 | 0.6 |
+| `variant-mcast` | `T1_discovery_start` | 3 | 11.0 | 0.0 |
+|  | `T2_target_observed` | 3 | 444.7 | 751.1 |
+|  | `T3_attach_start` | 3 | 452.0 | 744.8 |
+|  | `T4_child_id_req` | 3 | 476.3 | 767.9 |
+|  | `T5_attach_done` | 3 | 1238.0 | 2075.0 |
+|  | `T6_parent_match` | 3 | 1238.0 | 2075.0 |
+| `variant-ucast` | `T1_discovery_start` | 3 | 11.3 | 0.6 |
+|  | `T2_target_observed` | 3 | 18.7 | 13.3 |
+|  | `T3_attach_start` | 3 | 26.0 | 6.9 |
+|  | `T4_child_id_req` | 3 | 33.7 | 0.6 |
+|  | `T5_attach_done` | 3 | 38.7 | 4.0 |
+|  | `T6_parent_match` | 3 | 38.7 | 4.0 |
