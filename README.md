@@ -223,12 +223,3 @@ The patch adds OpenThread hooks used to:
 - If the OpenThread patch does not apply cleanly against the ESP-IDF/OpenThread version in your build, selected-parent switching will not work.
 - Keep a serial console attached while developing or debugging, especially if the device's ESPHome API connection depends on Thread connectivity.
 
-## Repository layout
-
-```text
-components/thread_preferred_parent/   ESPHome external component and OpenThread patch script
-examples/                             Example ESPHome configuration
-patches/                              OpenThread patch reference
-scripts/                              Helper scripts
-```
-
