@@ -84,12 +84,3 @@ button:
           ESP_LOGI("stock_switch", "T0 request; calling otThreadSearchForBetterParent()");
           otError err = otThreadSearchForBetterParent(instance);
           ESP_LOGI("stock_switch", "T1 search started; status=%d", static_cast<int>(err));
-          if (err == OT_ERROR_NONE) {
-            // Stock firmware does not emit selected-parent internals. Emit
-            // compatibility markers so timing extraction uses the same schema.
-            ESP_LOGI("stock_switch", "target observed after 0 ms (stock compatibility marker)");
-            ESP_LOGI("stock_switch", "starting selected-parent attach (stock compatibility marker)");
-            ESP_LOGI("stock_switch", "SendChildIdRequest (stock compatibility marker)");
-            ESP_LOGI("stock_switch", "Attach result: success (stock compatibility marker)");
-            ESP_LOGI("stock_switch", "current parent is (stock compatibility marker)");
-          }
