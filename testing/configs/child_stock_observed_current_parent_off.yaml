@@ -1,0 +1,99 @@
+substitutions:
+  thread_channel: "15"
+  thread_pan_id: "0x1234"
+  thread_network_key: "0x00112233445566778899aabbccddeeff"
+  thread_ext_pan_id: "0x1111222233334444"
+  thread_network_name: "OpenClawBench"
+  thread_pskc: "0x445566778899aabbccddeeff00112233"
+  thread_mesh_local_prefix: "fd11:22::/64"
+  target_parent_extaddr: "da97557943a05aac"
+  auto_trigger_switch: "true"
+  auto_trigger_delay: "25s"
+  prepared_to_search_delay: "6s"
+
+esphome:
+  name: child-stock-observed-cpoff
+  friendly_name: Thread Child Stock Observed Current Parent Off
+  on_boot:
+    priority: -100
+    then:
+      - script.execute: stock_observed_trigger_switch
+
+esp32:
+  board: esp32-c6-devkitm-1
+  framework:
+    type: esp-idf
+
+logger:
+  level: VERY_VERBOSE
+  hardware_uart: UART0
+
+network:
+  enable_ipv6: true
+
+api:
+
+ota:
+  - platform: esphome
+
+openthread:
+  device_type: MTD
+  channel: ${thread_channel}
+  pan_id: ${thread_pan_id}
+  network_key: ${thread_network_key}
+  ext_pan_id: ${thread_ext_pan_id}
+  network_name: "${thread_network_name}"
+  pskc: ${thread_pskc}
+  mesh_local_prefix: ${thread_mesh_local_prefix}
+
+external_components:
+  - source:
+      type: local
+      path: ../../components
+    components: [thread_stock_observer]
+
+thread_stock_observer:
+  id: stock_observer
+  target_parent_extaddr: "${target_parent_extaddr}"
+  observe_timeout: 16s
+  log_parent_responses: true
+
+globals:
+  - id: stock_observed_requested_once
+    type: bool
+    restore_value: no
+    initial_value: "false"
+
+script:
+  - id: stock_observed_trigger_switch
+    mode: single
+    then:
+      - if:
+          condition:
+            lambda: 'return ${auto_trigger_switch};'
+          then:
+            - delay: ${auto_trigger_delay}
+            - if:
+                condition:
+                  lambda: 'return !id(stock_observed_requested_once);'
+                then:
+                  - lambda: 'id(stock_observed_requested_once) = true;'
+                  - logger.log: "AUTO trigger: preparing current-parent-off stock-observed switch sequence"
+                  - button.press: stock_observed_current_parent_off_prepare_button
+                  - delay: ${prepared_to_search_delay}
+                  - button.press: stock_observed_current_parent_off_start_button
+
+button:
+  - platform: template
+    id: stock_observed_current_parent_off_prepare_button
+    name: "Stock Observed Current Parent Off: Prepare"
+    on_press:
+      - lambda: |-
+          id(stock_observer).prepare_stock_search();
+
+  - platform: template
+    id: stock_observed_current_parent_off_start_button
+    name: "Stock Observed Current Parent Off: Start Search"
+    on_press:
+      - lambda: |-
+          id(stock_observer).start_prepared_stock_search();

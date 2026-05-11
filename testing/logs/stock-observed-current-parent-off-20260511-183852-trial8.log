@@ -1,0 +1,202 @@
+# capture-start 2026-05-11T16:38:52.354162+00:00
+# duration-seconds 80
+# baud 115200
+# node child /dev/serial/by-id/usb-1a86_USB_Single_Serial_5AF7094208-if00
+# node router1 /dev/serial/by-id/usb-1a86_USB_Single_Serial_5AF7094336-if00
+# node router2 /dev/serial/by-id/usb-1a86_USB_Single_Serial_5AF7094210-if00
+2026-05-11T16:38:52.447+00:00 [router2] INFO ESPHome 2026.4.5
+2026-05-11T16:38:52.447+00:00 [router1] INFO ESPHome 2026.4.5
+2026-05-11T16:38:52.447+00:00 [child] INFO ESPHome 2026.4.5
+2026-05-11T16:38:52.449+00:00 [router2] INFO Reading configuration testing/configs/child_stock_observed_current_parent_off.yaml...
+2026-05-11T16:38:52.449+00:00 [child] INFO Reading configuration testing/configs/child_stock_observed_current_parent_off.yaml...
+2026-05-11T16:38:52.449+00:00 [router1] INFO Reading configuration testing/configs/child_stock_observed_current_parent_off.yaml...
+2026-05-11T16:38:52.620+00:00 [router2] INFO Starting log output from /dev/serial/by-id/usb-1a86_USB_Single_Serial_5AF7094210-if00 with baud rate 115200
+2026-05-11T16:38:52.620+00:00 [router1] INFO Starting log output from /dev/serial/by-id/usb-1a86_USB_Single_Serial_5AF7094336-if00 with baud rate 115200
+2026-05-11T16:38:52.623+00:00 [child] INFO Starting log output from /dev/serial/by-id/usb-1a86_USB_Single_Serial_5AF7094208-if00 with baud rate 115200
+2026-05-11T16:38:52.631+00:00 [child] [18:38:52.631]ESP-ROM:esp32c6-20220919
+2026-05-11T16:38:52.645+00:00 [child] [18:38:52.645]Build:Sep 19 2022
+2026-05-11T16:38:52.645+00:00 [child] [18:38:52.645]rst:0x1 (POWERON),boot:0xc (SPI_FAST_FLASH_BOOT)
+2026-05-11T16:38:52.645+00:00 [child] [18:38:52.645]SPIWP:0xee
+2026-05-11T16:38:52.645+00:00 [child] [18:38:52.645]mode:DIO, clock div:2
+2026-05-11T16:38:52.651+00:00 [child] [18:38:52.651]load:0x40875730,len:0x16f4
+2026-05-11T16:38:52.651+00:00 [child] [18:38:52.651]load:0x4086b910,len:0xed0
+2026-05-11T16:38:52.651+00:00 [child] [18:38:52.651]load:0x4086e610,len:0x3218
+2026-05-11T16:38:52.651+00:00 [child] [18:38:52.651]entry 0x4086b910
+2026-05-11T16:38:52.663+00:00 [child] [18:38:52.663]I (23) boot: ESP-IDF 5.5.4 2nd stage bootloader
+2026-05-11T16:38:52.663+00:00 [child] [18:38:52.663]I (24) boot: compile time May 11 2026 18:00:09
+2026-05-11T16:38:52.674+00:00 [child] [18:38:52.674]I (24) boot: chip revision: v0.2
+2026-05-11T16:38:52.674+00:00 [child] [18:38:52.674]I (24) boot: efuse block revision: v0.3
+2026-05-11T16:38:52.674+00:00 [child] [18:38:52.674]I (27) boot.esp32c6: SPI Speed      : 80MHz
+2026-05-11T16:38:52.685+00:00 [child] [18:38:52.685]I (31) boot.esp32c6: SPI Mode       : DIO
+2026-05-11T16:38:52.685+00:00 [child] [18:38:52.685]I (35) boot.esp32c6: SPI Flash Size : 4MB
+2026-05-11T16:38:52.685+00:00 [child] [18:38:52.685]I (38) boot: Enabling RNG early entropy source...
+2026-05-11T16:38:52.696+00:00 [child] [18:38:52.696]I (43) boot: Partition Table:
+2026-05-11T16:38:52.696+00:00 [child] [18:38:52.696]I (45) boot: ## Label            Usage          Type ST Offset   Length
+2026-05-11T16:38:52.707+00:00 [child] [18:38:52.707]I (52) boot:  0 otadata          OTA data         01 00 00009000 00002000
+2026-05-11T16:38:52.707+00:00 [child] [18:38:52.707]I (58) boot:  1 phy_init         RF data          01 01 0000b000 00001000
+2026-05-11T16:38:52.718+00:00 [child] [18:38:52.718]I (65) boot:  2 app0             OTA app          00 10 00010000 001c0000
+2026-05-11T16:38:52.718+00:00 [child] [18:38:52.718]I (71) boot:  3 app1             OTA app          00 11 001d0000 001c0000
+2026-05-11T16:38:52.730+00:00 [child] [18:38:52.729]I (78) boot:  4 nvs              WiFi data        01 02 00390000 00070000
+2026-05-11T16:38:52.730+00:00 [child] [18:38:52.729]I (84) boot: End of partition table
+2026-05-11T16:38:52.735+00:00 [child] [18:38:52.735]I (88) esp_image: segment 0: paddr=00010020 vaddr=42080020 size=19058h (102488) map
+2026-05-11T16:38:52.754+00:00 [child] [18:38:52.754]I (114) esp_image: segment 1: paddr=00029080 vaddr=40800000 size=06f98h ( 28568) load
+2026-05-11T16:38:52.758+00:00 [child] [18:38:52.758]I (121) esp_image: segment 2: paddr=00030020 vaddr=42000020 size=79e6ch (499308) map
+2026-05-11T16:38:52.853+00:00 [child] [18:38:52.853]I (213) esp_image: segment 3: paddr=000a9e94 vaddr=40806f98 size=06224h ( 25124) load
+2026-05-11T16:38:52.864+00:00 [child] [18:38:52.864]I (220) esp_image: segment 4: paddr=000b00c0 vaddr=4080d1c0 size=02a68h ( 10856) load
+2026-05-11T16:38:52.864+00:00 [child] [18:38:52.864]I (226) boot: Loaded app from partition at offset 0x10000
+2026-05-11T16:38:52.867+00:00 [child] [18:38:52.867]I (226) boot: Disabling RNG early entropy source...
+2026-05-11T16:38:52.907+00:00 [child] [18:38:52.907][I][logger:120]: Log initialized
+2026-05-11T16:38:52.907+00:00 [child] [18:38:52.907][VV][preferences:077]: nvs_get_blob: key: 233825507, len: 4
+2026-05-11T16:38:52.918+00:00 [child] [18:38:52.918][C][safe_mode:136]: Unsuccessful boot attempts: 0
+2026-05-11T16:38:52.918+00:00 [child] [18:38:52.918][VV][preferences:043]: s_pending_save: key: 233825507, len: 4
+2026-05-11T16:38:52.929+00:00 [child] [18:38:52.929][V][preferences:121]: Saving 1 items...
+2026-05-11T16:38:52.929+00:00 [child] [18:38:52.929][VV][preferences:129]: Checking if NVS data 233825507 has changed
+2026-05-11T16:38:52.940+00:00 [child] [18:38:52.940][V][preferences:132]: sync: key: 233825507, len: 4
+2026-05-11T16:38:52.951+00:00 [child] [18:38:52.951][D][preferences:152]: Writing 1 items: 0 cached, 1 written, 0 failed
+2026-05-11T16:38:52.951+00:00 [child] [18:38:52.951][I][thread_stock_observer:045]: Configured target parent ExtAddr da97557943a05aac
+2026-05-11T16:38:52.962+00:00 [child] [18:38:52.962][I][app:067]: Running through setup()
+2026-05-11T16:38:52.962+00:00 [child] [18:38:52.962][V][app:068]: Sorting components by setup priority
+2026-05-11T16:38:52.962+00:00 [child] [18:38:52.962][V][component:236]: Setup logger
+2026-05-11T16:38:52.973+00:00 [child] [18:38:52.973][V][component:248]: Setup logger took 0ms
+2026-05-11T16:38:52.973+00:00 [child] [18:38:52.973][V][component:236]: Setup preferences
+2026-05-11T16:38:52.984+00:00 [child] [18:38:52.984][V][scheduler:217]: Scheduler interval for (null) is 60000ms, offset 3334ms
+2026-05-11T16:38:52.984+00:00 [child] [18:38:52.984][V][component:248]: Setup preferences took 3ms
+2026-05-11T16:38:52.996+00:00 [child] [18:38:52.996][V][component:236]: Setup script
+2026-05-11T16:38:52.996+00:00 [child] [18:38:52.996][V][component:248]: Setup script took 0ms
+2026-05-11T16:38:53.007+00:00 [child] [18:38:53.007][V][component:236]: Setup script
+2026-05-11T16:38:53.007+00:00 [child] [18:38:53.007][V][component:248]: Setup script took 0ms
+2026-05-11T16:38:53.007+00:00 [child] [18:38:53.007][V][component:236]: Setup thread_stock_observer
+2026-05-11T16:38:53.018+00:00 [child] [18:38:53.018][I][thread_stock_observer:020]: OpenThread Parent Response reporting hook registered for stock observation
+2026-05-11T16:38:53.029+00:00 [child] [18:38:53.029][V][component:248]: Setup thread_stock_observer took 11ms
+2026-05-11T16:38:53.029+00:00 [child] [18:38:53.029][V][component:236]: Setup globals
+2026-05-11T16:38:53.035+00:00 [child] [18:38:53.035][V][component:248]: Setup globals took 0ms
+2026-05-11T16:38:53.035+00:00 [child] [18:38:53.035][V][component:236]: Setup openthread
+2026-05-11T16:38:53.095+00:00 [child] [18:38:53.095][C][component:246]: Setup openthread took 90ms
+2026-05-11T16:38:53.095+00:00 [child] [18:38:53.095][V][component:236]: Setup esphome.ota
+2026-05-11T16:38:53.110+00:00 [child] [18:38:53.110][V][component:248]: Setup esphome.ota took 12ms
+2026-05-11T16:38:53.110+00:00 [child] [18:38:53.110][V][component:236]: Setup safe_mode
+2026-05-11T16:38:53.121+00:00 [child] [18:38:53.121][V][component:248]: Setup safe_mode took 0ms
+2026-05-11T16:38:53.121+00:00 [child] [18:38:53.121][V][component:236]: Setup api
+2026-05-11T16:38:53.132+00:00 [child] [18:38:53.132][W][component:389]: api set Warning flag: waiting for client connection
+2026-05-11T16:38:53.132+00:00 [child] [18:38:53.132][V][component:248]: Setup api took 1ms
+2026-05-11T16:38:53.132+00:00 [child] [18:38:53.132][V][component:236]: Setup mdns
+2026-05-11T16:38:53.143+00:00 [child] [18:38:53.143][V][component:248]: Setup mdns took 0ms
+2026-05-11T16:38:53.143+00:00 [child] [18:38:53.143][V][component:236]: Setup openthread
+2026-05-11T16:38:53.154+00:00 [child] [18:38:53.154][D][openthread:157]: Setting up SRP services. count = 1
+2026-05-11T16:38:53.154+00:00 [child] [18:38:53.154][D][openthread:207]: Added service: _esphomelib._tcp
+2026-05-11T16:38:53.165+00:00 [child] [18:38:53.165][D][openthread:211]: Finished SRP setup
+2026-05-11T16:38:53.165+00:00 [child] [18:38:53.165][V][component:248]: Setup openthread took 24ms
+2026-05-11T16:38:53.176+00:00 [child] [18:38:53.176][V][component:236]: Setup esphome.coroutine
+2026-05-11T16:38:53.176+00:00 [child] [18:38:53.176][V][component:248]: Setup esphome.coroutine took 0ms
+2026-05-11T16:38:53.176+00:00 [child] [18:38:53.176][I][app:123]: setup() finished successfully!
+2026-05-11T16:38:53.187+00:00 [child] [18:38:53.187][D][openthread:113][ot_main]: Thread Version: 4
+2026-05-11T16:38:53.199+00:00 [child] [18:38:53.199][D][openthread:137][ot_main]: Link Mode Device Type: FALSE, Network Data: FALSE, RX On When Idle: TRUE
+2026-05-11T16:38:53.210+00:00 [child] [18:38:53.210][I][openthread:152][ot_main]: Activating dataset...
+2026-05-11T16:38:53.221+00:00 [child] [18:38:53.221][I][openthread:162][ot_main]: Found existing dataset, ignoring config (force_dataset: true to override)
+2026-05-11T16:38:53.221+00:00 [child] [18:38:53.221][I][app:154]: ESPHome version 2026.4.5 compiled on 2026-05-11 17:59:14 +0200
+2026-05-11T16:38:53.232+00:00 [child] [18:38:53.232][I][app:161]: ESP32 Chip: ESP32-C6 rev0.2, 1 core(s)
+2026-05-11T16:38:53.232+00:00 [child] [18:38:53.232][C][logger:219]: Logger:
+2026-05-11T16:38:53.232+00:00 [child] [18:38:53.232][C][logger:219]:   Max Level: VERY_VERBOSE
+2026-05-11T16:38:53.243+00:00 [child] [18:38:53.243][C][logger:219]:   Initial Level: VERY_VERBOSE
+2026-05-11T16:38:53.243+00:00 [child] [18:38:53.243][C][logger:226]:   Log Baud Rate: 115200
+2026-05-11T16:38:53.243+00:00 [child] [18:38:53.243][C][logger:226]:   Hardware UART: UART0
+2026-05-11T16:38:53.254+00:00 [child] [18:38:53.254][C][logger:235]:   Task Log Buffer Size: 768 bytes
+2026-05-11T16:38:53.266+00:00 [child] [18:38:53.265][W][logger:251]: VERY_VERBOSE logging is active — significant performance impact, short-term debugging only
+2026-05-11T16:38:53.266+00:00 [child] [18:38:53.265][W][logger:251]:   May cause connection instability. Set log level to DEBUG or lower for long-term use.
+2026-05-11T16:38:53.277+00:00 [child] [18:38:53.276][VV][component:292]: logger loop disabled
+2026-05-11T16:38:53.277+00:00 [child] [18:38:53.276][C][thread_stock_observer:027]: Thread stock observer:
+2026-05-11T16:38:53.288+00:00 [child] [18:38:53.288][C][thread_stock_observer:028]:   Target configured: YES
+2026-05-11T16:38:53.288+00:00 [child] [18:38:53.288][C][thread_stock_observer:029]:   Target ExtAddr: da97557943a05aac
+2026-05-11T16:38:53.299+00:00 [child] [18:38:53.299][C][thread_stock_observer:030]:   Observe timeout: 16000 ms
+2026-05-11T16:38:53.299+00:00 [child] [18:38:53.299][C][thread_stock_observer:031]:   Log Parent Responses: YES
+2026-05-11T16:38:53.310+00:00 [child] [18:38:53.310][C][thread_stock_observer:032]:   Parent Response hook registered: YES
+2026-05-11T16:38:53.310+00:00 [child] [18:38:53.310][C][openthread:029]: Open Thread:
+2026-05-11T16:38:53.321+00:00 [child] [18:38:53.321][C][openthread:033]:   Device Type: MTD
+2026-05-11T16:38:53.321+00:00 [child] [18:38:53.321][C][openthread:040]:   Device is configured as Minimal End Device (MED)
+2026-05-11T16:38:53.332+00:00 [child] [18:38:53.332][C][esphome.ota:071]: Over-The-Air updates:
+2026-05-11T16:38:53.332+00:00 [child] [18:38:53.332][C][esphome.ota:071]:   Address: child-stock-observed-cpoff.local:3232
+2026-05-11T16:38:53.332+00:00 [child] [18:38:53.332][C][esphome.ota:071]:   Version: 2
+2026-05-11T16:38:53.343+00:00 [child] [18:38:53.343][C][safe_mode:026]: Safe Mode:
+2026-05-11T16:38:53.343+00:00 [child] [18:38:53.343][C][safe_mode:026]:   Successful after: 60s
+2026-05-11T16:38:53.343+00:00 [child] [18:38:53.343][C][safe_mode:026]:   Invoke after: 10 attempts
+2026-05-11T16:38:53.343+00:00 [child] [18:38:53.343][C][safe_mode:026]:   Duration: 300s
+2026-05-11T16:38:53.354+00:00 [child] [18:38:53.354][C][safe_mode:043]:   Bootloader rollback: support unknown
+2026-05-11T16:38:53.354+00:00 [child] [18:38:53.354][C][api:235]: Server:
+2026-05-11T16:38:53.354+00:00 [child] [18:38:53.354][C][api:235]:   Address: child-stock-observed-cpoff.local:6053
+2026-05-11T16:38:53.365+00:00 [child] [18:38:53.365][C][api:235]:   Listen backlog: 4
+2026-05-11T16:38:53.365+00:00 [child] [18:38:53.365][C][api:235]:   Max connections: 8
+2026-05-11T16:38:53.365+00:00 [child] [18:38:53.365][C][api:247]:   Noise encryption: NO
+2026-05-11T16:38:53.365+00:00 [child] [18:38:53.365][C][mdns:194]: mDNS:
+2026-05-11T16:38:53.376+00:00 [child] [18:38:53.376][C][mdns:194]:   Hostname: child-stock-observed-cpoff
+2026-05-11T16:38:53.376+00:00 [child] [18:38:53.376][V][mdns:199]:   Services:
+2026-05-11T16:38:53.376+00:00 [child] [18:38:53.376][V][mdns:201]:   - _esphomelib, _tcp, 6053
+2026-05-11T16:38:53.387+00:00 [child] [18:38:53.387][V][mdns:204]:     TXT: friendly_name = Thread Child Stock Observed Current Parent Off
+2026-05-11T16:38:53.398+00:00 [child] [18:38:53.398][V][mdns:204]:     TXT: version = 2026.4.5
+2026-05-11T16:38:53.398+00:00 [child] [18:38:53.398][V][mdns:204]:     TXT: mac = 588c815fd928
+2026-05-11T16:38:53.398+00:00 [child] [18:38:53.398][V][mdns:204]:     TXT: platform = ESP32
+2026-05-11T16:38:53.408+00:00 [child] [18:38:53.408][V][mdns:204]:     TXT: board = esp32-c6-devkitm-1
+2026-05-11T16:38:53.408+00:00 [child] [18:38:53.408][V][mdns:204]:     TXT: network = thread
+2026-05-11T16:38:58.771+00:00 [router1] [18:38:58.771][I][safe_mode:091]: Boot seems successful; resetting boot loop counter
+2026-05-11T16:38:58.778+00:00 [router1] [18:38:58.778][VV][preferences:043]: s_pending_save: key: 233825507, len: 4
+2026-05-11T16:38:58.779+00:00 [router1] [18:38:58.778][VV][component:292]: safe_mode loop disabled
+2026-05-11T16:38:59.515+00:00 [router1] [18:38:59.515][V][preferences:121]: Saving 1 items...
+2026-05-11T16:38:59.515+00:00 [router1] [18:38:59.515][VV][preferences:129]: Checking if NVS data 233825507 has changed
+2026-05-11T16:38:59.526+00:00 [router1] [18:38:59.526][V][preferences:132]: sync: key: 233825507, len: 4
+2026-05-11T16:38:59.527+00:00 [router1] [18:38:59.527][D][preferences:152]: Writing 1 items: 0 cached, 1 written, 0 failed
+2026-05-11T16:39:18.143+00:00 [child] [18:39:18.143][D][main:083]: AUTO trigger: preparing current-parent-off stock-observed switch sequence
+2026-05-11T16:39:18.154+00:00 [child] [18:39:18.154][V][button:019]: 'Stock Observed Current Parent Off: Prepare' Pressed.
+2026-05-11T16:39:18.165+00:00 [child] [18:39:18.165][I][thread_stock_observer:083]: SO0 current-parent-off prepare; target=da97557943a05aac
+2026-05-11T16:39:18.165+00:00 [child] [18:39:18.165][I][thread_stock_observer:093]: SO0 initial parent: RLOC16 0xd000 ExtAddr b27d8460213d29da
+2026-05-11T16:39:18.176+00:00 [child] [18:39:18.176][I][thread_stock_observer:096]: SO0 current parent selected for shutdown: RLOC16 0xd000 ExtAddr b27d8460213d29da
+2026-05-11T16:39:18.183+00:00 [child] [18:39:18.183][I][thread_stock_observer:098]: SO0 waiting for current-parent-off action
+2026-05-11T16:39:18.548+00:00 [router1] [18:39:18.548]Suild:Sep 19 2022
+2026-05-11T16:39:18.555+00:00 [router1] [18:39:18.555]rst:0x14
+2026-05-11T16:39:18.555+00:00 [router1] [18:39:18.555]load:0x4086b910,len:0xed0
+2026-05-11T16:39:18.555+00:00 [router1] [18:39:18.555]load:0x4086e610,len:0x3218
+2026-05-11T16:39:18.555+00:00 [router1] [18:39:18.555]entry 0x4086b910
+2026-05-11T16:39:18.567+00:00 [router1] [18:39:18.567]I(23) boot: ESP-IDF 5.5.4 2nd stage bootloader
+2026-05-11T16:39:18.567+00:00 [router1] [18:39:18.567]I (24) boot: compile time May  7 2026 14:29:51
+2026-05-11T16:39:18.600+00:00 [router1] [18:39:18.600]I (24) boot: chip revision: v0. DI
+2026-05-11T16:39:18.600+00:00 [router1] [18:39:18.600]I (35) boot.esp32c6: SPI Flash Size : 4MB
+2026-05-11T16:39:18.600+00:00 [router1] [18:39:18.600]I (38) boot: Enabling RNG early entropy source...
+2026-05-11T16:39:18.600+00:00 [router1] [18:39:18.600]I (43) boot: Partition Table:
+2026-05-11T16:39:18.622+00:00 [router1] [18:39:18.622]000009000 00002000
+2026-05-11T16:39:18.622+00:00 [router1] [18:39:18.622]I (58) boot:  1 phy_init         RF data          01 01 0000b000 00001000
+2026-05-11T16:39:18.638+00:00 [router1] [18:39:18.638]I (65) boot:  2 app0             t  4 nvs              WiFi data        01 02 00390000 00070000
+2026-05-11T16:39:18.638+00:00 [router1] [18:39:18.638]I (84) boot: End of partition table
+2026-05-11T16:39:18.661+00:00 [router1] [18:39:18.661]I (88) esp_image: segment 0I(114) esp_image: segment 1: paddr=00028a78 vaddr=40800000 size=075a0h ( 30112) load
+2026-05-11T16:39:18.661+00:00 [router1] ERROR Serial port closed!
+2026-05-11T16:39:24.157+00:00 [child] [18:39:24.157][V][button:019]: 'Stock Observed Current Parent Off: Start Search' Pressed.
+2026-05-11T16:39:24.168+00:00 [child] [18:39:24.168][I][thread_stock_observer:112]: SO1 current-parent-off action complete; starting stock search
+2026-05-11T16:39:24.169+00:00 [child] [18:39:24.169][I][thread_stock_observer:114]: SO1 search started; status=0
+2026-05-11T16:39:25.086+00:00 [child] [18:39:25.086][VV][app:471]: logger loop enabled from ISR
+2026-05-11T16:39:25.097+00:00 [child] [18:39:25.097][I][thread_stock_observer:182][ot_main]: SO2 parent response observed after 6942 ms; ExtAddr facf27a3d9377fd9 RLOC16 0xb400 RSSI -13 target_match=NO
+2026-05-11T16:39:25.108+00:00 [child] [18:39:25.108][VV][component:292]: logger loop disabled
+2026-05-11T16:39:25.108+00:00 [child] [18:39:25.108][VV][app:471]: logger loop enabled from ISR
+2026-05-11T16:39:25.119+00:00 [child] [18:39:25.119][I][thread_stock_observer:187][ot_main]: SO2 parent response observed after 6963 ms; ExtAddr da97557943a05aac RLOC16 0x1800 RSSI -28 target_match=YES
+2026-05-11T16:39:25.138+00:00 [child] [18:39:25.138][I][thread_stock_observer:195][ot_main]: SO3 target parent response observed after 6963 ms; ExtAddr da97557943a05aac RLOC16 0x1800 RSSI -28
+2026-05-11T16:39:25.138+00:00 [child] [18:39:25.138][VV][component:292]: logger loop disabled
+2026-05-11T16:39:25.422+00:00 [child] [18:39:25.422][VV][app:471]: logger loop enabled from ISR
+2026-05-11T16:39:25.433+00:00 [child] [18:39:25.433][I][thread_stock_observer:187][ot_main]: SO2 parent response observed after 7278 ms; ExtAddr b27d8460213d29da RLOC16 0xd000 RSSI -19 target_match=NO
+2026-05-11T16:39:25.444+00:00 [child] [18:39:25.444][VV][component:292]: logger loop disabled
+2026-05-11T16:39:25.444+00:00 [child] [18:39:25.444][VV][app:471]: logger loop enabled from ISR
+2026-05-11T16:39:25.455+00:00 [child] [18:39:25.455][I][thread_stock_observer:187][ot_main]: SO2 parent response observed after 7302 ms; ExtAddr 2657edfb2fbc394b RLOC16 0x8c00 RSSI -27 target_match=NO
+2026-05-11T16:39:25.460+00:00 [child] [18:39:25.460][VV][component:292]: logger loop disabled
+2026-05-11T16:39:25.839+00:00 [child] [18:39:25.839][I][thread_stock_observer:235]: SO4 parent changed after 7693 ms; previous RLOC16 0xd000 current RLOC16 0x8c00 current ExtAddr 2657edfb2fbc394b
+2026-05-11T16:39:34.146+00:00 [child] [18:39:34.146][W][thread_stock_observer:254]: SO6 timeout after 16001 ms; target parent not reached; current parent RLOC16 0x8c00 ExtAddr 2657edfb2fbc394b
+2026-05-11T16:39:52.909+00:00 [child] [18:39:52.909][I][safe_mode:091]: Boot seems successful; resetting boot loop counter
+2026-05-11T16:39:52.916+00:00 [child] [18:39:52.916][VV][preferences:043]: s_pending_save: key: 233825507, len: 4
+2026-05-11T16:39:52.916+00:00 [child] [18:39:52.916][VV][component:292]: safe_mode loop disabled
+2026-05-11T16:39:56.294+00:00 [child] [18:39:56.294][V][preferences:121]: Saving 1 items...
+2026-05-11T16:39:56.294+00:00 [child] [18:39:56.294][VV][preferences:129]: Checking if NVS data 233825507 has changed
+2026-05-11T16:39:56.305+00:00 [child] [18:39:56.305][V][preferences:132]: sync: key: 233825507, len: 4
+2026-05-11T16:39:56.306+00:00 [child] [18:39:56.306][D][preferences:152]: Writing 1 items: 0 cached, 1 written, 0 failed
+# capture-end 2026-05-11T16:40:12.362645+00:00
+# trial 8
+# current-parent-extaddr b27d8460213d29da
+# current-parent-rloc16 0xd000
+# disabled-router-label router1
+# disable-method serial-reset
+# disable-start 2026-05-11T16:39:18.274Z
+# disable-end 2026-05-11T16:39:26.281Z
+# classification current_parent_shutdown_failed

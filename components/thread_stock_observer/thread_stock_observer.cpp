@@ -47,29 +47,30 @@ void ThreadStockObserverComponent::set_target_parent_extaddr(const std::string &
 
 void ThreadStockObserverComponent::reset_run_state_() {
   this->active_ = false;
+  this->prepared_ = false;
   this->logged_first_parent_response_ = false;
   this->logged_target_parent_response_ = false;
   this->logged_parent_changed_ = false;
   this->logged_target_reached_ = false;
 }
 
-void ThreadStockObserverComponent::start_stock_search() {
+bool ThreadStockObserverComponent::prepare_stock_search_internal_(bool current_parent_off_mode) {
   if (!this->target_configured_) {
     ESP_LOGW(TAG, "SO0 request ignored; target parent extaddr is not configured");
-    return;
+    return false;
   }
 
   if (!this->callback_registered_) {
     ESP_LOGW(TAG,
              "SO6 failure; invalid instrumentation; Parent Response hook unavailable "
              "(trial not valid for stock-observed interpretation)");
-    return;
+    return false;
   }
 
   auto lock = esphome::openthread::InstanceLock::try_acquire(0);
   if (!lock.has_value()) {
     ESP_LOGW(TAG, "SO0 request ignored; could not lock OpenThread instance");
-    return;
+    return false;
   }
 
   otInstance *instance = lock->get_instance();
@@ -78,22 +79,38 @@ void ThreadStockObserverComponent::start_stock_search() {
   this->t0_ms_ = millis();
 
   const std::string target_text = this->extaddr_to_string_(this->target_extaddr_);
+  if (current_parent_off_mode) {
+    ESP_LOGI(TAG, "SO0 current-parent-off prepare; target=%s", target_text.c_str());
+  } else {
+    ESP_LOGI(TAG, "SO0 request; target=%s", target_text.c_str());
+  }
 
   otRouterInfo parent{};
   if (otThreadGetParentInfo(instance, &parent) == OT_ERROR_NONE) {
     this->initial_parent_rloc16_ = parent.mRloc16;
     this->initial_parent_extaddr_ = parent.mExtAddress;
 
-    ESP_LOGI(TAG, "SO0 request; target=%s", target_text.c_str());
     ESP_LOGI(TAG, "SO0 initial parent: RLOC16 0x%04x ExtAddr %s", parent.mRloc16,
              this->extaddr_to_string_(parent.mExtAddress).c_str());
+    if (current_parent_off_mode) {
+      ESP_LOGI(TAG, "SO0 current parent selected for shutdown: RLOC16 0x%04x ExtAddr %s", parent.mRloc16,
+               this->extaddr_to_string_(parent.mExtAddress).c_str());
+      ESP_LOGI(TAG, "SO0 waiting for current-parent-off action");
+    }
   } else {
     this->initial_parent_rloc16_ = 0xFFFE;
     std::memset(&this->initial_parent_extaddr_, 0, sizeof(this->initial_parent_extaddr_));
     ESP_LOGI(TAG, "SO0 request; target=%s; initial parent unavailable", target_text.c_str());
   }
 
-  otError err = otThreadSearchForBetterParent(instance);
+  this->prepared_ = true;
+  return true;
+}
+
+void ThreadStockObserverComponent::start_observation_after_search_(otError err, bool current_parent_off_mode) {
+  if (current_parent_off_mode) {
+    ESP_LOGI(TAG, "SO1 current-parent-off action complete; starting stock search");
+  }
   ESP_LOGI(TAG, "SO1 search started; status=%d", static_cast<int>(err));
 
   if (err != OT_ERROR_NONE) {
@@ -102,6 +119,46 @@ void ThreadStockObserverComponent::start_stock_search() {
   }
 
   this->active_ = true;
+}
+
+void ThreadStockObserverComponent::start_stock_search() {
+  if (!this->prepare_stock_search_internal_(false)) {
+    return;
+  }
+
+  auto lock = esphome::openthread::InstanceLock::try_acquire(0);
+  if (!lock.has_value()) {
+    ESP_LOGW(TAG, "SO6 failure; could not lock OpenThread instance for better-parent search");
+    return;
+  }
+
+  otInstance *instance = lock->get_instance();
+
+  otError err = otThreadSearchForBetterParent(instance);
+  this->prepared_ = false;
+  this->start_observation_after_search_(err, false);
+}
+
+void ThreadStockObserverComponent::prepare_stock_search() {
+  this->prepare_stock_search_internal_(true);
+}
+
+void ThreadStockObserverComponent::start_prepared_stock_search() {
+  if (!this->prepared_) {
+    ESP_LOGW(TAG, "SO6 failure; start_prepared_stock_search called without prepared state");
+    return;
+  }
+
+  auto lock = esphome::openthread::InstanceLock::try_acquire(0);
+  if (!lock.has_value()) {
+    ESP_LOGW(TAG, "SO6 failure; could not lock OpenThread instance for better-parent search");
+    return;
+  }
+
+  otInstance *instance = lock->get_instance();
+  otError err = otThreadSearchForBetterParent(instance);
+  this->prepared_ = false;
+  this->start_observation_after_search_(err, true);
 }
 
 void ThreadStockObserverComponent::parent_response_callback_(const otThreadParentResponseInfo *info, void *context) {

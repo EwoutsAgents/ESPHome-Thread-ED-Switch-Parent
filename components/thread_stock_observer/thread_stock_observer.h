@@ -41,6 +41,8 @@ class ThreadStockObserverComponent : public Component {
   void set_log_parent_responses(bool enabled) { this->log_parent_responses_ = enabled; }
 
   void start_stock_search();
+  void prepare_stock_search();
+  void start_prepared_stock_search();
 
  protected:
   static constexpr const char *TAG = "thread_stock_observer";
@@ -54,6 +56,8 @@ class ThreadStockObserverComponent : public Component {
   bool current_parent_matches_target_(otInstance *instance, otRouterInfo *out_parent);
 
   void reset_run_state_();
+  bool prepare_stock_search_internal_(bool current_parent_off_mode);
+  void start_observation_after_search_(otError err, bool current_parent_off_mode);
 
   bool active_{false};
   bool callback_registered_{false};
@@ -71,6 +75,7 @@ class ThreadStockObserverComponent : public Component {
   bool logged_target_parent_response_{false};
   bool logged_parent_changed_{false};
   bool logged_target_reached_{false};
+  bool prepared_{false};
 };
 
 }  // namespace thread_stock_observer

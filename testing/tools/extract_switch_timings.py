@@ -18,7 +18,7 @@ VARIANT_PATTERNS = {
 }
 
 STOCK_OBSERVED_PATTERNS = {
-    "SO0_request": re.compile(r"SO0 request"),
+    "SO0_request": re.compile(r"SO0 (request|current-parent-off prepare)"),
     "SO1_search_started": re.compile(r"SO1 search started"),
     "SO2_parent_response_observed": re.compile(r"SO2 parent response observed"),
     "SO3_target_parent_response_observed": re.compile(r"SO3 target parent response observed"),
@@ -29,7 +29,7 @@ STOCK_OBSERVED_PATTERNS = {
 }
 
 COMMON_PATTERNS = {
-    "C0_request": re.compile(r"(SO0 request|T0 request|Requested Thread parent switch)"),
+    "C0_request": re.compile(r"(SO0 request|SO0 current-parent-off prepare|T0 request|Requested Thread parent switch)"),
     "C1_workflow_started": re.compile(
         r"(SO1 search started|T1 search started|Parent discovery attempt|Status changed to discovering parents)"
     ),
@@ -48,6 +48,14 @@ SCENARIOS = {
     "auto": [*VARIANT_PATTERNS.keys(), *STOCK_OBSERVED_PATTERNS.keys(), *COMMON_PATTERNS.keys()],
 }
 
+META_PATTERNS = {
+    "classification": re.compile(r"^#\s*classification\s+(.+)$"),
+    "initial_parent_extaddr": re.compile(r"^#\s*current-parent-extaddr\s+([0-9a-fA-F]{16})$"),
+    "initial_parent_rloc16": re.compile(r"^#\s*current-parent-rloc16\s+(0x[0-9a-fA-F]{4})$"),
+    "disabled_router_label": re.compile(r"^#\s*disabled-router-label\s+(\S+)$"),
+    "disable_method": re.compile(r"^#\s*disable-method\s+(\S+)$"),
+}
+
 
 def parse_ts(s: str) -> dt.datetime:
     return dt.datetime.fromisoformat(s.replace("Z", "+00:00"))
@@ -63,6 +71,13 @@ def main() -> int:
     args = parser.parse_args()
 
     events: dict[str, dt.datetime] = {}
+    meta: dict[str, str] = {
+        "classification": "",
+        "initial_parent_extaddr": "",
+        "initial_parent_rloc16": "",
+        "disabled_router_label": "",
+        "disable_method": "",
+    }
 
     all_patterns: dict[str, re.Pattern[str]] = {}
     all_patterns.update(VARIANT_PATTERNS)
@@ -72,6 +87,11 @@ def main() -> int:
     selected_events = SCENARIOS[args.scenario]
 
     for line in args.infile.read_text(encoding="utf-8", errors="ignore").splitlines():
+        for key, pat in META_PATTERNS.items():
+            mm = pat.match(line)
+            if mm:
+                meta[key] = mm.group(1).strip()
+
         m = TS_PREFIX.match(line)
         if not m or m.group("label") != args.label:
             continue
@@ -85,18 +105,39 @@ def main() -> int:
     args.out.parent.mkdir(parents=True, exist_ok=True)
     with args.out.open("w", newline="", encoding="utf-8") as f:
         writer = csv.writer(f)
-        writer.writerow(["scenario", "mode", "checkpoint", "timestamp_utc", "delta_ms_from_c0", "source_log", "classification"])
+        writer.writerow([
+            "scenario", "mode", "checkpoint", "timestamp_utc", "delta_ms_from_c0", "source_log", "classification",
+            "initial_parent_extaddr", "target_parent_extaddr", "disabled_router_label", "disable_method"
+        ])
         c0 = events.get("C0_request")
+
+        classification = meta["classification"]
+        if not classification:
+            if args.scenario == "stock-observed" and "SO_invalid_instrumentation" in events:
+                classification = "invalid_instrumentation"
+            elif args.mode in ("current-parent-off", "forced-current-parent-off"):
+                if "SO5_target_parent_reached" in events:
+                    classification = "success_target_reached"
+                elif "SO6_timeout_or_failure" in events:
+                    classification = "timeout_target_not_reached"
+        target_parent_extaddr = ""
+        m_target = re.search(r"SO0 (?:current-parent-off prepare; |request; )target=([0-9a-fA-F]{16})", args.infile.read_text(encoding="utf-8", errors="ignore"))
+        if m_target:
+            target_parent_extaddr = m_target.group(1).lower()
+
         for key in selected_events:
             ts = events.get(key)
             if ts is None:
-                writer.writerow([args.scenario, args.mode, key, "", "", str(args.infile), ""])
+                writer.writerow([
+                    args.scenario, args.mode, key, "", "", str(args.infile), classification,
+                    meta["initial_parent_extaddr"], target_parent_extaddr, meta["disabled_router_label"], meta["disable_method"]
+                ])
             else:
                 delta = "" if c0 is None else int((ts - c0).total_seconds() * 1000)
-                classification = ""
-                if args.scenario == "stock-observed" and key == "SO_invalid_instrumentation":
-                    classification = "invalid_instrumentation"
-                writer.writerow([args.scenario, args.mode, key, ts.isoformat(), delta, str(args.infile), classification])
+                writer.writerow([
+                    args.scenario, args.mode, key, ts.isoformat(), delta, str(args.infile), classification,
+                    meta["initial_parent_extaddr"], target_parent_extaddr, meta["disabled_router_label"], meta["disable_method"]
+                ])
 
     print(f"Wrote {args.out}")
     for key in selected_events:

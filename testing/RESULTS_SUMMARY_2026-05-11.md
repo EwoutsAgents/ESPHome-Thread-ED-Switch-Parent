@@ -93,13 +93,55 @@ Per-trial checkpoints (ms from SO0/C0 request):
 
 Conclusion: this batch is valid for stock-observed interpretation (instrumentation available). The target parent consistently responded (SO3), but parent change/target reach did not occur before timeout in these 10 trials.
 
+## Stock-observed current-parent-off trials
+
+In `current-parent-off` mode, the child’s actual current parent was identified from `otThreadGetParentInfo()` and the runner attempted to disable the mapped current-parent router before `otThreadSearchForBetterParent()` was called. This differs from the steady-state stock-observed batch, where the current parent remained available.
+
+Batch: `stock-observed-current-parent-off`, latest 10 trials (`20260511-182931` .. `20260511-184132`)
+
+- trial count: 10
+- valid trials: 4
+- invalid trials: 6
+- disable method: `serial-reset` (weak fallback, not hard power-off)
+
+Per-trial current parent / disabled router / classification:
+- trial1: `b27d8460213d29da` -> `router1` (`current_parent_shutdown_failed`)
+- trial2: `b27d8460213d29da` -> `router1` (`timeout_target_not_reached`) [valid]
+- trial3: `b27d8460213d29da` -> `router1` (`timeout_target_not_reached`) [valid]
+- trial4: `b27d8460213d29da` -> `router1` (`current_parent_shutdown_failed`)
+- trial5: `b27d8460213d29da` -> `router1` (`timeout_target_not_reached`) [valid]
+- trial6: `b27d8460213d29da` -> `router1` (`current_parent_shutdown_failed`)
+- trial7: `b27d8460213d29da` -> `router1` (`current_parent_shutdown_failed`)
+- trial8: `b27d8460213d29da` -> `router1` (`current_parent_shutdown_failed`)
+- trial9: `2657edfb2fbc394b` -> `unknown` (`invalid_parent_mapping`)
+- trial10: `b27d8460213d29da` -> `router1` (`timeout_target_not_reached`) [valid]
+
+Checkpoint counts (all 10 trials):
+- SO2 observed: 10/10
+- SO3 observed: 10/10
+- SO4 parent changed: 3/10
+- SO5 target reached: 0/10
+- SO6 timeout/failure: 10/10
+
+Timing medians (latest 10 trial batch):
+- median time to SO3: 7076 ms
+- median time to SO4 (when present): 8224 ms
+- median time to SO5 (when present): N/A
+
+Interpretation split:
+- Steady-state stock-observed tests whether stock OpenThread voluntarily moves to a responding target while the current parent remains available.
+- Current-parent-off tests whether stock OpenThread reaches the configured target when the actual current parent is disrupted immediately before the better-parent search.
+- In the current-parent-off batch above, valid trials reached SO3 but did not reach SO5 before timeout.
+
 ## Commands used
 
 - Build/flash + verification:
   - `testing/tools/build_stock_observed_with_verification.sh`
-- Batch run:
+- Steady batch run:
   - `testing/tools/run_trials_batch.sh stock-observed 10 80 steady`
+- Current-parent-off batch run:
+  - `testing/tools/run_current_parent_off_trials.sh stock-observed 10 80`
 - Extractor:
-  - `python3 testing/tools/extract_switch_timings.py --in <log> --label child --scenario stock-observed --mode steady --out <csv>`
+  - `python3 testing/tools/extract_switch_timings.py --in <log> --label child --scenario stock-observed --mode <steady|current-parent-off> --out <csv>`
 - Integrity check:
   - `python3 testing/tools/check_stock_observed_integrity.py`
