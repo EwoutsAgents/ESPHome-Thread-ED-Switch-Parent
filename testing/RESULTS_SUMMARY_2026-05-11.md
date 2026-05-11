@@ -2,68 +2,104 @@
 
 `stock-observed` is **stock behavior with observe-only instrumentation**.
 
-## Artifact Audit Status
+## Audit status (updated after instrumentation fix)
 
-- Committed artifacts: none under `testing/logs/` (path is currently gitignored).
-- Local-only artifacts present on this workstation:
-  - `testing/logs/stock-observed-steady-20260507-215442.log`
-  - `testing/logs/stock-observed-steady-20260507-215442.csv`
-  - `testing/logs/variant-mcast-steady-20260507-202238.log`
-  - `testing/logs/variant-mcast-steady-20260507-202238.csv`
-  - `testing/logs/variant-ucast-steady-20260507-202442.log`
-  - `testing/logs/variant-ucast-steady-20260507-202442.csv`
-- Missing artifacts: none for the file list above.
-- Rerun status: **required** after observe-only implementation changes.
+- Instrumentation fix commit: `76c75eb`
+- Rerun batch window: `20260511-171511` .. `20260511-172711` (10 trials)
+- Build/flash evidence preserved: `testing/logs/stock-observed-steady-flash.log`
+- Patch script execution confirmed in flash log:
+  - `[thread_stock_observer] thread_api: already`
+  - `[thread_stock_observer] mle_decl: already`
+  - `[thread_stock_observer] mle_call: already`
+- Runtime hook status during rerun: `Parent Response hook registered: YES` in all 10 trial logs.
 
-The raw artifacts for this run were not committed. The numerical values below are retained as provisional historical notes only and must not be treated as auditable benchmark evidence.
+## Batch validity
 
-## Table 1 — Variant Internal Timings (T0–T6)
+- Valid instrumentation trials: 10/10
+- Invalid instrumentation trials: 0/10 (`invalid_instrumentation`)
 
-| Variant | Mode | T0 | T1 | T2 | T3 | T4 | T5 | T6 |
-|---|---|---:|---:|---:|---:|---:|---:|---:|
-| variant-mcast | steady | 0 | 11 | 11 | 22 | 33 | 40 | 40 |
-| variant-ucast | steady | 0 | 11 | 11 | 22 | 34 | 41 | 41 |
+## Stock-observed trial outcomes (steady)
 
-## Table 2 — Stock-Observed Timings (SO0–SO6)
+Per-trial checkpoints (ms from SO0/C0 request):
 
-| Variant | Mode | SO0 | SO1 | SO2 | SO3 | SO4 | SO5 | SO6 |
-|---|---|---:|---:|---:|---:|---:|---:|---:|
-| stock-observed | steady | 0 | 14 | 2946 | 2963 | — | — | 15998 |
+- trial1 (`stock-observed-steady-20260511-171511-trial1.log`)
+  - SO2: 2800
+  - SO3: 3154
+  - SO4: missing
+  - SO5: missing
+  - SO6: 15994
+- trial2 (`stock-observed-steady-20260511-171631-trial2.log`)
+  - SO2: 5932
+  - SO3: 5973
+  - SO4: missing
+  - SO5: missing
+  - SO6: 16003
+- trial3 (`stock-observed-steady-20260511-171751-trial3.log`)
+  - SO2: 413
+  - SO3: 469
+  - SO4: missing
+  - SO5: missing
+  - SO6: 15991
+- trial4 (`stock-observed-steady-20260511-171911-trial4.log`)
+  - SO2: 2759
+  - SO3: 2782
+  - SO4: missing
+  - SO5: missing
+  - SO6: 15992
+- trial5 (`stock-observed-steady-20260511-172031-trial5.log`)
+  - SO2: 2836
+  - SO3: 2944
+  - SO4: missing
+  - SO5: missing
+  - SO6: 15999
+- trial6 (`stock-observed-steady-20260511-172151-trial6.log`)
+  - SO2: 2086
+  - SO3: 2102
+  - SO4: missing
+  - SO5: missing
+  - SO6: 15991
+- trial7 (`stock-observed-steady-20260511-172311-trial7.log`)
+  - SO2: 4837
+  - SO3: 4859
+  - SO4: missing
+  - SO5: missing
+  - SO6: 15999
+- trial8 (`stock-observed-steady-20260511-172431-trial8.log`)
+  - SO2: 3003
+  - SO3: 3200
+  - SO4: missing
+  - SO5: missing
+  - SO6: 15997
+- trial9 (`stock-observed-steady-20260511-172551-trial9.log`)
+  - SO2: 6170
+  - SO3: 6414
+  - SO4: missing
+  - SO5: missing
+  - SO6: 15996
+- trial10 (`stock-observed-steady-20260511-172711-trial10.log`)
+  - SO2: 2711
+  - SO3: 2728
+  - SO4: missing
+  - SO5: missing
+  - SO6: 15997
 
-## Table 3 — Common Comparable Metrics
+## Aggregate interpretation (this valid batch only)
 
-| Variant | Mode | C0_request | C1_workflow_started | C2_target_reached | time_to_target (C2-C0, ms) | success_rate |
-|---|---|---:|---:|---:|---:|---:|
-| stock-observed | steady | 0 | 14 | — | — | 0/1 |
-| variant-mcast | steady | 0 | 11 | 40 | 40 | 1/1 |
-| variant-ucast | steady | 0 | 11 | 41 | 41 | 1/1 |
+- SO2 observed: 10/10
+- SO3 observed: 10/10
+- SO4 observed: 0/10
+- SO5 observed: 0/10
+- SO6 timeout/failure: 10/10
 
-## Interpretation
+Conclusion: this batch is valid for stock-observed interpretation (instrumentation available). The target parent consistently responded (SO3), but parent change/target reach did not occur before timeout in these 10 trials.
 
-The stock-observed run reached `SO3`, meaning the target parent emitted a real Parent Response. It did not reach `SO5`, meaning OpenThread did not report the target as the current parent before timeout. This is reported as `SO6_timeout_or_failure`, not converted into synthetic selected-parent timing events.
+## Commands used
 
-## Reproducibility Metadata
-
-- Repository commit: 02a91bb114029cf872eb5b71169ce2e509825337
-- ESPHome version: unknown
-- ESP-IDF version: unknown
-- OpenThread version or ESP-IDF OpenThread package: unknown
-- Board: esp32-c6-devkitm-1
-- Child device serial path: /dev/serial/by-id/usb-1a86_USB_Single_Serial_5AF7094208-if00
-- Primary router serial path: /dev/serial/by-id/usb-1a86_USB_Single_Serial_5AF7094336-if00
-- Secondary router serial path: /dev/serial/by-id/usb-1a86_USB_Single_Serial_5AF7094210-if00
-- Thread channel: 15
-- PAN ID: 0x1234
-- Target parent ExtAddr: da97557943a05aac
-- Scenario list: stock-observed, variant-mcast, variant-ucast, stock (sanity)
-- Number of trials per scenario: 1 (historical), rerun pending (target >=10)
-- Capture command: unknown
-- Extraction command: `python3 testing/tools/extract_switch_timings.py --in <log> --label child --scenario <scenario> --mode steady --out <csv>`
-
-## Regression Check
-
-Run:
-
-```bash
-python3 testing/tools/check_stock_observed_integrity.py
-```
+- Build/flash + verification:
+  - `testing/tools/build_stock_observed_with_verification.sh`
+- Batch run:
+  - `testing/tools/run_trials_batch.sh stock-observed 10 80 steady`
+- Extractor:
+  - `python3 testing/tools/extract_switch_timings.py --in <log> --label child --scenario stock-observed --mode steady --out <csv>`
+- Integrity check:
+  - `python3 testing/tools/check_stock_observed_integrity.py`
