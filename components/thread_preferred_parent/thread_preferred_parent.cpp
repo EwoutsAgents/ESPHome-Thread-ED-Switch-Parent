@@ -766,6 +766,7 @@ otError ThreadPreferredParentComponent::start_selected_parent_attach_(otInstance
   if (this->selected_parent_hook_available_()) {
     // Prefer the custom selected-parent bridge because it directly constrains
     // the attach attempt to the observed or configured target ExtAddr.
+    ESP_LOGI(TAG, "T3 selected-parent attach start; target=%s", this->extaddr_to_string_(selected).c_str());
     ESP_LOGI(TAG, "Starting selected-parent attach to ExtAddr %s", this->extaddr_to_string_(selected).c_str());
     const bool accepted = this->request_selected_parent_attach_(instance, selected);
     ESP_LOGI(TAG, "Selected-parent attach hook returned %s", YESNO(accepted));

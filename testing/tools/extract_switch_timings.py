@@ -11,7 +11,7 @@ VARIANT_PATTERNS = {
     "T0_request": re.compile(r"(T0 request|Requested Thread parent switch)"),
     "T1_discovery_start": re.compile(r"(T1 search started|Parent discovery attempt|Status changed to discovering parents)"),
     "T2_target_observed": re.compile(r"(target observed after|preferred parent .* matched|Thread parent switch succeeded; current parent is)"),
-    "T3_attach_start": re.compile(r"(starting selected-parent attach|Starting selected-parent attach)"),
+    "T3_attach_start": re.compile(r"T3 selected-parent attach start(?:; target=.*)?"),
     "T4_child_id_req": re.compile(r"(Child ID Request sent|SelectedParent ChildIdRequest sent|SendChildIdRequest|selected-parent attach in progress)"),
     "T5_attach_done": re.compile(r"(Thread parent switch succeeded|Attach result: success)"),
     "T6_parent_match": re.compile(r"(current parent is)"),
