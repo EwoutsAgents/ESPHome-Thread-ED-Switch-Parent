@@ -148,6 +148,35 @@ Interpretation split:
 
 \* `T6-T3` currently available in 1/10 extracted variant-mcast trials due sparse `T3` marker logging in raw logs; `T6-T0` end-to-end median for the same batch is 33.5 ms.
 
+## Balanced rerun (latest)
+
+Balanced batches were rerun with 10 trials each:
+- `stock-observed` `current-parent-off`: 10/10
+- `variant-mcast` `steady`: 10/10
+- `variant-ucast` `steady`: 10/10
+
+Latest switch-act related outcomes from committed CSVs:
+- stock current-parent-off:
+  - SO2 observed: 7/10
+  - SO3 observed: 7/10
+  - SO4 parent changed: 1/10
+  - SO5 target reached: 4/10
+  - SO6 timeout/failure: 6/10
+  - median `SO4 - disruption_time`: 7478 ms (n=1)
+  - median `SO5 - disruption_time`: 5906 ms (n=4)
+- variant-mcast steady:
+  - T6 reached: 10/10
+  - T3 attach-start detected: 1/10
+  - median `T6-T3`: 3305 ms (n=1)
+  - median end-to-end `T6-T0`: 34 ms
+- variant-ucast steady:
+  - T6 reached: 10/10
+  - T3 attach-start detected: 0/10
+  - median `T6-T3`: N/A
+  - median end-to-end `T6-T0`: 33 ms
+
+Note: `T3` sparsity in variant logs still limits strong `T6-T3` comparison quality; this needs explicit variant-side logging improvements for a publishable switch-act comparison.
+
 ## Commands used
 
 - Build/flash + verification:
