@@ -33,17 +33,19 @@ COMMON_PATTERNS = {
         r"(SO1 search started|T1 search started|Parent discovery attempt|Status changed to discovering parents)"
     ),
     "C2_target_reached": re.compile(
-        r"(SO5 target parent reached|Thread parent switch succeeded; current parent is|current parent is)"
+        r"(SO5 target parent reached|Thread parent switch succeeded; current parent is)"
     ),
 }
 
 TS_PREFIX = re.compile(r"^(?P<ts>\d{4}-\d{2}-\d{2}T[^ ]+)\s+\[(?P<label>[^\]]+)\]\s+(?P<msg>.*)$")
 
-EVENT_ORDER = [
-    *VARIANT_PATTERNS.keys(),
-    *STOCK_OBSERVED_PATTERNS.keys(),
-    *COMMON_PATTERNS.keys(),
-]
+SCENARIOS = {
+    "stock-observed": [*STOCK_OBSERVED_PATTERNS.keys(), *COMMON_PATTERNS.keys()],
+    "variant-mcast": [*VARIANT_PATTERNS.keys(), *COMMON_PATTERNS.keys()],
+    "variant-ucast": [*VARIANT_PATTERNS.keys(), *COMMON_PATTERNS.keys()],
+    "stock": ["T0_request", "T1_discovery_start", "C0_request", "C1_workflow_started"],
+    "auto": [*VARIANT_PATTERNS.keys(), *STOCK_OBSERVED_PATTERNS.keys(), *COMMON_PATTERNS.keys()],
+}
 
 
 def parse_ts(s: str) -> dt.datetime:
@@ -54,6 +56,8 @@ def main() -> int:
     parser = argparse.ArgumentParser(description="Extract parent-switch timing checkpoints from captured logs.")
     parser.add_argument("--in", dest="infile", type=Path, required=True)
     parser.add_argument("--label", default="child", help="Node label to analyze (from capture prefix).")
+    parser.add_argument("--scenario", choices=list(SCENARIOS.keys()), default="auto")
+    parser.add_argument("--mode", default="steady")
     parser.add_argument("--out", type=Path, default=Path("testing/logs/switch_timings.csv"))
     args = parser.parse_args()
 
@@ -64,37 +68,34 @@ def main() -> int:
     all_patterns.update(STOCK_OBSERVED_PATTERNS)
     all_patterns.update(COMMON_PATTERNS)
 
+    selected_events = SCENARIOS[args.scenario]
+
     for line in args.infile.read_text(encoding="utf-8", errors="ignore").splitlines():
         m = TS_PREFIX.match(line)
-        if not m:
-            continue
-        if m.group("label") != args.label:
+        if not m or m.group("label") != args.label:
             continue
 
         ts = parse_ts(m.group("ts"))
         msg = m.group("msg")
-        for key, pattern in all_patterns.items():
-            if key not in events and pattern.search(msg):
+        for key in selected_events:
+            if key not in events and all_patterns[key].search(msg):
                 events[key] = ts
 
     args.out.parent.mkdir(parents=True, exist_ok=True)
     with args.out.open("w", newline="", encoding="utf-8") as f:
         writer = csv.writer(f)
-        writer.writerow(["checkpoint", "timestamp_utc", "delta_ms_from_c0"])
+        writer.writerow(["scenario", "mode", "checkpoint", "timestamp_utc", "delta_ms_from_c0", "source_log"])
         c0 = events.get("C0_request")
-        for key in EVENT_ORDER:
+        for key in selected_events:
             ts = events.get(key)
             if ts is None:
-                writer.writerow([key, "", ""])
+                writer.writerow([args.scenario, args.mode, key, "", "", str(args.infile)])
             else:
                 delta = "" if c0 is None else int((ts - c0).total_seconds() * 1000)
-                writer.writerow([key, ts.isoformat(), delta])
+                writer.writerow([args.scenario, args.mode, key, ts.isoformat(), delta, str(args.infile)])
 
     print(f"Wrote {args.out}")
-    print("T* = selected-parent variant internals")
-    print("SO* = stock-observed internals")
-    print("C* = common comparable outcomes")
-    for key in EVENT_ORDER:
+    for key in selected_events:
         print(f"{key}: {events.get(key).isoformat() if key in events else '<missing>'}")
     return 0
 

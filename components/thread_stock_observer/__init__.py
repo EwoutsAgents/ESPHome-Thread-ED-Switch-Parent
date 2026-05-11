@@ -18,9 +18,7 @@ CONF_LOG_PARENT_RESPONSES = "log_parent_responses"
 SCRIPT_PATH = os.path.abspath(
     os.path.join(
         os.path.dirname(__file__),
-        "..",
-        "thread_preferred_parent",
-        "apply-openthread-selected-parent-hook.py",
+        "apply-openthread-parent-response-observer.py",
     )
 )
 

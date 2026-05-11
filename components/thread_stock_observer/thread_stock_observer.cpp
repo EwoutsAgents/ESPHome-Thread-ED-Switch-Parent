@@ -13,8 +13,8 @@ static int hex_to_nibble_(char c) {
 }
 
 void ThreadStockObserverComponent::setup() {
-  if (thread_preferred_parent_ot_register_parent_response_callback != nullptr) {
-    thread_preferred_parent_ot_register_parent_response_callback(
+  if (thread_stock_observer_ot_register_parent_response_callback != nullptr) {
+    thread_stock_observer_ot_register_parent_response_callback(
         &ThreadStockObserverComponent::parent_response_callback_, this);
     this->callback_registered_ = true;
     ESP_LOGI(TAG, "OpenThread Parent Response reporting hook registered for stock observation");

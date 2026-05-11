@@ -15,13 +15,13 @@
 
 extern "C" {
 
-typedef void (*thread_preferred_parent_parent_response_callback_t)(
+typedef void (*thread_stock_observer_parent_response_callback_t)(
     const otThreadParentResponseInfo *aInfo,
     void *aContext
 );
 
-void thread_preferred_parent_ot_register_parent_response_callback(
-    thread_preferred_parent_parent_response_callback_t aCallback,
+void thread_stock_observer_ot_register_parent_response_callback(
+    thread_stock_observer_parent_response_callback_t aCallback,
     void *aContext
 ) __attribute__((weak));
 
