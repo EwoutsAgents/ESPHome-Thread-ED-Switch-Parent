@@ -123,15 +123,30 @@ Checkpoint counts (all 10 trials):
 - SO5 target reached: 0/10
 - SO6 timeout/failure: 10/10
 
-Timing medians (latest 10 trial batch):
-- median time to SO3: 7076 ms
-- median time to SO4 (when present): 8224 ms
-- median time to SO5 (when present): N/A
+Switch-act timing basis:
+- `disruption_time = disable_start`
+- primary stock switch-act metric: `SO4 - disruption_time`
+- strict stock target switch metric: `SO5 - disruption_time`
+
+Measured medians from committed current-parent-off CSVs:
+- median `SO4 - disruption_time`: **7968.5 ms** (2 observed SO4 events)
+- median `SO5 - disruption_time`: **N/A** (0 observed SO5 events)
 
 Interpretation split:
 - Steady-state stock-observed tests whether stock OpenThread voluntarily moves to a responding target while the current parent remains available.
 - Current-parent-off tests whether stock OpenThread reaches the configured target when the actual current parent is disrupted immediately before the better-parent search.
-- In the current-parent-off batch above, valid trials reached SO3 but did not reach SO5 before timeout.
+- Stock is not target-steered: SO4 (any parent change) and SO5 (configured target reached) answer different questions.
+
+## Switch-act vs end-to-end summary table
+
+| Scenario | Mode | Trials | Trigger | Success criterion | Successes | Median switch-act time (ms) | Notes |
+|---|---|---:|---|---|---:|---:|---|
+| stock-observed | current-parent-off | 10 | disruption_time (`disable_start`) | SO4 parent changed | 3/10 | 7968.5 | stock not target-steered |
+| stock-observed | current-parent-off | 10 | disruption_time (`disable_start`) | SO5 target reached | 0/10 | N/A | stricter target criterion |
+| variant-mcast | steady | 10 | T3 attach start | T6 target parent confirmed | 10/10 | 3846* | selected-parent attach |
+| variant-ucast | steady | 0 | T3 attach start | T6 target parent confirmed | 0/0 | N/A | not rerun in this batch |
+
+\* `T6-T3` currently available in 1/10 extracted variant-mcast trials due sparse `T3` marker logging in raw logs; `T6-T0` end-to-end median for the same batch is 33.5 ms.
 
 ## Commands used
 

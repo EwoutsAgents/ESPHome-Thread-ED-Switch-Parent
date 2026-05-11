@@ -56,7 +56,7 @@ void ThreadStockObserverComponent::reset_run_state_() {
 
 bool ThreadStockObserverComponent::prepare_stock_search_internal_(bool current_parent_off_mode) {
   if (!this->target_configured_) {
-    ESP_LOGW(TAG, "SO0 request ignored; target parent extaddr is not configured");
+    ESP_LOGW(TAG, "SO0 ignored; target parent extaddr is not configured");
     return false;
   }
 
@@ -69,7 +69,7 @@ bool ThreadStockObserverComponent::prepare_stock_search_internal_(bool current_p
 
   auto lock = esphome::openthread::InstanceLock::try_acquire(0);
   if (!lock.has_value()) {
-    ESP_LOGW(TAG, "SO0 request ignored; could not lock OpenThread instance");
+    ESP_LOGW(TAG, "SO0 ignored; could not lock OpenThread instance");
     return false;
   }
 
@@ -108,15 +108,15 @@ bool ThreadStockObserverComponent::prepare_stock_search_internal_(bool current_p
 }
 
 void ThreadStockObserverComponent::start_observation_after_search_(otError err, bool current_parent_off_mode) {
-  if (current_parent_off_mode) {
-    ESP_LOGI(TAG, "SO1 current-parent-off action complete; starting stock search");
-  }
-  ESP_LOGI(TAG, "SO1 search started; status=%d", static_cast<int>(err));
-
   if (err != OT_ERROR_NONE) {
     ESP_LOGW(TAG, "SO6 failure; otThreadSearchForBetterParent status=%d", static_cast<int>(err));
     return;
   }
+
+  if (current_parent_off_mode) {
+    ESP_LOGI(TAG, "SO1 current-parent-off action complete; starting stock search");
+  }
+  ESP_LOGI(TAG, "SO1 search started; status=%d", static_cast<int>(err));
 
   this->active_ = true;
 }
@@ -229,8 +229,12 @@ void ThreadStockObserverComponent::loop() {
   if (parent_err == OT_ERROR_NONE) {
     const std::string parent_extaddr = this->extaddr_to_string_(parent.mExtAddress);
 
-    if (!this->logged_parent_changed_ && this->initial_parent_rloc16_ != 0xFFFE &&
-        parent.mRloc16 != this->initial_parent_rloc16_) {
+    const bool parent_changed =
+        this->initial_parent_rloc16_ != 0xFFFE &&
+        (parent.mRloc16 != this->initial_parent_rloc16_ ||
+         !this->extaddr_matches_(parent.mExtAddress, this->initial_parent_extaddr_));
+
+    if (!this->logged_parent_changed_ && parent_changed) {
       this->logged_parent_changed_ = true;
       ESP_LOGI(TAG,
                "SO4 parent changed after %lu ms; previous RLOC16 0x%04x current RLOC16 0x%04x current ExtAddr %s",

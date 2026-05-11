@@ -11,8 +11,8 @@ VARIANT_PATTERNS = {
     "T0_request": re.compile(r"(T0 request|Requested Thread parent switch)"),
     "T1_discovery_start": re.compile(r"(T1 search started|Parent discovery attempt|Status changed to discovering parents)"),
     "T2_target_observed": re.compile(r"(target observed after|preferred parent .* matched|Thread parent switch succeeded; current parent is)"),
-    "T3_attach_start": re.compile(r"(starting selected-parent attach|Starting selected-parent attach|already selected|Attach result: success after 0 ms)"),
-    "T4_child_id_req": re.compile(r"(Child ID Request sent|SelectedParent ChildIdRequest sent|SendChildIdRequest|selected-parent attach in progress|Attach result: success after 0 ms)"),
+    "T3_attach_start": re.compile(r"(starting selected-parent attach|Starting selected-parent attach)"),
+    "T4_child_id_req": re.compile(r"(Child ID Request sent|SelectedParent ChildIdRequest sent|SendChildIdRequest|selected-parent attach in progress)"),
     "T5_attach_done": re.compile(r"(Thread parent switch succeeded|Attach result: success)"),
     "T6_parent_match": re.compile(r"(current parent is)"),
 }
@@ -54,6 +54,8 @@ META_PATTERNS = {
     "initial_parent_rloc16": re.compile(r"^#\s*current-parent-rloc16\s+(0x[0-9a-fA-F]{4})$"),
     "disabled_router_label": re.compile(r"^#\s*disabled-router-label\s+(\S+)$"),
     "disable_method": re.compile(r"^#\s*disable-method\s+(\S+)$"),
+    "disable_start": re.compile(r"^#\s*disable-start\s+(.+)$"),
+    "disable_end": re.compile(r"^#\s*disable-end\s+(.+)$"),
 }
 
 
@@ -77,7 +79,11 @@ def main() -> int:
         "initial_parent_rloc16": "",
         "disabled_router_label": "",
         "disable_method": "",
+        "disable_start": "",
+        "disable_end": "",
     }
+
+    input_text = args.infile.read_text(encoding="utf-8", errors="ignore")
 
     all_patterns: dict[str, re.Pattern[str]] = {}
     all_patterns.update(VARIANT_PATTERNS)
@@ -86,7 +92,7 @@ def main() -> int:
 
     selected_events = SCENARIOS[args.scenario]
 
-    for line in args.infile.read_text(encoding="utf-8", errors="ignore").splitlines():
+    for line in input_text.splitlines():
         for key, pat in META_PATTERNS.items():
             mm = pat.match(line)
             if mm:
@@ -106,10 +112,12 @@ def main() -> int:
     with args.out.open("w", newline="", encoding="utf-8") as f:
         writer = csv.writer(f)
         writer.writerow([
-            "scenario", "mode", "checkpoint", "timestamp_utc", "delta_ms_from_c0", "source_log", "classification",
+            "scenario", "mode", "checkpoint", "timestamp_utc", "delta_ms_from_c0", "disruption_time_utc", "delta_ms_from_disruption", "delta_ms_from_search_start", "source_log", "classification",
             "initial_parent_extaddr", "target_parent_extaddr", "disabled_router_label", "disable_method"
         ])
         c0 = events.get("C0_request")
+        so1 = events.get("SO1_search_started")
+        disruption_ts = parse_ts(meta["disable_start"]) if meta["disable_start"] else None
 
         classification = meta["classification"]
         if not classification:
@@ -121,7 +129,7 @@ def main() -> int:
                 elif "SO6_timeout_or_failure" in events:
                     classification = "timeout_target_not_reached"
         target_parent_extaddr = ""
-        m_target = re.search(r"SO0 (?:current-parent-off prepare; |request; )target=([0-9a-fA-F]{16})", args.infile.read_text(encoding="utf-8", errors="ignore"))
+        m_target = re.search(r"SO0 (?:current-parent-off prepare; |request; )target=([0-9a-fA-F]{16})", input_text)
         if m_target:
             target_parent_extaddr = m_target.group(1).lower()
 
@@ -129,13 +137,15 @@ def main() -> int:
             ts = events.get(key)
             if ts is None:
                 writer.writerow([
-                    args.scenario, args.mode, key, "", "", str(args.infile), classification,
+                    args.scenario, args.mode, key, "", "", meta["disable_start"], "", "", str(args.infile), classification,
                     meta["initial_parent_extaddr"], target_parent_extaddr, meta["disabled_router_label"], meta["disable_method"]
                 ])
             else:
                 delta = "" if c0 is None else int((ts - c0).total_seconds() * 1000)
+                delta_disruption = "" if disruption_ts is None else int((ts - disruption_ts).total_seconds() * 1000)
+                delta_search = "" if so1 is None else int((ts - so1).total_seconds() * 1000)
                 writer.writerow([
-                    args.scenario, args.mode, key, ts.isoformat(), delta, str(args.infile), classification,
+                    args.scenario, args.mode, key, ts.isoformat(), delta, meta["disable_start"], delta_disruption, delta_search, str(args.infile), classification,
                     meta["initial_parent_extaddr"], target_parent_extaddr, meta["disabled_router_label"], meta["disable_method"]
                 ])
 
