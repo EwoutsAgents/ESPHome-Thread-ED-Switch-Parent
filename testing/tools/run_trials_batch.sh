@@ -28,12 +28,37 @@ fi
 
 STATE_FILE="$STATE_DIR/${SCENARIO}-${MODE}.state"
 DONE=0
+VALID_DONE=0
 if [[ -f "$STATE_FILE" ]]; then
   DONE="$(cat "$STATE_FILE")"
 fi
 
-if (( DONE >= COUNT )); then
-  echo "[batch] already complete: $SCENARIO $MODE $DONE/$COUNT"
+VALID_STATE_FILE="$STATE_DIR/${SCENARIO}-${MODE}.valid.state"
+if [[ -f "$VALID_STATE_FILE" ]]; then
+  VALID_DONE="$(cat "$VALID_STATE_FILE")"
+fi
+
+if [[ "$SCENARIO" == variant-* ]]; then
+  if (( VALID_DONE >= COUNT )); then
+    echo "[batch] already complete: $SCENARIO $MODE valid $VALID_DONE/$COUNT (attempts=$DONE)"
+    exit 0
+  fi
+else
+  if (( DONE >= COUNT )); then
+    echo "[batch] already complete: $SCENARIO $MODE $DONE/$COUNT"
+    exit 0
+  fi
+fi
+
+if [[ "$SCENARIO" == variant-* ]]; then
+  TARGET_ATTEMPTS=$(( COUNT * 4 ))
+  if (( TARGET_ATTEMPTS < COUNT )); then TARGET_ATTEMPTS=$COUNT; fi
+else
+  TARGET_ATTEMPTS=$COUNT
+fi
+
+if (( DONE >= TARGET_ATTEMPTS )); then
+  echo "[batch] attempts exhausted for $SCENARIO $MODE: attempts=$DONE valid=$VALID_DONE target_valid=$COUNT"
   exit 0
 fi
 
@@ -41,12 +66,16 @@ fi
 echo "[batch] preparing firmware: scenario=$SCENARIO mode=$MODE"
 .venv/bin/esphome run "$CONFIG" --device "$CHILD_PORT" --no-logs >"testing/logs/${SCENARIO}-${MODE}-flash.log" 2>&1
 
-for ((i=DONE+1; i<=COUNT; i++)); do
+for ((i=DONE+1; i<=TARGET_ATTEMPTS; i++)); do
   STAMP="$(date +%Y%m%d-%H%M%S)"
   LOG="testing/logs/${SCENARIO}-${MODE}-${STAMP}-trial${i}.log"
   CSV="testing/logs/${SCENARIO}-${MODE}-${STAMP}-trial${i}.csv"
 
-  echo "[batch] trial $i/$COUNT"
+  if [[ "$SCENARIO" == variant-* ]]; then
+    echo "[batch] trial $i/$TARGET_ATTEMPTS (valid $VALID_DONE/$COUNT)"
+  else
+    echo "[batch] trial $i/$COUNT"
+  fi
 
   CAPTURE_ARGS=(
     --config "$CONFIG"
@@ -72,6 +101,30 @@ for ((i=DONE+1; i<=COUNT; i++)); do
     --out "$CSV" >"${CSV%.csv}.extract.out" 2>&1
 
   echo "$i" > "$STATE_FILE"
+
+  if [[ "$SCENARIO" == variant-* ]]; then
+    CLASSIFICATION="$(python3 - <<'PY' "$CSV"
+import csv,sys
+rows=list(csv.DictReader(open(sys.argv[1], newline='', encoding='utf-8')))
+print(rows[0]['classification'] if rows else '')
+PY
+)"
+    if [[ "$CLASSIFICATION" == "success_switch_act" ]]; then
+      VALID_DONE=$((VALID_DONE + 1))
+      echo "$VALID_DONE" > "$VALID_STATE_FILE"
+      echo "[batch] valid switch-act trial accepted ($VALID_DONE/$COUNT)"
+    else
+      echo "[batch] non-switch-act trial classification=$CLASSIFICATION (not counted toward valid target)"
+    fi
+
+    if (( VALID_DONE >= COUNT )); then
+      break
+    fi
+  fi
 done
 
-echo "[batch] complete: $SCENARIO $MODE $COUNT/$COUNT"
+if [[ "$SCENARIO" == variant-* ]]; then
+  echo "[batch] complete: $SCENARIO $MODE valid $VALID_DONE/$COUNT (attempts=$i)"
+else
+  echo "[batch] complete: $SCENARIO $MODE $COUNT/$COUNT"
+fi

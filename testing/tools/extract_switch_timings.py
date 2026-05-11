@@ -15,6 +15,7 @@ VARIANT_PATTERNS = {
     "T4_child_id_req": re.compile(r"(Child ID Request sent|SelectedParent ChildIdRequest sent|SendChildIdRequest|selected-parent attach in progress)"),
     "T5_attach_done": re.compile(r"(Thread parent switch succeeded|Attach result: success)"),
     "T6_parent_match": re.compile(r"(current parent is)"),
+    "V_immediate_parent_match": re.compile(r"T_success_immediate_parent_match"),
 }
 
 STOCK_OBSERVED_PATTERNS = {
@@ -112,10 +113,11 @@ def main() -> int:
     with args.out.open("w", newline="", encoding="utf-8") as f:
         writer = csv.writer(f)
         writer.writerow([
-            "scenario", "mode", "checkpoint", "timestamp_utc", "delta_ms_from_c0", "disruption_time_utc", "delta_ms_from_disruption", "delta_ms_from_search_start", "source_log", "classification",
+            "scenario", "mode", "checkpoint", "timestamp_utc", "delta_ms_from_c0", "delta_ms_from_attach_start", "disruption_time_utc", "delta_ms_from_disruption", "delta_ms_from_search_start", "source_log", "classification",
             "initial_parent_extaddr", "target_parent_extaddr", "disabled_router_label", "disable_method"
         ])
         c0 = events.get("C0_request")
+        t3 = events.get("T3_attach_start")
         so1 = events.get("SO1_search_started")
         disruption_ts = parse_ts(meta["disable_start"]) if meta["disable_start"] else None
 
@@ -132,20 +134,41 @@ def main() -> int:
         m_target = re.search(r"SO0 (?:current-parent-off prepare; |request; )target=([0-9a-fA-F]{16})", input_text)
         if m_target:
             target_parent_extaddr = m_target.group(1).lower()
+        if not target_parent_extaddr and args.scenario.startswith("variant"):
+            m_target = re.search(r"Configured preferred parent by extended address: ([0-9a-fA-F]{16})", input_text)
+            if m_target:
+                target_parent_extaddr = m_target.group(1).lower()
+
+        if args.scenario.startswith("variant"):
+            m_initial = re.search(r"V_initial_parent_extaddr=([0-9a-fA-F]{16})", input_text)
+            if m_initial:
+                meta["initial_parent_extaddr"] = m_initial.group(1).lower()
+
+            if "T3_attach_start" in events and "T6_parent_match" in events:
+                classification = "success_switch_act"
+            elif "V_immediate_parent_match" in events and "T6_parent_match" in events and "T3_attach_start" not in events:
+                classification = "immediate_parent_match_no_switch"
+            elif meta["initial_parent_extaddr"] and target_parent_extaddr and meta["initial_parent_extaddr"].lower() == target_parent_extaddr.lower():
+                classification = "invalid_initial_parent_is_target"
+            elif "T6_parent_match" not in events:
+                classification = "timeout_or_failure"
+            elif not classification:
+                classification = "unclassified"
 
         for key in selected_events:
             ts = events.get(key)
             if ts is None:
                 writer.writerow([
-                    args.scenario, args.mode, key, "", "", meta["disable_start"], "", "", str(args.infile), classification,
+                    args.scenario, args.mode, key, "", "", "", meta["disable_start"], "", "", str(args.infile), classification,
                     meta["initial_parent_extaddr"], target_parent_extaddr, meta["disabled_router_label"], meta["disable_method"]
                 ])
             else:
                 delta = "" if c0 is None else int((ts - c0).total_seconds() * 1000)
+                delta_attach = "" if t3 is None else int((ts - t3).total_seconds() * 1000)
                 delta_disruption = "" if disruption_ts is None else int((ts - disruption_ts).total_seconds() * 1000)
                 delta_search = "" if so1 is None else int((ts - so1).total_seconds() * 1000)
                 writer.writerow([
-                    args.scenario, args.mode, key, ts.isoformat(), delta, meta["disable_start"], delta_disruption, delta_search, str(args.infile), classification,
+                    args.scenario, args.mode, key, ts.isoformat(), delta, delta_attach, meta["disable_start"], delta_disruption, delta_search, str(args.infile), classification,
                     meta["initial_parent_extaddr"], target_parent_extaddr, meta["disabled_router_label"], meta["disable_method"]
                 ])
 

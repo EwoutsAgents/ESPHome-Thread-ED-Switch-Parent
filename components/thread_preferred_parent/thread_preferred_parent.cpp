@@ -153,6 +153,14 @@ void ThreadPreferredParentComponent::request_switch() {
     return;
   }
 
+  auto lock = esphome::openthread::InstanceLock::try_acquire(0);
+  if (lock.has_value()) {
+    otRouterInfo parent_info{};
+    if (otThreadGetParentInfo(lock->get_instance(), &parent_info) == OT_ERROR_NONE) {
+      ESP_LOGI(TAG, "V_initial_parent_extaddr=%s", this->extaddr_to_string_(parent_info.mExtAddress).c_str());
+    }
+  }
+
   this->begin_switch_();
   ESP_LOGI(TAG, "Requested Thread parent switch to %s", this->target_to_string_().c_str());
 }
@@ -266,6 +274,9 @@ void ThreadPreferredParentComponent::loop() {
   // in observed Thread state instead of optimistic API return values.
   if (this->current_parent_matches_(instance)) {
     const uint32_t attach_elapsed_ms = this->attach_start_ms_ == 0 ? 0 : now - this->attach_start_ms_;
+    if (this->attach_start_ms_ == 0) {
+      ESP_LOGI(TAG, "T_success_immediate_parent_match; target=%s", this->target_to_string_().c_str());
+    }
     ESP_LOGI(TAG, "Thread parent switch succeeded; current parent is %s", this->target_to_string_().c_str());
     ESP_LOGI(TAG, "Attach result: success after %lu ms; %s selected",
              static_cast<unsigned long>(attach_elapsed_ms), this->target_to_string_().c_str());
