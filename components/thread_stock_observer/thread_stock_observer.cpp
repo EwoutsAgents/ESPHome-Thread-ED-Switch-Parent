@@ -59,6 +59,13 @@ void ThreadStockObserverComponent::start_stock_search() {
     return;
   }
 
+  if (!this->callback_registered_) {
+    ESP_LOGW(TAG,
+             "SO6 failure; invalid instrumentation; Parent Response hook unavailable "
+             "(trial not valid for stock-observed interpretation)");
+    return;
+  }
+
   auto lock = esphome::openthread::InstanceLock::try_acquire(0);
   if (!lock.has_value()) {
     ESP_LOGW(TAG, "SO0 request ignored; could not lock OpenThread instance");

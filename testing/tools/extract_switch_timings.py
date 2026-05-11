@@ -25,6 +25,7 @@ STOCK_OBSERVED_PATTERNS = {
     "SO4_parent_changed": re.compile(r"SO4 parent changed"),
     "SO5_target_parent_reached": re.compile(r"SO5 target parent reached"),
     "SO6_timeout_or_failure": re.compile(r"SO6 (timeout|failure)"),
+    "SO_invalid_instrumentation": re.compile(r"SO6 failure; invalid instrumentation"),
 }
 
 COMMON_PATTERNS = {
@@ -84,15 +85,18 @@ def main() -> int:
     args.out.parent.mkdir(parents=True, exist_ok=True)
     with args.out.open("w", newline="", encoding="utf-8") as f:
         writer = csv.writer(f)
-        writer.writerow(["scenario", "mode", "checkpoint", "timestamp_utc", "delta_ms_from_c0", "source_log"])
+        writer.writerow(["scenario", "mode", "checkpoint", "timestamp_utc", "delta_ms_from_c0", "source_log", "classification"])
         c0 = events.get("C0_request")
         for key in selected_events:
             ts = events.get(key)
             if ts is None:
-                writer.writerow([args.scenario, args.mode, key, "", "", str(args.infile)])
+                writer.writerow([args.scenario, args.mode, key, "", "", str(args.infile), ""])
             else:
                 delta = "" if c0 is None else int((ts - c0).total_seconds() * 1000)
-                writer.writerow([args.scenario, args.mode, key, ts.isoformat(), delta, str(args.infile)])
+                classification = ""
+                if args.scenario == "stock-observed" and key == "SO_invalid_instrumentation":
+                    classification = "invalid_instrumentation"
+                writer.writerow([args.scenario, args.mode, key, ts.isoformat(), delta, str(args.infile), classification])
 
     print(f"Wrote {args.out}")
     for key in selected_events:

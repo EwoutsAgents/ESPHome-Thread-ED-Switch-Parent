@@ -161,7 +161,10 @@ def detect_root(explicit_root: str | None) -> Path:
     if explicit_root:
         candidates.append(Path(explicit_root).expanduser())
 
-    project_dir = Path(__file__).resolve().parents[2]
+    if "__file__" in globals():
+        project_dir = Path(__file__).resolve().parents[2]
+    else:
+        project_dir = Path.cwd()
     candidates.append(project_dir / FRAMEWORK_RELATIVE_CORE)
     candidates.append(DEFAULT_ROOT)
 
@@ -176,18 +179,13 @@ def detect_root(explicit_root: str | None) -> Path:
     raise FileNotFoundError("Could not locate OpenThread src/core root")
 
 
-def main() -> int:
-    parser = argparse.ArgumentParser(description="Patch OpenThread for stock-observed parent-response reporting")
-    parser.add_argument("--root", help="OpenThread src/core root")
-    parser.add_argument("--dry-run", action="store_true")
-    args = parser.parse_args()
-
-    root = detect_root(args.root)
+def run_patch(root_override: str | None = None, dry_run: bool = False) -> int:
+    root = detect_root(root_override)
 
     steps = {
-        "thread_api": patch_thread_api(root, dry_run=args.dry_run),
-        "mle_decl": patch_mle_declaration(root, dry_run=args.dry_run),
-        "mle_call": patch_mle_notify_call(root, dry_run=args.dry_run),
+        "thread_api": patch_thread_api(root, dry_run=dry_run),
+        "mle_decl": patch_mle_declaration(root, dry_run=dry_run),
+        "mle_call": patch_mle_notify_call(root, dry_run=dry_run),
     }
 
     for name, state in steps.items():
@@ -198,5 +196,27 @@ def main() -> int:
     return 0
 
 
-if __name__ == "__main__":
-    raise SystemExit(main())
+def main() -> int:
+    parser = argparse.ArgumentParser(description="Patch OpenThread for stock-observed parent-response reporting")
+    parser.add_argument("--root", help="OpenThread src/core root")
+    parser.add_argument("--dry-run", action="store_true")
+    args = parser.parse_args()
+
+    return run_patch(root_override=args.root, dry_run=args.dry_run)
+
+
+def _run_from_platformio() -> None:
+    # PlatformIO `extra_scripts = pre:<script.py>` execution path.
+    # Keep this side-effectful on import so the patch always runs in pre-build.
+    rc = run_patch()
+    if rc != 0:
+        raise RuntimeError("thread_stock_observer OpenThread patch failed")
+
+
+try:
+    Import  # type: ignore[name-defined]
+except Exception:
+    if __name__ == "__main__":
+        raise SystemExit(main())
+else:
+    _run_from_platformio()
