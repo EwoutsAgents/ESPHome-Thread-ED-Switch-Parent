@@ -21,8 +21,8 @@ Source artifacts (latest balanced stock run):
 
 | scenario | mode | attempts | non-target confirmed | target still current | initial unknown | thread off failed | valid switch-act | median T6-T3 ms | median T6-T0 ms | preconditioning method |
 |---|---|---:|---:|---:|---:|---:|---:|---:|---:|---|
-| variant-mcast | steady | 4 | 0 | 0 | 0 | 4 | 0 | N/A | N/A | usb-thread-off |
-| variant-ucast | steady | 4 | 0 | 0 | 0 | 4 | 0 | N/A | N/A | usb-thread-off |
+| variant-mcast | steady | 4 | 0 | 4 | 0 | 0 | 0 | N/A | N/A | usb-thread-off |
+| variant-ucast | steady | 4 | 0 | 4 | 0 | 0 | 0 | N/A | N/A | usb-thread-off |
 
 Classification criteria implemented:
 - `success_switch_act` only when:
@@ -32,19 +32,14 @@ Classification criteria implemented:
 - `precondition_failed_initial_parent_is_target` when:
   - `variant_precondition_result = target_still_current`
 
-These latest steady smoke reruns show that the stronger off-path still does not reach the required disabled state before child reset. In all 8 attempts the target router acknowledged:
+The earlier `thread_off_failed` smoke reruns turned out to be a tooling artifact: `testing/tools/thread_ctl.py` opened the USB serial port separately for `thread off` and `thread state`, and on this board each reopen effectively reset the router before the follow-up state check. That made the second command observe post-boot `enabled=true role=detached` instead of the real off-state.
+
+After fixing the helper to verify `thread off` and `thread state` within a single serial session, the latest steady smoke reruns now show the intended behavior during preconditioning:
 
 - `USB_CTL thread off -> OT_ERROR_NONE`
-
-but the immediate verification step reported:
-
-- `USB_CTL thread state enabled=true role=detached`
-
-instead of the required:
-
 - `USB_CTL thread state enabled=false role=disabled`
 
-So all 8 attempts were classified as `thread_off_failed`, and the runner did not count any of them as valid switch-act trials. This clearly shows that router2 was **not** proven disabled by the strengthened off-path yet.
+So router2 **is** being locally disabled by the stronger off-path. Even with that confirmed, the child still initially reattaches to the target parent (`router2` / `da97557943a05aac`) in all 8 attempts, so all 8 latest trials classify as `precondition_failed_initial_parent_is_target` rather than `thread_off_failed`.
 
 ## C) Variant end-to-end timing note
 
@@ -89,6 +84,9 @@ Because the post-change smoke reruns did not produce `T6_parent_match`, there is
    - On path remains:
      - `otIp6SetEnabled(instance, true)`
      - `otThreadSetEnabled(instance, true)`
+   - Root-cause fix in `testing/tools/thread_ctl.py`:
+     - off verification now sends `thread off` and `thread state` within one persistent serial session
+     - this avoids false failures caused by reopening the USB serial port between commands
    - Stable log lines added:
      - `USB_CTL thread off requested timeout=60s`
      - `USB_CTL thread off -> OT_ERROR_NONE`
@@ -120,21 +118,22 @@ Because the post-change smoke reruns did not produce `T6_parent_match`, there is
 - ✅ Existing `variant-* steady` now uses USB Thread suppression rather than repeated target-router reset suppression.
 - ✅ Runner now verifies `thread state` before child reset and classifies failed verification as `thread_off_failed`.
 - ✅ Router firmware accepted `thread off 60`, `thread on`, and `thread state` over USB serial, with a failsafe re-enable path.
-- ❌ Latest USB thread-off smoke reruns still produced 0 valid switch-act trials for both `variant-mcast steady` and `variant-ucast steady` because all 8 attempts failed the required disabled-state verification.
+- ✅ Latest reruns prove `thread off 60` reaches `enabled=false role=disabled` before child reset.
+- ❌ Even with router2 verified disabled, the child still started on the target parent in all 8 latest steady smoke attempts.
 - ❌ No USB thread-off smoke run has yet demonstrated `non_target_confirmed` before switch request.
 - ❌ 10 valid steady switch-act trials per variant mode have not been achieved yet.
 
 ## Raw artifacts used for latest USB thread-off smoke check
 
 - mcast:
-  - `testing/logs/variant-mcast-steady-20260512-211243-trial1.log`
-  - `testing/logs/variant-mcast-steady-20260512-211408-trial2.log`
-  - `testing/logs/variant-mcast-steady-20260512-211534-trial3.log`
-  - `testing/logs/variant-mcast-steady-20260512-211659-trial4.log`
+  - `testing/logs/variant-mcast-steady-20260512-215946-trial1.log`
+  - `testing/logs/variant-mcast-steady-20260512-220108-trial2.log`
+  - `testing/logs/variant-mcast-steady-20260512-220231-trial3.log`
+  - `testing/logs/variant-mcast-steady-20260512-220354-trial4.log`
   - matching `.csv` and `.prep.out` files
 - ucast:
-  - `testing/logs/variant-ucast-steady-20260512-211854-trial1.log`
-  - `testing/logs/variant-ucast-steady-20260512-212019-trial2.log`
-  - `testing/logs/variant-ucast-steady-20260512-212144-trial3.log`
-  - `testing/logs/variant-ucast-steady-20260512-212310-trial4.log`
+  - `testing/logs/variant-ucast-steady-20260512-220542-trial1.log`
+  - `testing/logs/variant-ucast-steady-20260512-220705-trial2.log`
+  - `testing/logs/variant-ucast-steady-20260512-220827-trial3.log`
+  - `testing/logs/variant-ucast-steady-20260512-220950-trial4.log`
   - matching `.csv` and `.prep.out` files

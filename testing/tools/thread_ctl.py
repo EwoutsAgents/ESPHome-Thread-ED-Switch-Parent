@@ -8,10 +8,24 @@ import time
 import serial
 
 
+def read_until(ser: serial.Serial, expect: str, timeout: float) -> tuple[bool, list[str]]:
+    deadline = time.time() + timeout
+    captured: list[str] = []
+    while time.time() < deadline:
+        line = ser.readline().decode("utf-8", errors="ignore").strip()
+        if not line:
+            continue
+        captured.append(line)
+        print(line)
+        if expect in line:
+            return True, captured
+    return False, captured
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description="Send Thread control commands over router serial console.")
     parser.add_argument("--port", required=True)
-    parser.add_argument("action", choices=["on", "off", "state", "status"])
+    parser.add_argument("action", choices=["on", "off", "state", "status", "off-verify-disabled"])
     parser.add_argument("--baud", type=int, default=115200)
     parser.add_argument("--timeout", type=float, default=8.0)
     parser.add_argument("--duration-s", type=int, default=60)
@@ -36,12 +50,35 @@ def main() -> int:
 
         ser.reset_input_buffer()
 
-        if args.action == "off":
+        if args.action in ("off", "off-verify-disabled"):
             if args.duration_s <= 0:
                 raise SystemExit("--duration-s must be > 0 for off")
-            command = f"thread off {args.duration_s}"
-            expect = "USB_CTL thread off -> OT_ERROR_NONE"
-        elif args.action in ("state", "status"):
+            ser.write((f"thread off {args.duration_s}\n").encode("utf-8"))
+            ser.flush()
+            ok, captured = read_until(ser, "USB_CTL thread off -> OT_ERROR_NONE", args.timeout)
+            if not ok:
+                print("Timed out waiting for: USB_CTL thread off -> OT_ERROR_NONE", file=sys.stderr)
+                if captured:
+                    print("Last lines:", file=sys.stderr)
+                    for line in captured[-10:]:
+                        print(line, file=sys.stderr)
+                return 1
+            if args.action == "off":
+                return 0
+
+            ser.write(b"thread state\n")
+            ser.flush()
+            ok, captured = read_until(ser, "USB_CTL thread state enabled=false role=disabled", args.timeout)
+            if ok:
+                return 0
+            print("Timed out waiting for: USB_CTL thread state enabled=false role=disabled", file=sys.stderr)
+            if captured:
+                print("Last lines:", file=sys.stderr)
+                for line in captured[-10:]:
+                    print(line, file=sys.stderr)
+            return 1
+
+        if args.action in ("state", "status"):
             command = "thread state"
             expect = "USB_CTL thread state enabled="
         else:
@@ -51,16 +88,9 @@ def main() -> int:
         ser.write((command + "\n").encode("utf-8"))
         ser.flush()
 
-        deadline = time.time() + args.timeout
-        captured: list[str] = []
-        while time.time() < deadline:
-            line = ser.readline().decode("utf-8", errors="ignore").strip()
-            if not line:
-                continue
-            captured.append(line)
-            print(line)
-            if expect in line:
-                return 0
+        ok, captured = read_until(ser, expect, args.timeout)
+        if ok:
+            return 0
         print(f"Timed out waiting for: {expect}", file=sys.stderr)
         if captured:
             print("Last lines:", file=sys.stderr)

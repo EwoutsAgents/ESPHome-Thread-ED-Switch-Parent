@@ -261,28 +261,20 @@ for ((i=DONE+1; i<=TARGET_ATTEMPTS; i++)); do
         echo "[batch] USB Thread control unavailable on $TARGET_ROUTER_LABEL" | tee -a "$PREP_LOG"
         PREP_RESULT="thread_off_failed"
         python3 testing/tools/capture_logs.py "${CAPTURE_ARGS[@]}" >"${LOG%.log}.capture.out" 2>&1
-      elif ! thread_control_cmd off --duration-s "$VARIANT_USB_THREAD_OFF_TIMEOUT" >>"$PREP_LOG" 2>&1; then
+      elif ! thread_control_cmd off-verify-disabled --duration-s "$VARIANT_USB_THREAD_OFF_TIMEOUT" >>"$PREP_LOG" 2>&1; then
+        echo "[batch] thread state verification failed after thread off" | tee -a "$PREP_LOG"
         PREP_RESULT="thread_off_failed"
         python3 testing/tools/capture_logs.py "${CAPTURE_ARGS[@]}" >"${LOG%.log}.capture.out" 2>&1
       else
-        if ! thread_control_cmd state >>"$PREP_LOG" 2>&1; then
-          PREP_RESULT="thread_off_failed"
-          python3 testing/tools/capture_logs.py "${CAPTURE_ARGS[@]}" >"${LOG%.log}.capture.out" 2>&1
-        elif ! grep -q "USB_CTL thread state enabled=false role=disabled" "$PREP_LOG"; then
-          echo "[batch] thread state verification failed after thread off" | tee -a "$PREP_LOG"
-          PREP_RESULT="thread_off_failed"
-          python3 testing/tools/capture_logs.py "${CAPTURE_ARGS[@]}" >"${LOG%.log}.capture.out" 2>&1
-        else
-          date -u +%Y-%m-%dT%H:%M:%S.%3NZ > "$PREP_SUPPRESSION_START_FILE"
-          python3 testing/tools/capture_logs.py "${CAPTURE_ARGS[@]}" >"${LOG%.log}.capture.out" 2>&1 &
-          CAPTURE_PID=$!
-          wait_for_variant_initial_parent "$LOG" "$VARIANT_PRECONDITION_TIMEOUT" "$TARGET_PARENT_EXTADDR_LC" "$PREP_RESULT_FILE" "$PREP_INITIAL_PARENT_FILE" || true
-          if ! thread_control_cmd on >>"$PREP_LOG" 2>&1; then
-            PREP_RESULT="thread_on_failed"
-          fi
-          date -u +%Y-%m-%dT%H:%M:%S.%3NZ > "$PREP_SUPPRESSION_END_FILE"
-          wait "$CAPTURE_PID" || true
+        date -u +%Y-%m-%dT%H:%M:%S.%3NZ > "$PREP_SUPPRESSION_START_FILE"
+        python3 testing/tools/capture_logs.py "${CAPTURE_ARGS[@]}" >"${LOG%.log}.capture.out" 2>&1 &
+        CAPTURE_PID=$!
+        wait_for_variant_initial_parent "$LOG" "$VARIANT_PRECONDITION_TIMEOUT" "$TARGET_PARENT_EXTADDR_LC" "$PREP_RESULT_FILE" "$PREP_INITIAL_PARENT_FILE" || true
+        if ! thread_control_cmd on >>"$PREP_LOG" 2>&1; then
+          PREP_RESULT="thread_on_failed"
         fi
+        date -u +%Y-%m-%dT%H:%M:%S.%3NZ > "$PREP_SUPPRESSION_END_FILE"
+        wait "$CAPTURE_PID" || true
       fi
       if [[ "$PREP_RESULT" != "thread_on_failed" && -f "$PREP_RESULT_FILE" ]]; then
         PREP_RESULT="$(cat "$PREP_RESULT_FILE")"
