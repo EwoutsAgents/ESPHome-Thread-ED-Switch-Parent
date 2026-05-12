@@ -24,11 +24,6 @@ logger:
 network:
   enable_ipv6: true
 
-api:
-
-ota:
-  - platform: esphome
-
 openthread:
   device_type: FTD
   channel: ${thread_channel}
@@ -43,7 +38,7 @@ external_components:
   - source:
       type: local
       path: ../../components
-    components: [thread_router_control]
+    components: [openthread, thread_router_control]
 
 thread_router_control:
   id: router_thread_control

@@ -5,24 +5,14 @@
 #include <cstdint>
 #include <cstdio>
 #include <cstring>
-#include <fcntl.h>
-#include <unistd.h>
+#include <driver/uart.h>
 
 namespace esphome {
 namespace thread_router_control {
 
 void ThreadRouterControlComponent::setup() {
-  const int flags = fcntl(STDIN_FILENO, F_GETFL, 0);
-  if (flags < 0) {
-    ESP_LOGW(TAG, "THREAD_CTL stdin setup failed: fcntl(F_GETFL): errno=%d", errno);
-    return;
-  }
-  if (fcntl(STDIN_FILENO, F_SETFL, flags | O_NONBLOCK) < 0) {
-    ESP_LOGW(TAG, "THREAD_CTL stdin setup failed: fcntl(F_SETFL): errno=%d", errno);
-    return;
-  }
   this->stdin_ready_ = true;
-  ESP_LOGI(TAG, "THREAD_CTL ready; commands: 'thread on', 'thread off', 'thread status', 'thread suspend <ms>'");
+  ESP_LOGI(TAG, "THREAD_CTL ready on UART0; commands: 'thread on', 'thread off', 'thread status', 'thread suspend <ms>'");
 }
 
 void ThreadRouterControlComponent::dump_config() {
@@ -41,13 +31,20 @@ void ThreadRouterControlComponent::loop() {
     return;
   }
 
-  char buffer[64];
-  while (true) {
-    const ssize_t count = read(STDIN_FILENO, buffer, sizeof(buffer));
+  size_t buffered = 0;
+  if (uart_get_buffered_data_len(UART_NUM_0, &buffered) != ESP_OK || buffered == 0) {
+    return;
+  }
+
+  uint8_t buffer[64];
+  while (buffered > 0) {
+    const int to_read = static_cast<int>(buffered > sizeof(buffer) ? sizeof(buffer) : buffered);
+    const int count = uart_read_bytes(UART_NUM_0, buffer, to_read, 0);
     if (count <= 0) {
       break;
     }
-    for (ssize_t i = 0; i < count; i++) {
+    buffered -= static_cast<size_t>(count);
+    for (int i = 0; i < count; i++) {
       const char ch = buffer[i];
       if (ch == '\r' || ch == '\n') {
         if (!this->rx_line_.empty()) {
