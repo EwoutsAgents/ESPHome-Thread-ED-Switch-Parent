@@ -12,6 +12,7 @@ substitutions:
   auto_trigger_delay: "25s"
   batch_precondition_gate: "false"
   batch_precondition_poll_interval: "1s"
+  batch_precondition_timeout_ms: "45000"
 
 esphome:
   name: thread-child-variant-b-ucast
@@ -75,6 +76,10 @@ globals:
     type: bool
     restore_value: no
     initial_value: "false"
+  - id: variant_b_ucast_precondition_start_ms
+    type: uint32_t
+    restore_value: no
+    initial_value: "0"
 
 script:
   - id: variant_b_ucast_trigger_switch
@@ -101,12 +106,24 @@ interval:
             lambda: 'return ${batch_precondition_gate} && !id(variant_b_ucast_switch_requested_once) && !id(variant_b_ucast_initial_parent_checked_once);'
           then:
             - lambda: |-
+                const uint32_t now = millis();
+                if (id(variant_b_ucast_precondition_start_ms) == 0) {
+                  id(variant_b_ucast_precondition_start_ms) = now;
+                }
                 auto lock = esphome::openthread::InstanceLock::try_acquire(0);
                 if (!lock.has_value()) {
+                  if ((now - id(variant_b_ucast_precondition_start_ms)) >= ${batch_precondition_timeout_ms}) {
+                    id(variant_b_ucast_initial_parent_checked_once) = true;
+                    ESP_LOGW("variant_b", "V_precondition_initial_parent_unknown=timeout_waiting_for_lock");
+                  }
                   return;
                 }
                 otRouterInfo parent{};
                 if (otThreadGetParentInfo(lock->get_instance(), &parent) != OT_ERROR_NONE) {
+                  if ((now - id(variant_b_ucast_precondition_start_ms)) >= ${batch_precondition_timeout_ms}) {
+                    id(variant_b_ucast_initial_parent_checked_once) = true;
+                    ESP_LOGW("variant_b", "V_precondition_initial_parent_unknown=timeout_waiting_for_parent");
+                  }
                   return;
                 }
                 char current_parent[17];
@@ -116,8 +133,8 @@ interval:
                          parent.mExtAddress.m8[2], parent.mExtAddress.m8[3],
                          parent.mExtAddress.m8[4], parent.mExtAddress.m8[5],
                          parent.mExtAddress.m8[6], parent.mExtAddress.m8[7]);
-                id(variant_b_ucast_initial_parent_checked_once) = true;
                 ESP_LOGI("variant_b", "V_precondition_initial_parent_extaddr=%s", current_parent);
+                id(variant_b_ucast_initial_parent_checked_once) = true;
                 if (strcmp(current_parent, "${target_parent_extaddr}") == 0) {
                   ESP_LOGW("variant_b", "V_precondition_target_still_current=%s", current_parent);
                   return;

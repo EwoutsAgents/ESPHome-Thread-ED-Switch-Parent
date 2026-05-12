@@ -19,10 +19,10 @@ Source artifacts (latest balanced stock run):
 
 ## B) Variant steady post-change smoke results
 
-| scenario | mode | total attempts | valid switch-act trials | precondition failures | immediate no-switch trials | T3 present | T6 present | median T6-T3 ms | median T6-T0 ms |
-|---|---|---:|---:|---:|---:|---:|---:|---:|---:|
-| variant-mcast | steady | 4 | 0 | 4 | 0 | 0 | 0 | N/A | N/A |
-| variant-ucast | steady | 4 | 0 | 4 | 0 | 0 | 0 | N/A | N/A |
+| scenario | mode | attempts | non-target confirmed | target still current | initial unknown | valid switch-act | median T6-T3 ms | median T6-T0 ms | preconditioning method |
+|---|---|---:|---:|---:|---:|---:|---:|---:|---|
+| variant-mcast | steady | 4 | 0 | 4 | 0 | 0 | N/A | N/A | repeated-target-router-reset |
+| variant-ucast | steady | 4 | 0 | 4 | 0 | 0 | N/A | N/A | repeated-target-router-reset |
 
 Classification criteria implemented:
 - `success_switch_act` only when:
@@ -32,7 +32,7 @@ Classification criteria implemented:
 - `precondition_failed_initial_parent_is_target` when:
   - `variant_precondition_result = target_still_current`
 
-These latest steady smoke reruns show the child still initially attached to the target parent (`router2` / `da97557943a05aac`) in all 8 attempts, so no valid `T3→T6` switch-act samples were produced yet.
+These latest steady smoke reruns show the child still initially attached to the target parent (`router2` / `da97557943a05aac`) in all 8 attempts, even under repeated target-router resets held through the preconditioning window. So no valid `T3→T6` switch-act samples were produced yet.
 
 ## C) Variant end-to-end timing note
 
@@ -53,6 +53,8 @@ Because the post-change smoke reruns did not produce `T6_parent_match`, there is
    - Added variant preconditioning metadata fields:
      - `variant_preconditioning_method`
      - `variant_precondition_result`
+     - `variant_target_suppression_start`
+     - `variant_target_suppression_end`
    - Added classification handling for:
      - `precondition_failed_initial_parent_is_target`
      - `success_switch_act`
@@ -63,19 +65,20 @@ Because the post-change smoke reruns did not produce `T6_parent_match`, there is
 3. Variant batch runner behavior:
    - `testing/tools/run_trials_batch.sh`
    - Variant runs count only `success_switch_act` trials toward the valid target.
-   - Variant steady runs now flash with batch-gated auto-triggering disabled, reset the target router in the capture sequence, append structured preconditioning metadata to each log, and rely on the child to trigger the switch only after confirming a non-target initial parent.
+   - Variant steady runs now flash with batch-gated auto-triggering disabled, start a repeated target-router reset loop, wait up to `VARIANT_PRECONDITION_TIMEOUT` seconds for `V_precondition_initial_parent_extaddr=...`, stop suppression only after a result is known, and append structured preconditioning metadata to each log.
 
 4. Variant steady child configs:
    - `testing/configs/child_variant_multicast.yaml`
    - `testing/configs/child_variant_unicast.yaml`
-   - Added batch preconditioning gate logic that logs the initial parent and suppresses the switch request when the initial parent is already the target.
+   - Added batch preconditioning polling with timeout logging (`V_precondition_initial_parent_unknown=...`) so the child keeps checking until parent confirmation or timeout.
 
 ## Status vs acceptance
 
 - ✅ No new runner mode added.
 - ✅ Stock runner behavior unchanged.
 - ✅ Variant steady now verifies/logs the initial parent before allowing the switch request.
-- ✅ Trial logs now carry structured variant preconditioning metadata.
+- ✅ Trial logs now carry structured variant preconditioning metadata, including suppression start/end timestamps.
+- ✅ The runner/YAML no longer relies on a single target-router reset; it now uses repeated target-router reset suppression during the preconditioning window.
 - ✅ Trials starting on the target parent are excluded from valid switch-act counts and classified as `precondition_failed_initial_parent_is_target`.
 - ❌ Latest post-change smoke reruns still produced 0 valid switch-act trials for both `variant-mcast steady` and `variant-ucast steady` because all observed initial parents were still the target parent.
 - ❌ No post-change smoke run has yet demonstrated `non_target_confirmed` before switch request.
@@ -84,14 +87,14 @@ Because the post-change smoke reruns did not produce `T6_parent_match`, there is
 ## Raw artifacts used for latest post-change smoke check
 
 - mcast:
-  - `testing/logs/variant-mcast-steady-20260512-080101-trial1.log`
-  - `testing/logs/variant-mcast-steady-20260512-080151-trial2.log`
-  - `testing/logs/variant-mcast-steady-20260512-080241-trial3.log`
-  - `testing/logs/variant-mcast-steady-20260512-080331-trial4.log`
+  - `testing/logs/variant-mcast-steady-20260512-085940-trial1.log`
+  - `testing/logs/variant-mcast-steady-20260512-090100-trial2.log`
+  - `testing/logs/variant-mcast-steady-20260512-090220-trial3.log`
+  - `testing/logs/variant-mcast-steady-20260512-090340-trial4.log`
   - matching `.csv` files
 - ucast:
-  - `testing/logs/variant-ucast-steady-20260512-080510-trial1.log`
-  - `testing/logs/variant-ucast-steady-20260512-080600-trial2.log`
-  - `testing/logs/variant-ucast-steady-20260512-080650-trial3.log`
-  - `testing/logs/variant-ucast-steady-20260512-080740-trial4.log`
+  - `testing/logs/variant-ucast-steady-20260512-090527-trial1.log`
+  - `testing/logs/variant-ucast-steady-20260512-090647-trial2.log`
+  - `testing/logs/variant-ucast-steady-20260512-090807-trial3.log`
+  - `testing/logs/variant-ucast-steady-20260512-090927-trial4.log`
   - matching `.csv` files

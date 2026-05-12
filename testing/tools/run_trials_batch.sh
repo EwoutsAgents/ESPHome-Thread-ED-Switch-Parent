@@ -41,43 +41,121 @@ fi
 
 ROUTER_CONFIG="testing/configs/router_ftd.yaml"
 TARGET_PARENT_EXTADDR_LC="${TARGET_PARENT_EXTADDR,,}"
+VARIANT_PRECONDITION_TIMEOUT="${VARIANT_PRECONDITION_TIMEOUT:-45}"
+VARIANT_RESET_LOOP_SLEEP="${VARIANT_RESET_LOOP_SLEEP:-1}"
 TARGET_ROUTER_LABEL=""
 TARGET_ROUTER_PORT=""
+NON_TARGET_PARENT_EXTADDR=""
 if [[ "$TARGET_PARENT_EXTADDR_LC" == "${ROUTER_PRIMARY_EXTADDR,,}" ]]; then
   TARGET_ROUTER_LABEL="router1"
   TARGET_ROUTER_PORT="$ROUTER_PRIMARY_PORT"
+  NON_TARGET_PARENT_EXTADDR="${ROUTER_SECONDARY_EXTADDR,,}"
 elif [[ "$TARGET_PARENT_EXTADDR_LC" == "${ROUTER_SECONDARY_EXTADDR,,}" ]]; then
   TARGET_ROUTER_LABEL="router2"
   TARGET_ROUTER_PORT="$ROUTER_SECONDARY_PORT"
+  NON_TARGET_PARENT_EXTADDR="${ROUTER_PRIMARY_EXTADDR,,}"
 fi
 
-append_variant_preconditioning_metadata() {
+get_variant_initial_parent() {
   local log_path="$1"
-  local prep_result="$2"
-  local prep_method="$3"
-
-  local initial_parent=""
-  initial_parent="$(python3 - <<'PY' "$log_path"
+  python3 - <<'PY' "$log_path"
 import re, sys
 text = open(sys.argv[1], encoding='utf-8', errors='ignore').read()
 match = re.search(r'V_precondition_initial_parent_extaddr=([0-9a-fA-F]{16})', text)
 print(match.group(1).lower() if match else '')
 PY
-)"
+}
 
-  if [[ -z "$initial_parent" ]]; then
-    prep_result="initial_parent_unknown"
-  elif [[ "$initial_parent" == "$TARGET_PARENT_EXTADDR_LC" ]]; then
-    prep_result="target_still_current"
-  else
-    prep_result="non_target_confirmed"
+start_variant_target_suppression_loop() {
+  local prep_log="$1"
+  local method_file="$2"
+  local start_file="$3"
+  local stop_file="$4"
+
+  rm -f "$stop_file"
+  date -u +%Y-%m-%dT%H:%M:%S.%3NZ > "$start_file"
+  echo "repeated-target-router-reset" > "$method_file"
+
+  (
+    while [[ ! -f "$stop_file" ]]; do
+      timeout 8 .venv/bin/esphome logs "$ROUTER_CONFIG" --device "$TARGET_ROUTER_PORT" --reset >>"$prep_log" 2>&1 || true
+      [[ -f "$stop_file" ]] && break
+      sleep "$VARIANT_RESET_LOOP_SLEEP"
+    done
+  ) &
+  SUPPRESS_PID="$!"
+}
+
+stop_variant_target_suppression_loop() {
+  local suppress_pid="$1"
+  local end_file="$2"
+  local stop_file="$3"
+
+  touch "$stop_file"
+  pkill -f "esphome logs $ROUTER_CONFIG --device $TARGET_ROUTER_PORT --reset" 2>/dev/null || true
+  if [[ -n "$suppress_pid" ]] && kill -0 "$suppress_pid" 2>/dev/null; then
+    for _ in $(seq 1 12); do
+      if ! kill -0 "$suppress_pid" 2>/dev/null; then
+        break
+      fi
+      sleep 1
+    done
+    if kill -0 "$suppress_pid" 2>/dev/null; then
+      kill "$suppress_pid" 2>/dev/null || true
+    fi
+    wait "$suppress_pid" 2>/dev/null || true
   fi
+  date -u +%Y-%m-%dT%H:%M:%S.%3NZ > "$end_file"
+}
+
+wait_for_variant_initial_parent() {
+  local log_path="$1"
+  local timeout_seconds="$2"
+  local target_parent="$3"
+  local result_file="$4"
+  local initial_parent_file="$5"
+
+  python3 - <<'PY' "$log_path" "$timeout_seconds" "$target_parent" "$result_file" "$initial_parent_file"
+import re, sys, time
+log_path, timeout_s, target, result_path, initial_path = sys.argv[1:6]
+deadline = time.time() + float(timeout_s)
+last_text = ''
+while time.time() < deadline:
+    try:
+        text = open(log_path, encoding='utf-8', errors='ignore').read()
+    except FileNotFoundError:
+        text = ''
+    last_text = text
+    m = re.search(r'V_precondition_initial_parent_extaddr=([0-9a-fA-F]{16})', text)
+    if m:
+        initial = m.group(1).lower()
+        open(initial_path, 'w', encoding='utf-8').write(initial)
+        result = 'non_target_confirmed' if initial != target.lower() else 'target_still_current'
+        open(result_path, 'w', encoding='utf-8').write(result)
+        raise SystemExit(0)
+    if 'V_precondition_initial_parent_unknown=' in text:
+        open(result_path, 'w', encoding='utf-8').write('initial_parent_unknown')
+        raise SystemExit(0)
+    time.sleep(0.5)
+open(result_path, 'w', encoding='utf-8').write('initial_parent_unknown')
+PY
+}
+
+append_variant_preconditioning_metadata() {
+  local log_path="$1"
+  local prep_result="$2"
+  local prep_method="$3"
+  local initial_parent="$4"
+  local suppression_start="$5"
+  local suppression_end="$6"
 
   {
     echo "# variant-preconditioning-method $prep_method"
     echo "# variant-target-parent-extaddr $TARGET_PARENT_EXTADDR_LC"
     [[ -n "$initial_parent" ]] && echo "# variant-initial-parent-extaddr $initial_parent"
     echo "# variant-precondition-result $prep_result"
+    [[ -n "$suppression_start" ]] && echo "# variant-target-suppression-start $suppression_start"
+    [[ -n "$suppression_end" ]] && echo "# variant-target-suppression-end $suppression_end"
     if [[ "$prep_result" == "target_still_current" ]]; then
       echo "# classification precondition_failed_initial_parent_is_target"
     fi
@@ -116,6 +194,7 @@ if [[ "$SCENARIO" == variant-* && "$MODE" == "steady" ]]; then
     .venv/bin/esphome
     -s auto_trigger_switch false
     -s batch_precondition_gate true
+    -s batch_precondition_timeout_ms "$((VARIANT_PRECONDITION_TIMEOUT * 1000))"
     run "$CONFIG"
     --device "$CHILD_PORT"
     --no-logs
@@ -136,7 +215,17 @@ for ((i=DONE+1; i<=TARGET_ATTEMPTS; i++)); do
 
   PREP_LOG="testing/logs/${SCENARIO}-${MODE}-${STAMP}-trial${i}.prep.out"
   PREP_RESULT="not_applicable"
-  PREP_METHOD="target-router-reset"
+  PREP_METHOD=""
+  PREP_INITIAL_PARENT=""
+  PREP_SUPPRESSION_START=""
+  PREP_SUPPRESSION_END=""
+  PREP_METHOD_FILE="${PREP_LOG%.out}.method.tmp"
+  PREP_RESULT_FILE="${PREP_LOG%.out}.result.tmp"
+  PREP_INITIAL_PARENT_FILE="${PREP_LOG%.out}.initial_parent.tmp"
+  PREP_SUPPRESSION_START_FILE="${PREP_LOG%.out}.suppression_start.tmp"
+  PREP_SUPPRESSION_END_FILE="${PREP_LOG%.out}.suppression_end.tmp"
+  PREP_SUPPRESSION_STOP_FILE="${PREP_LOG%.out}.suppression_stop.tmp"
+  rm -f "$PREP_METHOD_FILE" "$PREP_RESULT_FILE" "$PREP_INITIAL_PARENT_FILE" "$PREP_SUPPRESSION_START_FILE" "$PREP_SUPPRESSION_END_FILE" "$PREP_SUPPRESSION_STOP_FILE"
 
   CAPTURE_ARGS=(
     --config "$CONFIG"
@@ -147,6 +236,7 @@ for ((i=DONE+1; i<=TARGET_ATTEMPTS; i++)); do
   if [[ "$SCENARIO" == variant-* && "$MODE" == "steady" ]]; then
     if [[ -z "$TARGET_ROUTER_LABEL" ]]; then
       echo "[batch] warning: steady variant preconditioning skipped; TARGET_PARENT_EXTADDR=$TARGET_PARENT_EXTADDR does not map to router1/router2" | tee "$PREP_LOG"
+      PREP_METHOD="single-target-router-reset"
       PREP_RESULT="initial_parent_unknown"
       CAPTURE_ARGS+=(
         --node child="$CHILD_PORT"
@@ -154,23 +244,28 @@ for ((i=DONE+1; i<=TARGET_ATTEMPTS; i++)); do
         --node router2="$ROUTER_SECONDARY_PORT"
         --reset-label child
       )
+      python3 testing/tools/capture_logs.py "${CAPTURE_ARGS[@]}" >"${LOG%.log}.capture.out" 2>&1
     else
-      echo "[batch] steady variant preconditioning: reset target router $TARGET_ROUTER_LABEL ($TARGET_PARENT_EXTADDR_LC) in capture sequence before child parent check" | tee "$PREP_LOG"
-      PREP_RESULT="pending_initial_parent_check"
-      if [[ "$TARGET_ROUTER_LABEL" == "router1" ]]; then
-        CAPTURE_ARGS+=(
-          --node router1="$ROUTER_PRIMARY_PORT"
-          --node child="$CHILD_PORT"
-          --node router2="$ROUTER_SECONDARY_PORT"
-        )
-      else
-        CAPTURE_ARGS+=(
-          --node router2="$ROUTER_SECONDARY_PORT"
-          --node child="$CHILD_PORT"
-          --node router1="$ROUTER_PRIMARY_PORT"
-        )
-      fi
-      CAPTURE_ARGS+=(--reset-label "$TARGET_ROUTER_LABEL" --reset-label child)
+      PREP_METHOD="repeated-target-router-reset"
+      echo "[batch] steady variant preconditioning: keep suppressing target router $TARGET_ROUTER_LABEL ($TARGET_PARENT_EXTADDR_LC) until child confirms non-target parent or timeout=${VARIANT_PRECONDITION_TIMEOUT}s" | tee "$PREP_LOG"
+      CAPTURE_ARGS+=(
+        --node child="$CHILD_PORT"
+        --node router1="$ROUTER_PRIMARY_PORT"
+        --reset-label child
+      )
+      python3 testing/tools/capture_logs.py "${CAPTURE_ARGS[@]}" >"${LOG%.log}.capture.out" 2>&1 &
+      CAPTURE_PID=$!
+      sleep 1
+      SUPPRESS_PID=""
+      start_variant_target_suppression_loop "$PREP_LOG" "$PREP_METHOD_FILE" "$PREP_SUPPRESSION_START_FILE" "$PREP_SUPPRESSION_STOP_FILE"
+      wait_for_variant_initial_parent "$LOG" "$VARIANT_PRECONDITION_TIMEOUT" "$TARGET_PARENT_EXTADDR_LC" "$PREP_RESULT_FILE" "$PREP_INITIAL_PARENT_FILE" || true
+      stop_variant_target_suppression_loop "$SUPPRESS_PID" "$PREP_SUPPRESSION_END_FILE" "$PREP_SUPPRESSION_STOP_FILE"
+      wait "$CAPTURE_PID" || true
+      [[ -f "$PREP_METHOD_FILE" ]] && PREP_METHOD="$(cat "$PREP_METHOD_FILE")"
+      [[ -f "$PREP_RESULT_FILE" ]] && PREP_RESULT="$(cat "$PREP_RESULT_FILE")"
+      [[ -f "$PREP_INITIAL_PARENT_FILE" ]] && PREP_INITIAL_PARENT="$(cat "$PREP_INITIAL_PARENT_FILE")"
+      [[ -f "$PREP_SUPPRESSION_START_FILE" ]] && PREP_SUPPRESSION_START="$(cat "$PREP_SUPPRESSION_START_FILE")"
+      [[ -f "$PREP_SUPPRESSION_END_FILE" ]] && PREP_SUPPRESSION_END="$(cat "$PREP_SUPPRESSION_END_FILE")"
     fi
   else
     CAPTURE_ARGS+=(
@@ -179,16 +274,28 @@ for ((i=DONE+1; i<=TARGET_ATTEMPTS; i++)); do
       --node router2="$ROUTER_SECONDARY_PORT"
       --reset-label child
     )
-  fi
 
-  if [[ "$MODE" == "forced-failover" ]]; then
-    CAPTURE_ARGS+=(--reset-label router1)
-  fi
+    if [[ "$MODE" == "forced-failover" ]]; then
+      CAPTURE_ARGS+=(--reset-label router1)
+    fi
 
-  python3 testing/tools/capture_logs.py "${CAPTURE_ARGS[@]}" >"${LOG%.log}.capture.out" 2>&1
+    python3 testing/tools/capture_logs.py "${CAPTURE_ARGS[@]}" >"${LOG%.log}.capture.out" 2>&1
+  fi
 
   if [[ "$SCENARIO" == variant-* ]]; then
-    append_variant_preconditioning_metadata "$LOG" "$PREP_RESULT" "$PREP_METHOD"
+    if [[ -z "$PREP_INITIAL_PARENT" ]]; then
+      PREP_INITIAL_PARENT="$(get_variant_initial_parent "$LOG")"
+    fi
+    if [[ "$PREP_RESULT" == "not_applicable" || "$PREP_RESULT" == "pending_initial_parent_check" ]]; then
+      if [[ -z "$PREP_INITIAL_PARENT" ]]; then
+        PREP_RESULT="initial_parent_unknown"
+      elif [[ "$PREP_INITIAL_PARENT" == "$TARGET_PARENT_EXTADDR_LC" ]]; then
+        PREP_RESULT="target_still_current"
+      else
+        PREP_RESULT="non_target_confirmed"
+      fi
+    fi
+    append_variant_preconditioning_metadata "$LOG" "$PREP_RESULT" "$PREP_METHOD" "$PREP_INITIAL_PARENT" "$PREP_SUPPRESSION_START" "$PREP_SUPPRESSION_END"
   fi
 
   python3 testing/tools/extract_switch_timings.py \
@@ -221,8 +328,13 @@ PY
   fi
 done
 
+LAST_ATTEMPT="$DONE"
+if (( LAST_ATTEMPT < TARGET_ATTEMPTS )); then
+  LAST_ATTEMPT="$((i - 1))"
+fi
+
 if [[ "$SCENARIO" == variant-* ]]; then
-  echo "[batch] complete: $SCENARIO $MODE valid $VALID_DONE/$COUNT (attempts=$i)"
+  echo "[batch] complete: $SCENARIO $MODE valid $VALID_DONE/$COUNT (attempts=$LAST_ATTEMPT)"
 else
   echo "[batch] complete: $SCENARIO $MODE $COUNT/$COUNT"
 fi
