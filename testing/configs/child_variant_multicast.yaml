@@ -10,6 +10,8 @@ substitutions:
   target_parent_extaddr: "da97557943a05aac"
   auto_trigger_switch: "true"
   auto_trigger_delay: "25s"
+  batch_precondition_gate: "false"
+  batch_precondition_poll_interval: "1s"
 
 esphome:
   name: thread-child-variant-b-mcast
@@ -69,6 +71,10 @@ globals:
     type: bool
     restore_value: no
     initial_value: "false"
+  - id: variant_b_mcast_initial_parent_checked_once
+    type: bool
+    restore_value: no
+    initial_value: "false"
 
 script:
   - id: variant_b_mcast_trigger_switch
@@ -76,7 +82,7 @@ script:
     then:
       - if:
           condition:
-            lambda: 'return ${auto_trigger_switch};'
+            lambda: 'return ${auto_trigger_switch} && !${batch_precondition_gate};'
           then:
             - delay: ${auto_trigger_delay}
             - if:
@@ -86,6 +92,39 @@ script:
                   - lambda: 'id(variant_b_mcast_switch_requested_once) = true;'
                   - logger.log: "AUTO trigger: pressing Variant B multicast switch button"
                   - button.press: variant_b_mcast_switch_button
+
+interval:
+  - interval: ${batch_precondition_poll_interval}
+    then:
+      - if:
+          condition:
+            lambda: 'return ${batch_precondition_gate} && !id(variant_b_mcast_switch_requested_once) && !id(variant_b_mcast_initial_parent_checked_once);'
+          then:
+            - lambda: |-
+                auto lock = esphome::openthread::InstanceLock::try_acquire(0);
+                if (!lock.has_value()) {
+                  return;
+                }
+                otRouterInfo parent{};
+                if (otThreadGetParentInfo(lock->get_instance(), &parent) != OT_ERROR_NONE) {
+                  return;
+                }
+                char current_parent[17];
+                snprintf(current_parent, sizeof(current_parent),
+                         "%02x%02x%02x%02x%02x%02x%02x%02x",
+                         parent.mExtAddress.m8[0], parent.mExtAddress.m8[1],
+                         parent.mExtAddress.m8[2], parent.mExtAddress.m8[3],
+                         parent.mExtAddress.m8[4], parent.mExtAddress.m8[5],
+                         parent.mExtAddress.m8[6], parent.mExtAddress.m8[7]);
+                id(variant_b_mcast_initial_parent_checked_once) = true;
+                ESP_LOGI("variant_b", "V_precondition_initial_parent_extaddr=%s", current_parent);
+                if (strcmp(current_parent, "${target_parent_extaddr}") == 0) {
+                  ESP_LOGW("variant_b", "V_precondition_target_still_current=%s", current_parent);
+                  return;
+                }
+                id(variant_b_mcast_switch_requested_once) = true;
+                ESP_LOGI("variant_b", "AUTO precondition satisfied: initial parent %s != target ${target_parent_extaddr}; pressing Variant B multicast switch button", current_parent);
+                id(variant_b_mcast_switch_button).press();
 
 button:
   - platform: template

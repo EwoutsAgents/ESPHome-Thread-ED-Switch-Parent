@@ -17,31 +17,28 @@ Source artifacts (latest balanced stock run):
 - `testing/logs/stock-observed-current-parent-off-20260511-205544-trial1.log` .. `trial10.log`
 - `testing/logs/stock-observed-current-parent-off-20260511-205544-trial1.csv` .. `trial10.csv`
 
-## B) Variant valid switch-act trials
+## B) Variant steady post-change smoke results
 
-| scenario | mode | total trials | valid switch-act trials | immediate no-switch trials | T3 present | T6 present | median T6-T3 ms | median T6-T0 ms |
-|---|---|---:|---:|---:|---:|---:|---:|---:|
-| variant-mcast | steady | 4 | 0 | 4 | 0 | 4 | N/A | 44 |
-| variant-ucast | steady | 4 | 0 | 4 | 0 | 4 | N/A | 33 |
-
-## C) Variant immediate-parent-match/no-switch trials
+| scenario | mode | total attempts | valid switch-act trials | precondition failures | immediate no-switch trials | T3 present | T6 present | median T6-T3 ms | median T6-T0 ms |
+|---|---|---:|---:|---:|---:|---:|---:|---:|---:|
+| variant-mcast | steady | 4 | 0 | 4 | 0 | 0 | 0 | N/A | N/A |
+| variant-ucast | steady | 4 | 0 | 4 | 0 | 0 | 0 | N/A | N/A |
 
 Classification criteria implemented:
-- `immediate_parent_match_no_switch` when:
-  - `V_immediate_parent_match` present
+- `success_switch_act` only when:
+  - `variant_precondition_result = non_target_confirmed`
+  - `T3_attach_start` present
   - `T6_parent_match` present
-  - `T3_attach_start` missing
+- `precondition_failed_initial_parent_is_target` when:
+  - `variant_precondition_result = target_still_current`
 
-Observed in smoke reruns:
-- mcast: 4/4
-- ucast: 4/4
+These latest steady smoke reruns show the child still initially attached to the target parent (`router2` / `da97557943a05aac`) in all 8 attempts, so no valid `T3→T6` switch-act samples were produced yet.
 
-## D) Variant end-to-end timings
+## C) Variant end-to-end timing note
 
-- mcast smoke median `T6-T0`: **44 ms**
-- ucast smoke median `T6-T0`: **33 ms**
+`T6-T0` is **end-to-end timing**, not switch-act timing.
 
-These are useful end-to-end timings, but **not** switch-act timings.
+Because the post-change smoke reruns did not produce `T6_parent_match`, there is no new `T6-T0` median to report from these runs.
 
 ## Implementation changes in this update
 
@@ -53,46 +50,48 @@ These are useful end-to-end timings, but **not** switch-act timings.
 
 2. Extractor updates:
    - `testing/tools/extract_switch_timings.py`
-   - Added checkpoint pattern:
-     - `V_immediate_parent_match`
-   - Added classification logic:
+   - Added variant preconditioning metadata fields:
+     - `variant_preconditioning_method`
+     - `variant_precondition_result`
+   - Added classification handling for:
+     - `precondition_failed_initial_parent_is_target`
      - `success_switch_act`
      - `immediate_parent_match_no_switch`
-     - `invalid_initial_parent_is_target`
      - `timeout_or_failure`
      - `unclassified`
-   - Added CSV field:
-     - `delta_ms_from_attach_start`
 
 3. Variant batch runner behavior:
    - `testing/tools/run_trials_batch.sh`
-   - Variant runs now count only `success_switch_act` trials toward valid target and keep classifying non-switch-act trials separately.
+   - Variant runs count only `success_switch_act` trials toward the valid target.
+   - Variant steady runs now flash with batch-gated auto-triggering disabled, reset the target router in the capture sequence, append structured preconditioning metadata to each log, and rely on the child to trigger the switch only after confirming a non-target initial parent.
 
-4. Variant steady preconditioning in batch runner:
-   - `testing/tools/run_trials_batch.sh`
-   - For `variant-* steady`, the runner now maps `TARGET_PARENT_EXTADDR` through `testing/router_identity.env`, resets the target router just before child boot, and then starts the normal capture.
-   - Goal: bias initial attach toward the non-target parent without changing stock paths or `forced-failover` behavior.
+4. Variant steady child configs:
+   - `testing/configs/child_variant_multicast.yaml`
+   - `testing/configs/child_variant_unicast.yaml`
+   - Added batch preconditioning gate logic that logs the initial parent and suppresses the switch request when the initial parent is already the target.
 
 ## Status vs acceptance
 
-- ✅ Immediate parent-match path explicitly logged and classified.
-- ✅ Variant CSV contains `classification` and `delta_ms_from_attach_start`.
-- ✅ Immediate parent-match/no-switch excluded from `T6-T3` medians.
-- ✅ Batch runner now preconditions `variant-* steady` by resetting the target router before child boot.
-- ❌ Variant steady batches have not yet been rerun after that preconditioning change, so current tables still reflect the older smoke runs (0 valid switch-act trials so far).
-- ❌ `T3`/`T6` >= 90% of valid switch-act trials not yet reached because post-change valid switch-act sample count is still uncollected.
+- ✅ No new runner mode added.
+- ✅ Stock runner behavior unchanged.
+- ✅ Variant steady now verifies/logs the initial parent before allowing the switch request.
+- ✅ Trial logs now carry structured variant preconditioning metadata.
+- ✅ Trials starting on the target parent are excluded from valid switch-act counts and classified as `precondition_failed_initial_parent_is_target`.
+- ❌ Latest post-change smoke reruns still produced 0 valid switch-act trials for both `variant-mcast steady` and `variant-ucast steady` because all observed initial parents were still the target parent.
+- ❌ No post-change smoke run has yet demonstrated `non_target_confirmed` before switch request.
+- ❌ 10 valid steady switch-act trials per variant mode have not been achieved yet.
 
-## Raw artifacts used for latest smoke check
+## Raw artifacts used for latest post-change smoke check
 
 - mcast:
-  - `testing/logs/variant-mcast-steady-20260511-224858-trial1.log`
-  - `testing/logs/variant-mcast-steady-20260511-225018-trial2.log`
-  - `testing/logs/variant-mcast-steady-20260511-225138-trial3.log`
-  - `testing/logs/variant-mcast-steady-20260511-225258-trial4.log`
+  - `testing/logs/variant-mcast-steady-20260512-080101-trial1.log`
+  - `testing/logs/variant-mcast-steady-20260512-080151-trial2.log`
+  - `testing/logs/variant-mcast-steady-20260512-080241-trial3.log`
+  - `testing/logs/variant-mcast-steady-20260512-080331-trial4.log`
   - matching `.csv` files
 - ucast:
-  - `testing/logs/variant-ucast-steady-20260511-225443-trial1.log`
-  - `testing/logs/variant-ucast-steady-20260511-225603-trial2.log`
-  - `testing/logs/variant-ucast-steady-20260511-225723-trial3.log`
-  - `testing/logs/variant-ucast-steady-20260511-225844-trial4.log`
+  - `testing/logs/variant-ucast-steady-20260512-080510-trial1.log`
+  - `testing/logs/variant-ucast-steady-20260512-080600-trial2.log`
+  - `testing/logs/variant-ucast-steady-20260512-080650-trial3.log`
+  - `testing/logs/variant-ucast-steady-20260512-080740-trial4.log`
   - matching `.csv` files

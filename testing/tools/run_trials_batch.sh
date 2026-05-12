@@ -51,28 +51,37 @@ elif [[ "$TARGET_PARENT_EXTADDR_LC" == "${ROUTER_SECONDARY_EXTADDR,,}" ]]; then
   TARGET_ROUTER_PORT="$ROUTER_SECONDARY_PORT"
 fi
 
-precondition_variant_steady_target_reset() {
-  local scenario="$1"
-  local mode="$2"
-  local stamp="$3"
-  local trial="$4"
-  local prep_log="$5"
+append_variant_preconditioning_metadata() {
+  local log_path="$1"
+  local prep_result="$2"
+  local prep_method="$3"
 
-  if [[ "$mode" != "steady" || "$scenario" != variant-* ]]; then
-    return 0
+  local initial_parent=""
+  initial_parent="$(python3 - <<'PY' "$log_path"
+import re, sys
+text = open(sys.argv[1], encoding='utf-8', errors='ignore').read()
+match = re.search(r'V_precondition_initial_parent_extaddr=([0-9a-fA-F]{16})', text)
+print(match.group(1).lower() if match else '')
+PY
+)"
+
+  if [[ -z "$initial_parent" ]]; then
+    prep_result="initial_parent_unknown"
+  elif [[ "$initial_parent" == "$TARGET_PARENT_EXTADDR_LC" ]]; then
+    prep_result="target_still_current"
+  else
+    prep_result="non_target_confirmed"
   fi
 
-  if [[ -z "$TARGET_ROUTER_LABEL" || -z "$TARGET_ROUTER_PORT" ]]; then
-    echo "[batch] warning: steady variant preconditioning skipped; TARGET_PARENT_EXTADDR=$TARGET_PARENT_EXTADDR does not map to router1/router2" | tee "$prep_log"
-    return 0
-  fi
-
-  echo "[batch] steady variant preconditioning: reset target router $TARGET_ROUTER_LABEL ($TARGET_PARENT_EXTADDR_LC) before child boot" | tee "$prep_log"
-  if ! timeout 8 .venv/bin/esphome logs "$ROUTER_CONFIG" --device "$TARGET_ROUTER_PORT" --reset >>"$prep_log" 2>&1; then
-    echo "[batch] warning: target-router preconditioning reset failed for $TARGET_ROUTER_LABEL; continuing with trial" | tee -a "$prep_log"
-  fi
-
-  sleep 1
+  {
+    echo "# variant-preconditioning-method $prep_method"
+    echo "# variant-target-parent-extaddr $TARGET_PARENT_EXTADDR_LC"
+    [[ -n "$initial_parent" ]] && echo "# variant-initial-parent-extaddr $initial_parent"
+    echo "# variant-precondition-result $prep_result"
+    if [[ "$prep_result" == "target_still_current" ]]; then
+      echo "# classification precondition_failed_initial_parent_is_target"
+    fi
+  } >> "$log_path"
 }
 
 if [[ "$SCENARIO" == variant-* ]]; then
@@ -101,7 +110,18 @@ fi
 
 # Build/flash once per scenario, then capture trials without extra compile pressure.
 echo "[batch] preparing firmware: scenario=$SCENARIO mode=$MODE"
-.venv/bin/esphome run "$CONFIG" --device "$CHILD_PORT" --no-logs >"testing/logs/${SCENARIO}-${MODE}-flash.log" 2>&1
+FLASH_CMD=(.venv/bin/esphome run "$CONFIG" --device "$CHILD_PORT" --no-logs)
+if [[ "$SCENARIO" == variant-* && "$MODE" == "steady" ]]; then
+  FLASH_CMD=(
+    .venv/bin/esphome
+    -s auto_trigger_switch false
+    -s batch_precondition_gate true
+    run "$CONFIG"
+    --device "$CHILD_PORT"
+    --no-logs
+  )
+fi
+"${FLASH_CMD[@]}" >"testing/logs/${SCENARIO}-${MODE}-flash.log" 2>&1
 
 for ((i=DONE+1; i<=TARGET_ATTEMPTS; i++)); do
   STAMP="$(date +%Y%m%d-%H%M%S)"
@@ -115,23 +135,61 @@ for ((i=DONE+1; i<=TARGET_ATTEMPTS; i++)); do
   fi
 
   PREP_LOG="testing/logs/${SCENARIO}-${MODE}-${STAMP}-trial${i}.prep.out"
-  precondition_variant_steady_target_reset "$SCENARIO" "$MODE" "$STAMP" "$i" "$PREP_LOG"
+  PREP_RESULT="not_applicable"
+  PREP_METHOD="target-router-reset"
 
   CAPTURE_ARGS=(
     --config "$CONFIG"
     --duration "$DURATION"
     --out "$LOG"
-    --node child="$CHILD_PORT"
-    --node router1="$ROUTER_PRIMARY_PORT"
-    --node router2="$ROUTER_SECONDARY_PORT"
-    --reset-label child
   )
+
+  if [[ "$SCENARIO" == variant-* && "$MODE" == "steady" ]]; then
+    if [[ -z "$TARGET_ROUTER_LABEL" ]]; then
+      echo "[batch] warning: steady variant preconditioning skipped; TARGET_PARENT_EXTADDR=$TARGET_PARENT_EXTADDR does not map to router1/router2" | tee "$PREP_LOG"
+      PREP_RESULT="initial_parent_unknown"
+      CAPTURE_ARGS+=(
+        --node child="$CHILD_PORT"
+        --node router1="$ROUTER_PRIMARY_PORT"
+        --node router2="$ROUTER_SECONDARY_PORT"
+        --reset-label child
+      )
+    else
+      echo "[batch] steady variant preconditioning: reset target router $TARGET_ROUTER_LABEL ($TARGET_PARENT_EXTADDR_LC) in capture sequence before child parent check" | tee "$PREP_LOG"
+      PREP_RESULT="pending_initial_parent_check"
+      if [[ "$TARGET_ROUTER_LABEL" == "router1" ]]; then
+        CAPTURE_ARGS+=(
+          --node router1="$ROUTER_PRIMARY_PORT"
+          --node child="$CHILD_PORT"
+          --node router2="$ROUTER_SECONDARY_PORT"
+        )
+      else
+        CAPTURE_ARGS+=(
+          --node router2="$ROUTER_SECONDARY_PORT"
+          --node child="$CHILD_PORT"
+          --node router1="$ROUTER_PRIMARY_PORT"
+        )
+      fi
+      CAPTURE_ARGS+=(--reset-label "$TARGET_ROUTER_LABEL" --reset-label child)
+    fi
+  else
+    CAPTURE_ARGS+=(
+      --node child="$CHILD_PORT"
+      --node router1="$ROUTER_PRIMARY_PORT"
+      --node router2="$ROUTER_SECONDARY_PORT"
+      --reset-label child
+    )
+  fi
 
   if [[ "$MODE" == "forced-failover" ]]; then
     CAPTURE_ARGS+=(--reset-label router1)
   fi
 
   python3 testing/tools/capture_logs.py "${CAPTURE_ARGS[@]}" >"${LOG%.log}.capture.out" 2>&1
+
+  if [[ "$SCENARIO" == variant-* ]]; then
+    append_variant_preconditioning_metadata "$LOG" "$PREP_RESULT" "$PREP_METHOD"
+  fi
 
   python3 testing/tools/extract_switch_timings.py \
     --in "$LOG" \

@@ -57,6 +57,10 @@ META_PATTERNS = {
     "disable_method": re.compile(r"^#\s*disable-method\s+(\S+)$"),
     "disable_start": re.compile(r"^#\s*disable-start\s+(.+)$"),
     "disable_end": re.compile(r"^#\s*disable-end\s+(.+)$"),
+    "variant_preconditioning_method": re.compile(r"^#\s*variant-preconditioning-method\s+(\S+)$"),
+    "variant_target_parent_extaddr": re.compile(r"^#\s*variant-target-parent-extaddr\s+([0-9a-fA-F]{16})$"),
+    "variant_initial_parent_extaddr": re.compile(r"^#\s*variant-initial-parent-extaddr\s+([0-9a-fA-F]{16})$"),
+    "variant_precondition_result": re.compile(r"^#\s*variant-precondition-result\s+(\S+)$"),
 }
 
 
@@ -82,6 +86,10 @@ def main() -> int:
         "disable_method": "",
         "disable_start": "",
         "disable_end": "",
+        "variant_preconditioning_method": "",
+        "variant_target_parent_extaddr": "",
+        "variant_initial_parent_extaddr": "",
+        "variant_precondition_result": "",
     }
 
     input_text = args.infile.read_text(encoding="utf-8", errors="ignore")
@@ -114,7 +122,7 @@ def main() -> int:
         writer = csv.writer(f)
         writer.writerow([
             "scenario", "mode", "checkpoint", "timestamp_utc", "delta_ms_from_c0", "delta_ms_from_attach_start", "disruption_time_utc", "delta_ms_from_disruption", "delta_ms_from_search_start", "source_log", "classification",
-            "initial_parent_extaddr", "target_parent_extaddr", "disabled_router_label", "disable_method"
+            "initial_parent_extaddr", "target_parent_extaddr", "disabled_router_label", "disable_method", "variant_preconditioning_method", "variant_precondition_result"
         ])
         c0 = events.get("C0_request")
         t3 = events.get("T3_attach_start")
@@ -135,16 +143,28 @@ def main() -> int:
         if m_target:
             target_parent_extaddr = m_target.group(1).lower()
         if not target_parent_extaddr and args.scenario.startswith("variant"):
-            m_target = re.search(r"Configured preferred parent by extended address: ([0-9a-fA-F]{16})", input_text)
-            if m_target:
-                target_parent_extaddr = m_target.group(1).lower()
+            if meta["variant_target_parent_extaddr"]:
+                target_parent_extaddr = meta["variant_target_parent_extaddr"].lower()
+            else:
+                m_target = re.search(r"Configured preferred parent by extended address: ([0-9a-fA-F]{16})", input_text)
+                if m_target:
+                    target_parent_extaddr = m_target.group(1).lower()
 
         if args.scenario.startswith("variant"):
-            m_initial = re.search(r"V_initial_parent_extaddr=([0-9a-fA-F]{16})", input_text)
-            if m_initial:
-                meta["initial_parent_extaddr"] = m_initial.group(1).lower()
+            if meta["variant_initial_parent_extaddr"]:
+                meta["initial_parent_extaddr"] = meta["variant_initial_parent_extaddr"].lower()
+            else:
+                m_initial = re.search(r"V_initial_parent_extaddr=([0-9a-fA-F]{16})", input_text)
+                if m_initial:
+                    meta["initial_parent_extaddr"] = m_initial.group(1).lower()
 
-            if "T3_attach_start" in events and "T6_parent_match" in events:
+            if meta["variant_precondition_result"] == "target_still_current":
+                classification = "precondition_failed_initial_parent_is_target"
+            elif meta["variant_precondition_result"] == "reset_failed" and not classification:
+                classification = "timeout_or_failure"
+            elif meta["variant_precondition_result"] == "initial_parent_unknown" and not classification:
+                classification = "timeout_or_failure"
+            elif meta["variant_precondition_result"] == "non_target_confirmed" and "T3_attach_start" in events and "T6_parent_match" in events:
                 classification = "success_switch_act"
             elif "V_immediate_parent_match" in events and "T6_parent_match" in events and "T3_attach_start" not in events:
                 classification = "immediate_parent_match_no_switch"
@@ -160,7 +180,7 @@ def main() -> int:
             if ts is None:
                 writer.writerow([
                     args.scenario, args.mode, key, "", "", "", meta["disable_start"], "", "", str(args.infile), classification,
-                    meta["initial_parent_extaddr"], target_parent_extaddr, meta["disabled_router_label"], meta["disable_method"]
+                    meta["initial_parent_extaddr"], target_parent_extaddr, meta["disabled_router_label"], meta["disable_method"], meta["variant_preconditioning_method"], meta["variant_precondition_result"]
                 ])
             else:
                 delta = "" if c0 is None else int((ts - c0).total_seconds() * 1000)
@@ -169,7 +189,7 @@ def main() -> int:
                 delta_search = "" if so1 is None else int((ts - so1).total_seconds() * 1000)
                 writer.writerow([
                     args.scenario, args.mode, key, ts.isoformat(), delta, delta_attach, meta["disable_start"], delta_disruption, delta_search, str(args.infile), classification,
-                    meta["initial_parent_extaddr"], target_parent_extaddr, meta["disabled_router_label"], meta["disable_method"]
+                    meta["initial_parent_extaddr"], target_parent_extaddr, meta["disabled_router_label"], meta["disable_method"], meta["variant_preconditioning_method"], meta["variant_precondition_result"]
                 ])
 
     print(f"Wrote {args.out}")
