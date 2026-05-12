@@ -68,13 +68,19 @@ These are useful end-to-end timings, but **not** switch-act timings.
    - `testing/tools/run_trials_batch.sh`
    - Variant runs now count only `success_switch_act` trials toward valid target and keep classifying non-switch-act trials separately.
 
+4. Variant steady preconditioning in batch runner:
+   - `testing/tools/run_trials_batch.sh`
+   - For `variant-* steady`, the runner now maps `TARGET_PARENT_EXTADDR` through `testing/router_identity.env`, resets the target router just before child boot, and then starts the normal capture.
+   - Goal: bias initial attach toward the non-target parent without changing stock paths or `forced-failover` behavior.
+
 ## Status vs acceptance
 
 - ✅ Immediate parent-match path explicitly logged and classified.
 - ✅ Variant CSV contains `classification` and `delta_ms_from_attach_start`.
 - ✅ Immediate parent-match/no-switch excluded from `T6-T3` medians.
-- ❌ Variant setup has not yet produced 10 valid switch-act trials per mode in latest smoke runs (0 valid so far).
-- ❌ `T3`/`T6` >= 90% of valid switch-act trials not yet reached because valid switch-act sample count is currently zero.
+- ✅ Batch runner now preconditions `variant-* steady` by resetting the target router before child boot.
+- ❌ Variant steady batches have not yet been rerun after that preconditioning change, so current tables still reflect the older smoke runs (0 valid switch-act trials so far).
+- ❌ `T3`/`T6` >= 90% of valid switch-act trials not yet reached because post-change valid switch-act sample count is still uncollected.
 
 ## Raw artifacts used for latest smoke check
 

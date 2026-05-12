@@ -5,6 +5,7 @@ ROOT_DIR="$(cd "$(dirname "$0")/../.." && pwd)"
 cd "$ROOT_DIR"
 
 source testing/benchmark_profile.env
+source testing/router_identity.env
 
 SCENARIO="${1:?usage: run_trials_batch.sh <scenario> <count> [duration] [mode]}"
 COUNT="${2:?usage: run_trials_batch.sh <scenario> <count> [duration] [mode]}"
@@ -37,6 +38,42 @@ VALID_STATE_FILE="$STATE_DIR/${SCENARIO}-${MODE}.valid.state"
 if [[ -f "$VALID_STATE_FILE" ]]; then
   VALID_DONE="$(cat "$VALID_STATE_FILE")"
 fi
+
+ROUTER_CONFIG="testing/configs/router_ftd.yaml"
+TARGET_PARENT_EXTADDR_LC="${TARGET_PARENT_EXTADDR,,}"
+TARGET_ROUTER_LABEL=""
+TARGET_ROUTER_PORT=""
+if [[ "$TARGET_PARENT_EXTADDR_LC" == "${ROUTER_PRIMARY_EXTADDR,,}" ]]; then
+  TARGET_ROUTER_LABEL="router1"
+  TARGET_ROUTER_PORT="$ROUTER_PRIMARY_PORT"
+elif [[ "$TARGET_PARENT_EXTADDR_LC" == "${ROUTER_SECONDARY_EXTADDR,,}" ]]; then
+  TARGET_ROUTER_LABEL="router2"
+  TARGET_ROUTER_PORT="$ROUTER_SECONDARY_PORT"
+fi
+
+precondition_variant_steady_target_reset() {
+  local scenario="$1"
+  local mode="$2"
+  local stamp="$3"
+  local trial="$4"
+  local prep_log="$5"
+
+  if [[ "$mode" != "steady" || "$scenario" != variant-* ]]; then
+    return 0
+  fi
+
+  if [[ -z "$TARGET_ROUTER_LABEL" || -z "$TARGET_ROUTER_PORT" ]]; then
+    echo "[batch] warning: steady variant preconditioning skipped; TARGET_PARENT_EXTADDR=$TARGET_PARENT_EXTADDR does not map to router1/router2" | tee "$prep_log"
+    return 0
+  fi
+
+  echo "[batch] steady variant preconditioning: reset target router $TARGET_ROUTER_LABEL ($TARGET_PARENT_EXTADDR_LC) before child boot" | tee "$prep_log"
+  if ! timeout 8 .venv/bin/esphome logs "$ROUTER_CONFIG" --device "$TARGET_ROUTER_PORT" --reset >>"$prep_log" 2>&1; then
+    echo "[batch] warning: target-router preconditioning reset failed for $TARGET_ROUTER_LABEL; continuing with trial" | tee -a "$prep_log"
+  fi
+
+  sleep 1
+}
 
 if [[ "$SCENARIO" == variant-* ]]; then
   if (( VALID_DONE >= COUNT )); then
@@ -76,6 +113,9 @@ for ((i=DONE+1; i<=TARGET_ATTEMPTS; i++)); do
   else
     echo "[batch] trial $i/$COUNT"
   fi
+
+  PREP_LOG="testing/logs/${SCENARIO}-${MODE}-${STAMP}-trial${i}.prep.out"
+  precondition_variant_steady_target_reset "$SCENARIO" "$MODE" "$STAMP" "$i" "$PREP_LOG"
 
   CAPTURE_ARGS=(
     --config "$CONFIG"
