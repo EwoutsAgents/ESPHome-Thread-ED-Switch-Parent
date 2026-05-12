@@ -119,9 +119,7 @@ void OpenThreadComponent::ot_main() {
   esp_openthread_lock_acquire(portMAX_DELAY);
 
   ESP_LOGD(TAG, "Thread Version: %" PRIu16, otThreadGetVersion());
-  ESP_LOGI(TAG, "Clearing persisted OpenThread state...");
   otInstanceErasePersistentInfo(instance);
-  ESP_LOGI(TAG, "Activating dataset...");
 
   otOperationalDatasetTlvs dataset_tlvs = {};
 #ifndef USE_OPENTHREAD_FORCE_DATASET
@@ -146,12 +144,9 @@ void OpenThreadComponent::ot_main() {
 #endif
 
   if (dataset_tlvs.mLength > 0) {
-    ESP_LOGI(TAG, "Using existing TLV dataset, length=%u", dataset_tlvs.mLength);
     otError tlv_err = otDatasetSetActiveTlvs(instance, &dataset_tlvs);
-    ESP_LOGI(TAG, "otDatasetSetActiveTlvs -> %d", static_cast<int>(tlv_err));
     if (tlv_err != OT_ERROR_NONE) {
       ESP_LOGE(TAG, "Failed to set active TLVs: %s", otThreadErrorToString(tlv_err));
-      esp_rom_printf("otDatasetSetActiveTlvs err=%d\n", static_cast<int>(tlv_err));
       esp_openthread_lock_release();
       return;
     }
@@ -173,13 +168,10 @@ void OpenThreadComponent::ot_main() {
     dataset.mComponents.mIsNetworkNamePresent = true;
     len = hex_string_to_binary(CONFIG_OPENTHREAD_NETWORK_EXTPANID, dataset.mExtendedPanId.m8,
                                sizeof(dataset.mExtendedPanId.m8));
-    ESP_LOGI(TAG, "extpan parse len=%u", static_cast<unsigned>(len));
     if (len != sizeof(dataset.mExtendedPanId.m8)) {
       ESP_LOGE(TAG, "Cannot convert extended pan id '%s' (len=%u expected=%u)",
                CONFIG_OPENTHREAD_NETWORK_EXTPANID, static_cast<unsigned>(len),
                static_cast<unsigned>(sizeof(dataset.mExtendedPanId.m8)));
-      esp_rom_printf("extpan parse failed len=%u expected=%u value=%s\n", static_cast<unsigned>(len),
-                     static_cast<unsigned>(sizeof(dataset.mExtendedPanId.m8)), CONFIG_OPENTHREAD_NETWORK_EXTPANID);
       esp_openthread_lock_release();
       return;
     }
@@ -187,36 +179,28 @@ void OpenThreadComponent::ot_main() {
     otIp6Prefix prefix;
     memset(&prefix, 0, sizeof(prefix));
     otError prefix_err = otIp6PrefixFromString(CONFIG_OPENTHREAD_MESH_LOCAL_PREFIX, &prefix);
-    ESP_LOGI(TAG, "mesh prefix parse -> %d", static_cast<int>(prefix_err));
     if (prefix_err == OT_ERROR_NONE) {
       memcpy(dataset.mMeshLocalPrefix.m8, prefix.mPrefix.mFields.m8, sizeof(dataset.mMeshLocalPrefix.m8));
       dataset.mComponents.mIsMeshLocalPrefixPresent = true;
     }
     len = hex_string_to_binary(CONFIG_OPENTHREAD_NETWORK_MASTERKEY, dataset.mNetworkKey.m8,
                                sizeof(dataset.mNetworkKey.m8));
-    ESP_LOGI(TAG, "masterkey parse len=%u", static_cast<unsigned>(len));
     if (len != sizeof(dataset.mNetworkKey.m8)) {
       ESP_LOGE(TAG, "Cannot convert master key '%s' (len=%u expected=%u)", CONFIG_OPENTHREAD_NETWORK_MASTERKEY,
                static_cast<unsigned>(len), static_cast<unsigned>(sizeof(dataset.mNetworkKey.m8)));
-      esp_rom_printf("masterkey parse failed len=%u expected=%u value=%s\n", static_cast<unsigned>(len),
-                     static_cast<unsigned>(sizeof(dataset.mNetworkKey.m8)), CONFIG_OPENTHREAD_NETWORK_MASTERKEY);
       esp_openthread_lock_release();
       return;
     }
     dataset.mComponents.mIsNetworkKeyPresent = true;
     len = hex_string_to_binary(CONFIG_OPENTHREAD_NETWORK_PSKC, dataset.mPskc.m8, sizeof(dataset.mPskc.m8));
-    ESP_LOGI(TAG, "pskc parse len=%u", static_cast<unsigned>(len));
     if (len != sizeof(dataset.mPskc.m8)) {
       ESP_LOGE(TAG, "Cannot convert pskc '%s' (len=%u expected=%u)", CONFIG_OPENTHREAD_NETWORK_PSKC,
                static_cast<unsigned>(len), static_cast<unsigned>(sizeof(dataset.mPskc.m8)));
-      esp_rom_printf("pskc parse failed len=%u expected=%u value=%s\n", static_cast<unsigned>(len),
-                     static_cast<unsigned>(sizeof(dataset.mPskc.m8)), CONFIG_OPENTHREAD_NETWORK_PSKC);
       esp_openthread_lock_release();
       return;
     }
     dataset.mComponents.mIsPskcPresent = true;
     otError set_err = otDatasetSetActive(instance, &dataset);
-    ESP_LOGI(TAG, "otDatasetSetActive -> %d", static_cast<int>(set_err));
     if (set_err != OT_ERROR_NONE) {
       ESP_LOGE(TAG, "Failed to set active dataset: %s (%d)", otThreadErrorToString(set_err), static_cast<int>(set_err));
       esp_openthread_lock_release();
@@ -225,7 +209,6 @@ void OpenThreadComponent::ot_main() {
   }
 
   otError ip6_err = otIp6SetEnabled(instance, true);
-  ESP_LOGI(TAG, "otIp6SetEnabled(true) -> %d", static_cast<int>(ip6_err));
   if (ip6_err != OT_ERROR_NONE) {
     ESP_LOGE(TAG, "Failed to enable IPv6: %s (%d)", otThreadErrorToString(ip6_err), static_cast<int>(ip6_err));
     esp_openthread_lock_release();
@@ -250,7 +233,6 @@ void OpenThreadComponent::ot_main() {
 #endif
 
   otError link_mode_err = otThreadSetLinkMode(instance, link_mode_config);
-  ESP_LOGI(TAG, "otThreadSetLinkMode -> %d", static_cast<int>(link_mode_err));
   if (link_mode_err != OT_ERROR_NONE) {
     ESP_LOGE(TAG, "Failed to set linkmode (%d)", static_cast<int>(link_mode_err));
     esp_openthread_lock_release();
@@ -264,7 +246,6 @@ void OpenThreadComponent::ot_main() {
 #endif
 
   otError thread_enable_err = otThreadSetEnabled(instance, true);
-  ESP_LOGI(TAG, "otThreadSetEnabled(true) -> %d", static_cast<int>(thread_enable_err));
   if (thread_enable_err != OT_ERROR_NONE) {
     ESP_LOGE(TAG, "Failed to enable Thread: %s (%d)", otThreadErrorToString(thread_enable_err),
              static_cast<int>(thread_enable_err));
