@@ -12,19 +12,21 @@ namespace thread_router_control {
 
 void ThreadRouterControlComponent::setup() {
   this->stdin_ready_ = true;
-  ESP_LOGI(TAG, "THREAD_CTL ready on UART0; commands: 'thread on', 'thread off', 'thread status', 'thread suspend <ms>'");
+  ESP_LOGI(TAG, "USB_CTL ready on UART0; commands: 'thread off <seconds>', 'thread on', 'thread state'");
 }
 
 void ThreadRouterControlComponent::dump_config() {
   ESP_LOGCONFIG(TAG, "Thread router control:");
-  ESP_LOGCONFIG(TAG, "  stdin command control: %s", YESNO(this->stdin_ready_));
+  ESP_LOGCONFIG(TAG, "  usb serial command control: %s", YESNO(this->stdin_ready_));
   ESP_LOGCONFIG(TAG, "  command echo: %s", YESNO(this->command_echo_));
+  ESP_LOGCONFIG(TAG, "  default off timeout: %u ms", static_cast<unsigned>(this->default_off_timeout_ms_));
 }
 
 void ThreadRouterControlComponent::loop() {
   if (this->auto_restore_pending_ && static_cast<int32_t>(millis() - this->auto_restore_at_ms_) >= 0) {
     this->auto_restore_pending_ = false;
-    this->apply_thread_enabled_(true, "auto_restore");
+    ESP_LOGI(TAG, "USB_CTL failsafe re-enable fired");
+    this->apply_thread_enabled_(true, "thread on");
   }
 
   if (!this->stdin_ready_) {
@@ -71,58 +73,70 @@ void ThreadRouterControlComponent::process_line_(const std::string &line) {
 
   const std::string cmd = lowercase_(trimmed);
   if (this->command_echo_) {
-    ESP_LOGI(TAG, "THREAD_CTL rx command=%s", trimmed.c_str());
+    ESP_LOGI(TAG, "USB_CTL rx command=%s", trimmed.c_str());
   }
 
   if (cmd == "thread on" || cmd == "thread enable") {
-    this->auto_restore_pending_ = false;
-    this->apply_thread_enabled_(true, "command_on");
+    this->cancel_auto_restore_();
+    ESP_LOGI(TAG, "USB_CTL thread on requested");
+    this->apply_thread_enabled_(true, "thread on");
     return;
   }
 
-  if (cmd == "thread off" || cmd == "thread disable") {
-    this->auto_restore_pending_ = false;
-    this->apply_thread_enabled_(false, "command_off");
-    return;
-  }
-
-  if (cmd == "thread status") {
+  if (cmd == "thread state" || cmd == "thread status") {
     bool enabled = false;
     otDeviceRole role = OT_DEVICE_ROLE_DISABLED;
     if (!this->get_thread_enabled_(&enabled, &role)) {
-      ESP_LOGW(TAG, "THREAD_CTL status result=lock_unavailable");
+      ESP_LOGW(TAG, "USB_CTL thread state lock_unavailable");
       return;
     }
-    ESP_LOGI(TAG, "THREAD_CTL status thread_enabled=%s role=%s", YESNO(enabled), role_to_string_(role));
+    ESP_LOGI(TAG, "USB_CTL thread state enabled=%s role=%s", enabled ? "true" : "false", role_to_string_(role));
     return;
   }
 
-  constexpr const char prefix[] = "thread suspend ";
+  constexpr const char prefix[] = "thread off";
   if (cmd.rfind(prefix, 0) == 0) {
-    const char *arg = trimmed.c_str() + std::strlen(prefix);
-    char *end = nullptr;
-    errno = 0;
-    const unsigned long duration_ms = std::strtoul(arg, &end, 10);
-    const std::string trailing = trim_(std::string(end != nullptr ? end : ""));
-    if (errno != 0 || end == arg || !trailing.empty()) {
-      ESP_LOGW(TAG, "THREAD_CTL ack result=invalid_argument command=%s", trimmed.c_str());
-      return;
+    std::string arg = trim_(trimmed.substr(std::strlen(prefix)));
+    uint32_t timeout_ms = this->default_off_timeout_ms_;
+    if (!arg.empty()) {
+      auto seconds = parse_timeout_seconds_(arg);
+      if (!seconds.has_value()) {
+        ESP_LOGW(TAG, "USB_CTL invalid thread off timeout arg=%s", arg.c_str());
+        return;
+      }
+      timeout_ms = *seconds * 1000U;
     }
-    this->apply_thread_enabled_(false, "command_suspend");
-    this->auto_restore_pending_ = true;
-    this->auto_restore_at_ms_ = millis() + static_cast<uint32_t>(duration_ms);
-    ESP_LOGI(TAG, "THREAD_CTL ack result=ok command=suspend duration_ms=%lu", duration_ms);
+    ESP_LOGI(TAG, "USB_CTL thread off requested timeout=%lus", static_cast<unsigned long>(timeout_ms / 1000U));
+    if (this->apply_thread_enabled_(false, "thread off")) {
+      this->arm_auto_restore_(timeout_ms);
+    }
     return;
   }
 
-  ESP_LOGW(TAG, "THREAD_CTL ack result=unknown_command command=%s", trimmed.c_str());
+  constexpr const char suspend_prefix[] = "thread suspend ";
+  if (cmd.rfind(suspend_prefix, 0) == 0) {
+    std::string arg = trim_(trimmed.substr(std::strlen(suspend_prefix)));
+    auto seconds = parse_timeout_seconds_(arg);
+    if (!seconds.has_value()) {
+      ESP_LOGW(TAG, "USB_CTL invalid thread suspend arg=%s", arg.c_str());
+      return;
+    }
+    const uint32_t timeout_ms = *seconds * 1000U;
+    ESP_LOGI(TAG, "USB_CTL thread off requested timeout=%lus", static_cast<unsigned long>(timeout_ms / 1000U));
+    if (this->apply_thread_enabled_(false, "thread off")) {
+      this->arm_auto_restore_(timeout_ms);
+    }
+    return;
+  }
+
+  ESP_LOGW(TAG, "USB_CTL unknown command=%s", trimmed.c_str());
 }
 
-void ThreadRouterControlComponent::apply_thread_enabled_(bool enabled, const char *reason) {
-  auto lock = esphome::openthread::InstanceLock::try_acquire(0);
+bool ThreadRouterControlComponent::apply_thread_enabled_(bool enabled, const char *log_action) {
+  auto lock = esphome::openthread::InstanceLock::try_acquire(100);
   if (!lock.has_value()) {
-    ESP_LOGW(TAG, "THREAD_CTL ack result=lock_unavailable reason=%s requested=%s", reason, YESNO(enabled));
-    return;
+    ESP_LOGW(TAG, "USB_CTL could not acquire OpenThread lock");
+    return false;
   }
 
   otInstance *instance = lock->get_instance();
@@ -137,18 +151,12 @@ void ThreadRouterControlComponent::apply_thread_enabled_(bool enabled, const cha
     err = otThreadSetEnabled(instance, false);
   }
 
-  bool active = false;
-  otDeviceRole role = OT_DEVICE_ROLE_DISABLED;
-  this->get_thread_enabled_(&active, &role);
-
-  ESP_LOGI(TAG,
-           "THREAD_CTL ack result=%s reason=%s requested=%s thread_enabled=%s role=%s err=%d",
-           err == OT_ERROR_NONE ? "ok" : "error", reason, YESNO(enabled), YESNO(active), role_to_string_(role),
-           static_cast<int>(err));
+  ESP_LOGI(TAG, "USB_CTL %s -> %s", log_action, error_to_string_(err));
+  return err == OT_ERROR_NONE;
 }
 
 bool ThreadRouterControlComponent::get_thread_enabled_(bool *enabled, otDeviceRole *role) {
-  auto lock = esphome::openthread::InstanceLock::try_acquire(0);
+  auto lock = esphome::openthread::InstanceLock::try_acquire(100);
   if (!lock.has_value()) {
     return false;
   }
@@ -162,6 +170,29 @@ bool ThreadRouterControlComponent::get_thread_enabled_(bool *enabled, otDeviceRo
     *role = current_role;
   }
   return true;
+}
+
+void ThreadRouterControlComponent::arm_auto_restore_(uint32_t timeout_ms) {
+  this->auto_restore_pending_ = true;
+  this->auto_restore_at_ms_ = millis() + timeout_ms;
+}
+
+void ThreadRouterControlComponent::cancel_auto_restore_() {
+  this->auto_restore_pending_ = false;
+}
+
+std::optional<uint32_t> ThreadRouterControlComponent::parse_timeout_seconds_(const std::string &value) {
+  if (value.empty()) {
+    return std::nullopt;
+  }
+  char *end = nullptr;
+  errno = 0;
+  const unsigned long parsed = std::strtoul(value.c_str(), &end, 10);
+  const std::string trailing = trim_(std::string(end != nullptr ? end : ""));
+  if (errno != 0 || end == value.c_str() || !trailing.empty()) {
+    return std::nullopt;
+  }
+  return static_cast<uint32_t>(parsed);
 }
 
 std::string ThreadRouterControlComponent::trim_(const std::string &value) {
@@ -199,6 +230,13 @@ const char *ThreadRouterControlComponent::role_to_string_(otDeviceRole role) {
     default:
       return "unknown";
   }
+}
+
+const char *ThreadRouterControlComponent::error_to_string_(otError error) {
+  if (error == OT_ERROR_NONE) {
+    return "OT_ERROR_NONE";
+  }
+  return otThreadErrorToString(error);
 }
 
 }  // namespace thread_router_control

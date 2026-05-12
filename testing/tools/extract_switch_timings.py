@@ -164,10 +164,12 @@ def main() -> int:
 
             if meta["variant_precondition_result"] == "target_still_current":
                 classification = "precondition_failed_initial_parent_is_target"
-            elif meta["variant_precondition_result"] == "reset_failed" and not classification:
-                classification = "timeout_or_failure"
-            elif meta["variant_precondition_result"] == "initial_parent_unknown" and not classification:
-                classification = "timeout_or_failure"
+            elif meta["variant_precondition_result"] == "thread_off_failed":
+                classification = "thread_off_failed"
+            elif meta["variant_precondition_result"] == "thread_on_failed":
+                classification = "thread_on_failed"
+            elif meta["variant_precondition_result"] == "initial_parent_unknown":
+                classification = "initial_parent_unknown"
             elif meta["variant_precondition_result"] == "non_target_confirmed" and "T3_attach_start" in events and "T6_parent_match" in events:
                 classification = "success_switch_act"
             elif "V_immediate_parent_match" in events and "T6_parent_match" in events and "T3_attach_start" not in events:

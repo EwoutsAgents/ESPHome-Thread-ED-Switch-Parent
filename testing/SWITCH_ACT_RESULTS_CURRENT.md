@@ -17,12 +17,12 @@ Source artifacts (latest balanced stock run):
 - `testing/logs/stock-observed-current-parent-off-20260511-205544-trial1.log` .. `trial10.log`
 - `testing/logs/stock-observed-current-parent-off-20260511-205544-trial1.csv` .. `trial10.csv`
 
-## B) Variant steady post-change smoke results
+## B) Variant steady USB thread-off smoke results
 
 | scenario | mode | attempts | non-target confirmed | target still current | initial unknown | valid switch-act | median T6-T3 ms | median T6-T0 ms | preconditioning method |
 |---|---|---:|---:|---:|---:|---:|---:|---:|---|
-| variant-mcast | steady | 4 | 0 | 4 | 0 | 0 | N/A | N/A | repeated-target-router-reset |
-| variant-ucast | steady | 4 | 0 | 4 | 0 | 0 | N/A | N/A | repeated-target-router-reset |
+| variant-mcast | steady | 4 | 0 | 4 | 0 | 0 | N/A | N/A | usb-thread-off |
+| variant-ucast | steady | 4 | 0 | 4 | 0 | 0 | N/A | N/A | usb-thread-off |
 
 Classification criteria implemented:
 - `success_switch_act` only when:
@@ -32,7 +32,12 @@ Classification criteria implemented:
 - `precondition_failed_initial_parent_is_target` when:
   - `variant_precondition_result = target_still_current`
 
-These latest steady smoke reruns show the child still initially attached to the target parent (`router2` / `da97557943a05aac`) in all 8 attempts, even under repeated target-router resets held through the preconditioning window. So no valid `T3→T6` switch-act samples were produced yet.
+These latest steady smoke reruns show the child still initially attached to the target parent (`router2` / `da97557943a05aac`) in all 8 attempts, even though the target router acknowledged both USB control commands:
+
+- `USB_CTL thread off -> OT_ERROR_NONE`
+- `USB_CTL thread on -> OT_ERROR_NONE`
+
+So the out-of-band USB control path is working, but it has not yet produced a `non_target_confirmed` precondition in this topology. No valid `T3→T6` switch-act samples were produced yet.
 
 ## C) Variant end-to-end timing note
 
@@ -62,12 +67,29 @@ Because the post-change smoke reruns did not produce `T6_parent_match`, there is
      - `timeout_or_failure`
      - `unclassified`
 
-3. Variant batch runner behavior:
+3. Router USB Thread control:
+   - `components/thread_router_control/thread_router_control.cpp`
+   - `components/thread_router_control/thread_router_control.h`
+   - `components/thread_router_control/__init__.py`
+   - `testing/configs/router_ftd.yaml`
+   - Router now accepts newline-delimited USB serial commands:
+     - `thread off <seconds>`
+     - `thread on`
+     - `thread state`
+   - Stable log lines added:
+     - `USB_CTL thread off requested timeout=60s`
+     - `USB_CTL thread off -> OT_ERROR_NONE`
+     - `USB_CTL thread on requested`
+     - `USB_CTL thread on -> OT_ERROR_NONE`
+     - `USB_CTL thread state enabled=<...> role=<...>`
+     - `USB_CTL failsafe re-enable fired`
+
+4. Variant batch runner behavior:
    - `testing/tools/run_trials_batch.sh`
    - Variant runs count only `success_switch_act` trials toward the valid target.
-   - Variant steady runs now flash with batch-gated auto-triggering disabled, start a repeated target-router reset loop, wait up to `VARIANT_PRECONDITION_TIMEOUT` seconds for `V_precondition_initial_parent_extaddr=...`, stop suppression only after a result is known, and append structured preconditioning metadata to each log.
+   - Variant steady runs now use USB Thread suppression on the target router (`thread off 60` / `thread on`) instead of repeated reset suppression, wait up to `VARIANT_PRECONDITION_TIMEOUT` seconds for `V_precondition_initial_parent_extaddr=...`, and append structured preconditioning metadata to each log.
 
-4. Variant steady child configs:
+5. Variant steady child configs:
    - `testing/configs/child_variant_multicast.yaml`
    - `testing/configs/child_variant_unicast.yaml`
    - Added batch preconditioning polling with timeout logging (`V_precondition_initial_parent_unknown=...`) so the child keeps checking until parent confirmation or timeout.
@@ -78,23 +100,24 @@ Because the post-change smoke reruns did not produce `T6_parent_match`, there is
 - ✅ Stock runner behavior unchanged.
 - ✅ Variant steady now verifies/logs the initial parent before allowing the switch request.
 - ✅ Trial logs now carry structured variant preconditioning metadata, including suppression start/end timestamps.
-- ✅ The runner/YAML no longer relies on a single target-router reset; it now uses repeated target-router reset suppression during the preconditioning window.
+- ✅ Existing `variant-* steady` now uses USB Thread suppression rather than repeated target-router reset suppression.
 - ✅ Trials starting on the target parent are excluded from valid switch-act counts and classified as `precondition_failed_initial_parent_is_target`.
-- ❌ Latest post-change smoke reruns still produced 0 valid switch-act trials for both `variant-mcast steady` and `variant-ucast steady` because all observed initial parents were still the target parent.
-- ❌ No post-change smoke run has yet demonstrated `non_target_confirmed` before switch request.
+- ✅ Router firmware accepted `thread off 60`, `thread on`, and `thread state` over USB serial, with a failsafe re-enable path.
+- ❌ Latest USB thread-off smoke reruns still produced 0 valid switch-act trials for both `variant-mcast steady` and `variant-ucast steady` because all observed initial parents were still the target parent.
+- ❌ No USB thread-off smoke run has yet demonstrated `non_target_confirmed` before switch request.
 - ❌ 10 valid steady switch-act trials per variant mode have not been achieved yet.
 
-## Raw artifacts used for latest post-change smoke check
+## Raw artifacts used for latest USB thread-off smoke check
 
 - mcast:
-  - `testing/logs/variant-mcast-steady-20260512-085940-trial1.log`
-  - `testing/logs/variant-mcast-steady-20260512-090100-trial2.log`
-  - `testing/logs/variant-mcast-steady-20260512-090220-trial3.log`
-  - `testing/logs/variant-mcast-steady-20260512-090340-trial4.log`
-  - matching `.csv` files
+  - `testing/logs/variant-mcast-steady-20260512-204235-trial1.log`
+  - `testing/logs/variant-mcast-steady-20260512-204358-trial2.log`
+  - `testing/logs/variant-mcast-steady-20260512-204521-trial3.log`
+  - `testing/logs/variant-mcast-steady-20260512-204643-trial4.log`
+  - matching `.csv` and `.prep.out` files
 - ucast:
-  - `testing/logs/variant-ucast-steady-20260512-090527-trial1.log`
-  - `testing/logs/variant-ucast-steady-20260512-090647-trial2.log`
-  - `testing/logs/variant-ucast-steady-20260512-090807-trial3.log`
-  - `testing/logs/variant-ucast-steady-20260512-090927-trial4.log`
-  - matching `.csv` files
+  - `testing/logs/variant-ucast-steady-20260512-204842-trial1.log`
+  - `testing/logs/variant-ucast-steady-20260512-205005-trial2.log`
+  - `testing/logs/variant-ucast-steady-20260512-205128-trial3.log`
+  - `testing/logs/variant-ucast-steady-20260512-205250-trial4.log`
+  - matching `.csv` and `.prep.out` files
