@@ -43,6 +43,9 @@ ROUTER_CONFIG="testing/configs/router_ftd.yaml"
 TARGET_PARENT_EXTADDR_LC="${TARGET_PARENT_EXTADDR,,}"
 VARIANT_PRECONDITION_TIMEOUT="${VARIANT_PRECONDITION_TIMEOUT:-45}"
 VARIANT_RESET_LOOP_SLEEP="${VARIANT_RESET_LOOP_SLEEP:-1}"
+VARIANT_PRECONDITION_METHOD="${VARIANT_PRECONDITION_METHOD:-auto}"
+THREAD_CTL=".venv/bin/python testing/tools/thread_ctl.py"
+THREAD_CONTROL_READY=""
 TARGET_ROUTER_LABEL=""
 TARGET_ROUTER_PORT=""
 NON_TARGET_PARENT_EXTADDR=""
@@ -106,6 +109,37 @@ stop_variant_target_suppression_loop() {
     wait "$suppress_pid" 2>/dev/null || true
   fi
   date -u +%Y-%m-%dT%H:%M:%S.%3NZ > "$end_file"
+}
+
+thread_control_cmd() {
+  local action="$1"
+  shift || true
+  $THREAD_CTL --port "$TARGET_ROUTER_PORT" "$action" "$@"
+}
+
+ensure_thread_control_ready() {
+  if [[ "$VARIANT_PRECONDITION_METHOD" == "repeated-reset" ]]; then
+    THREAD_CONTROL_READY="no"
+    return 1
+  fi
+  if [[ "$THREAD_CONTROL_READY" == "yes" ]]; then
+    return 0
+  fi
+  if [[ "$THREAD_CONTROL_READY" == "no" ]]; then
+    return 1
+  fi
+  if thread_control_cmd status >/dev/null 2>&1; then
+    THREAD_CONTROL_READY="yes"
+    return 0
+  fi
+
+  echo "[batch] preparing target router control firmware on $TARGET_ROUTER_LABEL ($TARGET_ROUTER_PORT)" >&2
+  if .venv/bin/esphome run "$ROUTER_CONFIG" --device "$TARGET_ROUTER_PORT" --no-logs >"testing/logs/${SCENARIO}-${MODE}-${TARGET_ROUTER_LABEL}-thread-control-flash.log" 2>&1 && thread_control_cmd status >/dev/null 2>&1; then
+    THREAD_CONTROL_READY="yes"
+    return 0
+  fi
+  THREAD_CONTROL_READY="no"
+  return 1
 }
 
 wait_for_variant_initial_parent() {
@@ -188,6 +222,13 @@ fi
 
 # Build/flash once per scenario, then capture trials without extra compile pressure.
 echo "[batch] preparing firmware: scenario=$SCENARIO mode=$MODE"
+if [[ "$SCENARIO" == variant-* && "$MODE" == "steady" && -n "$TARGET_ROUTER_LABEL" ]]; then
+  if ensure_thread_control_ready; then
+    echo "[batch] target-router software Thread control ready on $TARGET_ROUTER_LABEL ($TARGET_ROUTER_PORT)"
+  else
+    echo "[batch] target-router software Thread control unavailable; falling back to repeated reset suppression"
+  fi
+fi
 FLASH_CMD=(.venv/bin/esphome run "$CONFIG" --device "$CHILD_PORT" --no-logs)
 if [[ "$SCENARIO" == variant-* && "$MODE" == "steady" ]]; then
   FLASH_CMD=(
@@ -246,21 +287,33 @@ for ((i=DONE+1; i<=TARGET_ATTEMPTS; i++)); do
       )
       python3 testing/tools/capture_logs.py "${CAPTURE_ARGS[@]}" >"${LOG%.log}.capture.out" 2>&1
     else
-      PREP_METHOD="repeated-target-router-reset"
-      echo "[batch] steady variant preconditioning: keep suppressing target router $TARGET_ROUTER_LABEL ($TARGET_PARENT_EXTADDR_LC) until child confirms non-target parent or timeout=${VARIANT_PRECONDITION_TIMEOUT}s" | tee "$PREP_LOG"
       CAPTURE_ARGS+=(
         --node child="$CHILD_PORT"
         --node router1="$ROUTER_PRIMARY_PORT"
         --reset-label child
       )
-      python3 testing/tools/capture_logs.py "${CAPTURE_ARGS[@]}" >"${LOG%.log}.capture.out" 2>&1 &
-      CAPTURE_PID=$!
-      sleep 1
-      SUPPRESS_PID=""
-      start_variant_target_suppression_loop "$PREP_LOG" "$PREP_METHOD_FILE" "$PREP_SUPPRESSION_START_FILE" "$PREP_SUPPRESSION_STOP_FILE"
-      wait_for_variant_initial_parent "$LOG" "$VARIANT_PRECONDITION_TIMEOUT" "$TARGET_PARENT_EXTADDR_LC" "$PREP_RESULT_FILE" "$PREP_INITIAL_PARENT_FILE" || true
-      stop_variant_target_suppression_loop "$SUPPRESS_PID" "$PREP_SUPPRESSION_END_FILE" "$PREP_SUPPRESSION_STOP_FILE"
-      wait "$CAPTURE_PID" || true
+      if ensure_thread_control_ready && thread_control_cmd off >>"$PREP_LOG" 2>&1; then
+        PREP_METHOD="target-router-thread-disable-command"
+        echo "[batch] steady variant preconditioning: disable Thread in software on target router $TARGET_ROUTER_LABEL ($TARGET_PARENT_EXTADDR_LC) until child confirms non-target parent or timeout=${VARIANT_PRECONDITION_TIMEOUT}s" | tee -a "$PREP_LOG"
+        date -u +%Y-%m-%dT%H:%M:%S.%3NZ > "$PREP_SUPPRESSION_START_FILE"
+        python3 testing/tools/capture_logs.py "${CAPTURE_ARGS[@]}" >"${LOG%.log}.capture.out" 2>&1 &
+        CAPTURE_PID=$!
+        wait_for_variant_initial_parent "$LOG" "$VARIANT_PRECONDITION_TIMEOUT" "$TARGET_PARENT_EXTADDR_LC" "$PREP_RESULT_FILE" "$PREP_INITIAL_PARENT_FILE" || true
+        thread_control_cmd on >>"$PREP_LOG" 2>&1 || true
+        date -u +%Y-%m-%dT%H:%M:%S.%3NZ > "$PREP_SUPPRESSION_END_FILE"
+        wait "$CAPTURE_PID" || true
+      else
+        PREP_METHOD="repeated-target-router-reset"
+        echo "[batch] steady variant preconditioning: keep suppressing target router $TARGET_ROUTER_LABEL ($TARGET_PARENT_EXTADDR_LC) until child confirms non-target parent or timeout=${VARIANT_PRECONDITION_TIMEOUT}s" | tee "$PREP_LOG"
+        python3 testing/tools/capture_logs.py "${CAPTURE_ARGS[@]}" >"${LOG%.log}.capture.out" 2>&1 &
+        CAPTURE_PID=$!
+        sleep 1
+        SUPPRESS_PID=""
+        start_variant_target_suppression_loop "$PREP_LOG" "$PREP_METHOD_FILE" "$PREP_SUPPRESSION_START_FILE" "$PREP_SUPPRESSION_STOP_FILE"
+        wait_for_variant_initial_parent "$LOG" "$VARIANT_PRECONDITION_TIMEOUT" "$TARGET_PARENT_EXTADDR_LC" "$PREP_RESULT_FILE" "$PREP_INITIAL_PARENT_FILE" || true
+        stop_variant_target_suppression_loop "$SUPPRESS_PID" "$PREP_SUPPRESSION_END_FILE" "$PREP_SUPPRESSION_STOP_FILE"
+        wait "$CAPTURE_PID" || true
+      fi
       [[ -f "$PREP_METHOD_FILE" ]] && PREP_METHOD="$(cat "$PREP_METHOD_FILE")"
       [[ -f "$PREP_RESULT_FILE" ]] && PREP_RESULT="$(cat "$PREP_RESULT_FILE")"
       [[ -f "$PREP_INITIAL_PARENT_FILE" ]] && PREP_INITIAL_PARENT="$(cat "$PREP_INITIAL_PARENT_FILE")"

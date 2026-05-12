@@ -13,6 +13,7 @@ substitutions:
   batch_precondition_gate: "false"
   batch_precondition_poll_interval: "1s"
   batch_precondition_timeout_ms: "45000"
+  batch_precondition_release_delay_ms: "8000ms"
 
 esphome:
   name: thread-child-variant-b-ucast
@@ -97,6 +98,12 @@ script:
                   - lambda: 'id(variant_b_ucast_switch_requested_once) = true;'
                   - logger.log: "AUTO trigger: pressing Variant B unicast switch button"
                   - button.press: variant_b_ucast_switch_button
+  - id: variant_b_ucast_release_then_switch
+    mode: restart
+    then:
+      - delay: ${batch_precondition_release_delay_ms}
+      - logger.log: "AUTO release delay elapsed: pressing Variant B unicast switch button"
+      - button.press: variant_b_ucast_switch_button
 
 interval:
   - interval: ${batch_precondition_poll_interval}
@@ -140,8 +147,8 @@ interval:
                   return;
                 }
                 id(variant_b_ucast_switch_requested_once) = true;
-                ESP_LOGI("variant_b", "AUTO precondition satisfied: initial parent %s != target ${target_parent_extaddr}; pressing Variant B unicast switch button", current_parent);
-                id(variant_b_ucast_switch_button).press();
+                ESP_LOGI("variant_b", "AUTO precondition satisfied: initial parent %s != target ${target_parent_extaddr}; waiting ${batch_precondition_release_delay_ms} ms before Variant B unicast switch button", current_parent);
+                id(variant_b_ucast_release_then_switch).execute();
 
 button:
   - platform: template

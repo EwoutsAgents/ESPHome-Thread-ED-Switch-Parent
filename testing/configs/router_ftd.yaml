@@ -39,6 +39,15 @@ openthread:
   pskc: ${thread_pskc}
   mesh_local_prefix: ${thread_mesh_local_prefix}
 
+external_components:
+  - source:
+      type: local
+      path: ../../components
+    components: [thread_router_control]
+
+thread_router_control:
+  id: router_thread_control
+
 text_sensor:
   - platform: template
     name: "Role hint"
