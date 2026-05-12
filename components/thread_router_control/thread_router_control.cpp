@@ -149,6 +149,9 @@ bool ThreadRouterControlComponent::apply_thread_enabled_(bool enabled, const cha
     }
   } else {
     err = otThreadSetEnabled(instance, false);
+    if (err == OT_ERROR_NONE) {
+      err = otIp6SetEnabled(instance, false);
+    }
   }
 
   ESP_LOGI(TAG, "USB_CTL %s -> %s", log_action, error_to_string_(err));
@@ -162,9 +165,13 @@ bool ThreadRouterControlComponent::get_thread_enabled_(bool *enabled, otDeviceRo
   }
 
   otInstance *instance = lock->get_instance();
-  const otDeviceRole current_role = otThreadGetDeviceRole(instance);
+  const bool ip6_enabled = otIp6IsEnabled(instance);
+  otDeviceRole current_role = otThreadGetDeviceRole(instance);
+  if (!ip6_enabled) {
+    current_role = OT_DEVICE_ROLE_DISABLED;
+  }
   if (enabled != nullptr) {
-    *enabled = current_role != OT_DEVICE_ROLE_DISABLED;
+    *enabled = ip6_enabled && current_role != OT_DEVICE_ROLE_DISABLED;
   }
   if (role != nullptr) {
     *role = current_role;
