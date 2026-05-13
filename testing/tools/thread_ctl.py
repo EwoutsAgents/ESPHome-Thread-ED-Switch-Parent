@@ -22,6 +22,10 @@ def read_until(ser: serial.Serial, expect: str, timeout: float) -> tuple[bool, l
     return False, captured
 
 
+def contains_any(lines: list[str], needles: tuple[str, ...]) -> bool:
+    return any(any(needle in line for needle in needles) for line in lines)
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description="Send Thread control commands over router serial console.")
     parser.add_argument("--port", required=True)
@@ -89,6 +93,10 @@ def main() -> int:
         ser.flush()
 
         ok, captured = read_until(ser, expect, args.timeout)
+        if not ok and args.action == "on":
+            ok = contains_any(captured, (
+                "USB_CTL thread on -> InvalidState (treated as success; stack already enabled:",
+            ))
         if ok:
             return 0
         print(f"Timed out waiting for: {expect}", file=sys.stderr)

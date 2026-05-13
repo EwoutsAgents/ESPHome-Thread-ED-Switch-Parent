@@ -6,6 +6,7 @@
 #include <openthread/error.h>
 #include <openthread/instance.h>
 #include <openthread/ip6.h>
+#include <openthread/link.h>
 #include <openthread/thread.h>
 
 #include <string>
