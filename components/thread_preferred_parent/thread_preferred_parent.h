@@ -314,6 +314,29 @@ class ThreadPreferredParentComponent : public Component {
    */
   void clear_target();
 
+  /**
+   * Start a discovery-only probe for the configured target.
+   *
+   * The probe sends a non-disruptive Parent Request and records Parent
+   * Responses, but it never proceeds into selected-parent attach.
+   */
+  void start_parent_response_probe();
+
+  /// `true` while a discovery-only probe is still running.
+  bool probe_active() const { return this->probe_active_; }
+
+  /// `true` once the latest discovery-only probe finished.
+  bool probe_completed() const { return this->probe_completed_; }
+
+  /// Number of Parent Responses captured during the latest probe.
+  uint32_t probe_parent_response_count() const { return this->probe_parent_response_count_; }
+
+  /// Number of target-matching Parent Responses captured during the latest probe.
+  uint32_t probe_target_parent_response_count() const { return this->probe_target_parent_response_count_; }
+
+  /// Best-effort non-target responder captured during the latest probe.
+  std::string probe_non_target_extaddr() const { return this->extaddr_to_string_(this->probe_non_target_extaddr_); }
+
  protected:
   // How the preferred parent is identified by the user configuration.
   enum class TargetType : uint8_t {
@@ -639,6 +662,11 @@ class ThreadPreferredParentComponent : public Component {
   bool early_attach_on_target_{true};
   bool early_attach_pending_{false};
   uint32_t early_attach_delay_ms_{250};
+  bool probe_active_{false};
+  bool probe_completed_{false};
+  uint32_t probe_parent_response_count_{0};
+  uint32_t probe_target_parent_response_count_{0};
+  otExtAddress probe_non_target_extaddr_{};
   bool best_target_rssi_valid_{false};
   int8_t best_target_rssi_{-128};
   uint16_t best_target_rloc16_{0xFFFE};

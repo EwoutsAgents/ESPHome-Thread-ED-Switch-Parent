@@ -61,6 +61,9 @@ META_PATTERNS = {
     "variant_target_parent_extaddr": re.compile(r"^#\s*variant-target-parent-extaddr\s+([0-9a-fA-F]{16})$"),
     "variant_initial_parent_extaddr": re.compile(r"^#\s*variant-initial-parent-extaddr\s+([0-9a-fA-F]{16})$"),
     "variant_precondition_result": re.compile(r"^#\s*variant-precondition-result\s+(\S+)$"),
+    "variant_precondition_probe_responses": re.compile(r"^#\s*variant-precondition-probe-responses\s+(\d+)$"),
+    "variant_precondition_probe_target_matches": re.compile(r"^#\s*variant-precondition-probe-target-matches\s+(\d+)$"),
+    "variant_precondition_probe_non_target_extaddr": re.compile(r"^#\s*variant-precondition-probe-non-target-extaddr\s+([0-9a-fA-F]{16})$"),
     "variant_target_suppression_start": re.compile(r"^#\s*variant-target-suppression-start\s+(.+)$"),
     "variant_target_suppression_end": re.compile(r"^#\s*variant-target-suppression-end\s+(.+)$"),
 }
@@ -92,6 +95,9 @@ def main() -> int:
         "variant_target_parent_extaddr": "",
         "variant_initial_parent_extaddr": "",
         "variant_precondition_result": "",
+        "variant_precondition_probe_responses": "",
+        "variant_precondition_probe_target_matches": "",
+        "variant_precondition_probe_non_target_extaddr": "",
         "variant_target_suppression_start": "",
         "variant_target_suppression_end": "",
     }
@@ -126,7 +132,7 @@ def main() -> int:
         writer = csv.writer(f)
         writer.writerow([
             "scenario", "mode", "checkpoint", "timestamp_utc", "delta_ms_from_c0", "delta_ms_from_attach_start", "disruption_time_utc", "delta_ms_from_disruption", "delta_ms_from_search_start", "source_log", "classification",
-            "initial_parent_extaddr", "target_parent_extaddr", "disabled_router_label", "disable_method", "variant_preconditioning_method", "variant_precondition_result", "variant_target_suppression_start", "variant_target_suppression_end"
+            "initial_parent_extaddr", "target_parent_extaddr", "disabled_router_label", "disable_method", "variant_preconditioning_method", "variant_precondition_result", "variant_precondition_probe_responses", "variant_precondition_probe_target_matches", "variant_precondition_probe_non_target_extaddr", "variant_target_suppression_start", "variant_target_suppression_end"
         ])
         c0 = events.get("C0_request")
         t3 = events.get("T3_attach_start")
@@ -186,7 +192,7 @@ def main() -> int:
             if ts is None:
                 writer.writerow([
                     args.scenario, args.mode, key, "", "", "", meta["disable_start"], "", "", str(args.infile), classification,
-                    meta["initial_parent_extaddr"], target_parent_extaddr, meta["disabled_router_label"], meta["disable_method"], meta["variant_preconditioning_method"], meta["variant_precondition_result"], meta["variant_target_suppression_start"], meta["variant_target_suppression_end"]
+                    meta["initial_parent_extaddr"], target_parent_extaddr, meta["disabled_router_label"], meta["disable_method"], meta["variant_preconditioning_method"], meta["variant_precondition_result"], meta["variant_precondition_probe_responses"], meta["variant_precondition_probe_target_matches"], meta["variant_precondition_probe_non_target_extaddr"], meta["variant_target_suppression_start"], meta["variant_target_suppression_end"]
                 ])
             else:
                 delta = "" if c0 is None else int((ts - c0).total_seconds() * 1000)
@@ -195,7 +201,7 @@ def main() -> int:
                 delta_search = "" if so1 is None else int((ts - so1).total_seconds() * 1000)
                 writer.writerow([
                     args.scenario, args.mode, key, ts.isoformat(), delta, delta_attach, meta["disable_start"], delta_disruption, delta_search, str(args.infile), classification,
-                    meta["initial_parent_extaddr"], target_parent_extaddr, meta["disabled_router_label"], meta["disable_method"], meta["variant_preconditioning_method"], meta["variant_precondition_result"], meta["variant_target_suppression_start"], meta["variant_target_suppression_end"]
+                    meta["initial_parent_extaddr"], target_parent_extaddr, meta["disabled_router_label"], meta["disable_method"], meta["variant_preconditioning_method"], meta["variant_precondition_result"], meta["variant_precondition_probe_responses"], meta["variant_precondition_probe_target_matches"], meta["variant_precondition_probe_non_target_extaddr"], meta["variant_target_suppression_start"], meta["variant_target_suppression_end"]
                 ])
 
     print(f"Wrote {args.out}")

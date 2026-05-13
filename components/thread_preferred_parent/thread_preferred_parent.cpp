@@ -187,6 +187,39 @@ void ThreadPreferredParentComponent::request_switch(const std::string &extaddr) 
   this->request_switch();
 }
 
+void ThreadPreferredParentComponent::start_parent_response_probe() {
+  if (this->active_) {
+    ESP_LOGW(TAG,
+             "Ignoring parent-response probe while busy: phase=%s status=%s active_target=%s",
+             phase_to_string_(this->phase_), status_to_string_(this->status_), this->target_to_string_().c_str());
+    return;
+  }
+
+  if (this->target_type_ == TargetType::NONE) {
+    ESP_LOGW(TAG, "Refusing parent-response probe without a configured target identifier");
+    this->set_status_(Status::INVALID_TARGET);
+    return;
+  }
+
+  this->attempts_ = 0;
+  this->active_ = true;
+  this->probe_active_ = true;
+  this->probe_completed_ = false;
+  this->probe_parent_response_count_ = 0;
+  this->probe_target_parent_response_count_ = 0;
+  std::memset(&this->probe_non_target_extaddr_, 0, sizeof(this->probe_non_target_extaddr_));
+  this->phase_ = SwitchPhase::DISCOVERING;
+  this->phase_deadline_ms_ = 0;
+  this->attach_start_ms_ = 0;
+  this->discovery_target_observed_ms_ = 0;
+  this->early_attach_pending_ = false;
+  this->target_observed_this_attempt_ = false;
+  std::memset(&this->observed_target_extaddr_, 0, sizeof(this->observed_target_extaddr_));
+  this->reset_parent_response_tracking_();
+  this->set_status_(Status::DISCOVERING);
+  ESP_LOGI(TAG, "Starting discovery-only Parent Response probe for %s", this->target_to_string_().c_str());
+}
+
 /**
  * Reset all per-attempt Parent Response tracking state.
  */
@@ -220,6 +253,11 @@ void ThreadPreferredParentComponent::begin_switch_() {
   this->discovery_target_observed_ms_ = 0;
   this->early_attach_pending_ = false;
   this->target_observed_this_attempt_ = false;
+  this->probe_active_ = false;
+  this->probe_completed_ = false;
+  this->probe_parent_response_count_ = 0;
+  this->probe_target_parent_response_count_ = 0;
+  std::memset(&this->probe_non_target_extaddr_, 0, sizeof(this->probe_non_target_extaddr_));
   std::memset(&this->observed_target_extaddr_, 0, sizeof(this->observed_target_extaddr_));
   this->reset_parent_response_tracking_();
   this->set_status_(Status::DISCOVERING);
@@ -236,6 +274,7 @@ void ThreadPreferredParentComponent::clear_target() {
   std::memset(&this->target_extaddr_, 0, sizeof(this->target_extaddr_));
   std::memset(&this->observed_target_extaddr_, 0, sizeof(this->observed_target_extaddr_));
   this->active_ = false;
+  this->probe_active_ = false;
   this->phase_ = SwitchPhase::IDLE;
   this->attempts_ = 0;
   this->set_status_(Status::IDLE);
@@ -302,6 +341,24 @@ void ThreadPreferredParentComponent::loop() {
         const bool early_attach_deadline = this->early_attach_pending_ && this->target_observed_this_attempt_;
         this->log_discovery_summary_(early_attach_deadline ? "early target debounce complete" : "discovery window complete");
 
+        if (this->probe_active_) {
+          this->probe_parent_response_count_ = this->parent_response_count_;
+          this->probe_target_parent_response_count_ = this->parent_response_target_count_;
+          this->probe_completed_ = true;
+          this->probe_active_ = false;
+          this->active_ = false;
+          this->phase_ = SwitchPhase::IDLE;
+          this->phase_deadline_ms_ = 0;
+          this->early_attach_pending_ = false;
+          this->set_status_(Status::IDLE);
+          ESP_LOGI(TAG,
+                   "Discovery-only probe complete: buffered=%lu target_matches=%lu representative_non_target=%s",
+                   static_cast<unsigned long>(this->probe_parent_response_count_),
+                   static_cast<unsigned long>(this->probe_target_parent_response_count_),
+                   this->extaddr_to_string_(this->probe_non_target_extaddr_).c_str());
+          return;
+        }
+
         if (this->target_observed_this_attempt_) {
           // We saw at least one Parent Response from the requested target during
           // this attempt, so discovery has done its job. The next step is to
@@ -355,6 +412,12 @@ void ThreadPreferredParentComponent::loop() {
       // No suitable target was acted on during the last window, so either try
       // again or fail after the configured retry budget is exhausted.
       if (this->attempts_ >= this->max_attempts_) {
+        if (this->probe_active_) {
+          this->probe_parent_response_count_ = this->parent_response_count_;
+          this->probe_target_parent_response_count_ = this->parent_response_target_count_;
+          this->probe_completed_ = true;
+          this->probe_active_ = false;
+        }
         this->dump_buffered_parent_responses_("failure replay", ReplayMode::INFO_ALL);
         ESP_LOGW(TAG, "Attach result: failed after %u discovery attempts; %s was not selected",
                  this->attempts_, this->target_to_string_().c_str());
@@ -399,6 +462,10 @@ void ThreadPreferredParentComponent::loop() {
 
       ESP_LOGW(TAG, "Parent discovery could not start: %s", ot_error_to_string_(discovery_error));
       if (discovery_error == OT_ERROR_NOT_IMPLEMENTED) {
+        if (this->probe_active_) {
+          this->probe_completed_ = true;
+          this->probe_active_ = false;
+        }
         this->active_ = false;
         this->phase_ = SwitchPhase::IDLE;
         this->set_status_(Status::API_MISSING);
@@ -520,6 +587,10 @@ void ThreadPreferredParentComponent::handle_parent_response_(const otThreadParen
                  static_cast<unsigned long>(observed_ms), this->early_attach_delay_ms_);
       }
     }
+  }
+
+  if (!target_match && this->extaddr_matches_(this->probe_non_target_extaddr_, otExtAddress{})) {
+    this->probe_non_target_extaddr_ = info->mExtAddr;
   }
 
   const uint32_t now = millis();

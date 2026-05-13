@@ -68,6 +68,24 @@ print(match.group(1).lower() if match else '')
 PY
 }
 
+get_variant_probe_metadata() {
+  local log_path="$1"
+  python3 - <<'PY' "$log_path"
+import re, sys
+text = open(sys.argv[1], encoding='utf-8', errors='ignore').read()
+matches = re.findall(r'V_precondition_probe_result\s+elapsed_ms=\d+\s+responses=(\d+)\s+target_matches=(\d+)', text)
+if matches:
+    responses, target_matches = matches[-1]
+else:
+    responses, target_matches = '', ''
+m_non_target = re.search(r'V_precondition_initial_parent_extaddr=([0-9a-fA-F]{16})', text)
+non_target = m_non_target.group(1).lower() if m_non_target else ''
+print(responses)
+print(target_matches)
+print(non_target)
+PY
+}
+
 thread_control_cmd() {
   local action="$1"
   shift || true
@@ -135,12 +153,18 @@ append_variant_preconditioning_metadata() {
   local initial_parent="$4"
   local suppression_start="$5"
   local suppression_end="$6"
+  local probe_responses="${7:-}"
+  local probe_target_matches="${8:-}"
+  local probe_non_target_parent="${9:-}"
 
   {
     echo "# variant-preconditioning-method $prep_method"
     echo "# variant-target-parent-extaddr $TARGET_PARENT_EXTADDR_LC"
     [[ -n "$initial_parent" ]] && echo "# variant-initial-parent-extaddr $initial_parent"
     echo "# variant-precondition-result $prep_result"
+    [[ -n "$probe_responses" ]] && echo "# variant-precondition-probe-responses $probe_responses"
+    [[ -n "$probe_target_matches" ]] && echo "# variant-precondition-probe-target-matches $probe_target_matches"
+    [[ -n "$probe_non_target_parent" ]] && echo "# variant-precondition-probe-non-target-extaddr $probe_non_target_parent"
     [[ -n "$suppression_start" ]] && echo "# variant-target-suppression-start $suppression_start"
     [[ -n "$suppression_end" ]] && echo "# variant-target-suppression-end $suppression_end"
     case "$prep_result" in
@@ -224,6 +248,9 @@ for ((i=DONE+1; i<=TARGET_ATTEMPTS; i++)); do
   PREP_INITIAL_PARENT=""
   PREP_SUPPRESSION_START=""
   PREP_SUPPRESSION_END=""
+  PREP_PROBE_RESPONSES=""
+  PREP_PROBE_TARGET_MATCHES=""
+  PREP_PROBE_NON_TARGET_PARENT=""
   PREP_METHOD_FILE="${PREP_LOG%.out}.method.tmp"
   PREP_RESULT_FILE="${PREP_LOG%.out}.result.tmp"
   PREP_INITIAL_PARENT_FILE="${PREP_LOG%.out}.initial_parent.tmp"
@@ -302,6 +329,10 @@ for ((i=DONE+1; i<=TARGET_ATTEMPTS; i++)); do
     if [[ -z "$PREP_INITIAL_PARENT" ]]; then
       PREP_INITIAL_PARENT="$(get_variant_initial_parent "$LOG")"
     fi
+    mapfile -t PREP_PROBE_META < <(get_variant_probe_metadata "$LOG")
+    PREP_PROBE_RESPONSES="${PREP_PROBE_META[0]:-}"
+    PREP_PROBE_TARGET_MATCHES="${PREP_PROBE_META[1]:-}"
+    PREP_PROBE_NON_TARGET_PARENT="${PREP_PROBE_META[2]:-}"
     if [[ "$PREP_RESULT" == "not_applicable" || "$PREP_RESULT" == "pending_initial_parent_check" ]]; then
       if [[ -z "$PREP_INITIAL_PARENT" ]]; then
         PREP_RESULT="initial_parent_unknown"
@@ -311,7 +342,7 @@ for ((i=DONE+1; i<=TARGET_ATTEMPTS; i++)); do
         PREP_RESULT="non_target_confirmed"
       fi
     fi
-    append_variant_preconditioning_metadata "$LOG" "$PREP_RESULT" "$PREP_METHOD" "$PREP_INITIAL_PARENT" "$PREP_SUPPRESSION_START" "$PREP_SUPPRESSION_END"
+    append_variant_preconditioning_metadata "$LOG" "$PREP_RESULT" "$PREP_METHOD" "$PREP_INITIAL_PARENT" "$PREP_SUPPRESSION_START" "$PREP_SUPPRESSION_END" "$PREP_PROBE_RESPONSES" "$PREP_PROBE_TARGET_MATCHES" "$PREP_PROBE_NON_TARGET_PARENT"
   fi
 
   python3 testing/tools/extract_switch_timings.py \
