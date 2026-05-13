@@ -311,7 +311,7 @@ void ThreadPreferredParentComponent::loop() {
   // Success is defined by the device's actual current parent, not merely by
   // whether an attach request was accepted. This keeps the component grounded
   // in observed Thread state instead of optimistic API return values.
-  if (this->current_parent_matches_(instance)) {
+  if (!this->probe_active_ && this->current_parent_matches_(instance)) {
     const uint32_t attach_elapsed_ms = this->attach_start_ms_ == 0 ? 0 : now - this->attach_start_ms_;
     if (this->attach_start_ms_ == 0) {
       ESP_LOGI(TAG, "T_success_immediate_parent_match; target=%s", this->target_to_string_().c_str());
