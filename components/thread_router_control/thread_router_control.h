@@ -15,6 +15,16 @@
 namespace esphome {
 namespace thread_router_control {
 
+struct ThreadRouterStateSnapshot {
+  bool enabled{false};
+  bool ip6_enabled{false};
+  bool link_enabled{false};
+  bool singleton{false};
+  otDeviceRole role{OT_DEVICE_ROLE_DISABLED};
+  uint16_t rloc16{0xffff};
+  otExtAddress extaddr{};
+};
+
 class ThreadRouterControlComponent : public Component {
  public:
   void setup() override;
@@ -35,15 +45,21 @@ class ThreadRouterControlComponent : public Component {
   uint32_t auto_restore_at_ms_{0};
   uint32_t default_off_timeout_ms_{60000};
   std::string rx_line_;
+  bool last_state_valid_{false};
+  ThreadRouterStateSnapshot last_state_{};
 
   void process_line_(const std::string &line);
   bool apply_thread_enabled_(bool enabled, const char *log_action);
   bool get_thread_enabled_(bool *enabled, otDeviceRole *role = nullptr);
+  bool get_state_snapshot_(ThreadRouterStateSnapshot *snapshot);
+  void maybe_log_state_transition_();
+  void log_state_snapshot_(const char *prefix, const ThreadRouterStateSnapshot &snapshot);
   void arm_auto_restore_(uint32_t timeout_ms);
   void cancel_auto_restore_();
   static std::optional<uint32_t> parse_timeout_seconds_(const std::string &value);
   static std::string trim_(const std::string &value);
   static std::string lowercase_(const std::string &value);
+  static std::string extaddr_to_string_(const otExtAddress &extaddr);
   static const char *role_to_string_(otDeviceRole role);
   static const char *error_to_string_(otError error);
 };

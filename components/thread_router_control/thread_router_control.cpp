@@ -13,6 +13,7 @@ namespace thread_router_control {
 void ThreadRouterControlComponent::setup() {
   this->stdin_ready_ = true;
   ESP_LOGI(TAG, "USB_CTL ready on UART0; commands: 'thread off <seconds>', 'thread on', 'thread state'");
+  this->maybe_log_state_transition_();
 }
 
 void ThreadRouterControlComponent::dump_config() {
@@ -23,6 +24,8 @@ void ThreadRouterControlComponent::dump_config() {
 }
 
 void ThreadRouterControlComponent::loop() {
+  this->maybe_log_state_transition_();
+
   if (this->auto_restore_pending_ && static_cast<int32_t>(millis() - this->auto_restore_at_ms_) >= 0) {
     this->auto_restore_pending_ = false;
     ESP_LOGI(TAG, "USB_CTL failsafe re-enable fired");
@@ -84,22 +87,12 @@ void ThreadRouterControlComponent::process_line_(const std::string &line) {
   }
 
   if (cmd == "thread state" || cmd == "thread status") {
-    bool enabled = false;
-    otDeviceRole role = OT_DEVICE_ROLE_DISABLED;
-    if (!this->get_thread_enabled_(&enabled, &role)) {
+    ThreadRouterStateSnapshot snapshot;
+    if (!this->get_state_snapshot_(&snapshot)) {
       ESP_LOGW(TAG, "USB_CTL thread state lock_unavailable");
       return;
     }
-    auto lock = esphome::openthread::InstanceLock::try_acquire(100);
-    if (!lock.has_value()) {
-      ESP_LOGI(TAG, "USB_CTL thread state enabled=%s role=%s", enabled ? "true" : "false", role_to_string_(role));
-      return;
-    }
-    otInstance *instance = lock->get_instance();
-    ESP_LOGI(TAG, "USB_CTL thread state enabled=%s role=%s ip6=%s link=%s",
-             enabled ? "true" : "false", role_to_string_(role),
-             otIp6IsEnabled(instance) ? "true" : "false",
-             otLinkIsEnabled(instance) ? "true" : "false");
+    this->log_state_snapshot_("USB_CTL thread state", snapshot);
     return;
   }
 
@@ -188,25 +181,77 @@ bool ThreadRouterControlComponent::apply_thread_enabled_(bool enabled, const cha
 }
 
 bool ThreadRouterControlComponent::get_thread_enabled_(bool *enabled, otDeviceRole *role) {
+  ThreadRouterStateSnapshot snapshot;
+  if (!this->get_state_snapshot_(&snapshot)) {
+    return false;
+  }
+  if (enabled != nullptr) {
+    *enabled = snapshot.enabled;
+  }
+  if (role != nullptr) {
+    *role = snapshot.role;
+  }
+  return true;
+}
+
+bool ThreadRouterControlComponent::get_state_snapshot_(ThreadRouterStateSnapshot *snapshot) {
   auto lock = esphome::openthread::InstanceLock::try_acquire(100);
-  if (!lock.has_value()) {
+  if (!lock.has_value() || snapshot == nullptr) {
     return false;
   }
 
   otInstance *instance = lock->get_instance();
-  const bool ip6_enabled = otIp6IsEnabled(instance);
-  const bool link_enabled = otLinkIsEnabled(instance);
-  otDeviceRole current_role = otThreadGetDeviceRole(instance);
-  if (!ip6_enabled || !link_enabled) {
-    current_role = OT_DEVICE_ROLE_DISABLED;
+  snapshot->ip6_enabled = otIp6IsEnabled(instance);
+  snapshot->link_enabled = otLinkIsEnabled(instance);
+  snapshot->role = otThreadGetDeviceRole(instance);
+  if (!snapshot->ip6_enabled || !snapshot->link_enabled) {
+    snapshot->role = OT_DEVICE_ROLE_DISABLED;
   }
-  if (enabled != nullptr) {
-    *enabled = ip6_enabled && link_enabled && current_role != OT_DEVICE_ROLE_DISABLED;
-  }
-  if (role != nullptr) {
-    *role = current_role;
+  snapshot->enabled = snapshot->ip6_enabled && snapshot->link_enabled && snapshot->role != OT_DEVICE_ROLE_DISABLED;
+  snapshot->singleton = otThreadIsSingleton(instance);
+  snapshot->rloc16 = otThreadGetRloc16(instance);
+  const otExtAddress *extaddr = otLinkGetExtendedAddress(instance);
+  if (extaddr != nullptr) {
+    snapshot->extaddr = *extaddr;
+  } else {
+    std::memset(&snapshot->extaddr, 0, sizeof(snapshot->extaddr));
   }
   return true;
+}
+
+void ThreadRouterControlComponent::maybe_log_state_transition_() {
+  ThreadRouterStateSnapshot snapshot;
+  if (!this->get_state_snapshot_(&snapshot)) {
+    return;
+  }
+
+  if (this->last_state_valid_ &&
+      this->last_state_.enabled == snapshot.enabled &&
+      this->last_state_.ip6_enabled == snapshot.ip6_enabled &&
+      this->last_state_.link_enabled == snapshot.link_enabled &&
+      this->last_state_.singleton == snapshot.singleton &&
+      this->last_state_.role == snapshot.role &&
+      this->last_state_.rloc16 == snapshot.rloc16 &&
+      std::memcmp(&this->last_state_.extaddr, &snapshot.extaddr, sizeof(snapshot.extaddr)) == 0) {
+    return;
+  }
+
+  this->last_state_valid_ = true;
+  this->last_state_ = snapshot;
+  this->log_state_snapshot_("USB_CTL observed state transition", snapshot);
+}
+
+void ThreadRouterControlComponent::log_state_snapshot_(const char *prefix, const ThreadRouterStateSnapshot &snapshot) {
+  ESP_LOGI(TAG,
+           "%s enabled=%s role=%s ip6=%s link=%s singleton=%s rloc16=0x%04x extaddr=%s",
+           prefix,
+           snapshot.enabled ? "true" : "false",
+           role_to_string_(snapshot.role),
+           snapshot.ip6_enabled ? "true" : "false",
+           snapshot.link_enabled ? "true" : "false",
+           snapshot.singleton ? "true" : "false",
+           snapshot.rloc16,
+           extaddr_to_string_(snapshot.extaddr).c_str());
 }
 
 void ThreadRouterControlComponent::arm_auto_restore_(uint32_t timeout_ms) {
@@ -250,6 +295,15 @@ std::string ThreadRouterControlComponent::lowercase_(const std::string &value) {
     ch = static_cast<char>(std::tolower(static_cast<unsigned char>(ch)));
   }
   return out;
+}
+
+std::string ThreadRouterControlComponent::extaddr_to_string_(const otExtAddress &extaddr) {
+  char buffer[sizeof(extaddr.m8) * 2 + 1];
+  std::snprintf(buffer, sizeof(buffer),
+                "%02x%02x%02x%02x%02x%02x%02x%02x",
+                extaddr.m8[0], extaddr.m8[1], extaddr.m8[2], extaddr.m8[3],
+                extaddr.m8[4], extaddr.m8[5], extaddr.m8[6], extaddr.m8[7]);
+  return std::string(buffer);
 }
 
 const char *ThreadRouterControlComponent::role_to_string_(otDeviceRole role) {

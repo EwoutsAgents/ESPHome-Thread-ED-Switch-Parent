@@ -26,6 +26,36 @@ def contains_any(lines: list[str], needles: tuple[str, ...]) -> bool:
     return any(any(needle in line for needle in needles) for line in lines)
 
 
+def stream_lines_for(ser: serial.Serial, duration_s: float) -> list[str]:
+    deadline = time.time() + duration_s
+    captured: list[str] = []
+    while time.time() < deadline:
+        line = ser.readline().decode("utf-8", errors="ignore").strip()
+        if not line:
+            continue
+        captured.append(line)
+        print(line)
+    return captured
+
+
+def verify_stays_disabled(ser: serial.Serial, duration_s: float, poll_interval_s: float = 1.0) -> bool:
+    deadline = time.time() + duration_s
+    while time.time() < deadline:
+        ser.write(b"thread state\n")
+        ser.flush()
+        ok, captured = read_until(ser, "USB_CTL thread state enabled=", poll_interval_s + 2.0)
+        if not ok:
+            print("Timed out waiting for periodic thread state during hold", file=sys.stderr)
+            return False
+        if contains_any(captured, ("USB_CTL thread state enabled=true",)):
+            print("Router re-enabled during off-hold window", file=sys.stderr)
+            return False
+        remaining = deadline - time.time()
+        if remaining > 0:
+            time.sleep(min(poll_interval_s, remaining))
+    return True
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description="Send Thread control commands over router serial console.")
     parser.add_argument("--port", required=True)
@@ -76,9 +106,8 @@ def main() -> int:
             if ok and args.action == "off-verify-disabled":
                 return 0
             if ok and args.action == "off-hold-verify-disabled":
-                deadline = time.time() + args.duration_s
-                while time.time() < deadline:
-                  time.sleep(min(0.5, max(0.0, deadline - time.time())))
+                if not verify_stays_disabled(ser, args.duration_s):
+                    return 1
                 return 0
             print("Timed out waiting for: USB_CTL thread state enabled=false role=disabled", file=sys.stderr)
             if captured:
