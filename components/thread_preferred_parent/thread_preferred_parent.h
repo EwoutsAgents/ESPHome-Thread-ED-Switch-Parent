@@ -337,6 +337,9 @@ class ThreadPreferredParentComponent : public Component {
   /// Best-effort non-target responder captured during the latest probe.
   std::string probe_non_target_extaddr() const { return this->extaddr_to_string_(this->probe_non_target_extaddr_); }
 
+  /// Current attached parent ExtAddr, or empty string when unavailable.
+  std::string current_parent_extaddr() const;
+
  protected:
   // How the preferred parent is identified by the user configuration.
   enum class TargetType : uint8_t {
@@ -447,6 +450,7 @@ class ThreadPreferredParentComponent : public Component {
    * @return `true` when the current parent is the preferred parent target.
    */
   bool current_parent_matches_(otInstance *instance) const;
+  bool get_current_parent_extaddr_(otInstance *instance, otExtAddress *extaddr) const;
 
   /**
    * Check whether the current Thread role is child.

@@ -220,6 +220,19 @@ void ThreadPreferredParentComponent::start_parent_response_probe() {
   ESP_LOGI(TAG, "Starting discovery-only Parent Response probe for %s", this->target_to_string_().c_str());
 }
 
+std::string ThreadPreferredParentComponent::current_parent_extaddr() const {
+  auto lock = esphome::openthread::InstanceLock::try_acquire(100);
+  if (!lock.has_value()) {
+    return "";
+  }
+
+  otExtAddress extaddr{};
+  if (!this->get_current_parent_extaddr_(lock->get_instance(), &extaddr)) {
+    return "";
+  }
+  return this->extaddr_to_string_(extaddr);
+}
+
 /**
  * Reset all per-attempt Parent Response tracking state.
  */
@@ -742,20 +755,34 @@ bool ThreadPreferredParentComponent::is_child_(otInstance *instance) const {
  * @return `true` when the current parent is the preferred parent target.
  */
 bool ThreadPreferredParentComponent::current_parent_matches_(otInstance *instance) const {
-  otRouterInfo parent_info{};
-  if (otThreadGetParentInfo(instance, &parent_info) != OT_ERROR_NONE) {
+  otExtAddress current_parent_extaddr{};
+  if (!this->get_current_parent_extaddr_(instance, &current_parent_extaddr)) {
     return false;
   }
 
   switch (this->target_type_) {
-    case TargetType::RLOC16:
+    case TargetType::RLOC16: {
+      otRouterInfo parent_info{};
+      if (otThreadGetParentInfo(instance, &parent_info) != OT_ERROR_NONE) {
+        return false;
+      }
       return parent_info.mRloc16 == this->target_rloc16_;
+    }
     case TargetType::EXTADDR:
-      return this->extaddr_matches_(parent_info.mExtAddress, this->target_extaddr_);
+      return this->extaddr_matches_(current_parent_extaddr, this->target_extaddr_);
     case TargetType::NONE:
       return false;
   }
   return false;
+}
+
+bool ThreadPreferredParentComponent::get_current_parent_extaddr_(otInstance *instance, otExtAddress *extaddr) const {
+  otRouterInfo parent_info{};
+  if (extaddr == nullptr || otThreadGetParentInfo(instance, &parent_info) != OT_ERROR_NONE) {
+    return false;
+  }
+  *extaddr = parent_info.mExtAddress;
+  return true;
 }
 
 /**
