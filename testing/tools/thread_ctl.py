@@ -29,7 +29,7 @@ def contains_any(lines: list[str], needles: tuple[str, ...]) -> bool:
 def main() -> int:
     parser = argparse.ArgumentParser(description="Send Thread control commands over router serial console.")
     parser.add_argument("--port", required=True)
-    parser.add_argument("action", choices=["on", "off", "state", "status", "off-verify-disabled"])
+    parser.add_argument("action", choices=["on", "off", "state", "status", "off-verify-disabled", "off-hold-verify-disabled"])
     parser.add_argument("--baud", type=int, default=115200)
     parser.add_argument("--timeout", type=float, default=8.0)
     parser.add_argument("--duration-s", type=int, default=60)
@@ -54,7 +54,7 @@ def main() -> int:
 
         ser.reset_input_buffer()
 
-        if args.action in ("off", "off-verify-disabled"):
+        if args.action in ("off", "off-verify-disabled", "off-hold-verify-disabled"):
             if args.duration_s <= 0:
                 raise SystemExit("--duration-s must be > 0 for off")
             ser.write((f"thread off {args.duration_s}\n").encode("utf-8"))
@@ -73,7 +73,12 @@ def main() -> int:
             ser.write(b"thread state\n")
             ser.flush()
             ok, captured = read_until(ser, "USB_CTL thread state enabled=false role=disabled", args.timeout)
-            if ok:
+            if ok and args.action == "off-verify-disabled":
+                return 0
+            if ok and args.action == "off-hold-verify-disabled":
+                deadline = time.time() + args.duration_s
+                while time.time() < deadline:
+                  time.sleep(min(0.5, max(0.0, deadline - time.time())))
                 return 0
             print("Timed out waiting for: USB_CTL thread state enabled=false role=disabled", file=sys.stderr)
             if captured:
