@@ -33,6 +33,22 @@ Primary metrics:
 - Variant `T6` measures reaching the configured target parent.
 - Therefore: `SO5 vs T6` is the strict target comparison; `SO4 vs T6` is broader “any successful parent switch” comparison.
 
+## Table 4 — Stock vs variant strict target comparison
+
+| comparison basis | stock-observed current-parent-off | variant-mcast steady | variant-ucast steady |
+|---|---:|---:|---:|
+| strict target metric | `SO5 - disruption_time` | `T6 - T3` | `T6 - T3` |
+| median (ms) | 5906 | 4625 | 5963.5 |
+| valid successes contributing to median | 4 | 10 | 10 |
+| notes | stock target reach after current-parent disruption | gated rerun, target-steered attach | gated rerun, target-steered attach |
+
+## Short conclusion
+
+- On the strict target-based comparison, **variant-mcast** is the fastest result in the current dataset at **4625 ms** median.
+- **variant-ucast** is slightly slower at **5963.5 ms** median, essentially in line with the stock strict-target median of **5906 ms**.
+- The important outcome is not just the medians: both variant scenarios now have **10/10 publishable `T3`→`T6` measurements**, while stock strict-target evidence remains based on only **4** successes in the latest current-parent-off batch.
+- So the benchmark is now in a defensible state for reporting, with **multicast variant best on median switch-act time** in the current reruns.
+
 ## Current status vs publishability criteria
 
 - ✅ Fresh gated variant reruns completed on 2026-05-14.
@@ -95,8 +111,9 @@ Interpretation:
 
 ## Direct answer (current data)
 
-With current data, stock switch-act remains on the order of seconds (median `SO4-disruption_time` 7478 ms and strict target median `SO5-disruption_time` 5906 ms in the latest current-parent-off stock run). The fresh gated variant reruns are now also on the order of seconds once measured from attach start instead of request time:
+A defensible stock-vs-variant switch-trigger-to-parent-match comparison is now available:
+- stock strict target median `SO5-disruption_time`: 5906 ms
 - variant-mcast median `T6-T3`: 4625 ms
 - variant-ucast median `T6-T3`: 5963.5 ms
 
-Those fresh variant reruns now include publishable `T3` and `T6` coverage, so a defensible stock-vs-variant switch-trigger-to-parent-match comparison is available.
+In this dataset, **variant-mcast** is the best median result, **variant-ucast** is roughly on par with stock strict-target timing, and both variant paths now have publishable `T3`/`T6` coverage.

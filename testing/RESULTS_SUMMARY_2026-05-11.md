@@ -181,6 +181,20 @@ Latest switch-act related outcomes from committed CSVs:
 
 The gated reruns replace the earlier non-publishable variant interpretation. `T3` is now present in all 10/10 valid trials for both variant scenarios, so a publishable variant `T6-T3` comparison is now available.
 
+## Final comparison / conclusion
+
+Using the strict target-based metrics:
+- stock-observed current-parent-off median `SO5 - disruption_time`: **5906 ms**
+- variant-mcast steady median `T6 - T3`: **4625 ms**
+- variant-ucast steady median `T6 - T3`: **5963.5 ms**
+
+Interpretation:
+- **variant-mcast** is the fastest median strict-target result in the current dataset.
+- **variant-ucast** is slightly slower than variant-mcast and roughly on par with the latest stock strict-target median.
+- The evidence quality is stronger for the variants in the new reruns: both variant scenarios now contribute **10 valid attach-start-to-target-match measurements**, while the latest stock strict-target median is based on **4** successful target reaches.
+
+Bottom line: the project now has a defensible publishable comparison, with multicast selected-parent attach currently the strongest result.
+
 ## Commands used
 
 - Build/flash + verification:
