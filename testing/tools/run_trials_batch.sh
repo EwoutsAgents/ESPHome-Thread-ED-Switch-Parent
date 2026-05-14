@@ -44,6 +44,7 @@ TARGET_PARENT_EXTADDR_LC="${TARGET_PARENT_EXTADDR,,}"
 VARIANT_PRECONDITION_TIMEOUT="${VARIANT_PRECONDITION_TIMEOUT:-45}"
 VARIANT_USB_THREAD_OFF_TIMEOUT="${VARIANT_USB_THREAD_OFF_TIMEOUT:-60}"
 VARIANT_POST_RESTORE_SETTLE_TIMEOUT="${VARIANT_POST_RESTORE_SETTLE_TIMEOUT:-15}"
+VARIANT_RESTORE_TO_SWITCH_DELAY_MS="${VARIANT_RESTORE_TO_SWITCH_DELAY_MS:-750}"
 VARIANT_PRECONDITION_RELEASE_DELAY_MS="$(((VARIANT_USB_THREAD_OFF_TIMEOUT + VARIANT_POST_RESTORE_SETTLE_TIMEOUT) * 1000))ms"
 THREAD_CTL=".venv/bin/python testing/tools/thread_ctl.py"
 THREAD_CONTROL_READY=""
@@ -178,6 +179,7 @@ append_variant_preconditioning_metadata() {
   {
     echo "# variant-preconditioning-method $prep_method"
     echo "# variant-target-parent-extaddr $TARGET_PARENT_EXTADDR_RUNTIME"
+    echo "# variant-restore-to-switch-delay-ms $VARIANT_RESTORE_TO_SWITCH_DELAY_MS"
     [[ -n "$initial_parent" ]] && echo "# variant-initial-parent-extaddr $initial_parent"
     echo "# variant-precondition-result $prep_result"
     [[ -n "$probe_responses" ]] && echo "# variant-precondition-probe-responses $probe_responses"
@@ -251,6 +253,19 @@ if [[ "$SCENARIO" == variant-* && "$MODE" == "steady" ]]; then
     --device "$CHILD_PORT"
     --no-logs
   )
+  if [[ "$SCENARIO" == "variant-mcast" ]]; then
+    FLASH_CMD=(
+      .venv/bin/esphome
+      -s auto_trigger_switch false
+      -s batch_precondition_gate true
+      -s batch_precondition_timeout_ms "$((VARIANT_PRECONDITION_TIMEOUT * 1000))"
+      -s batch_precondition_release_delay_ms "${VARIANT_RESTORE_TO_SWITCH_DELAY_MS}ms"
+      -s target_parent_extaddr "$TARGET_PARENT_EXTADDR_RUNTIME"
+      run "$CONFIG"
+      --device "$CHILD_PORT"
+      --no-logs
+    )
+  fi
 fi
 "${FLASH_CMD[@]}" >"testing/logs/${SCENARIO}-${MODE}-flash.log" 2>&1
 
@@ -389,13 +404,33 @@ for ((i=DONE+1; i<=TARGET_ATTEMPTS; i++)); do
   echo "$i" > "$STATE_FILE"
 
   if [[ "$SCENARIO" == variant-* ]]; then
-    CLASSIFICATION="$(python3 - <<'PY' "$CSV"
-import csv,sys
-rows=list(csv.DictReader(open(sys.argv[1], newline='', encoding='utf-8')))
-print(rows[0]['classification'] if rows else '')
+    mapfile -t CSV_SUMMARY < <(python3 - <<'PY' "$CSV"
+import csv, sys
+rows = list(csv.DictReader(open(sys.argv[1], newline='', encoding='utf-8')))
+row = rows[0] if rows else {}
+classification = row.get('classification', '')
+initial_parent = row.get('initial_parent_extaddr', '')
+target_parent = row.get('target_parent_extaddr', '')
+checkpoint_t3 = any(r.get('checkpoint') == 'T3_attach_start' and r.get('timestamp_utc') for r in rows)
+checkpoint_t6 = any(r.get('checkpoint') == 'T6_parent_match' and r.get('timestamp_utc') for r in rows)
+immediate = any(r.get('checkpoint') == 'V_immediate_parent_match' and r.get('timestamp_utc') for r in rows)
+valid = all([
+    row.get('variant_precondition_result', '') == 'non_target_confirmed',
+    bool(initial_parent),
+    bool(target_parent),
+    initial_parent.lower() != target_parent.lower() if initial_parent and target_parent else False,
+    checkpoint_t3,
+    checkpoint_t6,
+    not immediate,
+    classification == 'success_switch_act',
+])
+print(classification)
+print('yes' if valid else 'no')
 PY
-)"
-    if [[ "$CLASSIFICATION" == "success_switch_act" ]]; then
+)
+    CLASSIFICATION="${CSV_SUMMARY[0]:-}"
+    VALID_SWITCH_ACT="${CSV_SUMMARY[1]:-no}"
+    if [[ "$VALID_SWITCH_ACT" == "yes" ]]; then
       VALID_DONE=$((VALID_DONE + 1))
       echo "$VALID_DONE" > "$VALID_STATE_FILE"
       echo "[batch] valid switch-act trial accepted ($VALID_DONE/$COUNT)"

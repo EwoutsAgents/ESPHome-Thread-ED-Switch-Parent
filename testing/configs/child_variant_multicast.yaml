@@ -13,7 +13,7 @@ substitutions:
   batch_precondition_gate: "true"
   batch_precondition_poll_interval: "1s"
   batch_precondition_timeout_ms: "45000"
-  batch_precondition_release_delay_ms: "75000ms"
+  batch_precondition_release_delay_ms: "750ms"
 
 esphome:
   name: thread-child-variant-b-mcast
@@ -81,6 +81,10 @@ globals:
     type: uint32_t
     restore_value: no
     initial_value: "0"
+  - id: variant_b_mcast_waiting_for_target_restore
+    type: bool
+    restore_value: no
+    initial_value: "false"
 
 script:
   - id: variant_b_mcast_trigger_switch
@@ -139,9 +143,8 @@ interval:
                   const std::string observed_parent = id(preferred_parent).probe_non_target_extaddr();
                   ESP_LOGI("variant_b", "V_precondition_initial_parent_extaddr=%s", observed_parent.c_str());
                   id(variant_b_mcast_initial_parent_checked_once) = true;
-                  id(variant_b_mcast_switch_requested_once) = true;
-                  ESP_LOGI("variant_b", "AUTO precondition satisfied: observed non-target Parent Response %s while target ${target_parent_extaddr} stayed absent; waiting ${batch_precondition_release_delay_ms} ms before Variant B multicast switch button", observed_parent.c_str());
-                  id(variant_b_mcast_release_then_switch).execute();
+                  id(variant_b_mcast_waiting_for_target_restore) = true;
+                  ESP_LOGI("variant_b", "AUTO precondition satisfied: observed non-target Parent Response %s while target ${target_parent_extaddr} stayed absent; waiting for target restoration before ${batch_precondition_release_delay_ms} delay", observed_parent.c_str());
                   return;
                 }
 
@@ -153,6 +156,32 @@ interval:
                   } else {
                     ESP_LOGW("variant_b", "V_precondition_initial_parent_unknown=no_non_target_parent_response");
                   }
+                  return;
+                }
+
+                id(preferred_parent).start_parent_response_probe();
+      - if:
+          condition:
+            lambda: 'return ${batch_precondition_gate} && !id(variant_b_mcast_switch_requested_once) && id(variant_b_mcast_waiting_for_target_restore);'
+          then:
+            - lambda: |-
+                const uint32_t now = millis();
+                const uint32_t elapsed_ms = now - id(variant_b_mcast_precondition_start_ms);
+                if (id(preferred_parent).probe_active()) {
+                  return;
+                }
+
+                const uint32_t responses = id(preferred_parent).probe_parent_response_count();
+                const uint32_t target_matches = id(preferred_parent).probe_target_parent_response_count();
+                ESP_LOGI("variant_b", "V_restore_probe_result elapsed_ms=%lu responses=%lu target_matches=%lu",
+                         static_cast<unsigned long>(elapsed_ms), static_cast<unsigned long>(responses),
+                         static_cast<unsigned long>(target_matches));
+
+                if (target_matches > 0) {
+                  id(variant_b_mcast_waiting_for_target_restore) = false;
+                  id(variant_b_mcast_switch_requested_once) = true;
+                  ESP_LOGI("variant_b", "AUTO target restoration observed; waiting ${batch_precondition_release_delay_ms} before Variant B multicast switch button");
+                  id(variant_b_mcast_release_then_switch).execute();
                   return;
                 }
 
