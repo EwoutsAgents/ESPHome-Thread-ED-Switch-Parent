@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import argparse
+import re
 import sys
 import time
 
@@ -56,10 +57,18 @@ def verify_stays_disabled(ser: serial.Serial, duration_s: float, poll_interval_s
     return True
 
 
+def extract_extaddr(lines: list[str]) -> str:
+    for line in reversed(lines):
+        m = re.search(r"extaddr=([0-9a-fA-F]{16})", line)
+        if m:
+            return m.group(1).lower()
+    return ""
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description="Send Thread control commands over router serial console.")
     parser.add_argument("--port", required=True)
-    parser.add_argument("action", choices=["on", "off", "state", "status", "off-verify-disabled", "off-hold-verify-disabled"])
+    parser.add_argument("action", choices=["on", "off", "state", "status", "extaddr", "off-verify-disabled", "off-hold-verify-disabled"])
     parser.add_argument("--baud", type=int, default=115200)
     parser.add_argument("--timeout", type=float, default=8.0)
     parser.add_argument("--duration-s", type=int, default=60)
@@ -116,7 +125,7 @@ def main() -> int:
                     print(line, file=sys.stderr)
             return 1
 
-        if args.action in ("state", "status"):
+        if args.action in ("state", "status", "extaddr"):
             command = "thread state"
             expect = "USB_CTL thread state enabled="
         else:
@@ -131,6 +140,13 @@ def main() -> int:
             ok = contains_any(captured, (
                 "USB_CTL thread on -> InvalidState (treated as success; stack already enabled:",
             ))
+        if ok and args.action == "extaddr":
+            extaddr = extract_extaddr(captured)
+            if not extaddr:
+                print("Failed to parse extaddr from thread state", file=sys.stderr)
+                return 1
+            print(extaddr)
+            return 0
         if ok:
             return 0
         print(f"Timed out waiting for: {expect}", file=sys.stderr)

@@ -37,8 +37,35 @@ Primary metrics:
 
 - ✅ Variant reruns executed (`variant-mcast` 10, `variant-ucast` 10).
 - ✅ `T6` detected in 10/10 for both variant batches.
-- ❌ `T3` detection target not met (0/10, 0/10).
-- ❌ Variant switch-act medians (`T6-T3`) not yet publishable from these runs.
+- ❌ `T3` detection target not met in the latest committed balanced reruns (0/10, 0/10).
+- ❌ Variant switch-act medians (`T6-T3`) are not yet publishable from those committed batches.
+
+## Post-rerun runner/doc update (2026-05-13)
+
+The child variant configs and steady batch runner were updated after the committed balanced reruns to stop the child from pressing the switch button too early during target-router suppression / restore preconditioning.
+
+Updated defaults / runner behavior:
+- `testing/configs/child_variant_multicast.yaml`
+  - `batch_precondition_gate: true`
+  - `batch_precondition_release_delay_ms: 75000ms`
+- `testing/configs/child_variant_unicast.yaml`
+  - `batch_precondition_gate: true`
+  - `batch_precondition_release_delay_ms: 75000ms`
+- `testing/tools/run_trials_batch.sh`
+  - computes release delay from USB-off + post-restore settle windows
+  - refreshes live target-router ExtAddr before flash/capture when router control is available
+  - passes runtime `target_parent_extaddr` into the child build/log metadata
+
+Spot-check evidence from the gated path:
+- `testing/logs/variant-ucast-steady-20260513-192708-trial1.log`
+  - precondition gate waited: `AUTO precondition satisfied ... waiting 75000ms ...`
+  - delayed press occurred later: `AUTO release delay elapsed: pressing Variant B unicast switch button`
+  - attach marker appeared: `T3 selected-parent attach start; target=588c81fffe5fd8c4`
+  - switch completed successfully: `Thread parent switch succeeded; current parent is ExtAddr 588c81fffe5fd8c4`
+
+Interpretation:
+- this spot check suggests the early child-trigger problem is fixed in the gated path
+- however, the publishable variant comparison still requires fresh full reruns using these updated defaults
 
 ## Raw artifacts used
 

@@ -43,11 +43,14 @@ ROUTER_CONFIG="testing/configs/router_ftd.yaml"
 TARGET_PARENT_EXTADDR_LC="${TARGET_PARENT_EXTADDR,,}"
 VARIANT_PRECONDITION_TIMEOUT="${VARIANT_PRECONDITION_TIMEOUT:-45}"
 VARIANT_USB_THREAD_OFF_TIMEOUT="${VARIANT_USB_THREAD_OFF_TIMEOUT:-60}"
+VARIANT_POST_RESTORE_SETTLE_TIMEOUT="${VARIANT_POST_RESTORE_SETTLE_TIMEOUT:-15}"
+VARIANT_PRECONDITION_RELEASE_DELAY_MS="$(((VARIANT_USB_THREAD_OFF_TIMEOUT + VARIANT_POST_RESTORE_SETTLE_TIMEOUT) * 1000))ms"
 THREAD_CTL=".venv/bin/python testing/tools/thread_ctl.py"
 THREAD_CONTROL_READY=""
 TARGET_ROUTER_LABEL=""
 TARGET_ROUTER_PORT=""
 NON_TARGET_PARENT_EXTADDR=""
+TARGET_PARENT_EXTADDR_RUNTIME="$TARGET_PARENT_EXTADDR_LC"
 if [[ "$TARGET_PARENT_EXTADDR_LC" == "${ROUTER_PRIMARY_EXTADDR,,}" ]]; then
   TARGET_ROUTER_LABEL="router1"
   TARGET_ROUTER_PORT="$ROUTER_PRIMARY_PORT"
@@ -90,6 +93,21 @@ thread_control_cmd() {
   local action="$1"
   shift || true
   $THREAD_CTL --port "$TARGET_ROUTER_PORT" "$action" "$@"
+}
+
+refresh_target_parent_extaddr() {
+  if [[ -z "$TARGET_ROUTER_PORT" ]]; then
+    return 1
+  fi
+  local live_extaddr
+  if ! live_extaddr="$(thread_control_cmd extaddr 2>/dev/null | tail -n1 | tr '[:upper:]' '[:lower:]')"; then
+    return 1
+  fi
+  if [[ ! "$live_extaddr" =~ ^[0-9a-f]{16}$ ]]; then
+    return 1
+  fi
+  TARGET_PARENT_EXTADDR_RUNTIME="$live_extaddr"
+  return 0
 }
 
 ensure_thread_control_ready() {
@@ -159,7 +177,7 @@ append_variant_preconditioning_metadata() {
 
   {
     echo "# variant-preconditioning-method $prep_method"
-    echo "# variant-target-parent-extaddr $TARGET_PARENT_EXTADDR_LC"
+    echo "# variant-target-parent-extaddr $TARGET_PARENT_EXTADDR_RUNTIME"
     [[ -n "$initial_parent" ]] && echo "# variant-initial-parent-extaddr $initial_parent"
     echo "# variant-precondition-result $prep_result"
     [[ -n "$probe_responses" ]] && echo "# variant-precondition-probe-responses $probe_responses"
@@ -219,11 +237,16 @@ if [[ "$SCENARIO" == variant-* && "$MODE" == "steady" && -n "$TARGET_ROUTER_LABE
 fi
 FLASH_CMD=(.venv/bin/esphome run "$CONFIG" --device "$CHILD_PORT" --no-logs)
 if [[ "$SCENARIO" == variant-* && "$MODE" == "steady" ]]; then
+  if [[ -n "$TARGET_ROUTER_LABEL" ]] && ensure_thread_control_ready && refresh_target_parent_extaddr; then
+    echo "[batch] refreshed target router extaddr: $TARGET_PARENT_EXTADDR_RUNTIME"
+  fi
   FLASH_CMD=(
     .venv/bin/esphome
     -s auto_trigger_switch false
     -s batch_precondition_gate true
     -s batch_precondition_timeout_ms "$((VARIANT_PRECONDITION_TIMEOUT * 1000))"
+    -s batch_precondition_release_delay_ms "$VARIANT_PRECONDITION_RELEASE_DELAY_MS"
+    -s target_parent_extaddr "$TARGET_PARENT_EXTADDR_RUNTIME"
     run "$CONFIG"
     --device "$CHILD_PORT"
     --no-logs
@@ -278,12 +301,17 @@ for ((i=DONE+1; i<=TARGET_ATTEMPTS; i++)); do
       )
       python3 testing/tools/capture_logs.py "${CAPTURE_ARGS[@]}" >"${LOG%.log}.capture.out" 2>&1
     else
+      if refresh_target_parent_extaddr; then
+        echo "[batch] refreshed target router extaddr: $TARGET_PARENT_EXTADDR_RUNTIME" | tee -a "$PREP_LOG"
+      else
+        echo "[batch] warning: could not refresh target router extaddr; using configured $TARGET_PARENT_EXTADDR_RUNTIME" | tee -a "$PREP_LOG"
+      fi
       CAPTURE_ARGS+=(
         --node child="$CHILD_PORT"
         --node router1="$ROUTER_PRIMARY_PORT"
         --reset-label child
       )
-      echo "[batch] steady variant preconditioning: hold target router $TARGET_ROUTER_LABEL ($TARGET_PARENT_EXTADDR_LC) off for ${VARIANT_USB_THREAD_OFF_TIMEOUT}s, reset child, confirm non-target parent, then allow auto-restore" | tee -a "$PREP_LOG"
+      echo "[batch] steady variant preconditioning: hold target router $TARGET_ROUTER_LABEL ($TARGET_PARENT_EXTADDR_RUNTIME) off for ${VARIANT_USB_THREAD_OFF_TIMEOUT}s, reset child, confirm non-target parent, then allow auto-restore" | tee -a "$PREP_LOG"
       if ! ensure_thread_control_ready; then
         echo "[batch] USB Thread control unavailable on $TARGET_ROUTER_LABEL" | tee -a "$PREP_LOG"
         PREP_RESULT="thread_off_failed"
@@ -301,7 +329,7 @@ for ((i=DONE+1; i<=TARGET_ATTEMPTS; i++)); do
           date -u +%Y-%m-%dT%H:%M:%S.%3NZ > "$PREP_SUPPRESSION_START_FILE"
           python3 testing/tools/capture_logs.py "${CAPTURE_ARGS[@]}" >"${LOG%.log}.capture.out" 2>&1 &
           CAPTURE_PID=$!
-          wait_for_variant_initial_parent "$LOG" "$VARIANT_PRECONDITION_TIMEOUT" "$TARGET_PARENT_EXTADDR_LC" "$PREP_RESULT_FILE" "$PREP_INITIAL_PARENT_FILE" || true
+          wait_for_variant_initial_parent "$LOG" "$VARIANT_PRECONDITION_TIMEOUT" "$TARGET_PARENT_EXTADDR_RUNTIME" "$PREP_RESULT_FILE" "$PREP_INITIAL_PARENT_FILE" || true
           if ! wait "$THREAD_HOLD_PID"; then
             PREP_RESULT="thread_on_failed"
           fi

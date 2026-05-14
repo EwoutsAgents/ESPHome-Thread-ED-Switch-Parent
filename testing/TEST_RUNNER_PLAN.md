@@ -30,6 +30,19 @@ For consistency, run the same two conditions for Variant A as well.
 5. `variant-ucast` + `steady`
 6. `variant-ucast` + `forced-failover`
 
+## Current steady variant runner defaults
+For `variant-mcast` and `variant-ucast` steady runs, the child now defaults to the gated precondition path instead of the old immediate button press:
+- `batch_precondition_gate: true`
+- `batch_precondition_release_delay_ms: 75000ms`
+- auto-trigger remains disabled by the batch runner during steady variant captures
+
+The batch runner also now:
+- refreshes the target router ExtAddr from live router control before flash/capture when available
+- passes the refreshed `target_parent_extaddr` into the child config
+- records the runtime target ExtAddr in log metadata as `# variant-target-parent-extaddr ...`
+
+This is intended to prevent the child from pressing the switch button before the target-router suppression / restore window has completed.
+
 ## Per-run command
 ```bash
 testing/tools/run_one_capture.sh <scenario> <mode> <duration_sec>
@@ -64,3 +77,13 @@ CSV checkpoints:
 - Trigger switch.
 - Turn off/disconnect R1 shortly after trigger.
 - Keep R2 online throughout.
+
+## Immediate next validation
+After the gated-default fix, rerun:
+- `testing/tools/run_trials_batch.sh variant-mcast 10 80 steady`
+- `testing/tools/run_trials_batch.sh variant-ucast 10 80 steady`
+
+Success criteria for the rerun:
+- the child log should show the precondition wait before button press
+- `T3 selected-parent attach start` should appear reliably enough to publish `T6-T3`
+- result summaries should be regenerated from the new CSV/log set

@@ -175,7 +175,9 @@ Latest switch-act related outcomes from committed CSVs:
   - median `T6-T3`: N/A
   - median end-to-end `T6-T0`: 33 ms
 
-Note: `T3` sparsity in variant logs still limits strong `T6-T3` comparison quality; this needs explicit variant-side logging improvements for a publishable switch-act comparison.
+Note: `T3` sparsity in these committed variant logs still limits strong `T6-T3` comparison quality.
+
+Post-batch update: after these 2026-05-11 committed reruns, the child variant configs and steady batch runner were updated to stop the child from pressing the switch button too early during target-router suppression / restore preconditioning. The new defaults enable `batch_precondition_gate: true` and use `batch_precondition_release_delay_ms: 75000ms` for both variant child configs, while the runner now refreshes and passes the live target-router ExtAddr into the child build. A gated spot-check log (`testing/logs/variant-ucast-steady-20260513-192708-trial1.log`) shows the child waiting the full release delay, then emitting `T3 selected-parent attach start`, and finally succeeding. Fresh full variant reruns are still required before replacing the committed 2026-05-11 variant summary numbers.
 
 ## Commands used
 

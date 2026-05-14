@@ -47,6 +47,8 @@ class ThreadRouterControlComponent : public Component {
   std::string rx_line_;
   bool last_state_valid_{false};
   ThreadRouterStateSnapshot last_state_{};
+  bool preserved_extaddr_valid_{false};
+  otExtAddress preserved_extaddr_{};
 
   void process_line_(const std::string &line);
   bool apply_thread_enabled_(bool enabled, const char *log_action);

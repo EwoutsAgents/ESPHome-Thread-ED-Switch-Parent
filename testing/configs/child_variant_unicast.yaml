@@ -10,10 +10,10 @@ substitutions:
   target_parent_extaddr: "4645b099670a43ed"
   auto_trigger_switch: "true"
   auto_trigger_delay: "25s"
-  batch_precondition_gate: "false"
+  batch_precondition_gate: "true"
   batch_precondition_poll_interval: "1s"
   batch_precondition_timeout_ms: "45000"
-  batch_precondition_release_delay_ms: "8000ms"
+  batch_precondition_release_delay_ms: "75000ms"
 
 esphome:
   name: thread-child-variant-b-ucast
@@ -31,6 +31,9 @@ esp32:
 logger:
   level: VERY_VERBOSE
   hardware_uart: UART0
+
+safe_mode:
+  disabled: true
 
 network:
   enable_ipv6: true
@@ -54,7 +57,7 @@ external_components:
   - source:
       type: local
       path: ../../components
-    components: [thread_preferred_parent]
+    components: [openthread, thread_preferred_parent]
 
 thread_preferred_parent:
   id: preferred_parent

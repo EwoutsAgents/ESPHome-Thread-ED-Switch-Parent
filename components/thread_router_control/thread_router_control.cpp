@@ -144,22 +144,38 @@ bool ThreadRouterControlComponent::apply_thread_enabled_(bool enabled, const cha
   otInstance *instance = lock->get_instance();
   otError err = OT_ERROR_NONE;
 
+  otExtAddress factory_eui64{};
+  otLinkGetFactoryAssignedIeeeEui64(instance, &factory_eui64);
+  this->preserved_extaddr_ = factory_eui64;
+  this->preserved_extaddr_valid_ = true;
+
   if (enabled) {
-    err = otLinkSetEnabled(instance, true);
-    if (err == OT_ERROR_NONE) {
-      err = otIp6SetEnabled(instance, true);
+    if (this->preserved_extaddr_valid_) {
+      const otError extaddr_err = otLinkSetExtendedAddress(instance, &this->preserved_extaddr_);
+      if (extaddr_err != OT_ERROR_NONE) {
+        ESP_LOGW(TAG, "USB_CTL failed to restore extaddr=%s before thread enable: %s",
+                 extaddr_to_string_(this->preserved_extaddr_).c_str(), error_to_string_(extaddr_err));
+      } else {
+        ESP_LOGI(TAG, "USB_CTL restored extaddr=%s before thread enable",
+                 extaddr_to_string_(this->preserved_extaddr_).c_str());
+      }
     }
-    if (err == OT_ERROR_NONE) {
-      err = otThreadSetEnabled(instance, true);
+    err = otThreadSetEnabled(instance, true);
+    if (err == OT_ERROR_NONE && this->preserved_extaddr_valid_) {
+      const otExtAddress *current_extaddr = otLinkGetExtendedAddress(instance);
+      if (current_extaddr != nullptr && std::memcmp(current_extaddr, &this->preserved_extaddr_, sizeof(*current_extaddr)) != 0) {
+        const otError extaddr_err = otLinkSetExtendedAddress(instance, &this->preserved_extaddr_);
+        if (extaddr_err == OT_ERROR_NONE) {
+          ESP_LOGI(TAG, "USB_CTL re-restored extaddr=%s after thread enable",
+                   extaddr_to_string_(this->preserved_extaddr_).c_str());
+        } else {
+          ESP_LOGW(TAG, "USB_CTL failed to re-restore extaddr=%s after thread enable: %s",
+                   extaddr_to_string_(this->preserved_extaddr_).c_str(), error_to_string_(extaddr_err));
+        }
+      }
     }
   } else {
     err = otThreadSetEnabled(instance, false);
-    if (err == OT_ERROR_NONE) {
-      err = otIp6SetEnabled(instance, false);
-    }
-    if (err == OT_ERROR_NONE) {
-      err = otLinkSetEnabled(instance, false);
-    }
   }
 
   const bool ip6_enabled = otIp6IsEnabled(instance);
@@ -213,6 +229,10 @@ bool ThreadRouterControlComponent::get_state_snapshot_(ThreadRouterStateSnapshot
   const otExtAddress *extaddr = otLinkGetExtendedAddress(instance);
   if (extaddr != nullptr) {
     snapshot->extaddr = *extaddr;
+    if (!this->preserved_extaddr_valid_) {
+      this->preserved_extaddr_ = *extaddr;
+      this->preserved_extaddr_valid_ = true;
+    }
   } else {
     std::memset(&snapshot->extaddr, 0, sizeof(snapshot->extaddr));
   }

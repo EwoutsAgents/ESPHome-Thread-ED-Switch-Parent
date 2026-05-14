@@ -121,6 +121,16 @@ void OpenThreadComponent::ot_main() {
   ESP_LOGD(TAG, "Thread Version: %" PRIu16, otThreadGetVersion());
   otInstanceErasePersistentInfo(instance);
 
+  otExtAddress factory_eui64{};
+  otLinkGetFactoryAssignedIeeeEui64(instance, &factory_eui64);
+  otError extaddr_err = otLinkSetExtendedAddress(instance, &factory_eui64);
+  if (extaddr_err != OT_ERROR_NONE) {
+    ESP_LOGE(TAG, "Failed to set factory IEEE EUI-64 as Thread extaddr: %s (%d)",
+             otThreadErrorToString(extaddr_err), static_cast<int>(extaddr_err));
+    esp_openthread_lock_release();
+    return;
+  }
+
   otOperationalDatasetTlvs dataset_tlvs = {};
 #ifndef USE_OPENTHREAD_FORCE_DATASET
   otError error = otDatasetGetActiveTlvs(instance, &dataset_tlvs);
