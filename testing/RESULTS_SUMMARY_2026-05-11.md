@@ -150,10 +150,10 @@ Interpretation split:
 
 ## Balanced rerun (latest)
 
-Balanced batches were rerun with 10 trials each:
-- `stock-observed` `current-parent-off`: 10/10
-- `variant-mcast` `steady`: 10/10
-- `variant-ucast` `steady`: 10/10
+Balanced batches were rerun with 10 valid switch-act trials targeted for each scenario:
+- `stock-observed` `current-parent-off`: 10 attempts / 4 valid in the latest committed stock batch
+- `variant-mcast` `steady`: 10 valid in 21 attempts (fresh gated rerun 2026-05-14)
+- `variant-ucast` `steady`: 10 valid in 13 attempts (fresh gated rerun 2026-05-14)
 
 Latest switch-act related outcomes from committed CSVs:
 - stock current-parent-off:
@@ -164,20 +164,22 @@ Latest switch-act related outcomes from committed CSVs:
   - SO6 timeout/failure: 6/10
   - median `SO4 - disruption_time`: 7478 ms (n=1)
   - median `SO5 - disruption_time`: 5906 ms (n=4)
-- variant-mcast steady:
-  - T6 reached: 10/10
-  - T3 attach-start detected: 1/10
-  - median `T6-T3`: 3305 ms (n=1)
-  - median end-to-end `T6-T0`: 34 ms
-- variant-ucast steady:
-  - T6 reached: 10/10
-  - T3 attach-start detected: 0/10
-  - median `T6-T3`: N/A
-  - median end-to-end `T6-T0`: 33 ms
+- variant-mcast steady (fresh gated rerun window `20260514-102429` .. `20260514-113542`):
+  - valid `success_switch_act`: 10/21
+  - non-valid classification: 11× `immediate_parent_match_no_switch`
+  - T3 attach-start detected in valid trials: 10/10
+  - T6 reached in valid trials: 10/10
+  - median `T6-T3`: 4625 ms
+  - median end-to-end `T6-T0`: 10751 ms
+- variant-ucast steady (fresh gated rerun window `20260514-114837` .. `20260514-123121`):
+  - valid `success_switch_act`: 10/13
+  - non-valid classification: 3× `initial_parent_unknown`
+  - T3 attach-start detected in valid trials: 10/10
+  - T6 reached in valid trials: 10/10
+  - median `T6-T3`: 5963.5 ms
+  - median end-to-end `T6-T0`: 12806.5 ms
 
-Note: `T3` sparsity in these committed variant logs still limits strong `T6-T3` comparison quality.
-
-Post-batch update: after these 2026-05-11 committed reruns, the child variant configs and steady batch runner were updated to stop the child from pressing the switch button too early during target-router suppression / restore preconditioning. The new defaults enable `batch_precondition_gate: true` and use `batch_precondition_release_delay_ms: 75000ms` for both variant child configs, while the runner now refreshes and passes the live target-router ExtAddr into the child build. A gated spot-check log (`testing/logs/variant-ucast-steady-20260513-192708-trial1.log`) shows the child waiting the full release delay, then emitting `T3 selected-parent attach start`, and finally succeeding. Fresh full variant reruns are still required before replacing the committed 2026-05-11 variant summary numbers.
+The gated reruns replace the earlier non-publishable variant interpretation. `T3` is now present in all 10/10 valid trials for both variant scenarios, so a publishable variant `T6-T3` comparison is now available.
 
 ## Commands used
 

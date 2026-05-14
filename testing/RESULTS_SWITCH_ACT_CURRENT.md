@@ -20,10 +20,10 @@ Primary metrics:
 
 ## Table 2 — Variant switch-act
 
-| scenario | mode | trials | T3 present | T6 present | valid T6-T3 trials | median T6-T3 (ms) | median T6-T0 (ms) | notes |
-|---|---|---:|---:|---:|---:|---:|---:|---|
-| variant-mcast | steady | 10 | 0 | 10 | 0 | N/A | 33 | latest rerun; requests often completed with immediate parent-match path, so no attach-start marker emitted |
-| variant-ucast | steady | 10 | 0 | 10 | 0 | N/A | 33 | same behavior as mcast in latest rerun |
+| scenario | mode | attempts | valid switch-act trials | non-valid classifications | T3 present in valid trials | T6 present in valid trials | median T6-T3 (ms) | median T6-T0 (ms) | notes |
+|---|---|---:|---:|---|---:|---:|---:|---:|---|
+| variant-mcast | steady | 21 | 10 | 11× `immediate_parent_match_no_switch` | 10 | 10 | 4625 | 10751 | gated 2026-05-14 rerun; publishable T3/T6 coverage recovered |
+| variant-ucast | steady | 13 | 10 | 3× `initial_parent_unknown` | 10 | 10 | 5963.5 | 12806.5 | gated 2026-05-14 rerun; publishable T3/T6 coverage recovered |
 
 ## Table 3 — Interpretation
 
@@ -35,16 +35,16 @@ Primary metrics:
 
 ## Current status vs publishability criteria
 
-- ✅ Variant reruns executed (`variant-mcast` 10, `variant-ucast` 10).
-- ✅ `T6` detected in 10/10 for both variant batches.
-- ❌ `T3` detection target not met in the latest committed balanced reruns (0/10, 0/10).
-- ❌ Variant switch-act medians (`T6-T3`) are not yet publishable from those committed batches.
+- ✅ Fresh gated variant reruns completed on 2026-05-14.
+- ✅ `T6` detected in 10/10 valid switch-act trials for both variant batches.
+- ✅ `T3` detected in 10/10 valid switch-act trials for both variant batches.
+- ✅ Variant switch-act medians (`T6-T3`) are now publishable from these reruns.
 
-## Post-rerun runner/doc update (2026-05-13)
+## Gated rerun update (2026-05-14)
 
-The child variant configs and steady batch runner were updated after the committed balanced reruns to stop the child from pressing the switch button too early during target-router suppression / restore preconditioning.
+The child variant configs and steady batch runner were updated to stop the child from pressing the switch button too early during target-router suppression / restore preconditioning. Fresh steady reruns were then executed with the gated defaults and longer 210 s captures so the delayed button press and attach path were fully observed.
 
-Updated defaults / runner behavior:
+Updated defaults / runner behavior used for these reruns:
 - `testing/configs/child_variant_multicast.yaml`
   - `batch_precondition_gate: true`
   - `batch_precondition_release_delay_ms: 75000ms`
@@ -56,16 +56,19 @@ Updated defaults / runner behavior:
   - refreshes live target-router ExtAddr before flash/capture when router control is available
   - passes runtime `target_parent_extaddr` into the child build/log metadata
 
-Spot-check evidence from the gated path:
-- `testing/logs/variant-ucast-steady-20260513-192708-trial1.log`
-  - precondition gate waited: `AUTO precondition satisfied ... waiting 75000ms ...`
-  - delayed press occurred later: `AUTO release delay elapsed: pressing Variant B unicast switch button`
-  - attach marker appeared: `T3 selected-parent attach start; target=588c81fffe5fd8c4`
-  - switch completed successfully: `Thread parent switch succeeded; current parent is ExtAddr 588c81fffe5fd8c4`
+Representative successful gated evidence:
+- `testing/logs/variant-mcast-steady-20260514-113209-trial20.log`
+  - delayed press after precondition wait
+  - `T3 selected-parent attach start; target=588c81fffe5fd8c4`
+  - successful target-parent match
+- `testing/logs/variant-ucast-steady-20260514-123121-trial13.log`
+  - delayed press after precondition wait
+  - `T3 selected-parent attach start; target=588c81fffe5fd8c4`
+  - `T6_parent_match` / success recorded in CSV
 
 Interpretation:
-- this spot check suggests the early child-trigger problem is fixed in the gated path
-- however, the publishable variant comparison still requires fresh full reruns using these updated defaults
+- the early child-trigger problem is fixed in the gated path
+- both variant steady scenarios now have publishable attach-start-to-parent-match measurements
 
 ## Raw artifacts used
 
@@ -73,13 +76,13 @@ Interpretation:
 - `testing/logs/stock-observed-current-parent-off-20260511-205544-trial1.log` .. `trial10.log`
 - `testing/logs/stock-observed-current-parent-off-20260511-205544-trial1.csv` .. `trial10.csv`
 
-### Variant table artifacts (latest reruns)
+### Variant table artifacts (fresh gated reruns)
 - mcast logs/csv:
-  - `testing/logs/variant-mcast-steady-20260511-215258-trial1.log` .. `trial10.log`
-  - `testing/logs/variant-mcast-steady-20260511-215258-trial1.csv` .. `trial10.csv`
+  - `testing/logs/variant-mcast-steady-20260514-102429-trial1.log` .. `testing/logs/variant-mcast-steady-20260514-113542-trial21.log`
+  - `testing/logs/variant-mcast-steady-20260514-102429-trial1.csv` .. `testing/logs/variant-mcast-steady-20260514-113542-trial21.csv`
 - ucast logs/csv:
-  - `testing/logs/variant-ucast-steady-20260511-220642-trial1.log` .. `trial10.log`
-  - `testing/logs/variant-ucast-steady-20260511-220642-trial1.csv` .. `trial10.csv`
+  - `testing/logs/variant-ucast-steady-20260514-114837-trial1.log` .. `testing/logs/variant-ucast-steady-20260514-123121-trial13.log`
+  - `testing/logs/variant-ucast-steady-20260514-114837-trial1.csv` .. `testing/logs/variant-ucast-steady-20260514-123121-trial13.csv`
 
 ## Code changes in this update
 
@@ -92,4 +95,8 @@ Interpretation:
 
 ## Direct answer (current data)
 
-With current data, stock switch-act (SO4-disruption) is on the order of seconds (median ~7.5s in latest current-parent-off stock run), while variant end-to-end (`T6-T0`) is ~33 ms in latest steady reruns. However, the **variant switch-act metric** (`T6-T3`) is still unavailable in these latest variant reruns because `T3` did not appear, so a defensible stock-vs-variant **switch-trigger-to-parent-match** comparison is not yet publishable.
+With current data, stock switch-act remains on the order of seconds (median `SO4-disruption_time` 7478 ms and strict target median `SO5-disruption_time` 5906 ms in the latest current-parent-off stock run). The fresh gated variant reruns are now also on the order of seconds once measured from attach start instead of request time:
+- variant-mcast median `T6-T3`: 4625 ms
+- variant-ucast median `T6-T3`: 5963.5 ms
+
+Those fresh variant reruns now include publishable `T3` and `T6` coverage, so a defensible stock-vs-variant switch-trigger-to-parent-match comparison is available.
