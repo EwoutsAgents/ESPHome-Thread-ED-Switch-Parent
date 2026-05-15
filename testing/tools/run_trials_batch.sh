@@ -11,6 +11,7 @@ SCENARIO="${1:?usage: run_trials_batch.sh <scenario> <count> [duration] [mode]}"
 COUNT="${2:?usage: run_trials_batch.sh <scenario> <count> [duration] [mode]}"
 DURATION="${3:-80}"
 MODE="${4:-steady}"
+EFFECTIVE_DURATION="$DURATION"
 STATE_DIR="testing/logs/.batch_state"
 mkdir -p "$STATE_DIR" testing/logs
 
@@ -42,16 +43,18 @@ fi
 ROUTER_CONFIG="testing/configs/router_ftd.yaml"
 TARGET_PARENT_EXTADDR_LC="${TARGET_PARENT_EXTADDR,,}"
 VARIANT_PRECONDITION_TIMEOUT="${VARIANT_PRECONDITION_TIMEOUT:-45}"
-VARIANT_USB_THREAD_OFF_TIMEOUT="${VARIANT_USB_THREAD_OFF_TIMEOUT:-60}"
+VARIANT_USB_THREAD_OFF_TIMEOUT="${VARIANT_USB_THREAD_OFF_TIMEOUT:-$VARIANT_PRECONDITION_TIMEOUT}"
 VARIANT_POST_RESTORE_SETTLE_TIMEOUT="${VARIANT_POST_RESTORE_SETTLE_TIMEOUT:-15}"
 VARIANT_RESTORE_TO_SWITCH_DELAY_MS="${VARIANT_RESTORE_TO_SWITCH_DELAY_MS:-750}"
 VARIANT_PRECONDITION_RELEASE_DELAY_MS="$(((VARIANT_USB_THREAD_OFF_TIMEOUT + VARIANT_POST_RESTORE_SETTLE_TIMEOUT) * 1000))ms"
+VARIANT_CAPTURE_BUFFER_TIMEOUT="${VARIANT_CAPTURE_BUFFER_TIMEOUT:-30}"
 THREAD_CTL=".venv/bin/python testing/tools/thread_ctl.py"
 THREAD_CONTROL_READY=""
 TARGET_ROUTER_LABEL=""
 TARGET_ROUTER_PORT=""
 NON_TARGET_PARENT_EXTADDR=""
 TARGET_PARENT_EXTADDR_RUNTIME="$TARGET_PARENT_EXTADDR_LC"
+LAST_ATTEMPT="$DONE"
 if [[ "$TARGET_PARENT_EXTADDR_LC" == "${ROUTER_PRIMARY_EXTADDR,,}" ]]; then
   TARGET_ROUTER_LABEL="router1"
   TARGET_ROUTER_PORT="$ROUTER_PRIMARY_PORT"
@@ -228,6 +231,14 @@ if (( DONE >= TARGET_ATTEMPTS )); then
   exit 0
 fi
 
+if [[ "$SCENARIO" == variant-* && "$MODE" == "steady" ]]; then
+  MIN_VARIANT_DURATION=$((VARIANT_USB_THREAD_OFF_TIMEOUT + VARIANT_POST_RESTORE_SETTLE_TIMEOUT + VARIANT_CAPTURE_BUFFER_TIMEOUT))
+  if (( EFFECTIVE_DURATION < MIN_VARIANT_DURATION )); then
+    echo "[batch] increasing capture duration from ${DURATION}s to ${MIN_VARIANT_DURATION}s for variant steady preconditioning budget"
+    EFFECTIVE_DURATION="$MIN_VARIANT_DURATION"
+  fi
+fi
+
 # Build/flash once per scenario, then capture trials without extra compile pressure.
 echo "[batch] preparing firmware: scenario=$SCENARIO mode=$MODE"
 if [[ "$SCENARIO" == variant-* && "$MODE" == "steady" && -n "$TARGET_ROUTER_LABEL" ]]; then
@@ -299,7 +310,7 @@ for ((i=DONE+1; i<=TARGET_ATTEMPTS; i++)); do
 
   CAPTURE_ARGS=(
     --config "$CONFIG"
-    --duration "$DURATION"
+    --duration "$EFFECTIVE_DURATION"
     --out "$LOG"
   )
 
@@ -382,14 +393,14 @@ for ((i=DONE+1; i<=TARGET_ATTEMPTS; i++)); do
     PREP_PROBE_RESPONSES="${PREP_PROBE_META[0]:-}"
     PREP_PROBE_TARGET_MATCHES="${PREP_PROBE_META[1]:-}"
     PREP_PROBE_NON_TARGET_PARENT="${PREP_PROBE_META[2]:-}"
-    if [[ "$PREP_RESULT" == "not_applicable" || "$PREP_RESULT" == "pending_initial_parent_check" ]]; then
-      if [[ -z "$PREP_INITIAL_PARENT" ]]; then
-        PREP_RESULT="initial_parent_unknown"
-      elif [[ "$PREP_INITIAL_PARENT" == "$TARGET_PARENT_EXTADDR_LC" ]]; then
+    if [[ -n "$PREP_INITIAL_PARENT" ]]; then
+      if [[ "$PREP_INITIAL_PARENT" == "$TARGET_PARENT_EXTADDR_RUNTIME" || "$PREP_INITIAL_PARENT" == "$TARGET_PARENT_EXTADDR_LC" ]]; then
         PREP_RESULT="target_still_current"
       else
         PREP_RESULT="non_target_confirmed"
       fi
+    elif [[ "$PREP_RESULT" == "not_applicable" || "$PREP_RESULT" == "pending_initial_parent_check" ]]; then
+      PREP_RESULT="initial_parent_unknown"
     fi
     append_variant_preconditioning_metadata "$LOG" "$PREP_RESULT" "$PREP_METHOD" "$PREP_INITIAL_PARENT" "$PREP_SUPPRESSION_START" "$PREP_SUPPRESSION_END" "$PREP_PROBE_RESPONSES" "$PREP_PROBE_TARGET_MATCHES" "$PREP_PROBE_NON_TARGET_PARENT"
   fi
@@ -402,6 +413,7 @@ for ((i=DONE+1; i<=TARGET_ATTEMPTS; i++)); do
     --out "$CSV" >"${CSV%.csv}.extract.out" 2>&1
 
   echo "$i" > "$STATE_FILE"
+  LAST_ATTEMPT="$i"
 
   if [[ "$SCENARIO" == variant-* ]]; then
     mapfile -t CSV_SUMMARY < <(python3 - <<'PY' "$CSV"
@@ -443,11 +455,6 @@ PY
     fi
   fi
 done
-
-LAST_ATTEMPT="$DONE"
-if (( LAST_ATTEMPT < TARGET_ATTEMPTS )); then
-  LAST_ATTEMPT="$((i - 1))"
-fi
 
 if [[ "$SCENARIO" == variant-* ]]; then
   echo "[batch] complete: $SCENARIO $MODE valid $VALID_DONE/$COUNT (attempts=$LAST_ATTEMPT)"

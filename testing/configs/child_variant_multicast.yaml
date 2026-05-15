@@ -13,7 +13,7 @@ substitutions:
   batch_precondition_gate: "true"
   batch_precondition_poll_interval: "1s"
   batch_precondition_timeout_ms: "45000"
-  batch_precondition_release_delay_ms: "750ms"
+  batch_precondition_release_delay_ms: "100ms"
 
 esphome:
   name: thread-child-variant-b-mcast
@@ -106,8 +106,42 @@ script:
     mode: restart
     then:
       - delay: ${batch_precondition_release_delay_ms}
-      - logger.log: "AUTO release delay elapsed: pressing Variant B multicast switch button"
-      - button.press: variant_b_mcast_switch_button
+      - if:
+          condition:
+            lambda: |-
+              const std::string current = id(preferred_parent).current_parent_extaddr();
+              const std::string target = "${target_parent_extaddr}";
+
+              if (current.empty()) {
+                ESP_LOGW("variant_b", "V_invariant_result=abort_current_parent_unknown");
+                ESP_LOGW("variant_b", "AUTO abort: current_parent_unknown target=%s", target.c_str());
+                id(variant_b_mcast_switch_requested_once) = false;
+                id(variant_b_mcast_waiting_for_target_restore) = false;
+                id(variant_b_mcast_initial_parent_checked_once) = false;
+                id(variant_b_mcast_precondition_start_ms) = millis();
+                return false;
+              }
+
+              if (current == target) {
+                ESP_LOGW("variant_b", "V_invariant_current_parent_extaddr=%s", current.c_str());
+                ESP_LOGW("variant_b", "V_invariant_target_parent_extaddr=%s", target.c_str());
+                ESP_LOGW("variant_b", "V_invariant_result=abort_current_parent_already_target");
+                ESP_LOGW("variant_b", "AUTO abort: current_parent_already_target=%s", current.c_str());
+                id(variant_b_mcast_switch_requested_once) = false;
+                id(variant_b_mcast_waiting_for_target_restore) = false;
+                id(variant_b_mcast_initial_parent_checked_once) = false;
+                id(variant_b_mcast_precondition_start_ms) = millis();
+                return false;
+              }
+
+              ESP_LOGI("variant_b", "V_invariant_current_parent_extaddr=%s", current.c_str());
+              ESP_LOGI("variant_b", "V_invariant_target_parent_extaddr=%s", target.c_str());
+              ESP_LOGI("variant_b", "V_invariant_result=non_target_current_parent");
+              ESP_LOGI("variant_b", "AUTO invariant satisfied: current_parent=%s target=%s", current.c_str(), target.c_str());
+              return true;
+          then:
+            - logger.log: "AUTO release delay elapsed: pressing Variant B multicast switch button"
+            - button.press: variant_b_mcast_switch_button
 
 interval:
   - interval: ${batch_precondition_poll_interval}
@@ -135,27 +169,42 @@ interval:
 
                 const uint32_t responses = id(preferred_parent).probe_parent_response_count();
                 const uint32_t target_matches = id(preferred_parent).probe_target_parent_response_count();
+                const std::string observed_parent = id(preferred_parent).probe_non_target_extaddr();
+                const std::string current = id(preferred_parent).current_parent_extaddr();
+                const std::string target = "${target_parent_extaddr}";
                 ESP_LOGI("variant_b", "V_precondition_probe_result elapsed_ms=%lu responses=%lu target_matches=%lu",
                          static_cast<unsigned long>(elapsed_ms), static_cast<unsigned long>(responses),
                          static_cast<unsigned long>(target_matches));
 
-                if (responses > 0 && target_matches == 0) {
-                  const std::string observed_parent = id(preferred_parent).probe_non_target_extaddr();
-                  ESP_LOGI("variant_b", "V_precondition_initial_parent_extaddr=%s", observed_parent.c_str());
+                if (!current.empty() && current != target) {
+                  if (!observed_parent.empty() && observed_parent != "0000000000000000") {
+                    ESP_LOGI("variant_b", "V_precondition_probe_non_target_extaddr=%s", observed_parent.c_str());
+                  }
+                  ESP_LOGI("variant_b", "V_precondition_initial_parent_extaddr=%s", current.c_str());
+                  ESP_LOGI("variant_b", "V_invariant_current_parent_extaddr=%s", current.c_str());
+                  ESP_LOGI("variant_b", "V_invariant_target_parent_extaddr=%s", target.c_str());
                   id(variant_b_mcast_initial_parent_checked_once) = true;
                   id(variant_b_mcast_waiting_for_target_restore) = true;
-                  ESP_LOGI("variant_b", "AUTO precondition satisfied: observed non-target Parent Response %s while target ${target_parent_extaddr} stayed absent; waiting for target restoration before ${batch_precondition_release_delay_ms} delay", observed_parent.c_str());
+                  ESP_LOGI("variant_b", "AUTO precondition satisfied: current parent %s while target ${target_parent_extaddr} stayed absent; observed non-target Parent Response %s and waiting for target restoration before ${batch_precondition_release_delay_ms} delay", current.c_str(), observed_parent.c_str());
                   return;
                 }
 
-                if (elapsed_ms >= ${batch_precondition_timeout_ms}) {
-                  id(variant_b_mcast_initial_parent_checked_once) = true;
-                  if (target_matches > 0) {
-                    ESP_LOGI("variant_b", "V_precondition_initial_parent_extaddr=${target_parent_extaddr}");
-                    ESP_LOGW("variant_b", "V_precondition_target_still_current=${target_parent_extaddr}");
-                  } else {
-                    ESP_LOGW("variant_b", "V_precondition_initial_parent_unknown=no_non_target_parent_response");
+                if (!current.empty() && current == target) {
+                  ESP_LOGI("variant_b", "V_precondition_retry_current_parent_is_target");
+                  if (elapsed_ms >= ${batch_precondition_timeout_ms}) {
+                    id(variant_b_mcast_initial_parent_checked_once) = true;
+                    ESP_LOGI("variant_b", "V_precondition_initial_parent_extaddr=%s", current.c_str());
+                    ESP_LOGW("variant_b", "V_precondition_target_still_current=%s", current.c_str());
+                    return;
                   }
+                  id(preferred_parent).start_parent_response_probe();
+                  return;
+                }
+
+                if (current.empty() && elapsed_ms >= ${batch_precondition_timeout_ms}) {
+                  id(variant_b_mcast_initial_parent_checked_once) = true;
+                  ESP_LOGW("variant_b", "V_precondition_initial_parent_unknown=current_parent_empty");
+                  ESP_LOGW("variant_b", "V_invariant_result=abort_current_parent_unknown");
                   return;
                 }
 

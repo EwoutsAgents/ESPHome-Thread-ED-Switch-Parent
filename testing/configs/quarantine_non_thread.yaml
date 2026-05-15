@@ -1,0 +1,22 @@
+esphome:
+  name: quarantine-non-thread
+  friendly_name: Quarantine Non-Thread
+
+esp32:
+  board: esp32-c6-devkitm-1
+  framework:
+    type: esp-idf
+
+logger:
+  level: INFO
+  hardware_uart: UART0
+
+network:
+  enable_ipv6: false
+
+text_sensor:
+  - platform: template
+    name: "Quarantine Status"
+    lambda: |-
+      return {"Non-Thread quarantine firmware active"};
+    update_interval: 60s

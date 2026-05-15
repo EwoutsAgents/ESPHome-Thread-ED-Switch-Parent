@@ -16,6 +16,10 @@ VARIANT_PATTERNS = {
     "T5_attach_done": re.compile(r"(Thread parent switch succeeded|Attach result: success)"),
     "T6_parent_match": re.compile(r"(current parent is)"),
     "V_immediate_parent_match": re.compile(r"T_success_immediate_parent_match"),
+    "V_precondition_retry_current_parent_is_target": re.compile(r"V_precondition_retry_current_parent_is_target"),
+    "V_invariant_non_target_current_parent": re.compile(r"V_invariant_result=non_target_current_parent"),
+    "V_invariant_abort_current_parent_unknown": re.compile(r"V_invariant_result=abort_current_parent_unknown"),
+    "V_invariant_abort_current_parent_already_target": re.compile(r"V_invariant_result=abort_current_parent_already_target"),
 }
 
 STOCK_OBSERVED_PATTERNS = {
@@ -176,12 +180,23 @@ def main() -> int:
                 classification = "thread_off_failed"
             elif meta["variant_precondition_result"] == "thread_on_failed":
                 classification = "thread_on_failed"
+            elif (
+                meta["initial_parent_extaddr"]
+                and target_parent_extaddr
+                and meta["initial_parent_extaddr"].lower() == target_parent_extaddr.lower()
+            ):
+                classification = "precondition_failed_initial_parent_is_target"
+            elif "V_invariant_abort_current_parent_unknown" in events:
+                classification = "precondition_aborted_current_parent_unknown"
+            elif "V_invariant_abort_current_parent_already_target" in events:
+                classification = "precondition_aborted_already_target"
             elif meta["variant_precondition_result"] == "initial_parent_unknown":
                 classification = "initial_parent_unknown"
             elif "V_immediate_parent_match" in events and "T3_attach_start" not in events:
                 classification = "immediate_parent_match_no_switch"
             elif (
-                meta["variant_precondition_result"] == "non_target_confirmed"
+                "V_invariant_non_target_current_parent" in events
+                and "T0_request" in events
                 and "T3_attach_start" in events
                 and "T6_parent_match" in events
                 and "V_immediate_parent_match" not in events
