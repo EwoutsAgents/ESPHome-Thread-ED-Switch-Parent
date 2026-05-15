@@ -1,0 +1,377 @@
+# capture-start 2026-05-15T07:19:11.466860+00:00
+# duration-seconds 120
+# baud 115200
+# node child /dev/serial/by-id/usb-1a86_USB_Single_Serial_5AF7094229-if00
+# node router1 /dev/serial/by-id/usb-1a86_USB_Single_Serial_5AF7094336-if00
+2026-05-15T07:19:11.558+00:00 [child] INFO ESPHome 2026.4.5
+2026-05-15T07:19:11.559+00:00 [router1] INFO ESPHome 2026.4.5
+2026-05-15T07:19:11.561+00:00 [child] INFO Reading configuration testing/configs/child_variant_multicast.yaml...
+2026-05-15T07:19:11.561+00:00 [router1] INFO Reading configuration testing/configs/child_variant_multicast.yaml...
+2026-05-15T07:19:11.731+00:00 [router1] INFO Starting log output from /dev/serial/by-id/usb-1a86_USB_Single_Serial_5AF7094336-if00 with baud rate 115200
+2026-05-15T07:19:11.731+00:00 [child] INFO Starting log output from /dev/serial/by-id/usb-1a86_USB_Single_Serial_5AF7094229-if00 with baud rate 115200
+2026-05-15T07:19:11.741+00:00 [child] [09:19:11.741]ESP-ROM:esp32c6-20220919
+2026-05-15T07:19:11.755+00:00 [child] [09:19:11.755]Build:Sep 19 2022
+2026-05-15T07:19:11.755+00:00 [child] [09:19:11.755]rst:0x1 (POWERON),boot:0xc (SPI_FAST_FLASH_BOOT)
+2026-05-15T07:19:11.755+00:00 [child] [09:19:11.755]SPIWP:0xee
+2026-05-15T07:19:11.755+00:00 [child] [09:19:11.755]mode:DIO, clock div:2
+2026-05-15T07:19:11.762+00:00 [child] [09:19:11.762]load:0x40875730,len:0x16f4
+2026-05-15T07:19:11.762+00:00 [child] [09:19:11.762]load:0x4086b910,len:0xed0
+2026-05-15T07:19:11.762+00:00 [child] [09:19:11.762]load:0x4086e610,len:0x3218
+2026-05-15T07:19:11.762+00:00 [child] [09:19:11.762]entry 0x4086b910
+2026-05-15T07:19:11.774+00:00 [child] [09:19:11.774]I (23) boot: ESP-IDF 5.5.4 2nd stage bootloader
+2026-05-15T07:19:11.774+00:00 [child] [09:19:11.774]I (24) boot: compile time May  7 2026 14:37:50
+2026-05-15T07:19:11.785+00:00 [child] [09:19:11.785]I (24) boot: chip revision: v0.2
+2026-05-15T07:19:11.785+00:00 [child] [09:19:11.785]I (24) boot: efuse block revision: v0.3
+2026-05-15T07:19:11.785+00:00 [child] [09:19:11.785]I (27) boot.esp32c6: SPI Speed      : 80MHz
+2026-05-15T07:19:11.796+00:00 [child] [09:19:11.796]I (31) boot.esp32c6: SPI Mode       : DIO
+2026-05-15T07:19:11.796+00:00 [child] [09:19:11.796]I (35) boot.esp32c6: SPI Flash Size : 4MB
+2026-05-15T07:19:11.796+00:00 [child] [09:19:11.796]I (38) boot: Enabling RNG early entropy source...
+2026-05-15T07:19:11.807+00:00 [child] [09:19:11.807]I (43) boot: Partition Table:
+2026-05-15T07:19:11.807+00:00 [child] [09:19:11.807]I (45) boot: ## Label            Usage          Type ST Offset   Length
+2026-05-15T07:19:11.818+00:00 [child] [09:19:11.818]I (52) boot:  0 otadata          OTA data         01 00 00009000 00002000
+2026-05-15T07:19:11.818+00:00 [child] [09:19:11.818]I (58) boot:  1 phy_init         RF data          01 01 0000b000 00001000
+2026-05-15T07:19:11.829+00:00 [child] [09:19:11.829]I (65) boot:  2 app0             OTA app          00 10 00010000 001c0000
+2026-05-15T07:19:11.829+00:00 [child] [09:19:11.829]I (71) boot:  3 app1             OTA app          00 11 001d0000 001c0000
+2026-05-15T07:19:11.840+00:00 [child] [09:19:11.840]I (78) boot:  4 nvs              WiFi data        01 02 00390000 00070000
+2026-05-15T07:19:11.840+00:00 [child] [09:19:11.840]I (84) boot: End of partition table
+2026-05-15T07:19:11.845+00:00 [child] [09:19:11.845]I (88) esp_image: segment 0: paddr=00010020 vaddr=42080020 size=1a070h (106608) map
+2026-05-15T07:19:11.865+00:00 [child] [09:19:11.865]I (115) esp_image: segment 1: paddr=0002a098 vaddr=40800000 size=05f80h ( 24448) load
+2026-05-15T07:19:11.869+00:00 [child] [09:19:11.869]I (121) esp_image: segment 2: paddr=00030020 vaddr=42000020 size=7bd24h (507172) map
+2026-05-15T07:19:11.965+00:00 [child] [09:19:11.965]I (215) esp_image: segment 3: paddr=000abd4c vaddr=40805f80 size=0723ch ( 29244) load
+2026-05-15T07:19:11.976+00:00 [child] [09:19:11.976]I (222) esp_image: segment 4: paddr=000b2f90 vaddr=4080d1c0 size=02a68h ( 10856) load
+2026-05-15T07:19:11.976+00:00 [child] [09:19:11.976]I (228) boot: Loaded app from partition at offset 0x10000
+2026-05-15T07:19:11.979+00:00 [child] [09:19:11.979]I (228) boot: Disabling RNG early entropy source...
+2026-05-15T07:19:12.034+00:00 [child] [09:19:12.034][I][logger:120]: Log initialized
+2026-05-15T07:19:12.034+00:00 [child] [09:19:12.034][VV][preferences:077]: nvs_get_blob: key: 233825507, len: 4
+2026-05-15T07:19:12.045+00:00 [child] [09:19:12.045][C][safe_mode:136]: Unsuccessful boot attempts: 0
+2026-05-15T07:19:12.045+00:00 [child] [09:19:12.045][VV][preferences:043]: s_pending_save: key: 233825507, len: 4
+2026-05-15T07:19:12.057+00:00 [child] [09:19:12.057][V][preferences:121]: Saving 1 items...
+2026-05-15T07:19:12.057+00:00 [child] [09:19:12.057][VV][preferences:129]: Checking if NVS data 233825507 has changed
+2026-05-15T07:19:12.068+00:00 [child] [09:19:12.067][V][preferences:132]: sync: key: 233825507, len: 4
+2026-05-15T07:19:12.079+00:00 [child] [09:19:12.079][D][preferences:152]: Writing 1 items: 0 cached, 1 written, 0 failed
+2026-05-15T07:19:12.079+00:00 [child] [09:19:12.079][I][thread_preferred_parent:125]: Configured preferred parent by extended address: 4645b099670a43ed
+2026-05-15T07:19:12.090+00:00 [child] [09:19:12.089][I][app:067]: Running through setup()
+2026-05-15T07:19:12.090+00:00 [child] [09:19:12.089][V][app:068]: Sorting components by setup priority
+2026-05-15T07:19:12.101+00:00 [child] [09:19:12.100][V][component:236]: Setup logger
+2026-05-15T07:19:12.101+00:00 [child] [09:19:12.100][V][component:248]: Setup logger took 0ms
+2026-05-15T07:19:12.101+00:00 [child] [09:19:12.100][V][component:236]: Setup preferences
+2026-05-15T07:19:12.112+00:00 [child] [09:19:12.112][V][scheduler:217]: Scheduler interval for (null) is 60000ms, offset 2370ms
+2026-05-15T07:19:12.123+00:00 [child] [09:19:12.123][V][component:248]: Setup preferences took 6ms
+2026-05-15T07:19:12.123+00:00 [child] [09:19:12.123][V][component:236]: Setup script
+2026-05-15T07:19:12.123+00:00 [child] [09:19:12.123][V][component:248]: Setup script took 0ms
+2026-05-15T07:19:12.134+00:00 [child] [09:19:12.134][V][component:236]: Setup script
+2026-05-15T07:19:12.134+00:00 [child] [09:19:12.134][V][component:248]: Setup script took 0ms
+2026-05-15T07:19:12.145+00:00 [child] [09:19:12.145][V][component:236]: Setup thread_preferred_parent
+2026-05-15T07:19:12.145+00:00 [child] [09:19:12.145][I][thread_preferred_parent:023]: Thread preferred-parent component initialized
+2026-05-15T07:19:12.157+00:00 [child] [09:19:12.157][I][thread_preferred_parent:033]: OpenThread Parent Response reporting hook registered
+2026-05-15T07:19:12.168+00:00 [child] [09:19:12.167][V][component:248]: Setup thread_preferred_parent took 16ms
+2026-05-15T07:19:12.168+00:00 [child] [09:19:12.167][V][component:236]: Setup interval
+2026-05-15T07:19:12.179+00:00 [child] [09:19:12.179][V][scheduler:217]: Scheduler interval for iid:0 is 1000ms, offset 65ms
+2026-05-15T07:19:12.179+00:00 [child] [09:19:12.179][V][component:248]: Setup interval took 6ms
+2026-05-15T07:19:12.179+00:00 [child] [09:19:12.179][V][component:236]: Setup globals
+2026-05-15T07:19:12.189+00:00 [child] [09:19:12.189][V][component:248]: Setup globals took 0ms
+2026-05-15T07:19:12.189+00:00 [child] [09:19:12.189][V][component:236]: Setup globals
+2026-05-15T07:19:12.201+00:00 [child] [09:19:12.200][V][component:248]: Setup globals took 0ms
+2026-05-15T07:19:12.201+00:00 [child] [09:19:12.200][V][component:236]: Setup globals
+2026-05-15T07:19:12.201+00:00 [child] [09:19:12.200][V][component:248]: Setup globals took 0ms
+2026-05-15T07:19:12.212+00:00 [child] [09:19:12.212][V][component:236]: Setup globals
+2026-05-15T07:19:12.212+00:00 [child] [09:19:12.212][V][component:248]: Setup globals took 0ms
+2026-05-15T07:19:12.212+00:00 [child] [09:19:12.212][V][component:236]: Setup openthread
+2026-05-15T07:19:12.287+00:00 [child] [09:19:12.287][C][component:246]: Setup openthread took 87ms
+2026-05-15T07:19:12.287+00:00 [child] [09:19:12.287][V][component:236]: Setup esphome.ota
+2026-05-15T07:19:12.298+00:00 [child] [09:19:12.298][V][component:248]: Setup esphome.ota took 1ms
+2026-05-15T07:19:12.298+00:00 [child] [09:19:12.298][V][component:236]: Setup safe_mode
+2026-05-15T07:19:12.309+00:00 [child] [09:19:12.309][V][component:248]: Setup safe_mode took 0ms
+2026-05-15T07:19:12.309+00:00 [child] [09:19:12.309][V][component:236]: Setup api
+2026-05-15T07:19:12.320+00:00 [child] [09:19:12.319][W][component:389]: api set Warning flag: waiting for client connection
+2026-05-15T07:19:12.320+00:00 [child] [09:19:12.319][V][component:248]: Setup api took 0ms
+2026-05-15T07:19:12.320+00:00 [child] [09:19:12.319][V][component:236]: Setup mdns
+2026-05-15T07:19:12.331+00:00 [child] [09:19:12.331][V][component:248]: Setup mdns took 0ms
+2026-05-15T07:19:12.331+00:00 [child] [09:19:12.331][V][component:236]: Setup openthread
+2026-05-15T07:19:12.342+00:00 [child] [09:19:12.342][D][openthread:157]: Setting up SRP services. count = 1
+2026-05-15T07:19:12.342+00:00 [child] [09:19:12.342][D][openthread:207]: Added service: _esphomelib._tcp
+2026-05-15T07:19:12.342+00:00 [child] [09:19:12.342][D][openthread:211]: Finished SRP setup
+2026-05-15T07:19:12.353+00:00 [child] [09:19:12.353][V][component:248]: Setup openthread took 11ms
+2026-05-15T07:19:12.353+00:00 [child] [09:19:12.353][V][component:236]: Setup esphome.coroutine
+2026-05-15T07:19:12.364+00:00 [child] [09:19:12.364][V][component:248]: Setup esphome.coroutine took 0ms
+2026-05-15T07:19:12.364+00:00 [child] [09:19:12.364][I][app:123]: setup() finished successfully!
+2026-05-15T07:19:12.376+00:00 [child] [09:19:12.375][I][variant_b:160]: V_precondition_probe_start elapsed_ms=0 target=4645b099670a43ed
+2026-05-15T07:19:12.387+00:00 [child] [09:19:12.387][D][thread_preferred_parent:1184]: Status changed to discovering parents
+2026-05-15T07:19:12.398+00:00 [child] [09:19:12.398][I][thread_preferred_parent:220]: Starting discovery-only Parent Response probe for ExtAddr 4645b099670a43ed
+2026-05-15T07:19:12.398+00:00 [child] [09:19:12.398][D][openthread:114][ot_main]: Thread Version: 4
+2026-05-15T07:19:12.409+00:00 [child] [09:19:12.409][D][openthread:138][ot_main]: Link Mode Device Type: FALSE, Network Data: FALSE, RX On When Idle: TRUE
+2026-05-15T07:19:12.420+00:00 [child] [09:19:12.419][I][openthread:153][ot_main]: Activating dataset...
+2026-05-15T07:19:12.431+00:00 [child] [09:19:12.431][I][openthread:163][ot_main]: Found existing dataset, ignoring config (force_dataset: true to override)
+2026-05-15T07:19:12.431+00:00 [child] [09:19:12.431][I][thread_preferred_parent:453]: Thread role before discovery: child
+2026-05-15T07:19:12.442+00:00 [child] [09:19:12.442][I][thread_preferred_parent:456]: Current parent before discovery: RLOC16 0x6000 ExtAddr 588c81fffe5db0e0
+2026-05-15T07:19:12.453+00:00 [child] [09:19:12.453][I][thread_preferred_parent:462]: Parent discovery attempt 1/3 for ExtAddr 4645b099670a43ed
+2026-05-15T07:19:12.464+00:00 [child] [09:19:12.464][I][thread_preferred_parent:826]: Starting non-disruptive multicast Parent Request discovery for ExtAddr 4645b099670a43ed
+2026-05-15T07:19:12.476+00:00 [child] [09:19:12.475][I][app:154]: ESPHome version 2026.4.5 compiled on 2026-05-15 09:16:23 +0200
+2026-05-15T07:19:12.476+00:00 [child] [09:19:12.475][I][app:161]: ESP32 Chip: ESP32-C6 rev0.2, 1 core(s)
+2026-05-15T07:19:12.487+00:00 [child] [09:19:12.486][C][logger:219]: Logger:
+2026-05-15T07:19:12.487+00:00 [child] [09:19:12.486][C][logger:219]:   Max Level: VERY_VERBOSE
+2026-05-15T07:19:12.487+00:00 [child] [09:19:12.486][C][logger:219]:   Initial Level: VERY_VERBOSE
+2026-05-15T07:19:12.487+00:00 [child] [09:19:12.486][C][logger:226]:   Log Baud Rate: 115200
+2026-05-15T07:19:12.498+00:00 [child] [09:19:12.497][C][logger:226]:   Hardware UART: UART0
+2026-05-15T07:19:12.498+00:00 [child] [09:19:12.497][C][logger:235]:   Task Log Buffer Size: 768 bytes
+2026-05-15T07:19:12.509+00:00 [child] [09:19:12.509][W][logger:251]: VERY_VERBOSE logging is active — significant performance impact, short-term debugging only
+2026-05-15T07:19:12.520+00:00 [child] [09:19:12.519][W][logger:251]:   May cause connection instability. Set log level to DEBUG or lower for long-term use.
+2026-05-15T07:19:12.520+00:00 [child] [09:19:12.519][VV][component:292]: logger loop disabled
+2026-05-15T07:19:12.531+00:00 [child] [09:19:12.531][C][thread_preferred_parent:043]: Thread preferred parent:
+2026-05-15T07:19:12.531+00:00 [child] [09:19:12.531][C][thread_preferred_parent:044]:   Target type: extaddr
+2026-05-15T07:19:12.542+00:00 [child] [09:19:12.542][C][thread_preferred_parent:045]:   Target: ExtAddr 4645b099670a43ed
+2026-05-15T07:19:12.542+00:00 [child] [09:19:12.542][C][thread_preferred_parent:046]:   Max attempts: 3
+2026-05-15T07:19:12.553+00:00 [child] [09:19:12.553][C][thread_preferred_parent:047]:   Retry interval: 8000 ms
+2026-05-15T07:19:12.564+00:00 [child] [09:19:12.564][C][thread_preferred_parent:048]:   Selected attach timeout: 16000 ms
+2026-05-15T07:19:12.564+00:00 [child] [09:19:12.564][C][thread_preferred_parent:049]:   Parent Request unicast: NO
+2026-05-15T07:19:12.576+00:00 [child] [09:19:12.576][C][thread_preferred_parent:050]:   Early attach on target: YES
+2026-05-15T07:19:12.576+00:00 [child] [09:19:12.576][C][thread_preferred_parent:051]:   Early attach delay: 500 ms
+2026-05-15T07:19:12.587+00:00 [child] [09:19:12.586][C][thread_preferred_parent:052]:   Require selected-parent hook: YES
+2026-05-15T07:19:12.598+00:00 [child] [09:19:12.598][C][thread_preferred_parent:053]:   Discovery hook available: YES
+2026-05-15T07:19:12.598+00:00 [child] [09:19:12.598][C][thread_preferred_parent:054]:   Discovery unicast hook available: YES
+2026-05-15T07:19:12.609+00:00 [child] [09:19:12.609][C][thread_preferred_parent:055]:   Selected-parent hook available: YES
+2026-05-15T07:19:12.620+00:00 [child] [09:19:12.619][C][thread_preferred_parent:056]:   Parent Response reporting hook registered: YES
+2026-05-15T07:19:12.620+00:00 [child] [09:19:12.619][C][thread_preferred_parent:057]:   Log Parent Responses: YES
+2026-05-15T07:19:12.623+00:00 [child] [09:19:12.623][C][thread_preferred_parent:058]:   Status: discovering parents
+2026-05-15T07:19:12.645+00:00 [child] [09:19:12.645][C][openthread:029]: Open Thread:
+2026-05-15T07:19:12.645+00:00 [child] [09:19:12.645][C][openthread:033]:   Device Type: MTD
+2026-05-15T07:19:12.656+00:00 [child] [09:19:12.656][C][openthread:040]:   Device is configured as Minimal End Device (MED)
+2026-05-15T07:19:12.656+00:00 [child] [09:19:12.656][C][esphome.ota:071]: Over-The-Air updates:
+2026-05-15T07:19:12.666+00:00 [child] [09:19:12.666][C][esphome.ota:071]:   Address: thread-child-variant-b-mcast.local:3232
+2026-05-15T07:19:12.666+00:00 [child] [09:19:12.666][C][esphome.ota:071]:   Version: 2
+2026-05-15T07:19:12.666+00:00 [child] [09:19:12.666][C][safe_mode:026]: Safe Mode:
+2026-05-15T07:19:12.666+00:00 [child] [09:19:12.666][C][safe_mode:026]:   Successful after: 60s
+2026-05-15T07:19:12.678+00:00 [child] [09:19:12.678][C][safe_mode:026]:   Invoke after: 10 attempts
+2026-05-15T07:19:12.678+00:00 [child] [09:19:12.678][C][safe_mode:026]:   Duration: 300s
+2026-05-15T07:19:12.678+00:00 [child] [09:19:12.678][C][safe_mode:043]:   Bootloader rollback: support unknown
+2026-05-15T07:19:12.678+00:00 [child] [09:19:12.678][C][api:235]: Server:
+2026-05-15T07:19:12.689+00:00 [child] [09:19:12.689][C][api:235]:   Address: thread-child-variant-b-mcast.local:6053
+2026-05-15T07:19:12.689+00:00 [child] [09:19:12.689][C][api:235]:   Listen backlog: 4
+2026-05-15T07:19:12.689+00:00 [child] [09:19:12.689][C][api:235]:   Max connections: 8
+2026-05-15T07:19:12.700+00:00 [child] [09:19:12.700][C][api:247]:   Noise encryption: NO
+2026-05-15T07:19:12.700+00:00 [child] [09:19:12.700][C][mdns:194]: mDNS:
+2026-05-15T07:19:12.700+00:00 [child] [09:19:12.700][C][mdns:194]:   Hostname: thread-child-variant-b-mcast
+2026-05-15T07:19:12.700+00:00 [child] [09:19:12.700][V][mdns:199]:   Services:
+2026-05-15T07:19:12.711+00:00 [child] [09:19:12.711][V][mdns:201]:   - _esphomelib, _tcp, 6053
+2026-05-15T07:19:12.722+00:00 [child] [09:19:12.722][V][mdns:204]:     TXT: friendly_name = Thread Child Variant B Multicast
+2026-05-15T07:19:12.722+00:00 [child] [09:19:12.722][V][mdns:204]:     TXT: version = 2026.4.5
+2026-05-15T07:19:12.722+00:00 [child] [09:19:12.722][V][mdns:204]:     TXT: mac = 588c815db154
+2026-05-15T07:19:12.733+00:00 [child] [09:19:12.733][V][mdns:204]:     TXT: platform = ESP32
+2026-05-15T07:19:12.733+00:00 [child] [09:19:12.733][V][mdns:204]:     TXT: board = esp32-c6-devkitm-1
+2026-05-15T07:19:12.735+00:00 [child] [09:19:12.735][V][mdns:204]:     TXT: network = thread
+2026-05-15T07:19:12.805+00:00 [child] [09:19:12.805][VV][app:471]: logger loop enabled from ISR
+2026-05-15T07:19:12.822+00:00 [child] [09:19:12.822][VV][thread_preferred_parent:650][ot_main]: Parent Response live #1 attempt_t+411ms: ExtAddr 588c81fffe5db0c4 RLOC16 0xe800 RSSI -12 priority 0 LQ3/LQ2/LQ1 1/0/0 device_attached=YES target_match=NO
+2026-05-15T07:19:12.822+00:00 [child] [09:19:12.822][VV][component:292]: logger loop disabled
+2026-05-15T07:19:20.408+00:00 [child] [09:19:20.408][I][thread_preferred_parent:674]: Discovery summary (discovery window complete): 1 Parent Responses, 0 target matches
+2026-05-15T07:19:20.408+00:00 [child] [09:19:20.408][D][thread_preferred_parent:1184]: Status changed to idle
+2026-05-15T07:19:20.415+00:00 [child] [09:19:20.415][I][thread_preferred_parent:367]: Discovery-only probe complete: buffered=1 target_matches=0 representative_non_target=588c81fffe5db0c4
+2026-05-15T07:19:21.341+00:00 [child] [09:19:21.341][I][variant_b:175]: V_precondition_probe_result elapsed_ms=9003 responses=1 target_matches=0
+2026-05-15T07:19:21.352+00:00 [child] [09:19:21.352][I][variant_b:181]: V_precondition_probe_non_target_extaddr=588c81fffe5db0c4
+2026-05-15T07:19:21.363+00:00 [child] [09:19:21.363][I][variant_b:183]: V_precondition_initial_parent_extaddr=588c81fffe5db0e0
+2026-05-15T07:19:21.363+00:00 [child] [09:19:21.363][I][variant_b:184]: V_invariant_current_parent_extaddr=588c81fffe5db0e0
+2026-05-15T07:19:21.374+00:00 [child] [09:19:21.374][I][variant_b:185]: V_invariant_target_parent_extaddr=4645b099670a43ed
+2026-05-15T07:19:21.396+00:00 [child] [09:19:21.396][I][variant_b:188]: AUTO precondition satisfied: current parent 588c81fffe5db0e0 while target 4645b099670a43ed stayed absent; observed non-target Parent Response 588c81fffe5db0c4 and waiting for target restoration before 750ms delay
+2026-05-15T07:19:21.407+00:00 [child] [09:19:21.407][I][variant_b:225]: V_restore_probe_result elapsed_ms=9017 responses=1 target_matches=0
+2026-05-15T07:19:21.408+00:00 [child] [09:19:21.407][D][thread_preferred_parent:1184]: Status changed to discovering parents
+2026-05-15T07:19:21.418+00:00 [child] [09:19:21.418][I][thread_preferred_parent:220]: Starting discovery-only Parent Response probe for ExtAddr 4645b099670a43ed
+2026-05-15T07:19:21.429+00:00 [child] [09:19:21.429][W][component:522]: interval took a long time for an operation (51 ms), max is 30 ms
+2026-05-15T07:19:21.441+00:00 [child] [09:19:21.441][I][thread_preferred_parent:453]: Thread role before discovery: child
+2026-05-15T07:19:21.452+00:00 [child] [09:19:21.452][I][thread_preferred_parent:456]: Current parent before discovery: RLOC16 0x6000 ExtAddr 588c81fffe5db0e0
+2026-05-15T07:19:21.452+00:00 [child] [09:19:21.452][I][thread_preferred_parent:462]: Parent discovery attempt 1/3 for ExtAddr 4645b099670a43ed
+2026-05-15T07:19:21.461+00:00 [child] [09:19:21.461][I][thread_preferred_parent:826]: Starting non-disruptive multicast Parent Request discovery for ExtAddr 4645b099670a43ed
+2026-05-15T07:19:23.290+00:00 [child] [09:19:23.290][VV][app:471]: logger loop enabled from ISR
+2026-05-15T07:19:23.307+00:00 [child] [09:19:23.307][VV][thread_preferred_parent:650][ot_main]: Parent Response live #1 attempt_t+1892ms: ExtAddr 588c81fffe5db0c4 RLOC16 0xe800 RSSI -12 priority 0 LQ3/LQ2/LQ1 1/0/0 device_attached=YES target_match=NO
+2026-05-15T07:19:23.307+00:00 [child] [09:19:23.307][VV][component:292]: logger loop disabled
+2026-05-15T07:19:23.538+00:00 [child] [09:19:23.538][VV][app:471]: logger loop enabled from ISR
+2026-05-15T07:19:23.556+00:00 [child] [09:19:23.556][VV][thread_preferred_parent:650][ot_main]: Parent Response live #2 attempt_t+2141ms: ExtAddr 588c81fffe5db0e0 RLOC16 0x6000 RSSI -14 priority 0 LQ3/LQ2/LQ1 1/0/0 device_attached=YES target_match=NO
+2026-05-15T07:19:23.556+00:00 [child] [09:19:23.556][VV][component:292]: logger loop disabled
+2026-05-15T07:19:29.412+00:00 [child] [09:19:29.412][I][thread_preferred_parent:674]: Discovery summary (discovery window complete): 2 Parent Responses, 0 target matches
+2026-05-15T07:19:29.412+00:00 [child] [09:19:29.412][D][thread_preferred_parent:1184]: Status changed to idle
+2026-05-15T07:19:29.420+00:00 [child] [09:19:29.419][I][thread_preferred_parent:367]: Discovery-only probe complete: buffered=2 target_matches=0 representative_non_target=588c81fffe5db0c4
+2026-05-15T07:19:30.344+00:00 [child] [09:19:30.344][I][variant_b:225]: V_restore_probe_result elapsed_ms=18007 responses=2 target_matches=0
+2026-05-15T07:19:30.356+00:00 [child] [09:19:30.356][D][thread_preferred_parent:1184]: Status changed to discovering parents
+2026-05-15T07:19:30.367+00:00 [child] [09:19:30.367][I][thread_preferred_parent:220]: Starting discovery-only Parent Response probe for ExtAddr 4645b099670a43ed
+2026-05-15T07:19:30.378+00:00 [child] [09:19:30.378][I][thread_preferred_parent:453]: Thread role before discovery: child
+2026-05-15T07:19:30.378+00:00 [child] [09:19:30.378][I][thread_preferred_parent:456]: Current parent before discovery: RLOC16 0x6000 ExtAddr 588c81fffe5db0e0
+2026-05-15T07:19:30.389+00:00 [child] [09:19:30.389][I][thread_preferred_parent:462]: Parent discovery attempt 1/3 for ExtAddr 4645b099670a43ed
+2026-05-15T07:19:30.398+00:00 [child] [09:19:30.398][I][thread_preferred_parent:826]: Starting non-disruptive multicast Parent Request discovery for ExtAddr 4645b099670a43ed
+2026-05-15T07:19:34.092+00:00 [child] [09:19:34.092][VV][app:471]: logger loop enabled from ISR
+2026-05-15T07:19:34.110+00:00 [child] [09:19:34.110][VV][thread_preferred_parent:650][ot_main]: Parent Response live #1 attempt_t+3746ms: ExtAddr 588c81fffe5db0e0 RLOC16 0x6000 RSSI -14 priority 0 LQ3/LQ2/LQ1 1/0/0 device_attached=YES target_match=NO
+2026-05-15T07:19:34.110+00:00 [child] [09:19:34.110][VV][component:292]: logger loop disabled
+2026-05-15T07:19:34.145+00:00 [child] [09:19:34.145][VV][app:471]: logger loop enabled from ISR
+2026-05-15T07:19:34.162+00:00 [child] [09:19:34.162][VV][thread_preferred_parent:650][ot_main]: Parent Response live #2 attempt_t+3799ms: ExtAddr 588c81fffe5db0c4 RLOC16 0xe800 RSSI -12 priority 0 LQ3/LQ2/LQ1 1/0/0 device_attached=YES target_match=NO
+2026-05-15T07:19:34.162+00:00 [child] [09:19:34.162][VV][component:292]: logger loop disabled
+2026-05-15T07:19:38.362+00:00 [child] [09:19:38.362][I][thread_preferred_parent:674]: Discovery summary (discovery window complete): 2 Parent Responses, 0 target matches
+2026-05-15T07:19:38.362+00:00 [child] [09:19:38.362][D][thread_preferred_parent:1184]: Status changed to idle
+2026-05-15T07:19:38.370+00:00 [child] [09:19:38.370][I][thread_preferred_parent:367]: Discovery-only probe complete: buffered=2 target_matches=0 representative_non_target=588c81fffe5db0e0
+2026-05-15T07:19:39.351+00:00 [child] [09:19:39.351][I][variant_b:225]: V_restore_probe_result elapsed_ms=27013 responses=2 target_matches=0
+2026-05-15T07:19:39.362+00:00 [child] [09:19:39.362][D][thread_preferred_parent:1184]: Status changed to discovering parents
+2026-05-15T07:19:39.373+00:00 [child] [09:19:39.373][I][thread_preferred_parent:220]: Starting discovery-only Parent Response probe for ExtAddr 4645b099670a43ed
+2026-05-15T07:19:39.384+00:00 [child] [09:19:39.384][I][thread_preferred_parent:453]: Thread role before discovery: child
+2026-05-15T07:19:39.384+00:00 [child] [09:19:39.384][I][thread_preferred_parent:456]: Current parent before discovery: RLOC16 0x6000 ExtAddr 588c81fffe5db0e0
+2026-05-15T07:19:39.395+00:00 [child] [09:19:39.395][I][thread_preferred_parent:462]: Parent discovery attempt 1/3 for ExtAddr 4645b099670a43ed
+2026-05-15T07:19:39.404+00:00 [child] [09:19:39.404][I][thread_preferred_parent:826]: Starting non-disruptive multicast Parent Request discovery for ExtAddr 4645b099670a43ed
+2026-05-15T07:19:47.367+00:00 [child] [09:19:47.367][I][thread_preferred_parent:674]: Discovery summary (discovery window complete): 0 Parent Responses, 0 target matches
+2026-05-15T07:19:47.368+00:00 [child] [09:19:47.367][D][thread_preferred_parent:1184]: Status changed to idle
+2026-05-15T07:19:47.376+00:00 [child] [09:19:47.375][I][thread_preferred_parent:367]: Discovery-only probe complete: buffered=0 target_matches=0 representative_non_target=0000000000000000
+2026-05-15T07:19:48.357+00:00 [child] [09:19:48.357][I][variant_b:225]: V_restore_probe_result elapsed_ms=36019 responses=0 target_matches=0
+2026-05-15T07:19:48.368+00:00 [child] [09:19:48.368][D][thread_preferred_parent:1184]: Status changed to discovering parents
+2026-05-15T07:19:48.379+00:00 [child] [09:19:48.379][I][thread_preferred_parent:220]: Starting discovery-only Parent Response probe for ExtAddr 4645b099670a43ed
+2026-05-15T07:19:48.390+00:00 [child] [09:19:48.390][I][thread_preferred_parent:453]: Thread role before discovery: child
+2026-05-15T07:19:48.390+00:00 [child] [09:19:48.390][I][thread_preferred_parent:456]: Current parent before discovery: RLOC16 0x6000 ExtAddr 588c81fffe5db0e0
+2026-05-15T07:19:48.401+00:00 [child] [09:19:48.401][I][thread_preferred_parent:462]: Parent discovery attempt 1/3 for ExtAddr 4645b099670a43ed
+2026-05-15T07:19:48.410+00:00 [child] [09:19:48.410][I][thread_preferred_parent:826]: Starting non-disruptive multicast Parent Request discovery for ExtAddr 4645b099670a43ed
+2026-05-15T07:19:48.548+00:00 [child] [09:19:48.548][VV][app:471]: logger loop enabled from ISR
+2026-05-15T07:19:48.566+00:00 [child] [09:19:48.566][VV][thread_preferred_parent:650][ot_main]: Parent Response live #1 attempt_t+190ms: ExtAddr 588c81fffe5db0e0 RLOC16 0x6000 RSSI -14 priority 0 LQ3/LQ2/LQ1 1/0/0 device_attached=YES target_match=NO
+2026-05-15T07:19:48.566+00:00 [child] [09:19:48.566][VV][component:292]: logger loop disabled
+2026-05-15T07:19:48.603+00:00 [child] [09:19:48.602][VV][app:471]: logger loop enabled from ISR
+2026-05-15T07:19:48.621+00:00 [child] [09:19:48.620][VV][thread_preferred_parent:650][ot_main]: Parent Response live #2 attempt_t+245ms: ExtAddr 588c81fffe5db0c4 RLOC16 0xe800 RSSI -12 priority 0 LQ3/LQ2/LQ1 1/0/0 device_attached=YES target_match=NO
+2026-05-15T07:19:48.621+00:00 [child] [09:19:48.620][VV][component:292]: logger loop disabled
+2026-05-15T07:19:56.371+00:00 [child] [09:19:56.371][I][thread_preferred_parent:674]: Discovery summary (discovery window complete): 2 Parent Responses, 0 target matches
+2026-05-15T07:19:56.371+00:00 [child] [09:19:56.371][D][thread_preferred_parent:1184]: Status changed to idle
+2026-05-15T07:19:56.379+00:00 [child] [09:19:56.379][I][thread_preferred_parent:367]: Discovery-only probe complete: buffered=2 target_matches=0 representative_non_target=588c81fffe5db0e0
+2026-05-15T07:19:57.359+00:00 [child] [09:19:57.359][I][variant_b:225]: V_restore_probe_result elapsed_ms=45022 responses=2 target_matches=0
+2026-05-15T07:19:57.371+00:00 [child] [09:19:57.371][D][thread_preferred_parent:1184]: Status changed to discovering parents
+2026-05-15T07:19:57.382+00:00 [child] [09:19:57.382][I][thread_preferred_parent:220]: Starting discovery-only Parent Response probe for ExtAddr 4645b099670a43ed
+2026-05-15T07:19:57.393+00:00 [child] [09:19:57.393][I][thread_preferred_parent:453]: Thread role before discovery: child
+2026-05-15T07:19:57.393+00:00 [child] [09:19:57.393][I][thread_preferred_parent:456]: Current parent before discovery: RLOC16 0x6000 ExtAddr 588c81fffe5db0e0
+2026-05-15T07:19:57.404+00:00 [child] [09:19:57.404][I][thread_preferred_parent:462]: Parent discovery attempt 1/3 for ExtAddr 4645b099670a43ed
+2026-05-15T07:19:57.413+00:00 [child] [09:19:57.413][I][thread_preferred_parent:826]: Starting non-disruptive multicast Parent Request discovery for ExtAddr 4645b099670a43ed
+2026-05-15T07:19:57.748+00:00 [child] [09:19:57.748][VV][app:471]: logger loop enabled from ISR
+2026-05-15T07:19:57.771+00:00 [child] [09:19:57.771][VV][thread_preferred_parent:650][ot_main]: Parent Response live #1 attempt_t+387ms: ExtAddr 588c81fffe5db0e0 RLOC16 0x6000 RSSI -14 priority 0 LQ3/LQ2/LQ1 1/0/0 device_attached=YES target_match=NO
+2026-05-15T07:19:57.771+00:00 [child] [09:19:57.771][VV][component:292]: logger loop disabled
+2026-05-15T07:19:57.782+00:00 [child] [09:19:57.782][VV][app:471]: logger loop enabled from ISR
+2026-05-15T07:19:57.793+00:00 [child] [09:19:57.793][VV][thread_preferred_parent:650][ot_main]: Parent Response live #2 attempt_t+394ms: ExtAddr 588c81fffe5db0c4 RLOC16 0xe800 RSSI -12 priority 0 LQ3/LQ2/LQ1 1/0/0 device_attached=YES target_match=NO
+2026-05-15T07:19:57.795+00:00 [child] [09:19:57.795][VV][component:292]: logger loop disabled
+2026-05-15T07:20:05.371+00:00 [child] [09:20:05.371][I][thread_preferred_parent:674]: Discovery summary (discovery window complete): 2 Parent Responses, 0 target matches
+2026-05-15T07:20:05.371+00:00 [child] [09:20:05.371][D][thread_preferred_parent:1184]: Status changed to idle
+2026-05-15T07:20:05.379+00:00 [child] [09:20:05.379][I][thread_preferred_parent:367]: Discovery-only probe complete: buffered=2 target_matches=0 representative_non_target=588c81fffe5db0e0
+2026-05-15T07:20:06.360+00:00 [child] [09:20:06.360][I][variant_b:225]: V_restore_probe_result elapsed_ms=54022 responses=2 target_matches=0
+2026-05-15T07:20:06.371+00:00 [child] [09:20:06.371][D][thread_preferred_parent:1184]: Status changed to discovering parents
+2026-05-15T07:20:06.382+00:00 [child] [09:20:06.382][I][thread_preferred_parent:220]: Starting discovery-only Parent Response probe for ExtAddr 4645b099670a43ed
+2026-05-15T07:20:06.393+00:00 [child] [09:20:06.393][I][thread_preferred_parent:453]: Thread role before discovery: child
+2026-05-15T07:20:06.393+00:00 [child] [09:20:06.393][I][thread_preferred_parent:456]: Current parent before discovery: RLOC16 0x6000 ExtAddr 588c81fffe5db0e0
+2026-05-15T07:20:06.404+00:00 [child] [09:20:06.404][I][thread_preferred_parent:462]: Parent discovery attempt 1/3 for ExtAddr 4645b099670a43ed
+2026-05-15T07:20:06.413+00:00 [child] [09:20:06.413][I][thread_preferred_parent:826]: Starting non-disruptive multicast Parent Request discovery for ExtAddr 4645b099670a43ed
+2026-05-15T07:20:10.494+00:00 [child] [09:20:10.494][VV][app:471]: logger loop enabled from ISR
+2026-05-15T07:20:10.512+00:00 [child] [09:20:10.512][VV][thread_preferred_parent:650][ot_main]: Parent Response live #1 attempt_t+4133ms: ExtAddr 588c81fffe5db0e0 RLOC16 0x6000 RSSI -14 priority 0 LQ3/LQ2/LQ1 1/0/0 device_attached=YES target_match=NO
+2026-05-15T07:20:10.512+00:00 [child] [09:20:10.512][VV][component:292]: logger loop disabled
+2026-05-15T07:20:10.685+00:00 [child] [09:20:10.685][VV][app:471]: logger loop enabled from ISR
+2026-05-15T07:20:10.703+00:00 [child] [09:20:10.703][VV][thread_preferred_parent:650][ot_main]: Parent Response live #2 attempt_t+4324ms: ExtAddr 588c81fffe5db0c4 RLOC16 0xe800 RSSI -12 priority 0 LQ3/LQ2/LQ1 1/0/0 device_attached=YES target_match=NO
+2026-05-15T07:20:10.703+00:00 [child] [09:20:10.703][VV][component:292]: logger loop disabled
+2026-05-15T07:20:12.038+00:00 [child] [09:20:12.038][I][safe_mode:091]: Boot seems successful; resetting boot loop counter
+2026-05-15T07:20:12.045+00:00 [child] [09:20:12.045][VV][preferences:043]: s_pending_save: key: 233825507, len: 4
+2026-05-15T07:20:12.045+00:00 [child] [09:20:12.045][VV][component:292]: safe_mode loop disabled
+2026-05-15T07:20:14.376+00:00 [child] [09:20:14.376][I][thread_preferred_parent:674]: Discovery summary (discovery window complete): 2 Parent Responses, 0 target matches
+2026-05-15T07:20:14.377+00:00 [child] [09:20:14.377][D][thread_preferred_parent:1184]: Status changed to idle
+2026-05-15T07:20:14.385+00:00 [child] [09:20:14.385][I][thread_preferred_parent:367]: Discovery-only probe complete: buffered=2 target_matches=0 representative_non_target=588c81fffe5db0e0
+2026-05-15T07:20:14.450+00:00 [child] [09:20:14.450][V][preferences:121]: Saving 1 items...
+2026-05-15T07:20:14.450+00:00 [child] [09:20:14.450][VV][preferences:129]: Checking if NVS data 233825507 has changed
+2026-05-15T07:20:14.461+00:00 [child] [09:20:14.461][V][preferences:132]: sync: key: 233825507, len: 4
+2026-05-15T07:20:14.461+00:00 [child] [09:20:14.461][D][preferences:152]: Writing 1 items: 0 cached, 1 written, 0 failed
+2026-05-15T07:20:15.366+00:00 [child] [09:20:15.365][I][variant_b:225]: V_restore_probe_result elapsed_ms=63028 responses=2 target_matches=0
+2026-05-15T07:20:15.377+00:00 [child] [09:20:15.376][D][thread_preferred_parent:1184]: Status changed to discovering parents
+2026-05-15T07:20:15.388+00:00 [child] [09:20:15.388][I][thread_preferred_parent:220]: Starting discovery-only Parent Response probe for ExtAddr 4645b099670a43ed
+2026-05-15T07:20:15.399+00:00 [child] [09:20:15.399][I][thread_preferred_parent:453]: Thread role before discovery: child
+2026-05-15T07:20:15.399+00:00 [child] [09:20:15.399][I][thread_preferred_parent:456]: Current parent before discovery: RLOC16 0x6000 ExtAddr 588c81fffe5db0e0
+2026-05-15T07:20:15.410+00:00 [child] [09:20:15.410][I][thread_preferred_parent:462]: Parent discovery attempt 1/3 for ExtAddr 4645b099670a43ed
+2026-05-15T07:20:15.419+00:00 [child] [09:20:15.419][I][thread_preferred_parent:826]: Starting non-disruptive multicast Parent Request discovery for ExtAddr 4645b099670a43ed
+2026-05-15T07:20:19.932+00:00 [child] [09:20:19.931][VV][app:471]: logger loop enabled from ISR
+2026-05-15T07:20:19.950+00:00 [child] [09:20:19.950][VV][thread_preferred_parent:650][ot_main]: Parent Response live #1 attempt_t+4564ms: ExtAddr 588c81fffe5db0c4 RLOC16 0xe800 RSSI -12 priority 0 LQ3/LQ2/LQ1 1/0/0 device_attached=YES target_match=NO
+2026-05-15T07:20:19.950+00:00 [child] [09:20:19.950][VV][component:292]: logger loop disabled
+2026-05-15T07:20:20.245+00:00 [child] [09:20:20.245][VV][app:471]: logger loop enabled from ISR
+2026-05-15T07:20:20.262+00:00 [child] [09:20:20.262][VV][thread_preferred_parent:650][ot_main]: Parent Response live #2 attempt_t+4877ms: ExtAddr 588c81fffe5db0e0 RLOC16 0x6000 RSSI -14 priority 0 LQ3/LQ2/LQ1 1/0/0 device_attached=YES target_match=NO
+2026-05-15T07:20:20.262+00:00 [child] [09:20:20.262][VV][component:292]: logger loop disabled
+2026-05-15T07:20:23.383+00:00 [child] [09:20:23.383][I][thread_preferred_parent:674]: Discovery summary (discovery window complete): 2 Parent Responses, 0 target matches
+2026-05-15T07:20:23.383+00:00 [child] [09:20:23.383][D][thread_preferred_parent:1184]: Status changed to idle
+2026-05-15T07:20:23.391+00:00 [child] [09:20:23.391][I][thread_preferred_parent:367]: Discovery-only probe complete: buffered=2 target_matches=0 representative_non_target=588c81fffe5db0c4
+2026-05-15T07:20:24.372+00:00 [child] [09:20:24.372][I][variant_b:225]: V_restore_probe_result elapsed_ms=72034 responses=2 target_matches=0
+2026-05-15T07:20:24.383+00:00 [child] [09:20:24.383][D][thread_preferred_parent:1184]: Status changed to discovering parents
+2026-05-15T07:20:24.394+00:00 [child] [09:20:24.394][I][thread_preferred_parent:220]: Starting discovery-only Parent Response probe for ExtAddr 4645b099670a43ed
+2026-05-15T07:20:24.405+00:00 [child] [09:20:24.405][I][thread_preferred_parent:453]: Thread role before discovery: child
+2026-05-15T07:20:24.405+00:00 [child] [09:20:24.405][I][thread_preferred_parent:456]: Current parent before discovery: RLOC16 0x6000 ExtAddr 588c81fffe5db0e0
+2026-05-15T07:20:24.416+00:00 [child] [09:20:24.416][I][thread_preferred_parent:462]: Parent discovery attempt 1/3 for ExtAddr 4645b099670a43ed
+2026-05-15T07:20:24.425+00:00 [child] [09:20:24.425][I][thread_preferred_parent:826]: Starting non-disruptive multicast Parent Request discovery for ExtAddr 4645b099670a43ed
+2026-05-15T07:20:32.389+00:00 [child] [09:20:32.389][I][thread_preferred_parent:674]: Discovery summary (discovery window complete): 0 Parent Responses, 0 target matches
+2026-05-15T07:20:32.389+00:00 [child] [09:20:32.389][D][thread_preferred_parent:1184]: Status changed to idle
+2026-05-15T07:20:32.396+00:00 [child] [09:20:32.396][I][thread_preferred_parent:367]: Discovery-only probe complete: buffered=0 target_matches=0 representative_non_target=0000000000000000
+2026-05-15T07:20:32.443+00:00 [child] [09:20:32.442][VV][app:471]: logger loop enabled from ISR
+2026-05-15T07:20:32.460+00:00 [child] [09:20:32.460][VV][thread_preferred_parent:650][ot_main]: Parent Response live #1 attempt_t+8069ms: ExtAddr 588c81fffe5db0c4 RLOC16 0xe800 RSSI -12 priority 0 LQ3/LQ2/LQ1 1/0/0 device_attached=YES target_match=NO
+2026-05-15T07:20:32.460+00:00 [child] [09:20:32.460][VV][component:292]: logger loop disabled
+2026-05-15T07:20:32.751+00:00 [child] [09:20:32.750][VV][app:471]: logger loop enabled from ISR
+2026-05-15T07:20:32.768+00:00 [child] [09:20:32.768][VV][thread_preferred_parent:650][ot_main]: Parent Response live #2 attempt_t+8377ms: ExtAddr 588c81fffe5db0e0 RLOC16 0x6000 RSSI -14 priority 0 LQ3/LQ2/LQ1 1/0/0 device_attached=YES target_match=NO
+2026-05-15T07:20:32.768+00:00 [child] [09:20:32.768][VV][component:292]: logger loop disabled
+2026-05-15T07:20:33.380+00:00 [child] [09:20:33.380][I][variant_b:225]: V_restore_probe_result elapsed_ms=81042 responses=0 target_matches=0
+2026-05-15T07:20:33.391+00:00 [child] [09:20:33.391][D][thread_preferred_parent:1184]: Status changed to discovering parents
+2026-05-15T07:20:33.402+00:00 [child] [09:20:33.402][I][thread_preferred_parent:220]: Starting discovery-only Parent Response probe for ExtAddr 4645b099670a43ed
+2026-05-15T07:20:33.413+00:00 [child] [09:20:33.413][I][thread_preferred_parent:453]: Thread role before discovery: child
+2026-05-15T07:20:33.413+00:00 [child] [09:20:33.413][I][thread_preferred_parent:456]: Current parent before discovery: RLOC16 0x6000 ExtAddr 588c81fffe5db0e0
+2026-05-15T07:20:33.425+00:00 [child] [09:20:33.424][I][thread_preferred_parent:462]: Parent discovery attempt 1/3 for ExtAddr 4645b099670a43ed
+2026-05-15T07:20:33.433+00:00 [child] [09:20:33.433][I][thread_preferred_parent:826]: Starting non-disruptive multicast Parent Request discovery for ExtAddr 4645b099670a43ed
+2026-05-15T07:20:41.397+00:00 [child] [09:20:41.397][I][thread_preferred_parent:674]: Discovery summary (discovery window complete): 0 Parent Responses, 0 target matches
+2026-05-15T07:20:41.397+00:00 [child] [09:20:41.397][D][thread_preferred_parent:1184]: Status changed to idle
+2026-05-15T07:20:41.405+00:00 [child] [09:20:41.405][I][thread_preferred_parent:367]: Discovery-only probe complete: buffered=0 target_matches=0 representative_non_target=0000000000000000
+2026-05-15T07:20:42.386+00:00 [child] [09:20:42.386][I][variant_b:225]: V_restore_probe_result elapsed_ms=90048 responses=0 target_matches=0
+2026-05-15T07:20:42.397+00:00 [child] [09:20:42.397][D][thread_preferred_parent:1184]: Status changed to discovering parents
+2026-05-15T07:20:42.408+00:00 [child] [09:20:42.408][I][thread_preferred_parent:220]: Starting discovery-only Parent Response probe for ExtAddr 4645b099670a43ed
+2026-05-15T07:20:42.419+00:00 [child] [09:20:42.419][I][thread_preferred_parent:453]: Thread role before discovery: child
+2026-05-15T07:20:42.419+00:00 [child] [09:20:42.419][I][thread_preferred_parent:456]: Current parent before discovery: RLOC16 0x6000 ExtAddr 588c81fffe5db0e0
+2026-05-15T07:20:42.430+00:00 [child] [09:20:42.430][I][thread_preferred_parent:462]: Parent discovery attempt 1/3 for ExtAddr 4645b099670a43ed
+2026-05-15T07:20:42.439+00:00 [child] [09:20:42.439][I][thread_preferred_parent:826]: Starting non-disruptive multicast Parent Request discovery for ExtAddr 4645b099670a43ed
+2026-05-15T07:20:45.788+00:00 [child] [09:20:45.788][VV][app:471]: logger loop enabled from ISR
+2026-05-15T07:20:45.805+00:00 [child] [09:20:45.805][VV][thread_preferred_parent:650][ot_main]: Parent Response live #1 attempt_t+3400ms: ExtAddr 588c81fffe5db0c4 RLOC16 0xe800 RSSI -12 priority 0 LQ3/LQ2/LQ1 1/0/0 device_attached=YES target_match=NO
+2026-05-15T07:20:45.805+00:00 [child] [09:20:45.805][VV][component:292]: logger loop disabled
+2026-05-15T07:20:45.922+00:00 [child] [09:20:45.922][VV][app:471]: logger loop enabled from ISR
+2026-05-15T07:20:45.940+00:00 [child] [09:20:45.940][VV][thread_preferred_parent:650][ot_main]: Parent Response live #2 attempt_t+3535ms: ExtAddr 588c81fffe5db0e0 RLOC16 0x6000 RSSI -14 priority 0 LQ3/LQ2/LQ1 1/0/0 device_attached=YES target_match=NO
+2026-05-15T07:20:45.940+00:00 [child] [09:20:45.940][VV][component:292]: logger loop disabled
+2026-05-15T07:20:50.403+00:00 [child] [09:20:50.403][I][thread_preferred_parent:674]: Discovery summary (discovery window complete): 2 Parent Responses, 0 target matches
+2026-05-15T07:20:50.403+00:00 [child] [09:20:50.403][D][thread_preferred_parent:1184]: Status changed to idle
+2026-05-15T07:20:50.411+00:00 [child] [09:20:50.411][I][thread_preferred_parent:367]: Discovery-only probe complete: buffered=2 target_matches=0 representative_non_target=588c81fffe5db0c4
+2026-05-15T07:20:51.392+00:00 [child] [09:20:51.392][I][variant_b:225]: V_restore_probe_result elapsed_ms=99054 responses=2 target_matches=0
+2026-05-15T07:20:51.403+00:00 [child] [09:20:51.403][D][thread_preferred_parent:1184]: Status changed to discovering parents
+2026-05-15T07:20:51.414+00:00 [child] [09:20:51.414][I][thread_preferred_parent:220]: Starting discovery-only Parent Response probe for ExtAddr 4645b099670a43ed
+2026-05-15T07:20:51.425+00:00 [child] [09:20:51.425][I][thread_preferred_parent:453]: Thread role before discovery: child
+2026-05-15T07:20:51.425+00:00 [child] [09:20:51.425][I][thread_preferred_parent:456]: Current parent before discovery: RLOC16 0x6000 ExtAddr 588c81fffe5db0e0
+2026-05-15T07:20:51.436+00:00 [child] [09:20:51.436][I][thread_preferred_parent:462]: Parent discovery attempt 1/3 for ExtAddr 4645b099670a43ed
+2026-05-15T07:20:51.445+00:00 [child] [09:20:51.445][I][thread_preferred_parent:826]: Starting non-disruptive multicast Parent Request discovery for ExtAddr 4645b099670a43ed
+2026-05-15T07:20:59.273+00:00 [child] [09:20:59.273][VV][app:471]: logger loop enabled from ISR
+2026-05-15T07:20:59.291+00:00 [child] [09:20:59.291][VV][thread_preferred_parent:650][ot_main]: Parent Response live #1 attempt_t+7880ms: ExtAddr 588c81fffe5db0c4 RLOC16 0xe800 RSSI -12 priority 0 LQ3/LQ2/LQ1 1/0/0 device_attached=YES target_match=NO
+2026-05-15T07:20:59.291+00:00 [child] [09:20:59.291][VV][component:292]: logger loop disabled
+2026-05-15T07:20:59.340+00:00 [child] [09:20:59.340][VV][app:471]: logger loop enabled from ISR
+2026-05-15T07:20:59.358+00:00 [child] [09:20:59.358][VV][thread_preferred_parent:650][ot_main]: Parent Response live #2 attempt_t+7947ms: ExtAddr 588c81fffe5db0e0 RLOC16 0x6000 RSSI -14 priority 0 LQ3/LQ2/LQ1 1/0/0 device_attached=YES target_match=NO
+2026-05-15T07:20:59.358+00:00 [child] [09:20:59.358][VV][component:292]: logger loop disabled
+2026-05-15T07:20:59.409+00:00 [child] [09:20:59.409][I][thread_preferred_parent:674]: Discovery summary (discovery window complete): 2 Parent Responses, 0 target matches
+2026-05-15T07:20:59.409+00:00 [child] [09:20:59.409][D][thread_preferred_parent:1184]: Status changed to idle
+2026-05-15T07:20:59.417+00:00 [child] [09:20:59.417][I][thread_preferred_parent:367]: Discovery-only probe complete: buffered=2 target_matches=0 representative_non_target=588c81fffe5db0c4
+2026-05-15T07:21:00.401+00:00 [child] [09:21:00.401][I][variant_b:225]: V_restore_probe_result elapsed_ms=108063 responses=2 target_matches=0
+2026-05-15T07:21:00.412+00:00 [child] [09:21:00.412][D][thread_preferred_parent:1184]: Status changed to discovering parents
+2026-05-15T07:21:00.423+00:00 [child] [09:21:00.423][I][thread_preferred_parent:220]: Starting discovery-only Parent Response probe for ExtAddr 4645b099670a43ed
+2026-05-15T07:21:00.434+00:00 [child] [09:21:00.434][I][thread_preferred_parent:453]: Thread role before discovery: child
+2026-05-15T07:21:00.434+00:00 [child] [09:21:00.434][I][thread_preferred_parent:456]: Current parent before discovery: RLOC16 0x6000 ExtAddr 588c81fffe5db0e0
+2026-05-15T07:21:00.446+00:00 [child] [09:21:00.445][I][thread_preferred_parent:462]: Parent discovery attempt 1/3 for ExtAddr 4645b099670a43ed
+2026-05-15T07:21:00.454+00:00 [child] [09:21:00.454][I][thread_preferred_parent:826]: Starting non-disruptive multicast Parent Request discovery for ExtAddr 4645b099670a43ed
+2026-05-15T07:21:08.418+00:00 [child] [09:21:08.418][I][thread_preferred_parent:674]: Discovery summary (discovery window complete): 0 Parent Responses, 0 target matches
+2026-05-15T07:21:08.418+00:00 [child] [09:21:08.418][D][thread_preferred_parent:1184]: Status changed to idle
+2026-05-15T07:21:08.426+00:00 [child] [09:21:08.426][I][thread_preferred_parent:367]: Discovery-only probe complete: buffered=0 target_matches=0 representative_non_target=0000000000000000
+2026-05-15T07:21:09.407+00:00 [child] [09:21:09.407][I][variant_b:225]: V_restore_probe_result elapsed_ms=117069 responses=0 target_matches=0
+2026-05-15T07:21:09.418+00:00 [child] [09:21:09.418][D][thread_preferred_parent:1184]: Status changed to discovering parents
+2026-05-15T07:21:09.429+00:00 [child] [09:21:09.429][I][thread_preferred_parent:220]: Starting discovery-only Parent Response probe for ExtAddr 4645b099670a43ed
+2026-05-15T07:21:09.440+00:00 [child] [09:21:09.440][I][thread_preferred_parent:453]: Thread role before discovery: child
+2026-05-15T07:21:09.440+00:00 [child] [09:21:09.440][I][thread_preferred_parent:456]: Current parent before discovery: RLOC16 0x6000 ExtAddr 588c81fffe5db0e0
+2026-05-15T07:21:09.451+00:00 [child] [09:21:09.451][I][thread_preferred_parent:462]: Parent discovery attempt 1/3 for ExtAddr 4645b099670a43ed
+2026-05-15T07:21:09.460+00:00 [child] [09:21:09.460][I][thread_preferred_parent:826]: Starting non-disruptive multicast Parent Request discovery for ExtAddr 4645b099670a43ed
+2026-05-15T07:21:09.848+00:00 [child] [09:21:09.848][VV][app:471]: logger loop enabled from ISR
+2026-05-15T07:21:09.865+00:00 [child] [09:21:09.865][VV][thread_preferred_parent:650][ot_main]: Parent Response live #1 attempt_t+439ms: ExtAddr 588c81fffe5db0c4 RLOC16 0xe800 RSSI -12 priority 0 LQ3/LQ2/LQ1 1/0/0 device_attached=YES target_match=NO
+2026-05-15T07:21:09.865+00:00 [child] [09:21:09.865][VV][component:292]: logger loop disabled
+2026-05-15T07:21:10.247+00:00 [child] [09:21:10.247][VV][app:471]: logger loop enabled from ISR
+2026-05-15T07:21:10.265+00:00 [child] [09:21:10.265][VV][thread_preferred_parent:650][ot_main]: Parent Response live #2 attempt_t+839ms: ExtAddr 588c81fffe5db0e0 RLOC16 0x6000 RSSI -14 priority 0 LQ3/LQ2/LQ1 1/0/0 device_attached=YES target_match=NO
+2026-05-15T07:21:10.265+00:00 [child] [09:21:10.265][VV][component:292]: logger loop disabled
+# capture-end 2026-05-15T07:21:11.483654+00:00
+# variant-preconditioning-method usb-thread-off
+# variant-target-parent-extaddr 588c81fffe5db0c4
+# variant-restore-to-switch-delay-ms 750
+# variant-initial-parent-extaddr 588c81fffe5db0e0
+# variant-precondition-result non_target_confirmed
+# variant-precondition-probe-responses 1
+# variant-precondition-probe-target-matches 0
+# variant-precondition-probe-non-target-extaddr 588c81fffe5db0e0

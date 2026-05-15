@@ -1,0 +1,38 @@
+INFO ESPHome 2026.4.5
+INFO Reading configuration testing/configs/router_ftd.yaml...
+INFO Generating C++ source...
+INFO Compiling app... Build path: /home/ewout/.openclaw/workspace-softwaredeveloper/ESPHome-Thread-ED-Switch-Parent/testing/configs/.esphome/build/thread-router
+Processing [36m[1mthread-router[0m (board: esp32-c6-devkitm-1; framework: espidf; platform: https://github.com/pioarduino/platform-espressif32/releases/download/55.03.38-1/platform-espressif32.zip)
+[1m--------------------------------------------------------------------------------[0m
+[0mHARDWARE: ESP32C6 160MHz, 320KB RAM, 4MB Flash
+[0m - contrib-piohome @ 3.4.4 
+[0m - framework-espidf @ 3.50504.0 (5.5.4) 
+[0m - tool-cmake @ 4.0.3 
+[0m - tool-esp-rom-elfs @ 2024.10.11 
+[0m - tool-esptoolpy @ 5.2.0 
+[0m - tool-ninja @ 1.13.1 
+[0m - tool-riscv32-esp-elf-gdb @ 16.3.0+20250913 
+[0m - tool-scons @ 4.40801.0 (4.8.1) 
+[0m - toolchain-riscv32-esp @ 14.2.0+20260121
+[33mUsing Python 3.12.3 environment at: /home/ewout/.platformio/penv/.espidf-5.5.4
+[0mReading CMake configuration...
+[0mNo dependencies
+[0mRAM:   [=         ]  14.2% (used 46408 bytes from 327680 bytes)
+[0mFlash: [====      ]  37.5% (used 688284 bytes from 1835008 bytes)
+========================= [[32m[1mSUCCESS[0m] Took 5.24 seconds =========================[0m
+INFO Build Info: config_hash=0xec17494f build_time_str=2026-05-13 17:46:30 +0200
+INFO Successfully compiled program.
+esptool v5.2.0
+Serial port /dev/serial/by-id/usb-1a86_USB_Single_Serial_5AF7094169-if00:
+ERROR Running command failed: Could not open /dev/serial/by-id/usb-1a86_USB_Single_Serial_5AF7094169-if00, the port is busy or doesn't exist.
+([Errno 11] Could not exclusively lock port /dev/serial/by-id/usb-1a86_USB_Single_Serial_5AF7094169-if00: [Errno 11] Resource temporarily unavailable)
+
+ERROR Please try running esptool --before default-reset --after hard-reset --baud 460800 --port /dev/serial/by-id/usb-1a86_USB_Single_Serial_5AF7094169-if00 --chip esp32c6 write-flash -z --flash-size detect 0x10000 /home/ewout/.openclaw/workspace-softwaredeveloper/ESPHome-Thread-ED-Switch-Parent/testing/configs/.esphome/build/thread-router/.pioenvs/thread-router/firmware.bin 0x0 /home/ewout/.openclaw/workspace-softwaredeveloper/ESPHome-Thread-ED-Switch-Parent/testing/configs/.esphome/build/thread-router/.pioenvs/thread-router/bootloader.bin 0x8000 /home/ewout/.openclaw/workspace-softwaredeveloper/ESPHome-Thread-ED-Switch-Parent/testing/configs/.esphome/build/thread-router/.pioenvs/thread-router/partitions.bin 0x9000 /home/ewout/.openclaw/workspace-softwaredeveloper/ESPHome-Thread-ED-Switch-Parent/testing/configs/.esphome/build/thread-router/.pioenvs/thread-router/ota_data_initial.bin locally.
+INFO Upload with baud rate 460800 failed. Trying again with baud rate 115200.
+esptool v5.2.0
+Serial port /dev/serial/by-id/usb-1a86_USB_Single_Serial_5AF7094169-if00:
+ERROR Running command failed: Could not open /dev/serial/by-id/usb-1a86_USB_Single_Serial_5AF7094169-if00, the port is busy or doesn't exist.
+([Errno 11] Could not exclusively lock port /dev/serial/by-id/usb-1a86_USB_Single_Serial_5AF7094169-if00: [Errno 11] Resource temporarily unavailable)
+
+ERROR Please try running esptool --before default-reset --after hard-reset --baud 115200 --port /dev/serial/by-id/usb-1a86_USB_Single_Serial_5AF7094169-if00 --chip esp32c6 write-flash -z --flash-size detect 0x10000 /home/ewout/.openclaw/workspace-softwaredeveloper/ESPHome-Thread-ED-Switch-Parent/testing/configs/.esphome/build/thread-router/.pioenvs/thread-router/firmware.bin 0x0 /home/ewout/.openclaw/workspace-softwaredeveloper/ESPHome-Thread-ED-Switch-Parent/testing/configs/.esphome/build/thread-router/.pioenvs/thread-router/bootloader.bin 0x8000 /home/ewout/.openclaw/workspace-softwaredeveloper/ESPHome-Thread-ED-Switch-Parent/testing/configs/.esphome/build/thread-router/.pioenvs/thread-router/partitions.bin 0x9000 /home/ewout/.openclaw/workspace-softwaredeveloper/ESPHome-Thread-ED-Switch-Parent/testing/configs/.esphome/build/thread-router/.pioenvs/thread-router/ota_data_initial.bin locally.
+WARNING Failed to upload to ['/dev/serial/by-id/usb-1a86_USB_Single_Serial_5AF7094169-if00']

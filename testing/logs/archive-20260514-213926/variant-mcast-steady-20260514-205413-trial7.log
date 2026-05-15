@@ -1,0 +1,606 @@
+# capture-start 2026-05-14T18:54:17.497791+00:00
+# duration-seconds 80
+# baud 115200
+# node child /dev/serial/by-id/usb-1a86_USB_Single_Serial_5AF7094229-if00
+# node router1 /dev/serial/by-id/usb-1a86_USB_Single_Serial_5AF7094336-if00
+2026-05-14T18:54:17.589+00:00 [child] INFO ESPHome 2026.4.5
+2026-05-14T18:54:17.589+00:00 [router1] INFO ESPHome 2026.4.5
+2026-05-14T18:54:17.591+00:00 [child] INFO Reading configuration testing/configs/child_variant_multicast.yaml...
+2026-05-14T18:54:17.592+00:00 [router1] INFO Reading configuration testing/configs/child_variant_multicast.yaml...
+2026-05-14T18:54:17.761+00:00 [child] INFO Starting log output from /dev/serial/by-id/usb-1a86_USB_Single_Serial_5AF7094229-if00 with baud rate 115200
+2026-05-14T18:54:17.762+00:00 [router1] INFO Starting log output from /dev/serial/by-id/usb-1a86_USB_Single_Serial_5AF7094336-if00 with baud rate 115200
+2026-05-14T18:54:17.771+00:00 [child] [20:54:17.771]ESP-ROM:esp32c6-20220919
+2026-05-14T18:54:17.785+00:00 [child] [20:54:17.785]Build:Sep 19 2022
+2026-05-14T18:54:17.785+00:00 [child] [20:54:17.785]rst:0x1 (POWERON),boot:0xc (SPI_FAST_FLASH_BOOT)
+2026-05-14T18:54:17.785+00:00 [child] [20:54:17.785]SPIWP:0xee
+2026-05-14T18:54:17.785+00:00 [child] [20:54:17.785]mode:DIO, clock div:2
+2026-05-14T18:54:17.792+00:00 [child] [20:54:17.792]load:0x40875730,len:0x16f4
+2026-05-14T18:54:17.792+00:00 [child] [20:54:17.792]load:0x4086b910,len:0xed0
+2026-05-14T18:54:17.792+00:00 [child] [20:54:17.792]load:0x4086e610,len:0x3218
+2026-05-14T18:54:17.792+00:00 [child] [20:54:17.792]entry 0x4086b910
+2026-05-14T18:54:17.803+00:00 [child] [20:54:17.803]I (23) boot: ESP-IDF 5.5.4 2nd stage bootloader
+2026-05-14T18:54:17.803+00:00 [child] [20:54:17.803]I (24) boot: compile time May  7 2026 14:37:50
+2026-05-14T18:54:17.814+00:00 [child] [20:54:17.814]I (24) boot: chip revision: v0.2
+2026-05-14T18:54:17.814+00:00 [child] [20:54:17.814]I (24) boot: efuse block revision: v0.3
+2026-05-14T18:54:17.814+00:00 [child] [20:54:17.814]I (27) boot.esp32c6: SPI Speed      : 80MHz
+2026-05-14T18:54:17.825+00:00 [child] [20:54:17.825]I (31) boot.esp32c6: SPI Mode       : DIO
+2026-05-14T18:54:17.825+00:00 [child] [20:54:17.825]I (35) boot.esp32c6: SPI Flash Size : 4MB
+2026-05-14T18:54:17.825+00:00 [child] [20:54:17.825]I (38) boot: Enabling RNG early entropy source...
+2026-05-14T18:54:17.837+00:00 [child] [20:54:17.837]I (43) boot: Partition Table:
+2026-05-14T18:54:17.837+00:00 [child] [20:54:17.837]I (45) boot: ## Label            Usage          Type ST Offset   Length
+2026-05-14T18:54:17.848+00:00 [child] [20:54:17.848]I (52) boot:  0 otadata          OTA data         01 00 00009000 00002000
+2026-05-14T18:54:17.848+00:00 [child] [20:54:17.848]I (58) boot:  1 phy_init         RF data          01 01 0000b000 00001000
+2026-05-14T18:54:17.859+00:00 [child] [20:54:17.859]I (65) boot:  2 app0             OTA app          00 10 00010000 001c0000
+2026-05-14T18:54:17.859+00:00 [child] [20:54:17.859]I (71) boot:  3 app1             OTA app          00 11 001d0000 001c0000
+2026-05-14T18:54:17.870+00:00 [child] [20:54:17.870]I (78) boot:  4 nvs              WiFi data        01 02 00390000 00070000
+2026-05-14T18:54:17.870+00:00 [child] [20:54:17.870]I (84) boot: End of partition table
+2026-05-14T18:54:17.875+00:00 [child] [20:54:17.875]I (88) esp_image: segment 0: paddr=00010020 vaddr=42080020 size=1a0e0h (106720) map
+2026-05-14T18:54:17.895+00:00 [child] [20:54:17.895]I (115) esp_image: segment 1: paddr=0002a108 vaddr=40800000 size=05f10h ( 24336) load
+2026-05-14T18:54:17.899+00:00 [child] [20:54:17.899]I (121) esp_image: segment 2: paddr=00030020 vaddr=42000020 size=7bd50h (507216) map
+2026-05-14T18:54:17.995+00:00 [child] [20:54:17.995]I (215) esp_image: segment 3: paddr=000abd78 vaddr=40805f10 size=072ach ( 29356) load
+2026-05-14T18:54:18.006+00:00 [child] [20:54:18.006]I (222) esp_image: segment 4: paddr=000b302c vaddr=4080d1c0 size=02a68h ( 10856) load
+2026-05-14T18:54:18.006+00:00 [child] [20:54:18.006]I (228) boot: Loaded app from partition at offset 0x10000
+2026-05-14T18:54:18.009+00:00 [child] [20:54:18.009]I (228) boot: Disabling RNG early entropy source...
+2026-05-14T18:54:18.085+00:00 [child] [20:54:18.085][I][logger:120]: Log initialized
+2026-05-14T18:54:18.085+00:00 [child] [20:54:18.085][VV][preferences:077]: nvs_get_blob: key: 233825507, len: 4
+2026-05-14T18:54:18.096+00:00 [child] [20:54:18.096][C][safe_mode:136]: Unsuccessful boot attempts: 0
+2026-05-14T18:54:18.096+00:00 [child] [20:54:18.096][VV][preferences:043]: s_pending_save: key: 233825507, len: 4
+2026-05-14T18:54:18.107+00:00 [child] [20:54:18.107][V][preferences:121]: Saving 1 items...
+2026-05-14T18:54:18.107+00:00 [child] [20:54:18.107][VV][preferences:129]: Checking if NVS data 233825507 has changed
+2026-05-14T18:54:18.118+00:00 [child] [20:54:18.118][V][preferences:132]: sync: key: 233825507, len: 4
+2026-05-14T18:54:18.129+00:00 [child] [20:54:18.129][D][preferences:152]: Writing 1 items: 0 cached, 1 written, 0 failed
+2026-05-14T18:54:18.129+00:00 [child] [20:54:18.129][I][thread_preferred_parent:125]: Configured preferred parent by extended address: 588c81fffe5db0c4
+2026-05-14T18:54:18.140+00:00 [child] [20:54:18.140][I][app:067]: Running through setup()
+2026-05-14T18:54:18.140+00:00 [child] [20:54:18.140][V][app:068]: Sorting components by setup priority
+2026-05-14T18:54:18.151+00:00 [child] [20:54:18.151][V][component:236]: Setup logger
+2026-05-14T18:54:18.151+00:00 [child] [20:54:18.151][V][component:248]: Setup logger took 0ms
+2026-05-14T18:54:18.151+00:00 [child] [20:54:18.151][V][component:236]: Setup preferences
+2026-05-14T18:54:18.163+00:00 [child] [20:54:18.163][V][scheduler:217]: Scheduler interval for (null) is 60000ms, offset 4562ms
+2026-05-14T18:54:18.174+00:00 [child] [20:54:18.174][V][component:248]: Setup preferences took 5ms
+2026-05-14T18:54:18.174+00:00 [child] [20:54:18.174][V][component:236]: Setup script
+2026-05-14T18:54:18.174+00:00 [child] [20:54:18.174][V][component:248]: Setup script took 0ms
+2026-05-14T18:54:18.185+00:00 [child] [20:54:18.185][V][component:236]: Setup script
+2026-05-14T18:54:18.185+00:00 [child] [20:54:18.185][V][component:248]: Setup script took 0ms
+2026-05-14T18:54:18.196+00:00 [child] [20:54:18.196][V][component:236]: Setup thread_preferred_parent
+2026-05-14T18:54:18.196+00:00 [child] [20:54:18.196][I][thread_preferred_parent:023]: Thread preferred-parent component initialized
+2026-05-14T18:54:18.207+00:00 [child] [20:54:18.207][I][thread_preferred_parent:033]: OpenThread Parent Response reporting hook registered
+2026-05-14T18:54:18.218+00:00 [child] [20:54:18.218][V][component:248]: Setup thread_preferred_parent took 17ms
+2026-05-14T18:54:18.218+00:00 [child] [20:54:18.218][V][component:236]: Setup interval
+2026-05-14T18:54:18.229+00:00 [child] [20:54:18.229][V][scheduler:217]: Scheduler interval for iid:0 is 1000ms, offset 476ms
+2026-05-14T18:54:18.229+00:00 [child] [20:54:18.229][V][component:248]: Setup interval took 9ms
+2026-05-14T18:54:18.229+00:00 [child] [20:54:18.229][V][component:236]: Setup globals
+2026-05-14T18:54:18.240+00:00 [child] [20:54:18.240][V][component:248]: Setup globals took 0ms
+2026-05-14T18:54:18.240+00:00 [child] [20:54:18.240][V][component:236]: Setup globals
+2026-05-14T18:54:18.251+00:00 [child] [20:54:18.251][V][component:248]: Setup globals took 0ms
+2026-05-14T18:54:18.251+00:00 [child] [20:54:18.251][V][component:236]: Setup globals
+2026-05-14T18:54:18.251+00:00 [child] [20:54:18.251][V][component:248]: Setup globals took 0ms
+2026-05-14T18:54:18.262+00:00 [child] [20:54:18.262][V][component:236]: Setup globals
+2026-05-14T18:54:18.263+00:00 [child] [20:54:18.262][V][component:248]: Setup globals took 0ms
+2026-05-14T18:54:18.263+00:00 [child] [20:54:18.262][V][component:236]: Setup openthread
+2026-05-14T18:54:18.321+00:00 [child] [20:54:18.321][C][component:246]: Setup openthread took 86ms
+2026-05-14T18:54:18.321+00:00 [child] [20:54:18.321][V][component:236]: Setup esphome.ota
+2026-05-14T18:54:18.337+00:00 [child] [20:54:18.337][V][component:248]: Setup esphome.ota took 14ms
+2026-05-14T18:54:18.337+00:00 [child] [20:54:18.337][V][component:236]: Setup safe_mode
+2026-05-14T18:54:18.348+00:00 [child] [20:54:18.348][V][component:248]: Setup safe_mode took 0ms
+2026-05-14T18:54:18.348+00:00 [child] [20:54:18.348][V][component:236]: Setup api
+2026-05-14T18:54:18.359+00:00 [child] [20:54:18.359][W][component:389]: api set Warning flag: waiting for client connection
+2026-05-14T18:54:18.359+00:00 [child] [20:54:18.359][V][component:248]: Setup api took 0ms
+2026-05-14T18:54:18.359+00:00 [child] [20:54:18.359][V][component:236]: Setup mdns
+2026-05-14T18:54:18.371+00:00 [child] [20:54:18.371][V][component:248]: Setup mdns took 1ms
+2026-05-14T18:54:18.371+00:00 [child] [20:54:18.371][V][component:236]: Setup openthread
+2026-05-14T18:54:18.382+00:00 [child] [20:54:18.382][D][openthread:157]: Setting up SRP services. count = 1
+2026-05-14T18:54:18.382+00:00 [child] [20:54:18.382][D][openthread:207]: Added service: _esphomelib._tcp
+2026-05-14T18:54:18.392+00:00 [child] [20:54:18.392][D][openthread:211]: Finished SRP setup
+2026-05-14T18:54:18.393+00:00 [child] [20:54:18.392][V][component:248]: Setup openthread took 24ms
+2026-05-14T18:54:18.403+00:00 [child] [20:54:18.403][V][component:236]: Setup esphome.coroutine
+2026-05-14T18:54:18.403+00:00 [child] [20:54:18.403][V][component:248]: Setup esphome.coroutine took 0ms
+2026-05-14T18:54:18.403+00:00 [child] [20:54:18.403][I][app:123]: setup() finished successfully!
+2026-05-14T18:54:18.415+00:00 [child] [20:54:18.415][D][openthread:114][ot_main]: Thread Version: 4
+2026-05-14T18:54:18.426+00:00 [child] [20:54:18.426][D][openthread:138][ot_main]: Link Mode Device Type: FALSE, Network Data: FALSE, RX On When Idle: TRUE
+2026-05-14T18:54:18.437+00:00 [child] [20:54:18.437][I][openthread:153][ot_main]: Activating dataset...
+2026-05-14T18:54:18.448+00:00 [child] [20:54:18.448][I][openthread:163][ot_main]: Found existing dataset, ignoring config (force_dataset: true to override)
+2026-05-14T18:54:18.448+00:00 [child] [20:54:18.448][I][app:154]: ESPHome version 2026.4.5 compiled on 2026-05-14 20:45:31 +0200
+2026-05-14T18:54:18.459+00:00 [child] [20:54:18.459][I][app:161]: ESP32 Chip: ESP32-C6 rev0.2, 1 core(s)
+2026-05-14T18:54:18.459+00:00 [child] [20:54:18.459][C][logger:219]: Logger:
+2026-05-14T18:54:18.459+00:00 [child] [20:54:18.459][C][logger:219]:   Max Level: VERY_VERBOSE
+2026-05-14T18:54:18.471+00:00 [child] [20:54:18.471][C][logger:219]:   Initial Level: VERY_VERBOSE
+2026-05-14T18:54:18.471+00:00 [child] [20:54:18.471][C][logger:226]:   Log Baud Rate: 115200
+2026-05-14T18:54:18.471+00:00 [child] [20:54:18.471][C][logger:226]:   Hardware UART: UART0
+2026-05-14T18:54:18.482+00:00 [child] [20:54:18.482][C][logger:235]:   Task Log Buffer Size: 768 bytes
+2026-05-14T18:54:18.493+00:00 [child] [20:54:18.493][W][logger:251]: VERY_VERBOSE logging is active — significant performance impact, short-term debugging only
+2026-05-14T18:54:18.493+00:00 [child] [20:54:18.493][W][logger:251]:   May cause connection instability. Set log level to DEBUG or lower for long-term use.
+2026-05-14T18:54:18.504+00:00 [child] [20:54:18.504][VV][component:292]: logger loop disabled
+2026-05-14T18:54:18.504+00:00 [child] [20:54:18.504][C][thread_preferred_parent:043]: Thread preferred parent:
+2026-05-14T18:54:18.515+00:00 [child] [20:54:18.515][C][thread_preferred_parent:044]:   Target type: extaddr
+2026-05-14T18:54:18.515+00:00 [child] [20:54:18.515][C][thread_preferred_parent:045]:   Target: ExtAddr 588c81fffe5db0c4
+2026-05-14T18:54:18.526+00:00 [child] [20:54:18.526][C][thread_preferred_parent:046]:   Max attempts: 3
+2026-05-14T18:54:18.526+00:00 [child] [20:54:18.526][C][thread_preferred_parent:047]:   Retry interval: 8000 ms
+2026-05-14T18:54:18.537+00:00 [child] [20:54:18.537][C][thread_preferred_parent:048]:   Selected attach timeout: 16000 ms
+2026-05-14T18:54:18.548+00:00 [child] [20:54:18.548][C][thread_preferred_parent:049]:   Parent Request unicast: NO
+2026-05-14T18:54:18.548+00:00 [child] [20:54:18.548][C][thread_preferred_parent:050]:   Early attach on target: YES
+2026-05-14T18:54:18.559+00:00 [child] [20:54:18.559][C][thread_preferred_parent:051]:   Early attach delay: 500 ms
+2026-05-14T18:54:18.559+00:00 [child] [20:54:18.559][C][thread_preferred_parent:052]:   Require selected-parent hook: YES
+2026-05-14T18:54:18.571+00:00 [child] [20:54:18.571][C][thread_preferred_parent:053]:   Discovery hook available: YES
+2026-05-14T18:54:18.582+00:00 [child] [20:54:18.582][C][thread_preferred_parent:054]:   Discovery unicast hook available: YES
+2026-05-14T18:54:18.582+00:00 [child] [20:54:18.582][C][thread_preferred_parent:055]:   Selected-parent hook available: YES
+2026-05-14T18:54:18.593+00:00 [child] [20:54:18.593][C][thread_preferred_parent:056]:   Parent Response reporting hook registered: YES
+2026-05-14T18:54:18.600+00:00 [child] [20:54:18.600][C][thread_preferred_parent:057]:   Log Parent Responses: YES
+2026-05-14T18:54:18.600+00:00 [child] [20:54:18.600][C][thread_preferred_parent:058]:   Status: idle
+2026-05-14T18:54:18.623+00:00 [child] [20:54:18.623][C][openthread:029]: Open Thread:
+2026-05-14T18:54:18.623+00:00 [child] [20:54:18.623][C][openthread:033]:   Device Type: MTD
+2026-05-14T18:54:18.634+00:00 [child] [20:54:18.634][C][openthread:040]:   Device is configured as Minimal End Device (MED)
+2026-05-14T18:54:18.634+00:00 [child] [20:54:18.634][C][esphome.ota:071]: Over-The-Air updates:
+2026-05-14T18:54:18.645+00:00 [child] [20:54:18.645][C][esphome.ota:071]:   Address: thread-child-variant-b-mcast.local:3232
+2026-05-14T18:54:18.645+00:00 [child] [20:54:18.645][C][esphome.ota:071]:   Version: 2
+2026-05-14T18:54:18.645+00:00 [child] [20:54:18.645][C][safe_mode:026]: Safe Mode:
+2026-05-14T18:54:18.645+00:00 [child] [20:54:18.645][C][safe_mode:026]:   Successful after: 60s
+2026-05-14T18:54:18.656+00:00 [child] [20:54:18.656][C][safe_mode:026]:   Invoke after: 10 attempts
+2026-05-14T18:54:18.656+00:00 [child] [20:54:18.656][C][safe_mode:026]:   Duration: 300s
+2026-05-14T18:54:18.656+00:00 [child] [20:54:18.656][C][safe_mode:043]:   Bootloader rollback: support unknown
+2026-05-14T18:54:18.656+00:00 [child] [20:54:18.656][C][api:235]: Server:
+2026-05-14T18:54:18.668+00:00 [child] [20:54:18.668][C][api:235]:   Address: thread-child-variant-b-mcast.local:6053
+2026-05-14T18:54:18.668+00:00 [child] [20:54:18.668][C][api:235]:   Listen backlog: 4
+2026-05-14T18:54:18.668+00:00 [child] [20:54:18.668][C][api:235]:   Max connections: 8
+2026-05-14T18:54:18.679+00:00 [child] [20:54:18.679][C][api:247]:   Noise encryption: NO
+2026-05-14T18:54:18.679+00:00 [child] [20:54:18.679][C][mdns:194]: mDNS:
+2026-05-14T18:54:18.679+00:00 [child] [20:54:18.679][C][mdns:194]:   Hostname: thread-child-variant-b-mcast
+2026-05-14T18:54:18.679+00:00 [child] [20:54:18.679][V][mdns:199]:   Services:
+2026-05-14T18:54:18.690+00:00 [child] [20:54:18.690][V][mdns:201]:   - _esphomelib, _tcp, 6053
+2026-05-14T18:54:18.701+00:00 [child] [20:54:18.701][V][mdns:204]:     TXT: friendly_name = Thread Child Variant B Multicast
+2026-05-14T18:54:18.701+00:00 [child] [20:54:18.701][V][mdns:204]:     TXT: version = 2026.4.5
+2026-05-14T18:54:18.701+00:00 [child] [20:54:18.701][V][mdns:204]:     TXT: mac = 588c815db154
+2026-05-14T18:54:18.712+00:00 [child] [20:54:18.712][V][mdns:204]:     TXT: platform = ESP32
+2026-05-14T18:54:18.712+00:00 [child] [20:54:18.712][V][mdns:204]:     TXT: board = esp32-c6-devkitm-1
+2026-05-14T18:54:18.723+00:00 [child] [20:54:18.723][V][mdns:204]:     TXT: network = thread
+2026-05-14T18:54:18.723+00:00 [child] [20:54:18.723][I][variant_b:160]: V_precondition_probe_start elapsed_ms=0 target=588c81fffe5db0c4
+2026-05-14T18:54:18.734+00:00 [child] [20:54:18.734][D][thread_preferred_parent:1184]: Status changed to discovering parents
+2026-05-14T18:54:18.745+00:00 [child] [20:54:18.745][I][thread_preferred_parent:220]: Starting discovery-only Parent Response probe for ExtAddr 588c81fffe5db0c4
+2026-05-14T18:54:18.756+00:00 [child] [20:54:18.756][I][thread_preferred_parent:453]: Thread role before discovery: child
+2026-05-14T18:54:18.768+00:00 [child] [20:54:18.768][I][thread_preferred_parent:456]: Current parent before discovery: RLOC16 0xe800 ExtAddr 588c81fffe5db0c4
+2026-05-14T18:54:18.768+00:00 [child] [20:54:18.768][I][thread_preferred_parent:462]: Parent discovery attempt 1/3 for ExtAddr 588c81fffe5db0c4
+2026-05-14T18:54:18.778+00:00 [child] [20:54:18.778][I][thread_preferred_parent:826]: Starting non-disruptive multicast Parent Request discovery for ExtAddr 588c81fffe5db0c4
+2026-05-14T18:54:18.983+00:00 [child] [20:54:18.983][VV][app:471]: logger loop enabled from ISR
+2026-05-14T18:54:19.001+00:00 [child] [20:54:19.001][VV][thread_preferred_parent:650][ot_main]: Parent Response live #1 attempt_t+270ms: ExtAddr 588c81fffe5db0e0 RLOC16 0x6000 RSSI -17 priority 0 LQ3/LQ2/LQ1 1/0/0 device_attached=YES target_match=NO
+2026-05-14T18:54:19.001+00:00 [child] [20:54:19.001][VV][component:292]: logger loop disabled
+2026-05-14T18:54:26.731+00:00 [child] [20:54:26.730][I][thread_preferred_parent:674]: Discovery summary (discovery window complete): 1 Parent Responses, 0 target matches
+2026-05-14T18:54:26.731+00:00 [child] [20:54:26.731][D][thread_preferred_parent:1184]: Status changed to idle
+2026-05-14T18:54:26.738+00:00 [child] [20:54:26.738][I][thread_preferred_parent:367]: Discovery-only probe complete: buffered=1 target_matches=0 representative_non_target=588c81fffe5db0e0
+2026-05-14T18:54:27.695+00:00 [child] [20:54:27.695][I][variant_b:172]: V_precondition_probe_result elapsed_ms=9003 responses=1 target_matches=0
+2026-05-14T18:54:27.707+00:00 [child] [20:54:27.706][I][variant_b:186]: V_precondition_initial_parent_extaddr=588c81fffe5db0c4
+2026-05-14T18:54:27.717+00:00 [child] [20:54:27.717][W][variant_b:187]: V_precondition_target_still_current=588c81fffe5db0c4
+2026-05-14T18:54:27.718+00:00 [child] [20:54:27.717][W][variant_b:188]: V_invariant_current_parent_extaddr=588c81fffe5db0c4
+2026-05-14T18:54:27.729+00:00 [child] [20:54:27.729][W][variant_b:189]: V_invariant_target_parent_extaddr=588c81fffe5db0c4
+2026-05-14T18:54:27.730+00:00 [child] [20:54:27.730][W][variant_b:190]: V_invariant_result=abort_current_parent_already_target
+2026-05-14T18:54:28.695+00:00 [child] [20:54:28.695][I][variant_b:172]: V_precondition_probe_result elapsed_ms=10003 responses=1 target_matches=0
+2026-05-14T18:54:28.706+00:00 [child] [20:54:28.706][I][variant_b:186]: V_precondition_initial_parent_extaddr=588c81fffe5db0c4
+2026-05-14T18:54:28.718+00:00 [child] [20:54:28.718][W][variant_b:187]: V_precondition_target_still_current=588c81fffe5db0c4
+2026-05-14T18:54:28.718+00:00 [child] [20:54:28.718][W][variant_b:188]: V_invariant_current_parent_extaddr=588c81fffe5db0c4
+2026-05-14T18:54:28.729+00:00 [child] [20:54:28.729][W][variant_b:189]: V_invariant_target_parent_extaddr=588c81fffe5db0c4
+2026-05-14T18:54:28.730+00:00 [child] [20:54:28.730][W][variant_b:190]: V_invariant_result=abort_current_parent_already_target
+2026-05-14T18:54:29.697+00:00 [child] [20:54:29.697][I][variant_b:172]: V_precondition_probe_result elapsed_ms=11005 responses=1 target_matches=0
+2026-05-14T18:54:29.708+00:00 [child] [20:54:29.708][I][variant_b:186]: V_precondition_initial_parent_extaddr=588c81fffe5db0c4
+2026-05-14T18:54:29.720+00:00 [child] [20:54:29.719][W][variant_b:187]: V_precondition_target_still_current=588c81fffe5db0c4
+2026-05-14T18:54:29.720+00:00 [child] [20:54:29.719][W][variant_b:188]: V_invariant_current_parent_extaddr=588c81fffe5db0c4
+2026-05-14T18:54:29.730+00:00 [child] [20:54:29.730][W][variant_b:189]: V_invariant_target_parent_extaddr=588c81fffe5db0c4
+2026-05-14T18:54:29.732+00:00 [child] [20:54:29.732][W][variant_b:190]: V_invariant_result=abort_current_parent_already_target
+2026-05-14T18:54:30.698+00:00 [child] [20:54:30.698][I][variant_b:172]: V_precondition_probe_result elapsed_ms=12006 responses=1 target_matches=0
+2026-05-14T18:54:30.709+00:00 [child] [20:54:30.709][I][variant_b:186]: V_precondition_initial_parent_extaddr=588c81fffe5db0c4
+2026-05-14T18:54:30.720+00:00 [child] [20:54:30.720][W][variant_b:187]: V_precondition_target_still_current=588c81fffe5db0c4
+2026-05-14T18:54:30.720+00:00 [child] [20:54:30.720][W][variant_b:188]: V_invariant_current_parent_extaddr=588c81fffe5db0c4
+2026-05-14T18:54:30.731+00:00 [child] [20:54:30.731][W][variant_b:189]: V_invariant_target_parent_extaddr=588c81fffe5db0c4
+2026-05-14T18:54:30.733+00:00 [child] [20:54:30.733][W][variant_b:190]: V_invariant_result=abort_current_parent_already_target
+2026-05-14T18:54:31.699+00:00 [child] [20:54:31.699][I][variant_b:172]: V_precondition_probe_result elapsed_ms=13007 responses=1 target_matches=0
+2026-05-14T18:54:31.710+00:00 [child] [20:54:31.710][I][variant_b:186]: V_precondition_initial_parent_extaddr=588c81fffe5db0c4
+2026-05-14T18:54:31.721+00:00 [child] [20:54:31.721][W][variant_b:187]: V_precondition_target_still_current=588c81fffe5db0c4
+2026-05-14T18:54:31.721+00:00 [child] [20:54:31.721][W][variant_b:188]: V_invariant_current_parent_extaddr=588c81fffe5db0c4
+2026-05-14T18:54:31.732+00:00 [child] [20:54:31.732][W][variant_b:189]: V_invariant_target_parent_extaddr=588c81fffe5db0c4
+2026-05-14T18:54:31.734+00:00 [child] [20:54:31.734][W][variant_b:190]: V_invariant_result=abort_current_parent_already_target
+2026-05-14T18:54:32.700+00:00 [child] [20:54:32.700][I][variant_b:172]: V_precondition_probe_result elapsed_ms=14008 responses=1 target_matches=0
+2026-05-14T18:54:32.711+00:00 [child] [20:54:32.711][I][variant_b:186]: V_precondition_initial_parent_extaddr=588c81fffe5db0c4
+2026-05-14T18:54:32.722+00:00 [child] [20:54:32.722][W][variant_b:187]: V_precondition_target_still_current=588c81fffe5db0c4
+2026-05-14T18:54:32.722+00:00 [child] [20:54:32.722][W][variant_b:188]: V_invariant_current_parent_extaddr=588c81fffe5db0c4
+2026-05-14T18:54:32.733+00:00 [child] [20:54:32.733][W][variant_b:189]: V_invariant_target_parent_extaddr=588c81fffe5db0c4
+2026-05-14T18:54:32.735+00:00 [child] [20:54:32.735][W][variant_b:190]: V_invariant_result=abort_current_parent_already_target
+2026-05-14T18:54:33.701+00:00 [child] [20:54:33.701][I][variant_b:172]: V_precondition_probe_result elapsed_ms=15009 responses=1 target_matches=0
+2026-05-14T18:54:33.712+00:00 [child] [20:54:33.712][I][variant_b:186]: V_precondition_initial_parent_extaddr=588c81fffe5db0c4
+2026-05-14T18:54:33.723+00:00 [child] [20:54:33.723][W][variant_b:187]: V_precondition_target_still_current=588c81fffe5db0c4
+2026-05-14T18:54:33.723+00:00 [child] [20:54:33.723][W][variant_b:188]: V_invariant_current_parent_extaddr=588c81fffe5db0c4
+2026-05-14T18:54:33.734+00:00 [child] [20:54:33.734][W][variant_b:189]: V_invariant_target_parent_extaddr=588c81fffe5db0c4
+2026-05-14T18:54:33.736+00:00 [child] [20:54:33.736][W][variant_b:190]: V_invariant_result=abort_current_parent_already_target
+2026-05-14T18:54:34.702+00:00 [child] [20:54:34.702][I][variant_b:172]: V_precondition_probe_result elapsed_ms=16010 responses=1 target_matches=0
+2026-05-14T18:54:34.713+00:00 [child] [20:54:34.713][I][variant_b:186]: V_precondition_initial_parent_extaddr=588c81fffe5db0c4
+2026-05-14T18:54:34.724+00:00 [child] [20:54:34.724][W][variant_b:187]: V_precondition_target_still_current=588c81fffe5db0c4
+2026-05-14T18:54:34.724+00:00 [child] [20:54:34.724][W][variant_b:188]: V_invariant_current_parent_extaddr=588c81fffe5db0c4
+2026-05-14T18:54:34.735+00:00 [child] [20:54:34.735][W][variant_b:189]: V_invariant_target_parent_extaddr=588c81fffe5db0c4
+2026-05-14T18:54:34.737+00:00 [child] [20:54:34.737][W][variant_b:190]: V_invariant_result=abort_current_parent_already_target
+2026-05-14T18:54:35.703+00:00 [child] [20:54:35.703][I][variant_b:172]: V_precondition_probe_result elapsed_ms=17011 responses=1 target_matches=0
+2026-05-14T18:54:35.714+00:00 [child] [20:54:35.714][I][variant_b:186]: V_precondition_initial_parent_extaddr=588c81fffe5db0c4
+2026-05-14T18:54:35.725+00:00 [child] [20:54:35.725][W][variant_b:187]: V_precondition_target_still_current=588c81fffe5db0c4
+2026-05-14T18:54:35.725+00:00 [child] [20:54:35.725][W][variant_b:188]: V_invariant_current_parent_extaddr=588c81fffe5db0c4
+2026-05-14T18:54:35.736+00:00 [child] [20:54:35.736][W][variant_b:189]: V_invariant_target_parent_extaddr=588c81fffe5db0c4
+2026-05-14T18:54:35.738+00:00 [child] [20:54:35.738][W][variant_b:190]: V_invariant_result=abort_current_parent_already_target
+2026-05-14T18:54:36.704+00:00 [child] [20:54:36.704][I][variant_b:172]: V_precondition_probe_result elapsed_ms=18012 responses=1 target_matches=0
+2026-05-14T18:54:36.715+00:00 [child] [20:54:36.715][I][variant_b:186]: V_precondition_initial_parent_extaddr=588c81fffe5db0c4
+2026-05-14T18:54:36.726+00:00 [child] [20:54:36.726][W][variant_b:187]: V_precondition_target_still_current=588c81fffe5db0c4
+2026-05-14T18:54:36.726+00:00 [child] [20:54:36.726][W][variant_b:188]: V_invariant_current_parent_extaddr=588c81fffe5db0c4
+2026-05-14T18:54:36.737+00:00 [child] [20:54:36.737][W][variant_b:189]: V_invariant_target_parent_extaddr=588c81fffe5db0c4
+2026-05-14T18:54:36.739+00:00 [child] [20:54:36.739][W][variant_b:190]: V_invariant_result=abort_current_parent_already_target
+2026-05-14T18:54:37.705+00:00 [child] [20:54:37.705][I][variant_b:172]: V_precondition_probe_result elapsed_ms=19013 responses=1 target_matches=0
+2026-05-14T18:54:37.716+00:00 [child] [20:54:37.716][I][variant_b:186]: V_precondition_initial_parent_extaddr=588c81fffe5db0c4
+2026-05-14T18:54:37.727+00:00 [child] [20:54:37.727][W][variant_b:187]: V_precondition_target_still_current=588c81fffe5db0c4
+2026-05-14T18:54:37.727+00:00 [child] [20:54:37.727][W][variant_b:188]: V_invariant_current_parent_extaddr=588c81fffe5db0c4
+2026-05-14T18:54:37.738+00:00 [child] [20:54:37.738][W][variant_b:189]: V_invariant_target_parent_extaddr=588c81fffe5db0c4
+2026-05-14T18:54:37.740+00:00 [child] [20:54:37.740][W][variant_b:190]: V_invariant_result=abort_current_parent_already_target
+2026-05-14T18:54:38.706+00:00 [child] [20:54:38.706][I][variant_b:172]: V_precondition_probe_result elapsed_ms=20014 responses=1 target_matches=0
+2026-05-14T18:54:38.717+00:00 [child] [20:54:38.717][I][variant_b:186]: V_precondition_initial_parent_extaddr=588c81fffe5db0c4
+2026-05-14T18:54:38.728+00:00 [child] [20:54:38.728][W][variant_b:187]: V_precondition_target_still_current=588c81fffe5db0c4
+2026-05-14T18:54:38.728+00:00 [child] [20:54:38.728][W][variant_b:188]: V_invariant_current_parent_extaddr=588c81fffe5db0c4
+2026-05-14T18:54:38.739+00:00 [child] [20:54:38.739][W][variant_b:189]: V_invariant_target_parent_extaddr=588c81fffe5db0c4
+2026-05-14T18:54:38.741+00:00 [child] [20:54:38.740][W][variant_b:190]: V_invariant_result=abort_current_parent_already_target
+2026-05-14T18:54:39.707+00:00 [child] [20:54:39.707][I][variant_b:172]: V_precondition_probe_result elapsed_ms=21015 responses=1 target_matches=0
+2026-05-14T18:54:39.718+00:00 [child] [20:54:39.718][I][variant_b:186]: V_precondition_initial_parent_extaddr=588c81fffe5db0c4
+2026-05-14T18:54:39.729+00:00 [child] [20:54:39.729][W][variant_b:187]: V_precondition_target_still_current=588c81fffe5db0c4
+2026-05-14T18:54:39.729+00:00 [child] [20:54:39.729][W][variant_b:188]: V_invariant_current_parent_extaddr=588c81fffe5db0c4
+2026-05-14T18:54:39.740+00:00 [child] [20:54:39.740][W][variant_b:189]: V_invariant_target_parent_extaddr=588c81fffe5db0c4
+2026-05-14T18:54:39.742+00:00 [child] [20:54:39.741][W][variant_b:190]: V_invariant_result=abort_current_parent_already_target
+2026-05-14T18:54:40.708+00:00 [child] [20:54:40.708][I][variant_b:172]: V_precondition_probe_result elapsed_ms=22016 responses=1 target_matches=0
+2026-05-14T18:54:40.719+00:00 [child] [20:54:40.719][I][variant_b:186]: V_precondition_initial_parent_extaddr=588c81fffe5db0c4
+2026-05-14T18:54:40.730+00:00 [child] [20:54:40.730][W][variant_b:187]: V_precondition_target_still_current=588c81fffe5db0c4
+2026-05-14T18:54:40.730+00:00 [child] [20:54:40.730][W][variant_b:188]: V_invariant_current_parent_extaddr=588c81fffe5db0c4
+2026-05-14T18:54:40.741+00:00 [child] [20:54:40.741][W][variant_b:189]: V_invariant_target_parent_extaddr=588c81fffe5db0c4
+2026-05-14T18:54:40.742+00:00 [child] [20:54:40.742][W][variant_b:190]: V_invariant_result=abort_current_parent_already_target
+2026-05-14T18:54:41.709+00:00 [child] [20:54:41.709][I][variant_b:172]: V_precondition_probe_result elapsed_ms=23017 responses=1 target_matches=0
+2026-05-14T18:54:41.720+00:00 [child] [20:54:41.720][I][variant_b:186]: V_precondition_initial_parent_extaddr=588c81fffe5db0c4
+2026-05-14T18:54:41.731+00:00 [child] [20:54:41.731][W][variant_b:187]: V_precondition_target_still_current=588c81fffe5db0c4
+2026-05-14T18:54:41.731+00:00 [child] [20:54:41.731][W][variant_b:188]: V_invariant_current_parent_extaddr=588c81fffe5db0c4
+2026-05-14T18:54:41.743+00:00 [child] [20:54:41.743][W][variant_b:189]: V_invariant_target_parent_extaddr=588c81fffe5db0c4
+2026-05-14T18:54:41.744+00:00 [child] [20:54:41.744][W][variant_b:190]: V_invariant_result=abort_current_parent_already_target
+2026-05-14T18:54:42.710+00:00 [child] [20:54:42.710][I][variant_b:172]: V_precondition_probe_result elapsed_ms=24018 responses=1 target_matches=0
+2026-05-14T18:54:42.721+00:00 [child] [20:54:42.721][I][variant_b:186]: V_precondition_initial_parent_extaddr=588c81fffe5db0c4
+2026-05-14T18:54:42.732+00:00 [child] [20:54:42.732][W][variant_b:187]: V_precondition_target_still_current=588c81fffe5db0c4
+2026-05-14T18:54:42.732+00:00 [child] [20:54:42.732][W][variant_b:188]: V_invariant_current_parent_extaddr=588c81fffe5db0c4
+2026-05-14T18:54:42.743+00:00 [child] [20:54:42.743][W][variant_b:189]: V_invariant_target_parent_extaddr=588c81fffe5db0c4
+2026-05-14T18:54:42.744+00:00 [child] [20:54:42.744][W][variant_b:190]: V_invariant_result=abort_current_parent_already_target
+2026-05-14T18:54:43.711+00:00 [child] [20:54:43.711][I][variant_b:172]: V_precondition_probe_result elapsed_ms=25019 responses=1 target_matches=0
+2026-05-14T18:54:43.722+00:00 [child] [20:54:43.722][I][variant_b:186]: V_precondition_initial_parent_extaddr=588c81fffe5db0c4
+2026-05-14T18:54:43.733+00:00 [child] [20:54:43.733][W][variant_b:187]: V_precondition_target_still_current=588c81fffe5db0c4
+2026-05-14T18:54:43.733+00:00 [child] [20:54:43.733][W][variant_b:188]: V_invariant_current_parent_extaddr=588c81fffe5db0c4
+2026-05-14T18:54:43.745+00:00 [child] [20:54:43.745][W][variant_b:189]: V_invariant_target_parent_extaddr=588c81fffe5db0c4
+2026-05-14T18:54:43.746+00:00 [child] [20:54:43.746][W][variant_b:190]: V_invariant_result=abort_current_parent_already_target
+2026-05-14T18:54:44.712+00:00 [child] [20:54:44.712][I][variant_b:172]: V_precondition_probe_result elapsed_ms=26020 responses=1 target_matches=0
+2026-05-14T18:54:44.723+00:00 [child] [20:54:44.723][I][variant_b:186]: V_precondition_initial_parent_extaddr=588c81fffe5db0c4
+2026-05-14T18:54:44.734+00:00 [child] [20:54:44.734][W][variant_b:187]: V_precondition_target_still_current=588c81fffe5db0c4
+2026-05-14T18:54:44.734+00:00 [child] [20:54:44.734][W][variant_b:188]: V_invariant_current_parent_extaddr=588c81fffe5db0c4
+2026-05-14T18:54:44.746+00:00 [child] [20:54:44.746][W][variant_b:189]: V_invariant_target_parent_extaddr=588c81fffe5db0c4
+2026-05-14T18:54:44.747+00:00 [child] [20:54:44.747][W][variant_b:190]: V_invariant_result=abort_current_parent_already_target
+2026-05-14T18:54:45.713+00:00 [child] [20:54:45.713][I][variant_b:172]: V_precondition_probe_result elapsed_ms=27021 responses=1 target_matches=0
+2026-05-14T18:54:45.724+00:00 [child] [20:54:45.724][I][variant_b:186]: V_precondition_initial_parent_extaddr=588c81fffe5db0c4
+2026-05-14T18:54:45.735+00:00 [child] [20:54:45.735][W][variant_b:187]: V_precondition_target_still_current=588c81fffe5db0c4
+2026-05-14T18:54:45.735+00:00 [child] [20:54:45.735][W][variant_b:188]: V_invariant_current_parent_extaddr=588c81fffe5db0c4
+2026-05-14T18:54:45.747+00:00 [child] [20:54:45.747][W][variant_b:189]: V_invariant_target_parent_extaddr=588c81fffe5db0c4
+2026-05-14T18:54:45.748+00:00 [child] [20:54:45.748][W][variant_b:190]: V_invariant_result=abort_current_parent_already_target
+2026-05-14T18:54:46.714+00:00 [child] [20:54:46.714][I][variant_b:172]: V_precondition_probe_result elapsed_ms=28022 responses=1 target_matches=0
+2026-05-14T18:54:46.725+00:00 [child] [20:54:46.725][I][variant_b:186]: V_precondition_initial_parent_extaddr=588c81fffe5db0c4
+2026-05-14T18:54:46.736+00:00 [child] [20:54:46.736][W][variant_b:187]: V_precondition_target_still_current=588c81fffe5db0c4
+2026-05-14T18:54:46.736+00:00 [child] [20:54:46.736][W][variant_b:188]: V_invariant_current_parent_extaddr=588c81fffe5db0c4
+2026-05-14T18:54:46.748+00:00 [child] [20:54:46.748][W][variant_b:189]: V_invariant_target_parent_extaddr=588c81fffe5db0c4
+2026-05-14T18:54:46.749+00:00 [child] [20:54:46.749][W][variant_b:190]: V_invariant_result=abort_current_parent_already_target
+2026-05-14T18:54:47.715+00:00 [child] [20:54:47.715][I][variant_b:172]: V_precondition_probe_result elapsed_ms=29023 responses=1 target_matches=0
+2026-05-14T18:54:47.726+00:00 [child] [20:54:47.726][I][variant_b:186]: V_precondition_initial_parent_extaddr=588c81fffe5db0c4
+2026-05-14T18:54:47.737+00:00 [child] [20:54:47.737][W][variant_b:187]: V_precondition_target_still_current=588c81fffe5db0c4
+2026-05-14T18:54:47.737+00:00 [child] [20:54:47.737][W][variant_b:188]: V_invariant_current_parent_extaddr=588c81fffe5db0c4
+2026-05-14T18:54:47.749+00:00 [child] [20:54:47.749][W][variant_b:189]: V_invariant_target_parent_extaddr=588c81fffe5db0c4
+2026-05-14T18:54:47.750+00:00 [child] [20:54:47.750][W][variant_b:190]: V_invariant_result=abort_current_parent_already_target
+2026-05-14T18:54:48.716+00:00 [child] [20:54:48.716][I][variant_b:172]: V_precondition_probe_result elapsed_ms=30024 responses=1 target_matches=0
+2026-05-14T18:54:48.727+00:00 [child] [20:54:48.727][I][variant_b:186]: V_precondition_initial_parent_extaddr=588c81fffe5db0c4
+2026-05-14T18:54:48.738+00:00 [child] [20:54:48.738][W][variant_b:187]: V_precondition_target_still_current=588c81fffe5db0c4
+2026-05-14T18:54:48.738+00:00 [child] [20:54:48.738][W][variant_b:188]: V_invariant_current_parent_extaddr=588c81fffe5db0c4
+2026-05-14T18:54:48.750+00:00 [child] [20:54:48.750][W][variant_b:189]: V_invariant_target_parent_extaddr=588c81fffe5db0c4
+2026-05-14T18:54:48.751+00:00 [child] [20:54:48.751][W][variant_b:190]: V_invariant_result=abort_current_parent_already_target
+2026-05-14T18:54:49.717+00:00 [child] [20:54:49.717][I][variant_b:172]: V_precondition_probe_result elapsed_ms=31025 responses=1 target_matches=0
+2026-05-14T18:54:49.728+00:00 [child] [20:54:49.728][I][variant_b:186]: V_precondition_initial_parent_extaddr=588c81fffe5db0c4
+2026-05-14T18:54:49.739+00:00 [child] [20:54:49.739][W][variant_b:187]: V_precondition_target_still_current=588c81fffe5db0c4
+2026-05-14T18:54:49.739+00:00 [child] [20:54:49.739][W][variant_b:188]: V_invariant_current_parent_extaddr=588c81fffe5db0c4
+2026-05-14T18:54:49.751+00:00 [child] [20:54:49.751][W][variant_b:189]: V_invariant_target_parent_extaddr=588c81fffe5db0c4
+2026-05-14T18:54:49.752+00:00 [child] [20:54:49.752][W][variant_b:190]: V_invariant_result=abort_current_parent_already_target
+2026-05-14T18:54:50.718+00:00 [child] [20:54:50.718][I][variant_b:172]: V_precondition_probe_result elapsed_ms=32026 responses=1 target_matches=0
+2026-05-14T18:54:50.729+00:00 [child] [20:54:50.729][I][variant_b:186]: V_precondition_initial_parent_extaddr=588c81fffe5db0c4
+2026-05-14T18:54:50.740+00:00 [child] [20:54:50.740][W][variant_b:187]: V_precondition_target_still_current=588c81fffe5db0c4
+2026-05-14T18:54:50.740+00:00 [child] [20:54:50.740][W][variant_b:188]: V_invariant_current_parent_extaddr=588c81fffe5db0c4
+2026-05-14T18:54:50.752+00:00 [child] [20:54:50.752][W][variant_b:189]: V_invariant_target_parent_extaddr=588c81fffe5db0c4
+2026-05-14T18:54:50.753+00:00 [child] [20:54:50.753][W][variant_b:190]: V_invariant_result=abort_current_parent_already_target
+2026-05-14T18:54:51.719+00:00 [child] [20:54:51.719][I][variant_b:172]: V_precondition_probe_result elapsed_ms=33027 responses=1 target_matches=0
+2026-05-14T18:54:51.730+00:00 [child] [20:54:51.730][I][variant_b:186]: V_precondition_initial_parent_extaddr=588c81fffe5db0c4
+2026-05-14T18:54:51.742+00:00 [child] [20:54:51.742][W][variant_b:187]: V_precondition_target_still_current=588c81fffe5db0c4
+2026-05-14T18:54:51.742+00:00 [child] [20:54:51.742][W][variant_b:188]: V_invariant_current_parent_extaddr=588c81fffe5db0c4
+2026-05-14T18:54:51.753+00:00 [child] [20:54:51.753][W][variant_b:189]: V_invariant_target_parent_extaddr=588c81fffe5db0c4
+2026-05-14T18:54:51.754+00:00 [child] [20:54:51.754][W][variant_b:190]: V_invariant_result=abort_current_parent_already_target
+2026-05-14T18:54:52.720+00:00 [child] [20:54:52.720][I][variant_b:172]: V_precondition_probe_result elapsed_ms=34028 responses=1 target_matches=0
+2026-05-14T18:54:52.731+00:00 [child] [20:54:52.731][I][variant_b:186]: V_precondition_initial_parent_extaddr=588c81fffe5db0c4
+2026-05-14T18:54:52.743+00:00 [child] [20:54:52.742][W][variant_b:187]: V_precondition_target_still_current=588c81fffe5db0c4
+2026-05-14T18:54:52.743+00:00 [child] [20:54:52.742][W][variant_b:188]: V_invariant_current_parent_extaddr=588c81fffe5db0c4
+2026-05-14T18:54:52.754+00:00 [child] [20:54:52.754][W][variant_b:189]: V_invariant_target_parent_extaddr=588c81fffe5db0c4
+2026-05-14T18:54:52.755+00:00 [child] [20:54:52.755][W][variant_b:190]: V_invariant_result=abort_current_parent_already_target
+2026-05-14T18:54:53.721+00:00 [child] [20:54:53.721][I][variant_b:172]: V_precondition_probe_result elapsed_ms=35029 responses=1 target_matches=0
+2026-05-14T18:54:53.732+00:00 [child] [20:54:53.732][I][variant_b:186]: V_precondition_initial_parent_extaddr=588c81fffe5db0c4
+2026-05-14T18:54:53.743+00:00 [child] [20:54:53.743][W][variant_b:187]: V_precondition_target_still_current=588c81fffe5db0c4
+2026-05-14T18:54:53.743+00:00 [child] [20:54:53.743][W][variant_b:188]: V_invariant_current_parent_extaddr=588c81fffe5db0c4
+2026-05-14T18:54:53.755+00:00 [child] [20:54:53.755][W][variant_b:189]: V_invariant_target_parent_extaddr=588c81fffe5db0c4
+2026-05-14T18:54:53.756+00:00 [child] [20:54:53.756][W][variant_b:190]: V_invariant_result=abort_current_parent_already_target
+2026-05-14T18:54:54.722+00:00 [child] [20:54:54.722][I][variant_b:172]: V_precondition_probe_result elapsed_ms=36030 responses=1 target_matches=0
+2026-05-14T18:54:54.733+00:00 [child] [20:54:54.733][I][variant_b:186]: V_precondition_initial_parent_extaddr=588c81fffe5db0c4
+2026-05-14T18:54:54.745+00:00 [child] [20:54:54.745][W][variant_b:187]: V_precondition_target_still_current=588c81fffe5db0c4
+2026-05-14T18:54:54.745+00:00 [child] [20:54:54.745][W][variant_b:188]: V_invariant_current_parent_extaddr=588c81fffe5db0c4
+2026-05-14T18:54:54.756+00:00 [child] [20:54:54.755][W][variant_b:189]: V_invariant_target_parent_extaddr=588c81fffe5db0c4
+2026-05-14T18:54:54.757+00:00 [child] [20:54:54.757][W][variant_b:190]: V_invariant_result=abort_current_parent_already_target
+2026-05-14T18:54:55.723+00:00 [child] [20:54:55.723][I][variant_b:172]: V_precondition_probe_result elapsed_ms=37031 responses=1 target_matches=0
+2026-05-14T18:54:55.734+00:00 [child] [20:54:55.734][I][variant_b:186]: V_precondition_initial_parent_extaddr=588c81fffe5db0c4
+2026-05-14T18:54:55.746+00:00 [child] [20:54:55.746][W][variant_b:187]: V_precondition_target_still_current=588c81fffe5db0c4
+2026-05-14T18:54:55.746+00:00 [child] [20:54:55.746][W][variant_b:188]: V_invariant_current_parent_extaddr=588c81fffe5db0c4
+2026-05-14T18:54:55.757+00:00 [child] [20:54:55.756][W][variant_b:189]: V_invariant_target_parent_extaddr=588c81fffe5db0c4
+2026-05-14T18:54:55.757+00:00 [child] [20:54:55.757][W][variant_b:190]: V_invariant_result=abort_current_parent_already_target
+2026-05-14T18:54:56.724+00:00 [child] [20:54:56.724][I][variant_b:172]: V_precondition_probe_result elapsed_ms=38032 responses=1 target_matches=0
+2026-05-14T18:54:56.735+00:00 [child] [20:54:56.735][I][variant_b:186]: V_precondition_initial_parent_extaddr=588c81fffe5db0c4
+2026-05-14T18:54:56.747+00:00 [child] [20:54:56.747][W][variant_b:187]: V_precondition_target_still_current=588c81fffe5db0c4
+2026-05-14T18:54:56.747+00:00 [child] [20:54:56.747][W][variant_b:188]: V_invariant_current_parent_extaddr=588c81fffe5db0c4
+2026-05-14T18:54:56.758+00:00 [child] [20:54:56.758][W][variant_b:189]: V_invariant_target_parent_extaddr=588c81fffe5db0c4
+2026-05-14T18:54:56.759+00:00 [child] [20:54:56.759][W][variant_b:190]: V_invariant_result=abort_current_parent_already_target
+2026-05-14T18:54:57.725+00:00 [child] [20:54:57.725][I][variant_b:172]: V_precondition_probe_result elapsed_ms=39033 responses=1 target_matches=0
+2026-05-14T18:54:57.737+00:00 [child] [20:54:57.737][I][variant_b:186]: V_precondition_initial_parent_extaddr=588c81fffe5db0c4
+2026-05-14T18:54:57.748+00:00 [child] [20:54:57.747][W][variant_b:187]: V_precondition_target_still_current=588c81fffe5db0c4
+2026-05-14T18:54:57.748+00:00 [child] [20:54:57.747][W][variant_b:188]: V_invariant_current_parent_extaddr=588c81fffe5db0c4
+2026-05-14T18:54:57.758+00:00 [child] [20:54:57.758][W][variant_b:189]: V_invariant_target_parent_extaddr=588c81fffe5db0c4
+2026-05-14T18:54:57.760+00:00 [child] [20:54:57.760][W][variant_b:190]: V_invariant_result=abort_current_parent_already_target
+2026-05-14T18:54:58.726+00:00 [child] [20:54:58.726][I][variant_b:172]: V_precondition_probe_result elapsed_ms=40034 responses=1 target_matches=0
+2026-05-14T18:54:58.738+00:00 [child] [20:54:58.738][I][variant_b:186]: V_precondition_initial_parent_extaddr=588c81fffe5db0c4
+2026-05-14T18:54:58.749+00:00 [child] [20:54:58.748][W][variant_b:187]: V_precondition_target_still_current=588c81fffe5db0c4
+2026-05-14T18:54:58.749+00:00 [child] [20:54:58.748][W][variant_b:188]: V_invariant_current_parent_extaddr=588c81fffe5db0c4
+2026-05-14T18:54:58.760+00:00 [child] [20:54:58.759][W][variant_b:189]: V_invariant_target_parent_extaddr=588c81fffe5db0c4
+2026-05-14T18:54:58.760+00:00 [child] [20:54:58.760][W][variant_b:190]: V_invariant_result=abort_current_parent_already_target
+2026-05-14T18:54:59.727+00:00 [child] [20:54:59.727][I][variant_b:172]: V_precondition_probe_result elapsed_ms=41035 responses=1 target_matches=0
+2026-05-14T18:54:59.739+00:00 [child] [20:54:59.738][I][variant_b:186]: V_precondition_initial_parent_extaddr=588c81fffe5db0c4
+2026-05-14T18:54:59.750+00:00 [child] [20:54:59.749][W][variant_b:187]: V_precondition_target_still_current=588c81fffe5db0c4
+2026-05-14T18:54:59.750+00:00 [child] [20:54:59.749][W][variant_b:188]: V_invariant_current_parent_extaddr=588c81fffe5db0c4
+2026-05-14T18:54:59.761+00:00 [child] [20:54:59.760][W][variant_b:189]: V_invariant_target_parent_extaddr=588c81fffe5db0c4
+2026-05-14T18:54:59.762+00:00 [child] [20:54:59.762][W][variant_b:190]: V_invariant_result=abort_current_parent_already_target
+2026-05-14T18:55:00.728+00:00 [child] [20:55:00.728][I][variant_b:172]: V_precondition_probe_result elapsed_ms=42036 responses=1 target_matches=0
+2026-05-14T18:55:00.740+00:00 [child] [20:55:00.739][I][variant_b:186]: V_precondition_initial_parent_extaddr=588c81fffe5db0c4
+2026-05-14T18:55:00.751+00:00 [child] [20:55:00.750][W][variant_b:187]: V_precondition_target_still_current=588c81fffe5db0c4
+2026-05-14T18:55:00.751+00:00 [child] [20:55:00.750][W][variant_b:188]: V_invariant_current_parent_extaddr=588c81fffe5db0c4
+2026-05-14T18:55:00.762+00:00 [child] [20:55:00.761][W][variant_b:189]: V_invariant_target_parent_extaddr=588c81fffe5db0c4
+2026-05-14T18:55:00.763+00:00 [child] [20:55:00.762][W][variant_b:190]: V_invariant_result=abort_current_parent_already_target
+2026-05-14T18:55:01.729+00:00 [child] [20:55:01.729][I][variant_b:172]: V_precondition_probe_result elapsed_ms=43037 responses=1 target_matches=0
+2026-05-14T18:55:01.741+00:00 [child] [20:55:01.740][I][variant_b:186]: V_precondition_initial_parent_extaddr=588c81fffe5db0c4
+2026-05-14T18:55:01.752+00:00 [child] [20:55:01.751][W][variant_b:187]: V_precondition_target_still_current=588c81fffe5db0c4
+2026-05-14T18:55:01.752+00:00 [child] [20:55:01.751][W][variant_b:188]: V_invariant_current_parent_extaddr=588c81fffe5db0c4
+2026-05-14T18:55:01.763+00:00 [child] [20:55:01.762][W][variant_b:189]: V_invariant_target_parent_extaddr=588c81fffe5db0c4
+2026-05-14T18:55:01.764+00:00 [child] [20:55:01.764][W][variant_b:190]: V_invariant_result=abort_current_parent_already_target
+2026-05-14T18:55:02.730+00:00 [child] [20:55:02.730][I][variant_b:172]: V_precondition_probe_result elapsed_ms=44038 responses=1 target_matches=0
+2026-05-14T18:55:02.742+00:00 [child] [20:55:02.741][I][variant_b:186]: V_precondition_initial_parent_extaddr=588c81fffe5db0c4
+2026-05-14T18:55:02.753+00:00 [child] [20:55:02.752][W][variant_b:187]: V_precondition_target_still_current=588c81fffe5db0c4
+2026-05-14T18:55:02.753+00:00 [child] [20:55:02.752][W][variant_b:188]: V_invariant_current_parent_extaddr=588c81fffe5db0c4
+2026-05-14T18:55:02.764+00:00 [child] [20:55:02.763][W][variant_b:189]: V_invariant_target_parent_extaddr=588c81fffe5db0c4
+2026-05-14T18:55:02.765+00:00 [child] [20:55:02.765][W][variant_b:190]: V_invariant_result=abort_current_parent_already_target
+2026-05-14T18:55:03.731+00:00 [child] [20:55:03.731][I][variant_b:172]: V_precondition_probe_result elapsed_ms=45039 responses=1 target_matches=0
+2026-05-14T18:55:03.742+00:00 [child] [20:55:03.742][I][variant_b:186]: V_precondition_initial_parent_extaddr=588c81fffe5db0c4
+2026-05-14T18:55:03.754+00:00 [child] [20:55:03.753][W][variant_b:187]: V_precondition_target_still_current=588c81fffe5db0c4
+2026-05-14T18:55:03.754+00:00 [child] [20:55:03.753][W][variant_b:188]: V_invariant_current_parent_extaddr=588c81fffe5db0c4
+2026-05-14T18:55:03.765+00:00 [child] [20:55:03.764][W][variant_b:189]: V_invariant_target_parent_extaddr=588c81fffe5db0c4
+2026-05-14T18:55:03.766+00:00 [child] [20:55:03.766][W][variant_b:190]: V_invariant_result=abort_current_parent_already_target
+2026-05-14T18:55:04.732+00:00 [child] [20:55:04.732][I][variant_b:172]: V_precondition_probe_result elapsed_ms=46040 responses=1 target_matches=0
+2026-05-14T18:55:04.743+00:00 [child] [20:55:04.743][I][variant_b:186]: V_precondition_initial_parent_extaddr=588c81fffe5db0c4
+2026-05-14T18:55:04.755+00:00 [child] [20:55:04.754][W][variant_b:187]: V_precondition_target_still_current=588c81fffe5db0c4
+2026-05-14T18:55:04.755+00:00 [child] [20:55:04.754][W][variant_b:188]: V_invariant_current_parent_extaddr=588c81fffe5db0c4
+2026-05-14T18:55:04.766+00:00 [child] [20:55:04.765][W][variant_b:189]: V_invariant_target_parent_extaddr=588c81fffe5db0c4
+2026-05-14T18:55:04.767+00:00 [child] [20:55:04.767][W][variant_b:190]: V_invariant_result=abort_current_parent_already_target
+2026-05-14T18:55:05.734+00:00 [child] [20:55:05.733][I][variant_b:172]: V_precondition_probe_result elapsed_ms=47041 responses=1 target_matches=0
+2026-05-14T18:55:05.744+00:00 [child] [20:55:05.744][I][variant_b:186]: V_precondition_initial_parent_extaddr=588c81fffe5db0c4
+2026-05-14T18:55:05.756+00:00 [child] [20:55:05.755][W][variant_b:187]: V_precondition_target_still_current=588c81fffe5db0c4
+2026-05-14T18:55:05.756+00:00 [child] [20:55:05.755][W][variant_b:188]: V_invariant_current_parent_extaddr=588c81fffe5db0c4
+2026-05-14T18:55:05.767+00:00 [child] [20:55:05.766][W][variant_b:189]: V_invariant_target_parent_extaddr=588c81fffe5db0c4
+2026-05-14T18:55:05.768+00:00 [child] [20:55:05.768][W][variant_b:190]: V_invariant_result=abort_current_parent_already_target
+2026-05-14T18:55:06.734+00:00 [child] [20:55:06.734][I][variant_b:172]: V_precondition_probe_result elapsed_ms=48042 responses=1 target_matches=0
+2026-05-14T18:55:06.745+00:00 [child] [20:55:06.745][I][variant_b:186]: V_precondition_initial_parent_extaddr=588c81fffe5db0c4
+2026-05-14T18:55:06.756+00:00 [child] [20:55:06.756][W][variant_b:187]: V_precondition_target_still_current=588c81fffe5db0c4
+2026-05-14T18:55:06.757+00:00 [child] [20:55:06.756][W][variant_b:188]: V_invariant_current_parent_extaddr=588c81fffe5db0c4
+2026-05-14T18:55:06.768+00:00 [child] [20:55:06.767][W][variant_b:189]: V_invariant_target_parent_extaddr=588c81fffe5db0c4
+2026-05-14T18:55:06.769+00:00 [child] [20:55:06.769][W][variant_b:190]: V_invariant_result=abort_current_parent_already_target
+2026-05-14T18:55:07.736+00:00 [child] [20:55:07.735][I][variant_b:172]: V_precondition_probe_result elapsed_ms=49043 responses=1 target_matches=0
+2026-05-14T18:55:07.747+00:00 [child] [20:55:07.746][I][variant_b:186]: V_precondition_initial_parent_extaddr=588c81fffe5db0c4
+2026-05-14T18:55:07.758+00:00 [child] [20:55:07.757][W][variant_b:187]: V_precondition_target_still_current=588c81fffe5db0c4
+2026-05-14T18:55:07.758+00:00 [child] [20:55:07.757][W][variant_b:188]: V_invariant_current_parent_extaddr=588c81fffe5db0c4
+2026-05-14T18:55:07.769+00:00 [child] [20:55:07.769][W][variant_b:189]: V_invariant_target_parent_extaddr=588c81fffe5db0c4
+2026-05-14T18:55:07.770+00:00 [child] [20:55:07.770][W][variant_b:190]: V_invariant_result=abort_current_parent_already_target
+2026-05-14T18:55:08.736+00:00 [child] [20:55:08.736][I][variant_b:172]: V_precondition_probe_result elapsed_ms=50044 responses=1 target_matches=0
+2026-05-14T18:55:08.747+00:00 [child] [20:55:08.747][I][variant_b:186]: V_precondition_initial_parent_extaddr=588c81fffe5db0c4
+2026-05-14T18:55:08.759+00:00 [child] [20:55:08.758][W][variant_b:187]: V_precondition_target_still_current=588c81fffe5db0c4
+2026-05-14T18:55:08.759+00:00 [child] [20:55:08.758][W][variant_b:188]: V_invariant_current_parent_extaddr=588c81fffe5db0c4
+2026-05-14T18:55:08.770+00:00 [child] [20:55:08.769][W][variant_b:189]: V_invariant_target_parent_extaddr=588c81fffe5db0c4
+2026-05-14T18:55:08.771+00:00 [child] [20:55:08.771][W][variant_b:190]: V_invariant_result=abort_current_parent_already_target
+2026-05-14T18:55:09.737+00:00 [child] [20:55:09.737][I][variant_b:172]: V_precondition_probe_result elapsed_ms=51045 responses=1 target_matches=0
+2026-05-14T18:55:09.748+00:00 [child] [20:55:09.748][I][variant_b:186]: V_precondition_initial_parent_extaddr=588c81fffe5db0c4
+2026-05-14T18:55:09.760+00:00 [child] [20:55:09.759][W][variant_b:187]: V_precondition_target_still_current=588c81fffe5db0c4
+2026-05-14T18:55:09.760+00:00 [child] [20:55:09.759][W][variant_b:188]: V_invariant_current_parent_extaddr=588c81fffe5db0c4
+2026-05-14T18:55:09.771+00:00 [child] [20:55:09.771][W][variant_b:189]: V_invariant_target_parent_extaddr=588c81fffe5db0c4
+2026-05-14T18:55:09.772+00:00 [child] [20:55:09.772][W][variant_b:190]: V_invariant_result=abort_current_parent_already_target
+2026-05-14T18:55:10.739+00:00 [child] [20:55:10.738][I][variant_b:172]: V_precondition_probe_result elapsed_ms=52046 responses=1 target_matches=0
+2026-05-14T18:55:10.749+00:00 [child] [20:55:10.749][I][variant_b:186]: V_precondition_initial_parent_extaddr=588c81fffe5db0c4
+2026-05-14T18:55:10.760+00:00 [child] [20:55:10.760][W][variant_b:187]: V_precondition_target_still_current=588c81fffe5db0c4
+2026-05-14T18:55:10.760+00:00 [child] [20:55:10.760][W][variant_b:188]: V_invariant_current_parent_extaddr=588c81fffe5db0c4
+2026-05-14T18:55:10.772+00:00 [child] [20:55:10.771][W][variant_b:189]: V_invariant_target_parent_extaddr=588c81fffe5db0c4
+2026-05-14T18:55:10.773+00:00 [child] [20:55:10.773][W][variant_b:190]: V_invariant_result=abort_current_parent_already_target
+2026-05-14T18:55:11.740+00:00 [child] [20:55:11.739][I][variant_b:172]: V_precondition_probe_result elapsed_ms=53047 responses=1 target_matches=0
+2026-05-14T18:55:11.751+00:00 [child] [20:55:11.750][I][variant_b:186]: V_precondition_initial_parent_extaddr=588c81fffe5db0c4
+2026-05-14T18:55:11.761+00:00 [child] [20:55:11.761][W][variant_b:187]: V_precondition_target_still_current=588c81fffe5db0c4
+2026-05-14T18:55:11.762+00:00 [child] [20:55:11.761][W][variant_b:188]: V_invariant_current_parent_extaddr=588c81fffe5db0c4
+2026-05-14T18:55:11.772+00:00 [child] [20:55:11.772][W][variant_b:189]: V_invariant_target_parent_extaddr=588c81fffe5db0c4
+2026-05-14T18:55:11.774+00:00 [child] [20:55:11.774][W][variant_b:190]: V_invariant_result=abort_current_parent_already_target
+2026-05-14T18:55:12.740+00:00 [child] [20:55:12.740][I][variant_b:172]: V_precondition_probe_result elapsed_ms=54048 responses=1 target_matches=0
+2026-05-14T18:55:12.751+00:00 [child] [20:55:12.751][I][variant_b:186]: V_precondition_initial_parent_extaddr=588c81fffe5db0c4
+2026-05-14T18:55:12.762+00:00 [child] [20:55:12.762][W][variant_b:187]: V_precondition_target_still_current=588c81fffe5db0c4
+2026-05-14T18:55:12.762+00:00 [child] [20:55:12.762][W][variant_b:188]: V_invariant_current_parent_extaddr=588c81fffe5db0c4
+2026-05-14T18:55:12.773+00:00 [child] [20:55:12.773][W][variant_b:189]: V_invariant_target_parent_extaddr=588c81fffe5db0c4
+2026-05-14T18:55:12.775+00:00 [child] [20:55:12.775][W][variant_b:190]: V_invariant_result=abort_current_parent_already_target
+2026-05-14T18:55:13.741+00:00 [child] [20:55:13.741][I][variant_b:172]: V_precondition_probe_result elapsed_ms=55049 responses=1 target_matches=0
+2026-05-14T18:55:13.752+00:00 [child] [20:55:13.752][I][variant_b:186]: V_precondition_initial_parent_extaddr=588c81fffe5db0c4
+2026-05-14T18:55:13.763+00:00 [child] [20:55:13.763][W][variant_b:187]: V_precondition_target_still_current=588c81fffe5db0c4
+2026-05-14T18:55:13.763+00:00 [child] [20:55:13.763][W][variant_b:188]: V_invariant_current_parent_extaddr=588c81fffe5db0c4
+2026-05-14T18:55:13.775+00:00 [child] [20:55:13.774][W][variant_b:189]: V_invariant_target_parent_extaddr=588c81fffe5db0c4
+2026-05-14T18:55:13.776+00:00 [child] [20:55:13.776][W][variant_b:190]: V_invariant_result=abort_current_parent_already_target
+2026-05-14T18:55:14.742+00:00 [child] [20:55:14.742][I][variant_b:172]: V_precondition_probe_result elapsed_ms=56050 responses=1 target_matches=0
+2026-05-14T18:55:14.753+00:00 [child] [20:55:14.753][I][variant_b:186]: V_precondition_initial_parent_extaddr=588c81fffe5db0c4
+2026-05-14T18:55:14.764+00:00 [child] [20:55:14.764][W][variant_b:187]: V_precondition_target_still_current=588c81fffe5db0c4
+2026-05-14T18:55:14.764+00:00 [child] [20:55:14.764][W][variant_b:188]: V_invariant_current_parent_extaddr=588c81fffe5db0c4
+2026-05-14T18:55:14.775+00:00 [child] [20:55:14.775][W][variant_b:189]: V_invariant_target_parent_extaddr=588c81fffe5db0c4
+2026-05-14T18:55:14.777+00:00 [child] [20:55:14.777][W][variant_b:190]: V_invariant_result=abort_current_parent_already_target
+2026-05-14T18:55:15.743+00:00 [child] [20:55:15.743][I][variant_b:172]: V_precondition_probe_result elapsed_ms=57051 responses=1 target_matches=0
+2026-05-14T18:55:15.754+00:00 [child] [20:55:15.754][I][variant_b:186]: V_precondition_initial_parent_extaddr=588c81fffe5db0c4
+2026-05-14T18:55:15.766+00:00 [child] [20:55:15.765][W][variant_b:187]: V_precondition_target_still_current=588c81fffe5db0c4
+2026-05-14T18:55:15.766+00:00 [child] [20:55:15.765][W][variant_b:188]: V_invariant_current_parent_extaddr=588c81fffe5db0c4
+2026-05-14T18:55:15.776+00:00 [child] [20:55:15.776][W][variant_b:189]: V_invariant_target_parent_extaddr=588c81fffe5db0c4
+2026-05-14T18:55:15.778+00:00 [child] [20:55:15.778][W][variant_b:190]: V_invariant_result=abort_current_parent_already_target
+2026-05-14T18:55:16.744+00:00 [child] [20:55:16.744][I][variant_b:172]: V_precondition_probe_result elapsed_ms=58052 responses=1 target_matches=0
+2026-05-14T18:55:16.756+00:00 [child] [20:55:16.755][I][variant_b:186]: V_precondition_initial_parent_extaddr=588c81fffe5db0c4
+2026-05-14T18:55:16.767+00:00 [child] [20:55:16.766][W][variant_b:187]: V_precondition_target_still_current=588c81fffe5db0c4
+2026-05-14T18:55:16.767+00:00 [child] [20:55:16.766][W][variant_b:188]: V_invariant_current_parent_extaddr=588c81fffe5db0c4
+2026-05-14T18:55:16.778+00:00 [child] [20:55:16.778][W][variant_b:189]: V_invariant_target_parent_extaddr=588c81fffe5db0c4
+2026-05-14T18:55:16.779+00:00 [child] [20:55:16.779][W][variant_b:190]: V_invariant_result=abort_current_parent_already_target
+2026-05-14T18:55:17.745+00:00 [child] [20:55:17.745][I][variant_b:172]: V_precondition_probe_result elapsed_ms=59053 responses=1 target_matches=0
+2026-05-14T18:55:17.756+00:00 [child] [20:55:17.756][I][variant_b:186]: V_precondition_initial_parent_extaddr=588c81fffe5db0c4
+2026-05-14T18:55:17.767+00:00 [child] [20:55:17.767][W][variant_b:187]: V_precondition_target_still_current=588c81fffe5db0c4
+2026-05-14T18:55:17.768+00:00 [child] [20:55:17.767][W][variant_b:188]: V_invariant_current_parent_extaddr=588c81fffe5db0c4
+2026-05-14T18:55:17.779+00:00 [child] [20:55:17.778][W][variant_b:189]: V_invariant_target_parent_extaddr=588c81fffe5db0c4
+2026-05-14T18:55:17.780+00:00 [child] [20:55:17.780][W][variant_b:190]: V_invariant_result=abort_current_parent_already_target
+2026-05-14T18:55:18.087+00:00 [child] [20:55:18.087][I][safe_mode:091]: Boot seems successful; resetting boot loop counter
+2026-05-14T18:55:18.094+00:00 [child] [20:55:18.094][VV][preferences:043]: s_pending_save: key: 233825507, len: 4
+2026-05-14T18:55:18.095+00:00 [child] [20:55:18.094][VV][component:292]: safe_mode loop disabled
+2026-05-14T18:55:18.746+00:00 [child] [20:55:18.746][I][variant_b:172]: V_precondition_probe_result elapsed_ms=60054 responses=1 target_matches=0
+2026-05-14T18:55:18.757+00:00 [child] [20:55:18.757][I][variant_b:186]: V_precondition_initial_parent_extaddr=588c81fffe5db0c4
+2026-05-14T18:55:18.769+00:00 [child] [20:55:18.768][W][variant_b:187]: V_precondition_target_still_current=588c81fffe5db0c4
+2026-05-14T18:55:18.769+00:00 [child] [20:55:18.768][W][variant_b:188]: V_invariant_current_parent_extaddr=588c81fffe5db0c4
+2026-05-14T18:55:18.780+00:00 [child] [20:55:18.780][W][variant_b:189]: V_invariant_target_parent_extaddr=588c81fffe5db0c4
+2026-05-14T18:55:18.781+00:00 [child] [20:55:18.781][W][variant_b:190]: V_invariant_result=abort_current_parent_already_target
+2026-05-14T18:55:19.747+00:00 [child] [20:55:19.747][I][variant_b:172]: V_precondition_probe_result elapsed_ms=61055 responses=1 target_matches=0
+2026-05-14T18:55:19.758+00:00 [child] [20:55:19.758][I][variant_b:186]: V_precondition_initial_parent_extaddr=588c81fffe5db0c4
+2026-05-14T18:55:19.770+00:00 [child] [20:55:19.770][W][variant_b:187]: V_precondition_target_still_current=588c81fffe5db0c4
+2026-05-14T18:55:19.770+00:00 [child] [20:55:19.770][W][variant_b:188]: V_invariant_current_parent_extaddr=588c81fffe5db0c4
+2026-05-14T18:55:19.781+00:00 [child] [20:55:19.781][W][variant_b:189]: V_invariant_target_parent_extaddr=588c81fffe5db0c4
+2026-05-14T18:55:19.782+00:00 [child] [20:55:19.782][W][variant_b:190]: V_invariant_result=abort_current_parent_already_target
+2026-05-14T18:55:20.748+00:00 [child] [20:55:20.748][I][variant_b:172]: V_precondition_probe_result elapsed_ms=62056 responses=1 target_matches=0
+2026-05-14T18:55:20.759+00:00 [child] [20:55:20.759][I][variant_b:186]: V_precondition_initial_parent_extaddr=588c81fffe5db0c4
+2026-05-14T18:55:20.771+00:00 [child] [20:55:20.771][W][variant_b:187]: V_precondition_target_still_current=588c81fffe5db0c4
+2026-05-14T18:55:20.771+00:00 [child] [20:55:20.771][W][variant_b:188]: V_invariant_current_parent_extaddr=588c81fffe5db0c4
+2026-05-14T18:55:20.782+00:00 [child] [20:55:20.782][W][variant_b:189]: V_invariant_target_parent_extaddr=588c81fffe5db0c4
+2026-05-14T18:55:20.783+00:00 [child] [20:55:20.783][W][variant_b:190]: V_invariant_result=abort_current_parent_already_target
+2026-05-14T18:55:21.749+00:00 [child] [20:55:21.749][I][variant_b:172]: V_precondition_probe_result elapsed_ms=63057 responses=1 target_matches=0
+2026-05-14T18:55:21.761+00:00 [child] [20:55:21.760][I][variant_b:186]: V_precondition_initial_parent_extaddr=588c81fffe5db0c4
+2026-05-14T18:55:21.771+00:00 [child] [20:55:21.771][W][variant_b:187]: V_precondition_target_still_current=588c81fffe5db0c4
+2026-05-14T18:55:21.772+00:00 [child] [20:55:21.771][W][variant_b:188]: V_invariant_current_parent_extaddr=588c81fffe5db0c4
+2026-05-14T18:55:21.783+00:00 [child] [20:55:21.783][W][variant_b:189]: V_invariant_target_parent_extaddr=588c81fffe5db0c4
+2026-05-14T18:55:21.784+00:00 [child] [20:55:21.784][W][variant_b:190]: V_invariant_result=abort_current_parent_already_target
+2026-05-14T18:55:22.691+00:00 [child] [20:55:22.690][V][preferences:121]: Saving 1 items...
+2026-05-14T18:55:22.691+00:00 [child] [20:55:22.690][VV][preferences:129]: Checking if NVS data 233825507 has changed
+2026-05-14T18:55:22.701+00:00 [child] [20:55:22.701][V][preferences:132]: sync: key: 233825507, len: 4
+2026-05-14T18:55:22.703+00:00 [child] [20:55:22.703][D][preferences:152]: Writing 1 items: 0 cached, 1 written, 0 failed
+2026-05-14T18:55:22.753+00:00 [child] [20:55:22.752][I][variant_b:172]: V_precondition_probe_result elapsed_ms=64060 responses=1 target_matches=0
+2026-05-14T18:55:22.763+00:00 [child] [20:55:22.763][I][variant_b:186]: V_precondition_initial_parent_extaddr=588c81fffe5db0c4
+2026-05-14T18:55:22.775+00:00 [child] [20:55:22.775][W][variant_b:187]: V_precondition_target_still_current=588c81fffe5db0c4
+2026-05-14T18:55:22.775+00:00 [child] [20:55:22.775][W][variant_b:188]: V_invariant_current_parent_extaddr=588c81fffe5db0c4
+2026-05-14T18:55:22.786+00:00 [child] [20:55:22.786][W][variant_b:189]: V_invariant_target_parent_extaddr=588c81fffe5db0c4
+2026-05-14T18:55:22.787+00:00 [child] [20:55:22.787][W][variant_b:190]: V_invariant_result=abort_current_parent_already_target
+2026-05-14T18:55:23.752+00:00 [child] [20:55:23.752][I][variant_b:172]: V_precondition_probe_result elapsed_ms=65060 responses=1 target_matches=0
+2026-05-14T18:55:23.763+00:00 [child] [20:55:23.763][I][variant_b:186]: V_precondition_initial_parent_extaddr=588c81fffe5db0c4
+2026-05-14T18:55:23.774+00:00 [child] [20:55:23.774][W][variant_b:187]: V_precondition_target_still_current=588c81fffe5db0c4
+2026-05-14T18:55:23.775+00:00 [child] [20:55:23.774][W][variant_b:188]: V_invariant_current_parent_extaddr=588c81fffe5db0c4
+2026-05-14T18:55:23.786+00:00 [child] [20:55:23.786][W][variant_b:189]: V_invariant_target_parent_extaddr=588c81fffe5db0c4
+2026-05-14T18:55:23.787+00:00 [child] [20:55:23.787][W][variant_b:190]: V_invariant_result=abort_current_parent_already_target
+2026-05-14T18:55:24.754+00:00 [child] [20:55:24.754][I][variant_b:172]: V_precondition_probe_result elapsed_ms=66062 responses=1 target_matches=0
+2026-05-14T18:55:24.765+00:00 [child] [20:55:24.765][I][variant_b:186]: V_precondition_initial_parent_extaddr=588c81fffe5db0c4
+2026-05-14T18:55:24.776+00:00 [child] [20:55:24.776][W][variant_b:187]: V_precondition_target_still_current=588c81fffe5db0c4
+2026-05-14T18:55:24.777+00:00 [child] [20:55:24.776][W][variant_b:188]: V_invariant_current_parent_extaddr=588c81fffe5db0c4
+2026-05-14T18:55:24.788+00:00 [child] [20:55:24.788][W][variant_b:189]: V_invariant_target_parent_extaddr=588c81fffe5db0c4
+2026-05-14T18:55:24.789+00:00 [child] [20:55:24.789][W][variant_b:190]: V_invariant_result=abort_current_parent_already_target
+2026-05-14T18:55:25.755+00:00 [child] [20:55:25.755][I][variant_b:172]: V_precondition_probe_result elapsed_ms=67063 responses=1 target_matches=0
+2026-05-14T18:55:25.767+00:00 [child] [20:55:25.767][I][variant_b:186]: V_precondition_initial_parent_extaddr=588c81fffe5db0c4
+2026-05-14T18:55:25.778+00:00 [child] [20:55:25.778][W][variant_b:187]: V_precondition_target_still_current=588c81fffe5db0c4
+2026-05-14T18:55:25.778+00:00 [child] [20:55:25.778][W][variant_b:188]: V_invariant_current_parent_extaddr=588c81fffe5db0c4
+2026-05-14T18:55:25.789+00:00 [child] [20:55:25.788][W][variant_b:189]: V_invariant_target_parent_extaddr=588c81fffe5db0c4
+2026-05-14T18:55:25.790+00:00 [child] [20:55:25.790][W][variant_b:190]: V_invariant_result=abort_current_parent_already_target
+2026-05-14T18:55:26.756+00:00 [child] [20:55:26.756][I][variant_b:172]: V_precondition_probe_result elapsed_ms=68064 responses=1 target_matches=0
+2026-05-14T18:55:26.767+00:00 [child] [20:55:26.767][I][variant_b:186]: V_precondition_initial_parent_extaddr=588c81fffe5db0c4
+2026-05-14T18:55:26.779+00:00 [child] [20:55:26.779][W][variant_b:187]: V_precondition_target_still_current=588c81fffe5db0c4
+2026-05-14T18:55:26.779+00:00 [child] [20:55:26.779][W][variant_b:188]: V_invariant_current_parent_extaddr=588c81fffe5db0c4
+2026-05-14T18:55:26.790+00:00 [child] [20:55:26.790][W][variant_b:189]: V_invariant_target_parent_extaddr=588c81fffe5db0c4
+2026-05-14T18:55:26.791+00:00 [child] [20:55:26.791][W][variant_b:190]: V_invariant_result=abort_current_parent_already_target
+2026-05-14T18:55:27.757+00:00 [child] [20:55:27.757][I][variant_b:172]: V_precondition_probe_result elapsed_ms=69065 responses=1 target_matches=0
+2026-05-14T18:55:27.768+00:00 [child] [20:55:27.768][I][variant_b:186]: V_precondition_initial_parent_extaddr=588c81fffe5db0c4
+2026-05-14T18:55:27.780+00:00 [child] [20:55:27.779][W][variant_b:187]: V_precondition_target_still_current=588c81fffe5db0c4
+2026-05-14T18:55:27.780+00:00 [child] [20:55:27.779][W][variant_b:188]: V_invariant_current_parent_extaddr=588c81fffe5db0c4
+2026-05-14T18:55:27.791+00:00 [child] [20:55:27.791][W][variant_b:189]: V_invariant_target_parent_extaddr=588c81fffe5db0c4
+2026-05-14T18:55:27.792+00:00 [child] [20:55:27.792][W][variant_b:190]: V_invariant_result=abort_current_parent_already_target
+2026-05-14T18:55:28.758+00:00 [child] [20:55:28.758][I][variant_b:172]: V_precondition_probe_result elapsed_ms=70066 responses=1 target_matches=0
+2026-05-14T18:55:28.769+00:00 [child] [20:55:28.769][I][variant_b:186]: V_precondition_initial_parent_extaddr=588c81fffe5db0c4
+2026-05-14T18:55:28.780+00:00 [child] [20:55:28.780][W][variant_b:187]: V_precondition_target_still_current=588c81fffe5db0c4
+2026-05-14T18:55:28.780+00:00 [child] [20:55:28.780][W][variant_b:188]: V_invariant_current_parent_extaddr=588c81fffe5db0c4
+2026-05-14T18:55:28.792+00:00 [child] [20:55:28.792][W][variant_b:189]: V_invariant_target_parent_extaddr=588c81fffe5db0c4
+2026-05-14T18:55:28.793+00:00 [child] [20:55:28.793][W][variant_b:190]: V_invariant_result=abort_current_parent_already_target
+2026-05-14T18:55:29.759+00:00 [child] [20:55:29.759][I][variant_b:172]: V_precondition_probe_result elapsed_ms=71067 responses=1 target_matches=0
+2026-05-14T18:55:29.770+00:00 [child] [20:55:29.770][I][variant_b:186]: V_precondition_initial_parent_extaddr=588c81fffe5db0c4
+2026-05-14T18:55:29.782+00:00 [child] [20:55:29.782][W][variant_b:187]: V_precondition_target_still_current=588c81fffe5db0c4
+2026-05-14T18:55:29.782+00:00 [child] [20:55:29.782][W][variant_b:188]: V_invariant_current_parent_extaddr=588c81fffe5db0c4
+2026-05-14T18:55:29.793+00:00 [child] [20:55:29.793][W][variant_b:189]: V_invariant_target_parent_extaddr=588c81fffe5db0c4
+2026-05-14T18:55:29.794+00:00 [child] [20:55:29.794][W][variant_b:190]: V_invariant_result=abort_current_parent_already_target
+2026-05-14T18:55:30.760+00:00 [child] [20:55:30.760][I][variant_b:172]: V_precondition_probe_result elapsed_ms=72068 responses=1 target_matches=0
+2026-05-14T18:55:30.772+00:00 [child] [20:55:30.772][I][variant_b:186]: V_precondition_initial_parent_extaddr=588c81fffe5db0c4
+2026-05-14T18:55:30.783+00:00 [child] [20:55:30.783][W][variant_b:187]: V_precondition_target_still_current=588c81fffe5db0c4
+2026-05-14T18:55:30.783+00:00 [child] [20:55:30.783][W][variant_b:188]: V_invariant_current_parent_extaddr=588c81fffe5db0c4
+2026-05-14T18:55:30.794+00:00 [child] [20:55:30.794][W][variant_b:189]: V_invariant_target_parent_extaddr=588c81fffe5db0c4
+2026-05-14T18:55:30.795+00:00 [child] [20:55:30.795][W][variant_b:190]: V_invariant_result=abort_current_parent_already_target
+2026-05-14T18:55:31.761+00:00 [child] [20:55:31.761][I][variant_b:172]: V_precondition_probe_result elapsed_ms=73069 responses=1 target_matches=0
+2026-05-14T18:55:31.772+00:00 [child] [20:55:31.772][I][variant_b:186]: V_precondition_initial_parent_extaddr=588c81fffe5db0c4
+2026-05-14T18:55:31.784+00:00 [child] [20:55:31.784][W][variant_b:187]: V_precondition_target_still_current=588c81fffe5db0c4
+2026-05-14T18:55:31.784+00:00 [child] [20:55:31.784][W][variant_b:188]: V_invariant_current_parent_extaddr=588c81fffe5db0c4
+2026-05-14T18:55:31.795+00:00 [child] [20:55:31.795][W][variant_b:189]: V_invariant_target_parent_extaddr=588c81fffe5db0c4
+2026-05-14T18:55:31.796+00:00 [child] [20:55:31.796][W][variant_b:190]: V_invariant_result=abort_current_parent_already_target
+2026-05-14T18:55:32.762+00:00 [child] [20:55:32.762][I][variant_b:172]: V_precondition_probe_result elapsed_ms=74070 responses=1 target_matches=0
+2026-05-14T18:55:32.774+00:00 [child] [20:55:32.774][I][variant_b:186]: V_precondition_initial_parent_extaddr=588c81fffe5db0c4
+2026-05-14T18:55:32.785+00:00 [child] [20:55:32.785][W][variant_b:187]: V_precondition_target_still_current=588c81fffe5db0c4
+2026-05-14T18:55:32.785+00:00 [child] [20:55:32.785][W][variant_b:188]: V_invariant_current_parent_extaddr=588c81fffe5db0c4
+2026-05-14T18:55:32.796+00:00 [child] [20:55:32.796][W][variant_b:189]: V_invariant_target_parent_extaddr=588c81fffe5db0c4
+2026-05-14T18:55:32.797+00:00 [child] [20:55:32.797][W][variant_b:190]: V_invariant_result=abort_current_parent_already_target
+2026-05-14T18:55:33.763+00:00 [child] [20:55:33.763][I][variant_b:172]: V_precondition_probe_result elapsed_ms=75071 responses=1 target_matches=0
+2026-05-14T18:55:33.775+00:00 [child] [20:55:33.775][I][variant_b:186]: V_precondition_initial_parent_extaddr=588c81fffe5db0c4
+2026-05-14T18:55:33.786+00:00 [child] [20:55:33.786][W][variant_b:187]: V_precondition_target_still_current=588c81fffe5db0c4
+2026-05-14T18:55:33.786+00:00 [child] [20:55:33.786][W][variant_b:188]: V_invariant_current_parent_extaddr=588c81fffe5db0c4
+2026-05-14T18:55:33.797+00:00 [child] [20:55:33.797][W][variant_b:189]: V_invariant_target_parent_extaddr=588c81fffe5db0c4
+2026-05-14T18:55:33.798+00:00 [child] [20:55:33.798][W][variant_b:190]: V_invariant_result=abort_current_parent_already_target
+2026-05-14T18:55:34.765+00:00 [child] [20:55:34.765][I][variant_b:172]: V_precondition_probe_result elapsed_ms=76073 responses=1 target_matches=0
+2026-05-14T18:55:34.777+00:00 [child] [20:55:34.777][I][variant_b:186]: V_precondition_initial_parent_extaddr=588c81fffe5db0c4
+2026-05-14T18:55:34.788+00:00 [child] [20:55:34.788][W][variant_b:187]: V_precondition_target_still_current=588c81fffe5db0c4
+2026-05-14T18:55:34.788+00:00 [child] [20:55:34.788][W][variant_b:188]: V_invariant_current_parent_extaddr=588c81fffe5db0c4
+2026-05-14T18:55:34.799+00:00 [child] [20:55:34.799][W][variant_b:189]: V_invariant_target_parent_extaddr=588c81fffe5db0c4
+2026-05-14T18:55:34.800+00:00 [child] [20:55:34.800][W][variant_b:190]: V_invariant_result=abort_current_parent_already_target
+2026-05-14T18:55:35.766+00:00 [child] [20:55:35.766][I][variant_b:172]: V_precondition_probe_result elapsed_ms=77074 responses=1 target_matches=0
+2026-05-14T18:55:35.778+00:00 [child] [20:55:35.778][I][variant_b:186]: V_precondition_initial_parent_extaddr=588c81fffe5db0c4
+2026-05-14T18:55:35.789+00:00 [child] [20:55:35.788][W][variant_b:187]: V_precondition_target_still_current=588c81fffe5db0c4
+2026-05-14T18:55:35.789+00:00 [child] [20:55:35.788][W][variant_b:188]: V_invariant_current_parent_extaddr=588c81fffe5db0c4
+2026-05-14T18:55:35.800+00:00 [child] [20:55:35.800][W][variant_b:189]: V_invariant_target_parent_extaddr=588c81fffe5db0c4
+2026-05-14T18:55:35.801+00:00 [child] [20:55:35.801][W][variant_b:190]: V_invariant_result=abort_current_parent_already_target
+2026-05-14T18:55:36.767+00:00 [child] [20:55:36.767][I][variant_b:172]: V_precondition_probe_result elapsed_ms=78075 responses=1 target_matches=0
+2026-05-14T18:55:36.779+00:00 [child] [20:55:36.779][I][variant_b:186]: V_precondition_initial_parent_extaddr=588c81fffe5db0c4
+2026-05-14T18:55:36.790+00:00 [child] [20:55:36.790][W][variant_b:187]: V_precondition_target_still_current=588c81fffe5db0c4
+2026-05-14T18:55:36.790+00:00 [child] [20:55:36.790][W][variant_b:188]: V_invariant_current_parent_extaddr=588c81fffe5db0c4
+2026-05-14T18:55:36.801+00:00 [child] [20:55:36.801][W][variant_b:189]: V_invariant_target_parent_extaddr=588c81fffe5db0c4
+2026-05-14T18:55:36.802+00:00 [child] [20:55:36.802][W][variant_b:190]: V_invariant_result=abort_current_parent_already_target
+# capture-end 2026-05-14T18:55:37.514234+00:00
+# variant-preconditioning-method usb-thread-off
+# variant-target-parent-extaddr 588c81fffe5db0c4
+# variant-restore-to-switch-delay-ms 750
+# variant-initial-parent-extaddr 588c81fffe5db0c4
+# variant-precondition-result target_still_current
+# variant-precondition-probe-responses 1
+# variant-precondition-probe-target-matches 0
+# variant-precondition-probe-non-target-extaddr 588c81fffe5db0c4
+# variant-target-suppression-start 2026-05-14T18:54:17.475Z
+# variant-target-suppression-end 2026-05-14T18:55:19.082Z
+# classification precondition_failed_initial_parent_is_target
