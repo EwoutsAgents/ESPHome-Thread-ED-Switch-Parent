@@ -68,6 +68,7 @@ META_PATTERNS = {
     "variant_precondition_probe_responses": re.compile(r"^#\s*variant-precondition-probe-responses\s+(\d+)$"),
     "variant_precondition_probe_target_matches": re.compile(r"^#\s*variant-precondition-probe-target-matches\s+(\d+)$"),
     "variant_precondition_probe_non_target_extaddr": re.compile(r"^#\s*variant-precondition-probe-non-target-extaddr\s+([0-9a-fA-F]{16})$"),
+    "variant_thread_off_ready_time": re.compile(r"^#\s*variant-thread-off-ready-time\s+(.+)$"),
     "variant_target_suppression_start": re.compile(r"^#\s*variant-target-suppression-start\s+(.+)$"),
     "variant_target_suppression_end": re.compile(r"^#\s*variant-target-suppression-end\s+(.+)$"),
     "variant_restore_to_switch_delay_ms": re.compile(r"^#\s*variant-restore-to-switch-delay-ms\s+(\d+)$"),
@@ -103,6 +104,7 @@ def main() -> int:
         "variant_precondition_probe_responses": "",
         "variant_precondition_probe_target_matches": "",
         "variant_precondition_probe_non_target_extaddr": "",
+        "variant_thread_off_ready_time": "",
         "variant_target_suppression_start": "",
         "variant_target_suppression_end": "",
         "variant_restore_to_switch_delay_ms": "",
@@ -117,6 +119,7 @@ def main() -> int:
 
     selected_events = SCENARIOS[args.scenario]
 
+    parsed_lines: list[tuple[dt.datetime, str]] = []
     for line in input_text.splitlines():
         for key, pat in META_PATTERNS.items():
             mm = pat.match(line)
@@ -126,11 +129,26 @@ def main() -> int:
         m = TS_PREFIX.match(line)
         if not m or m.group("label") != args.label:
             continue
+        parsed_lines.append((parse_ts(m.group("ts")), m.group("msg")))
 
-        ts = parse_ts(m.group("ts"))
-        msg = m.group("msg")
+    t0_request_ts: dt.datetime | None = None
+    for ts, msg in parsed_lines:
+        if all_patterns["T0_request"].search(msg) or all_patterns["C0_request"].search(msg):
+            t0_request_ts = ts
+            break
+
+    variant_post_t0_only = {
+        "T1_discovery_start", "T2_target_observed", "T3_attach_start", "T4_child_id_req",
+        "T5_attach_done", "T6_parent_match", "C1_workflow_started", "C2_target_reached",
+    }
+
+    for ts, msg in parsed_lines:
         for key in selected_events:
-            if key not in events and all_patterns[key].search(msg):
+            if key in events:
+                continue
+            if args.scenario.startswith("variant") and t0_request_ts is not None and key in variant_post_t0_only and ts < t0_request_ts:
+                continue
+            if all_patterns[key].search(msg):
                 events[key] = ts
 
     args.out.parent.mkdir(parents=True, exist_ok=True)
@@ -138,7 +156,7 @@ def main() -> int:
         writer = csv.writer(f)
         writer.writerow([
             "scenario", "mode", "checkpoint", "timestamp_utc", "delta_ms_from_c0", "delta_ms_from_attach_start", "disruption_time_utc", "delta_ms_from_disruption", "delta_ms_from_search_start", "source_log", "classification",
-            "initial_parent_extaddr", "target_parent_extaddr", "disabled_router_label", "disable_method", "variant_preconditioning_method", "variant_precondition_result", "variant_precondition_probe_responses", "variant_precondition_probe_target_matches", "variant_precondition_probe_non_target_extaddr", "variant_target_suppression_start", "variant_target_suppression_end", "variant_restore_to_switch_delay_ms"
+            "initial_parent_extaddr", "target_parent_extaddr", "disabled_router_label", "disable_method", "variant_preconditioning_method", "variant_precondition_result", "variant_precondition_probe_responses", "variant_precondition_probe_target_matches", "variant_precondition_probe_non_target_extaddr", "variant_thread_off_ready_time", "variant_target_suppression_start", "variant_target_suppression_end", "variant_restore_to_switch_delay_ms"
         ])
         c0 = events.get("C0_request")
         t3 = events.get("T3_attach_start")
@@ -180,23 +198,12 @@ def main() -> int:
                 classification = "thread_off_failed"
             elif meta["variant_precondition_result"] == "thread_on_failed":
                 classification = "thread_on_failed"
-            elif (
-                meta["initial_parent_extaddr"]
-                and target_parent_extaddr
-                and meta["initial_parent_extaddr"].lower() == target_parent_extaddr.lower()
-            ):
-                classification = "precondition_failed_initial_parent_is_target"
-            elif "V_invariant_abort_current_parent_unknown" in events:
-                classification = "precondition_aborted_current_parent_unknown"
-            elif "V_invariant_abort_current_parent_already_target" in events:
-                classification = "precondition_aborted_already_target"
             elif meta["variant_precondition_result"] == "initial_parent_unknown":
                 classification = "initial_parent_unknown"
             elif "V_immediate_parent_match" in events and "T3_attach_start" not in events:
                 classification = "immediate_parent_match_no_switch"
             elif (
-                "V_invariant_non_target_current_parent" in events
-                and "T0_request" in events
+                meta["variant_precondition_result"] == "non_target_confirmed"
                 and "T3_attach_start" in events
                 and "T6_parent_match" in events
                 and "V_immediate_parent_match" not in events
@@ -212,7 +219,7 @@ def main() -> int:
             if ts is None:
                 writer.writerow([
                     args.scenario, args.mode, key, "", "", "", meta["disable_start"], "", "", str(args.infile), classification,
-                    meta["initial_parent_extaddr"], target_parent_extaddr, meta["disabled_router_label"], meta["disable_method"], meta["variant_preconditioning_method"], meta["variant_precondition_result"], meta["variant_precondition_probe_responses"], meta["variant_precondition_probe_target_matches"], meta["variant_precondition_probe_non_target_extaddr"], meta["variant_target_suppression_start"], meta["variant_target_suppression_end"], meta["variant_restore_to_switch_delay_ms"]
+                    meta["initial_parent_extaddr"], target_parent_extaddr, meta["disabled_router_label"], meta["disable_method"], meta["variant_preconditioning_method"], meta["variant_precondition_result"], meta["variant_precondition_probe_responses"], meta["variant_precondition_probe_target_matches"], meta["variant_precondition_probe_non_target_extaddr"], meta["variant_thread_off_ready_time"], meta["variant_target_suppression_start"], meta["variant_target_suppression_end"], meta["variant_restore_to_switch_delay_ms"]
                 ])
             else:
                 delta = "" if c0 is None else int((ts - c0).total_seconds() * 1000)
@@ -221,7 +228,7 @@ def main() -> int:
                 delta_search = "" if so1 is None else int((ts - so1).total_seconds() * 1000)
                 writer.writerow([
                     args.scenario, args.mode, key, ts.isoformat(), delta, delta_attach, meta["disable_start"], delta_disruption, delta_search, str(args.infile), classification,
-                    meta["initial_parent_extaddr"], target_parent_extaddr, meta["disabled_router_label"], meta["disable_method"], meta["variant_preconditioning_method"], meta["variant_precondition_result"], meta["variant_precondition_probe_responses"], meta["variant_precondition_probe_target_matches"], meta["variant_precondition_probe_non_target_extaddr"], meta["variant_target_suppression_start"], meta["variant_target_suppression_end"], meta["variant_restore_to_switch_delay_ms"]
+                    meta["initial_parent_extaddr"], target_parent_extaddr, meta["disabled_router_label"], meta["disable_method"], meta["variant_preconditioning_method"], meta["variant_precondition_result"], meta["variant_precondition_probe_responses"], meta["variant_precondition_probe_target_matches"], meta["variant_precondition_probe_non_target_extaddr"], meta["variant_thread_off_ready_time"], meta["variant_target_suppression_start"], meta["variant_target_suppression_end"], meta["variant_restore_to_switch_delay_ms"]
                 ])
 
     print(f"Wrote {args.out}")

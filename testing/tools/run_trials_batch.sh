@@ -48,6 +48,7 @@ VARIANT_POST_RESTORE_SETTLE_TIMEOUT="${VARIANT_POST_RESTORE_SETTLE_TIMEOUT:-15}"
 VARIANT_RESTORE_TO_SWITCH_DELAY_MS="${VARIANT_RESTORE_TO_SWITCH_DELAY_MS:-750}"
 VARIANT_PRECONDITION_RELEASE_DELAY_MS="$(((VARIANT_USB_THREAD_OFF_TIMEOUT + VARIANT_POST_RESTORE_SETTLE_TIMEOUT) * 1000))ms"
 VARIANT_CAPTURE_BUFFER_TIMEOUT="${VARIANT_CAPTURE_BUFFER_TIMEOUT:-30}"
+VARIANT_THREAD_OFF_READY_TIMEOUT="${VARIANT_THREAD_OFF_READY_TIMEOUT:-12}"
 THREAD_CTL=".venv/bin/python testing/tools/thread_ctl.py"
 THREAD_CONTROL_READY=""
 TARGET_ROUTER_LABEL=""
@@ -178,6 +179,7 @@ append_variant_preconditioning_metadata() {
   local probe_responses="${7:-}"
   local probe_target_matches="${8:-}"
   local probe_non_target_parent="${9:-}"
+  local ready_time="${10:-}"
 
   {
     echo "# variant-preconditioning-method $prep_method"
@@ -188,6 +190,7 @@ append_variant_preconditioning_metadata() {
     [[ -n "$probe_responses" ]] && echo "# variant-precondition-probe-responses $probe_responses"
     [[ -n "$probe_target_matches" ]] && echo "# variant-precondition-probe-target-matches $probe_target_matches"
     [[ -n "$probe_non_target_parent" ]] && echo "# variant-precondition-probe-non-target-extaddr $probe_non_target_parent"
+    [[ -n "$ready_time" ]] && echo "# variant-thread-off-ready-time $ready_time"
     [[ -n "$suppression_start" ]] && echo "# variant-target-suppression-start $suppression_start"
     [[ -n "$suppression_end" ]] && echo "# variant-target-suppression-end $suppression_end"
     case "$prep_result" in
@@ -297,6 +300,7 @@ for ((i=DONE+1; i<=TARGET_ATTEMPTS; i++)); do
   PREP_INITIAL_PARENT=""
   PREP_SUPPRESSION_START=""
   PREP_SUPPRESSION_END=""
+  PREP_READY_TIME=""
   PREP_PROBE_RESPONSES=""
   PREP_PROBE_TARGET_MATCHES=""
   PREP_PROBE_NON_TARGET_PARENT=""
@@ -305,8 +309,10 @@ for ((i=DONE+1; i<=TARGET_ATTEMPTS; i++)); do
   PREP_INITIAL_PARENT_FILE="${PREP_LOG%.out}.initial_parent.tmp"
   PREP_SUPPRESSION_START_FILE="${PREP_LOG%.out}.suppression_start.tmp"
   PREP_SUPPRESSION_END_FILE="${PREP_LOG%.out}.suppression_end.tmp"
+  PREP_READY_FILE="${PREP_LOG%.out}.ready.tmp"
+  PREP_READY_TIME_FILE="${PREP_LOG%.out}.ready_time.tmp"
   PREP_SUPPRESSION_STOP_FILE="${PREP_LOG%.out}.suppression_stop.tmp"
-  rm -f "$PREP_METHOD_FILE" "$PREP_RESULT_FILE" "$PREP_INITIAL_PARENT_FILE" "$PREP_SUPPRESSION_START_FILE" "$PREP_SUPPRESSION_END_FILE" "$PREP_SUPPRESSION_STOP_FILE"
+  rm -f "$PREP_METHOD_FILE" "$PREP_RESULT_FILE" "$PREP_INITIAL_PARENT_FILE" "$PREP_SUPPRESSION_START_FILE" "$PREP_SUPPRESSION_END_FILE" "$PREP_READY_FILE" "$PREP_READY_TIME_FILE" "$PREP_SUPPRESSION_STOP_FILE"
 
   CAPTURE_ARGS=(
     --config "$CONFIG"
@@ -343,30 +349,49 @@ for ((i=DONE+1; i<=TARGET_ATTEMPTS; i++)); do
         PREP_RESULT="thread_off_failed"
         python3 testing/tools/capture_logs.py "${CAPTURE_ARGS[@]}" >"${LOG%.log}.capture.out" 2>&1
       else
-        thread_control_cmd off-hold-verify-disabled --duration-s "$VARIANT_USB_THREAD_OFF_TIMEOUT" >>"$PREP_LOG" 2>&1 &
+        thread_control_cmd off-verify-disabled-hold --duration-s "$VARIANT_USB_THREAD_OFF_TIMEOUT" >>"$PREP_LOG" 2>&1 &
         THREAD_HOLD_PID=$!
-        sleep 1
-        if ! kill -0 "$THREAD_HOLD_PID" 2>/dev/null; then
+        READY_OBSERVED="no"
+        READY_DEADLINE=$(( $(date +%s) + VARIANT_THREAD_OFF_READY_TIMEOUT ))
+        while true; do
+          if grep -q 'USB_CTL_READY_DISABLED' "$PREP_LOG" 2>/dev/null; then
+            READY_OBSERVED="yes"
+            : > "$PREP_READY_FILE"
+            date -u +%Y-%m-%dT%H:%M:%S.%3NZ > "$PREP_READY_TIME_FILE"
+            cp "$PREP_READY_TIME_FILE" "$PREP_SUPPRESSION_START_FILE"
+            break
+          fi
+          if ! kill -0 "$THREAD_HOLD_PID" 2>/dev/null; then
+            break
+          fi
+          if (( $(date +%s) >= READY_DEADLINE )); then
+            break
+          fi
+          sleep 0.2
+        done
+
+        if [[ "$READY_OBSERVED" != "yes" ]]; then
           wait "$THREAD_HOLD_PID" || true
-          echo "[batch] thread state verification failed after thread off" | tee -a "$PREP_LOG"
+          echo "[batch] thread state verification failed before ready-disabled handshake" | tee -a "$PREP_LOG"
           PREP_RESULT="thread_off_failed"
-          python3 testing/tools/capture_logs.py "${CAPTURE_ARGS[@]}" >"${LOG%.log}.capture.out" 2>&1
+          SHORT_CAPTURE_DURATION=20
+          python3 testing/tools/capture_logs.py "${CAPTURE_ARGS[@]/$EFFECTIVE_DURATION/$SHORT_CAPTURE_DURATION}" >"${LOG%.log}.capture.out" 2>&1
         else
-          date -u +%Y-%m-%dT%H:%M:%S.%3NZ > "$PREP_SUPPRESSION_START_FILE"
           python3 testing/tools/capture_logs.py "${CAPTURE_ARGS[@]}" >"${LOG%.log}.capture.out" 2>&1 &
           CAPTURE_PID=$!
           wait_for_variant_initial_parent "$LOG" "$VARIANT_PRECONDITION_TIMEOUT" "$TARGET_PARENT_EXTADDR_RUNTIME" "$PREP_RESULT_FILE" "$PREP_INITIAL_PARENT_FILE" || true
+          wait "$CAPTURE_PID" || true
           if ! wait "$THREAD_HOLD_PID"; then
             PREP_RESULT="thread_on_failed"
           fi
           date -u +%Y-%m-%dT%H:%M:%S.%3NZ > "$PREP_SUPPRESSION_END_FILE"
-          wait "$CAPTURE_PID" || true
         fi
       fi
       if [[ "$PREP_RESULT" != "thread_on_failed" && -f "$PREP_RESULT_FILE" ]]; then
         PREP_RESULT="$(cat "$PREP_RESULT_FILE")"
       fi
       [[ -f "$PREP_INITIAL_PARENT_FILE" ]] && PREP_INITIAL_PARENT="$(cat "$PREP_INITIAL_PARENT_FILE")"
+      [[ -f "$PREP_READY_TIME_FILE" ]] && PREP_READY_TIME="$(cat "$PREP_READY_TIME_FILE")"
       [[ -f "$PREP_SUPPRESSION_START_FILE" ]] && PREP_SUPPRESSION_START="$(cat "$PREP_SUPPRESSION_START_FILE")"
       [[ -f "$PREP_SUPPRESSION_END_FILE" ]] && PREP_SUPPRESSION_END="$(cat "$PREP_SUPPRESSION_END_FILE")"
     fi
@@ -402,7 +427,7 @@ for ((i=DONE+1; i<=TARGET_ATTEMPTS; i++)); do
     elif [[ "$PREP_RESULT" == "not_applicable" || "$PREP_RESULT" == "pending_initial_parent_check" ]]; then
       PREP_RESULT="initial_parent_unknown"
     fi
-    append_variant_preconditioning_metadata "$LOG" "$PREP_RESULT" "$PREP_METHOD" "$PREP_INITIAL_PARENT" "$PREP_SUPPRESSION_START" "$PREP_SUPPRESSION_END" "$PREP_PROBE_RESPONSES" "$PREP_PROBE_TARGET_MATCHES" "$PREP_PROBE_NON_TARGET_PARENT"
+    append_variant_preconditioning_metadata "$LOG" "$PREP_RESULT" "$PREP_METHOD" "$PREP_INITIAL_PARENT" "$PREP_SUPPRESSION_START" "$PREP_SUPPRESSION_END" "$PREP_PROBE_RESPONSES" "$PREP_PROBE_TARGET_MATCHES" "$PREP_PROBE_NON_TARGET_PARENT" "$PREP_READY_TIME"
   fi
 
   python3 testing/tools/extract_switch_timings.py \

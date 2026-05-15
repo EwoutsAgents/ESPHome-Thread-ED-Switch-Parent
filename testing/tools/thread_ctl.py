@@ -17,7 +17,7 @@ def read_until(ser: serial.Serial, expect: str, timeout: float) -> tuple[bool, l
         if not line:
             continue
         captured.append(line)
-        print(line)
+        print(line, flush=True)
         if expect in line:
             return True, captured
     return False, captured
@@ -35,7 +35,7 @@ def stream_lines_for(ser: serial.Serial, duration_s: float) -> list[str]:
         if not line:
             continue
         captured.append(line)
-        print(line)
+        print(line, flush=True)
     return captured
 
 
@@ -68,7 +68,7 @@ def extract_extaddr(lines: list[str]) -> str:
 def main() -> int:
     parser = argparse.ArgumentParser(description="Send Thread control commands over router serial console.")
     parser.add_argument("--port", required=True)
-    parser.add_argument("action", choices=["on", "off", "state", "status", "extaddr", "off-verify-disabled", "off-hold-verify-disabled"])
+    parser.add_argument("action", choices=["on", "off", "state", "status", "extaddr", "off-verify-disabled", "off-hold-verify-disabled", "off-verify-disabled-hold"])
     parser.add_argument("--baud", type=int, default=115200)
     parser.add_argument("--timeout", type=float, default=8.0)
     parser.add_argument("--duration-s", type=int, default=60)
@@ -93,7 +93,7 @@ def main() -> int:
 
         ser.reset_input_buffer()
 
-        if args.action in ("off", "off-verify-disabled", "off-hold-verify-disabled"):
+        if args.action in ("off", "off-verify-disabled", "off-hold-verify-disabled", "off-verify-disabled-hold"):
             if args.duration_s <= 0:
                 raise SystemExit("--duration-s must be > 0 for off")
             ser.write((f"thread off {args.duration_s}\n").encode("utf-8"))
@@ -104,7 +104,7 @@ def main() -> int:
                 if captured:
                     print("Last lines:", file=sys.stderr)
                     for line in captured[-10:]:
-                        print(line, file=sys.stderr)
+                        print(line, file=sys.stderr, flush=True)
                 return 1
             if args.action == "off":
                 return 0
@@ -114,7 +114,9 @@ def main() -> int:
             ok, captured = read_until(ser, "USB_CTL thread state enabled=false role=disabled", args.timeout)
             if ok and args.action == "off-verify-disabled":
                 return 0
-            if ok and args.action == "off-hold-verify-disabled":
+            if ok and args.action in ("off-hold-verify-disabled", "off-verify-disabled-hold"):
+                if args.action == "off-verify-disabled-hold":
+                    print("USB_CTL_READY_DISABLED", flush=True)
                 if not verify_stays_disabled(ser, args.duration_s):
                     return 1
                 return 0
@@ -122,7 +124,7 @@ def main() -> int:
             if captured:
                 print("Last lines:", file=sys.stderr)
                 for line in captured[-10:]:
-                    print(line, file=sys.stderr)
+                    print(line, file=sys.stderr, flush=True)
             return 1
 
         if args.action in ("state", "status", "extaddr"):
@@ -145,7 +147,7 @@ def main() -> int:
             if not extaddr:
                 print("Failed to parse extaddr from thread state", file=sys.stderr)
                 return 1
-            print(extaddr)
+            print(extaddr, flush=True)
             return 0
         if ok:
             return 0
@@ -153,7 +155,7 @@ def main() -> int:
         if captured:
             print("Last lines:", file=sys.stderr)
             for line in captured[-10:]:
-                print(line, file=sys.stderr)
+                print(line, file=sys.stderr, flush=True)
         return 1
     finally:
         ser.close()
