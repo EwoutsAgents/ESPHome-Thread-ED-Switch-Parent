@@ -210,7 +210,7 @@ append_variant_preconditioning_metadata() {
   } >> "$log_path"
 }
 
-if [[ "$SCENARIO" == variant-* ]]; then
+if [[ "$SCENARIO" == variant-* || "$SCENARIO" == "stock-observed" ]]; then
   if (( VALID_DONE >= COUNT )); then
     echo "[batch] already complete: $SCENARIO $MODE valid $VALID_DONE/$COUNT (attempts=$DONE)"
     exit 0
@@ -222,7 +222,7 @@ else
   fi
 fi
 
-if [[ "$SCENARIO" == variant-* ]]; then
+if [[ "$SCENARIO" == variant-* || "$SCENARIO" == "stock-observed" ]]; then
   TARGET_ATTEMPTS=$(( COUNT * 4 ))
   if (( TARGET_ATTEMPTS < COUNT )); then TARGET_ATTEMPTS=$COUNT; fi
 else
@@ -252,6 +252,20 @@ if [[ "$SCENARIO" == variant-* && "$MODE" == "steady" && -n "$TARGET_ROUTER_LABE
   fi
 fi
 FLASH_CMD=(.venv/bin/esphome run "$CONFIG" --device "$CHILD_PORT" --no-logs)
+if [[ "$SCENARIO" == "stock-observed" && -n "$TARGET_ROUTER_LABEL" ]]; then
+  if ensure_thread_control_ready && refresh_target_parent_extaddr; then
+    echo "[batch] refreshed stock-observed target router extaddr: $TARGET_PARENT_EXTADDR_RUNTIME"
+  else
+    echo "[batch] stock-observed target router live refresh unavailable; using cached $TARGET_PARENT_EXTADDR_RUNTIME"
+  fi
+  FLASH_CMD=(
+    .venv/bin/esphome
+    -s target_parent_extaddr "$TARGET_PARENT_EXTADDR_RUNTIME"
+    run "$CONFIG"
+    --device "$CHILD_PORT"
+    --no-logs
+  )
+fi
 if [[ "$SCENARIO" == variant-* && "$MODE" == "steady" ]]; then
   if [[ -n "$TARGET_ROUTER_LABEL" ]] && ensure_thread_control_ready && refresh_target_parent_extaddr; then
     echo "[batch] refreshed target router extaddr: $TARGET_PARENT_EXTADDR_RUNTIME"
@@ -288,7 +302,7 @@ for ((i=DONE+1; i<=TARGET_ATTEMPTS; i++)); do
   LOG="testing/logs/${SCENARIO}-${MODE}-${STAMP}-trial${i}.log"
   CSV="testing/logs/${SCENARIO}-${MODE}-${STAMP}-trial${i}.csv"
 
-  if [[ "$SCENARIO" == variant-* ]]; then
+  if [[ "$SCENARIO" == variant-* || "$SCENARIO" == "stock-observed" ]]; then
     echo "[batch] trial $i/$TARGET_ATTEMPTS (valid $VALID_DONE/$COUNT)"
   else
     echo "[batch] trial $i/$COUNT"
@@ -478,10 +492,46 @@ PY
     if (( VALID_DONE >= COUNT )); then
       break
     fi
+  elif [[ "$SCENARIO" == "stock-observed" ]]; then
+    mapfile -t CSV_SUMMARY < <(python3 - <<'PY' "$CSV" "$MODE"
+import csv, sys
+rows = list(csv.DictReader(open(sys.argv[1], newline='', encoding='utf-8')))
+row = rows[0] if rows else {}
+classification = row.get('classification', '')
+initial_parent = row.get('initial_parent_extaddr', '').lower()
+target_parent = row.get('target_parent_extaddr', '').lower()
+mode = sys.argv[2]
+so5 = any(r.get('checkpoint') == 'SO5_target_parent_reached' and r.get('timestamp_utc') for r in rows)
+so6 = any(r.get('checkpoint') == 'SO6_timeout_or_failure' and r.get('timestamp_utc') for r in rows)
+known_initial = bool(initial_parent)
+known_target = bool(target_parent)
+initial_non_target = known_initial and known_target and initial_parent != target_parent
+valid = False
+if mode == 'steady':
+    valid = initial_non_target and (so5 or so6) and classification in {'success_target_reached', 'timeout_target_not_reached'}
+else:
+    valid = initial_non_target and classification in {'success_target_reached', 'timeout_target_not_reached'}
+print(classification)
+print('yes' if valid else 'no')
+PY
+)
+    CLASSIFICATION="${CSV_SUMMARY[0]:-}"
+    VALID_STOCK_TRIAL="${CSV_SUMMARY[1]:-no}"
+    if [[ "$VALID_STOCK_TRIAL" == "yes" ]]; then
+      VALID_DONE=$((VALID_DONE + 1))
+      echo "$VALID_DONE" > "$VALID_STATE_FILE"
+      echo "[batch] valid stock-observed trial accepted ($VALID_DONE/$COUNT)"
+    else
+      echo "[batch] non-valid stock-observed trial classification=$CLASSIFICATION (not counted toward valid target)"
+    fi
+
+    if (( VALID_DONE >= COUNT )); then
+      break
+    fi
   fi
 done
 
-if [[ "$SCENARIO" == variant-* ]]; then
+if [[ "$SCENARIO" == variant-* || "$SCENARIO" == "stock-observed" ]]; then
   echo "[batch] complete: $SCENARIO $MODE valid $VALID_DONE/$COUNT (attempts=$LAST_ATTEMPT)"
 else
   echo "[batch] complete: $SCENARIO $MODE $COUNT/$COUNT"

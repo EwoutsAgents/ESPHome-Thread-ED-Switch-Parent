@@ -76,7 +76,7 @@ bool ThreadStockObserverComponent::prepare_stock_search_internal_(bool current_p
   otInstance *instance = lock->get_instance();
 
   this->reset_run_state_();
-  this->t0_ms_ = millis();
+  this->t0_ms_ = 0;
 
   const std::string target_text = this->extaddr_to_string_(this->target_extaddr_);
   if (current_parent_off_mode) {
@@ -113,10 +113,12 @@ void ThreadStockObserverComponent::start_observation_after_search_(otError err, 
     return;
   }
 
+  this->t0_ms_ = millis();
+
   if (current_parent_off_mode) {
     ESP_LOGI(TAG, "SO1 current-parent-off action complete; starting stock search");
   }
-  ESP_LOGI(TAG, "SO1 search started; status=%d", static_cast<int>(err));
+  ESP_LOGI(TAG, "SO1 search started; status=%d observe_timeout_ms=%u", static_cast<int>(err), this->observe_timeout_ms_);
 
   this->active_ = true;
 }

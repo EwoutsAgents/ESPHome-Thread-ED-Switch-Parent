@@ -1,5 +1,97 @@
 # Thread Parent-Switch Benchmark Results (2026-05-11)
 
+## Latest stock-observed current-parent-off update (2026-05-17)
+
+The stock `current-parent-off` path was tightened to copy the multicast anti-`initial_parent_already_target` strategy more faithfully:
+
+- runner-side target-router suppression before each trial,
+- explicit non-target-start preconditioning,
+- wait for target restoration before releasing stock search,
+- and finally a stricter evidence gate that requires an observed non-target Parent Response before accepting the precondition.
+
+Latest current-parent-off rerun window: `20260517-225012` .. `20260517-230837`
+
+- attempts: 10
+- valid trials: 10/10
+- disruption method: `usb-thread-off-hold` via `thread_ctl.py off-verify-disabled-hold`
+- non-valid classifications: none
+
+Valid-trial outcomes only:
+- `success_target_reached`: 6/10
+- `timeout_target_not_reached`: 4/10
+- SO2 observed: 10/10
+- SO3 observed: 10/10
+- SO4 parent changed: 6/10
+- SO5 target reached: 6/10
+- SO6 timeout/failure: 4/10
+- median `SO3 - SO1`: **1742.5 ms**
+- median `SO4 - SO1`: **3137.0 ms**
+- median `SO5 - SO1`: **3140.0 ms**
+- median `SO6 - SO1` (timeouts only): **44981.5 ms**
+
+Interpretation: this is the first stock current-parent-off batch in this investigation that both removes the bad-start waste and produces a publishable set of successful target reaches. The remaining failures are no longer dominated by invalid starts; they are mixed behavioral timeouts after a much stronger mcast-style precondition.
+
+## Fresh stock-observed rerun update (2026-05-16)
+
+Two stock-observed reruns were executed after fixing stale router identity data and replacing the fragile current-parent-off `serial-reset` path with the same verified USB Thread-off hold used by the variant preconditioning flow.
+
+Live router identities used during the rerun:
+- router1 / primary: `588c81fffe5db0e0`
+- router2 / secondary target: `588c81fffe5db0c4`
+
+Runner changes relevant to interpretation:
+- stock steady now uses the same valid-trial gating idea as the variant batches and rejects `initial_parent_already_target` starts;
+- stock current-parent-off now refreshes router identities live and uses `thread_ctl.py off-verify-disabled-hold` instead of `timeout 8 esphome logs ... --reset`;
+- router-port contention was removed by capturing only the child port during current-parent-off runs.
+
+### Fresh stock-observed steady (gated valid batch)
+
+Batch window: `20260516-115511` .. `20260516-122728`
+
+- attempts: 24
+- valid trials: 10/24
+- non-valid classification: 14× `initial_parent_already_target`
+
+Valid-trial outcomes only (`stock-observed-steady-20260516-120151-trial6.csv` .. `stock-observed-steady-20260516-122728-trial24.csv`):
+- `success_target_reached`: 4/10
+- `timeout_target_not_reached`: 6/10
+- SO2 observed: 10/10
+- SO3 observed: 10/10
+- SO4 parent changed: 4/10
+- SO5 target reached: 4/10
+- SO6 timeout/failure: 6/10
+- median `SO4 - C0`: **6701 ms**
+- median `SO5 - C0`: **6704 ms**
+- median `SO4 - SO1`: **6687.5 ms**
+- median `SO5 - SO1`: **6690.5 ms**
+- median `SO6 - SO1` (timeouts only): **15985 ms**
+- median `SO3 - SO1`: **4791.5 ms**
+
+Interpretation: once invalid “already on target” starts were gated out, stock steady produced a mixed batch instead of the earlier all-timeout interpretation. In this refreshed topology, stock steady reached the configured target in 4 of 10 valid non-target starts. The new `SO1`-anchored basis makes the stock batch more comparable to the variant `T3`-anchored attach-phase reporting.
+
+### Earlier fresh stock-observed current-parent-off (gated valid batch)
+
+Batch window: `20260516-131043` .. `20260516-132244`
+
+- attempts: 10
+- valid trials: 10/10
+- disruption method: `usb-thread-off-hold` via `thread_ctl.py off-verify-disabled-hold`
+- non-valid classifications: none in the final rerun
+
+Valid-trial outcomes only:
+- `timeout_target_not_reached`: 10/10
+- SO2 observed: 7/10
+- SO3 observed: 7/10
+- SO4 parent changed: 0/10
+- SO5 target reached: 0/10
+- SO6 timeout/failure: 10/10
+- median `SO4 - disruption_time`: **N/A**
+- median `SO5 - disruption_time`: **N/A**
+- median `SO3 - SO1`: **5040 ms**
+- median `SO6 - SO1`: **9983.5 ms**
+
+Interpretation: after the runner fix, the dominant earlier `current_parent_shutdown_failed` classification disappeared. This rerun cleaned up the runner behavior, but every valid trial still timed out before any parent change or target reach was observed. It is now superseded by the later 2026-05-17 mcast-style-gated rerun above.
+
 `stock-observed` is **stock behavior with observe-only instrumentation**.
 
 ## Audit status (updated after instrumentation fix)
@@ -184,16 +276,24 @@ The gated reruns replace the earlier non-publishable variant interpretation. `T3
 ## Final comparison / conclusion
 
 Using the strict target-based metrics:
-- stock-observed current-parent-off median `SO5 - disruption_time`: **5906 ms**
+- stock-observed current-parent-off median `SO5 - SO1`: **3140 ms** in the latest valid-only rerun (6/10 target reaches)
+- variant-mcast steady median `T6 - T3`: **4625 ms**
+- variant-ucast steady median `T6 - T3`: **5963.5 ms**
+
+Using the new stock search-phase basis:
+- stock-observed current-parent-off median `SO3 - SO1`: **1742.5 ms**
+- stock-observed current-parent-off median `SO5 - SO1`: **3140 ms**
+- stock-observed steady median `SO5 - SO1`: **6690.5 ms**
 - variant-mcast steady median `T6 - T3`: **4625 ms**
 - variant-ucast steady median `T6 - T3`: **5963.5 ms**
 
 Interpretation:
-- **variant-mcast** is the fastest median strict-target result in the current dataset.
-- **variant-ucast** is slightly slower than variant-mcast and roughly on par with the latest stock strict-target median.
-- The evidence quality is stronger for the variants in the new reruns: both variant scenarios now contribute **10 valid attach-start-to-target-match measurements**, while the latest stock strict-target median is based on **4** successful target reaches.
+- **stock-observed current-parent-off** is now the fastest successful median in the latest `SO1`-anchored dataset, but only on **6/10** valid trials.
+- **variant-mcast** still has the strongest complete result because it contributes **10/10 valid attach-start-to-target-match measurements** at a still-fast median.
+- **variant-ucast** remains slower than variant-mcast and faster than stock steady on the `SO1`/`T3` search-phase basis.
+- The evidence quality is now much stronger across all paths: stock current-parent-off no longer collapses into invalid starts or all-timeout batches, and the variant scenarios remain fully publishable.
 
-Bottom line: the project now has a defensible publishable comparison, with multicast selected-parent attach currently the strongest result.
+Bottom line: the project now has a cleaner stock-observed timing basis as well as the already-publishable variant basis. The fresh 2026-05-16 stock reruns improve evidence quality substantially: stock steady is gated, valid-only, and now summarized from `SO1 search started`, while stock current-parent-off no longer depends on the misleading `serial-reset` classification path.
 
 ## Commands used
 
@@ -203,7 +303,12 @@ Bottom line: the project now has a defensible publishable comparison, with multi
   - `testing/tools/run_trials_batch.sh stock-observed 10 80 steady`
 - Current-parent-off batch run:
   - `testing/tools/run_current_parent_off_trials.sh stock-observed 10 80`
+  - latest tuned rerun: `testing/tools/run_current_parent_off_trials.sh stock-observed 10 120`
 - Extractor:
   - `python3 testing/tools/extract_switch_timings.py --in <log> --label child --scenario stock-observed --mode <steady|current-parent-off> --out <csv>`
+- Stock batch summary on the new `SO1` basis:
+  - `python3 testing/tools/summarize_stock_observed_batches.py --glob 'testing/logs/stock-observed-steady-20260516-*.csv' --stamp-min 20260516-115511 --stamp-max 20260516-122728 --field delta_ms_from_search_start`
+  - `python3 testing/tools/summarize_stock_observed_batches.py --glob 'testing/logs/stock-observed-current-parent-off-20260516-*.csv' --stamp-min 20260516-131043 --stamp-max 20260516-132244 --field delta_ms_from_search_start`
+  - `python3 testing/tools/summarize_stock_observed_batches.py --glob 'testing/logs/stock-observed-current-parent-off-20260517-*.csv' --stamp-min 20260517-225012 --stamp-max 20260517-230837 --field delta_ms_from_search_start`
 - Integrity check:
   - `python3 testing/tools/check_stock_observed_integrity.py`

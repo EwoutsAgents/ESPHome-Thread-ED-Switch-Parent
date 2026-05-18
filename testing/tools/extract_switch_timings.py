@@ -164,18 +164,33 @@ def main() -> int:
         disruption_ts = parse_ts(meta["disable_start"]) if meta["disable_start"] else None
 
         classification = meta["classification"]
-        if not classification:
-            if args.scenario == "stock-observed" and "SO_invalid_instrumentation" in events:
+        m_initial = re.search(r"SO0 initial parent: RLOC16 0x[0-9a-fA-F]{4} ExtAddr ([0-9a-fA-F]{16})", input_text)
+        if m_initial and not meta["initial_parent_extaddr"]:
+            meta["initial_parent_extaddr"] = m_initial.group(1).lower()
+        target_parent_extaddr = ""
+        m_target = re.search(r"SO0 (?:current-parent-off prepare; |request; )target=([0-9a-fA-F]{16})", input_text)
+        if m_target:
+            target_parent_extaddr = m_target.group(1).lower()
+        if args.scenario == "stock-observed" and not classification:
+            initial_parent = meta["initial_parent_extaddr"].lower() if meta["initial_parent_extaddr"] else ""
+            if "SO_invalid_instrumentation" in events:
                 classification = "invalid_instrumentation"
+            elif initial_parent and target_parent_extaddr and initial_parent == target_parent_extaddr:
+                classification = "initial_parent_already_target"
             elif args.mode in ("current-parent-off", "forced-current-parent-off"):
                 if "SO5_target_parent_reached" in events:
                     classification = "success_target_reached"
                 elif "SO6_timeout_or_failure" in events:
                     classification = "timeout_target_not_reached"
-        target_parent_extaddr = ""
-        m_target = re.search(r"SO0 (?:current-parent-off prepare; |request; )target=([0-9a-fA-F]{16})", input_text)
-        if m_target:
-            target_parent_extaddr = m_target.group(1).lower()
+                else:
+                    classification = "unclassified"
+            else:
+                if "SO5_target_parent_reached" in events:
+                    classification = "success_target_reached"
+                elif "SO6_timeout_or_failure" in events:
+                    classification = "timeout_target_not_reached"
+                else:
+                    classification = "unclassified"
         if not target_parent_extaddr and args.scenario.startswith("variant"):
             if meta["variant_target_parent_extaddr"]:
                 target_parent_extaddr = meta["variant_target_parent_extaddr"].lower()
