@@ -52,6 +52,15 @@ void ThreadStockObserverComponent::reset_run_state_() {
   this->logged_target_parent_response_ = false;
   this->logged_parent_changed_ = false;
   this->logged_target_reached_ = false;
+  this->logged_post_target_non_target_response_ = false;
+  this->logged_post_target_repeat_response_ = false;
+  this->so3_ms_ = 0;
+  this->last_post_so3_status_log_ms_ = 0;
+  this->total_parent_response_count_ = 0;
+  this->total_target_parent_response_count_ = 0;
+  this->post_so3_parent_response_count_ = 0;
+  this->post_so3_target_parent_response_count_ = 0;
+  this->post_so3_non_target_parent_response_count_ = 0;
 }
 
 bool ThreadStockObserverComponent::prepare_stock_search_internal_(bool current_parent_off_mode) {
@@ -97,10 +106,20 @@ bool ThreadStockObserverComponent::prepare_stock_search_internal_(bool current_p
                this->extaddr_to_string_(parent.mExtAddress).c_str());
       ESP_LOGI(TAG, "SO0 waiting for current-parent-off action");
     }
+
+    ESP_LOGI(TAG, "SO_invariant_initial_parent_extaddr=%s",
+             this->extaddr_to_string_(parent.mExtAddress).c_str());
+    ESP_LOGI(TAG, "SO_invariant_target_parent_extaddr=%s", target_text.c_str());
+    ESP_LOGI(TAG, "SO_invariant_result=%s",
+             this->extaddr_matches_(parent.mExtAddress, this->target_extaddr_) ? "initial_parent_already_target"
+                                                                                : "non_target_initial_parent");
   } else {
     this->initial_parent_rloc16_ = 0xFFFE;
     std::memset(&this->initial_parent_extaddr_, 0, sizeof(this->initial_parent_extaddr_));
     ESP_LOGI(TAG, "SO0 request; target=%s; initial parent unavailable", target_text.c_str());
+    ESP_LOGW(TAG, "SO_invariant_initial_parent_extaddr=unknown");
+    ESP_LOGI(TAG, "SO_invariant_target_parent_extaddr=%s", target_text.c_str());
+    ESP_LOGW(TAG, "SO_invariant_result=initial_parent_unknown");
   }
 
   this->prepared_ = true;
@@ -178,6 +197,10 @@ void ThreadStockObserverComponent::handle_parent_response_(const otThreadParentR
   const uint32_t elapsed_ms = millis() - this->t0_ms_;
   const bool target_match = this->extaddr_matches_(info->mExtAddr, this->target_extaddr_);
   const std::string extaddr_text = this->extaddr_to_string_(info->mExtAddr);
+  this->total_parent_response_count_++;
+  if (target_match) {
+    this->total_target_parent_response_count_++;
+  }
 
   if (!this->logged_first_parent_response_) {
     this->logged_first_parent_response_ = true;
@@ -194,9 +217,36 @@ void ThreadStockObserverComponent::handle_parent_response_(const otThreadParentR
 
   if (target_match && !this->logged_target_parent_response_) {
     this->logged_target_parent_response_ = true;
+    this->so3_ms_ = elapsed_ms;
     ESP_LOGI(TAG,
              "SO3 target parent response observed after %lu ms; ExtAddr %s RLOC16 0x%04x RSSI %d",
              static_cast<unsigned long>(elapsed_ms), extaddr_text.c_str(), info->mRloc16, info->mRssi);
+    return;
+  }
+
+  if (this->logged_target_parent_response_) {
+    this->post_so3_parent_response_count_++;
+    if (target_match) {
+      this->post_so3_target_parent_response_count_++;
+      if (!this->logged_post_target_repeat_response_) {
+        this->logged_post_target_repeat_response_ = true;
+        ESP_LOGI(TAG,
+                 "SO3_post target response repeated after %lu ms; ExtAddr %s RLOC16 0x%04x RSSI %d post_so3_target_matches=%lu post_so3_total_responses=%lu",
+                 static_cast<unsigned long>(elapsed_ms), extaddr_text.c_str(), info->mRloc16, info->mRssi,
+                 static_cast<unsigned long>(this->post_so3_target_parent_response_count_),
+                 static_cast<unsigned long>(this->post_so3_parent_response_count_));
+      }
+    } else {
+      this->post_so3_non_target_parent_response_count_++;
+      if (!this->logged_post_target_non_target_response_) {
+        this->logged_post_target_non_target_response_ = true;
+        ESP_LOGI(TAG,
+                 "SO3_post non-target response after target observed after %lu ms; ExtAddr %s RLOC16 0x%04x RSSI %d post_so3_non_target_responses=%lu post_so3_total_responses=%lu",
+                 static_cast<unsigned long>(elapsed_ms), extaddr_text.c_str(), info->mRloc16, info->mRssi,
+                 static_cast<unsigned long>(this->post_so3_non_target_parent_response_count_),
+                 static_cast<unsigned long>(this->post_so3_parent_response_count_));
+      }
+    }
   }
 }
 
@@ -209,6 +259,33 @@ bool ThreadStockObserverComponent::current_parent_matches_target_(otInstance *in
     *out_parent = parent;
   }
   return this->extaddr_matches_(parent.mExtAddress, this->target_extaddr_);
+}
+
+bool ThreadStockObserverComponent::current_parent_matches_initial_(const otRouterInfo &parent) const {
+  return this->initial_parent_rloc16_ != 0xFFFE && parent.mRloc16 == this->initial_parent_rloc16_ &&
+         this->extaddr_matches_(parent.mExtAddress, this->initial_parent_extaddr_);
+}
+
+const char *ThreadStockObserverComponent::timeout_classification_(bool parent_available, const otRouterInfo &parent) const {
+  if (!this->logged_target_parent_response_) {
+    return "timeout_target_never_seen";
+  }
+  if (this->logged_parent_changed_) {
+    if (parent_available && !this->extaddr_matches_(parent.mExtAddress, this->target_extaddr_)) {
+      return "timeout_parent_changed_but_not_target";
+    }
+    return "timeout_parent_changed_target_unknown";
+  }
+  if (parent_available && this->current_parent_matches_initial_(parent)) {
+    if (this->post_so3_target_parent_response_count_ > 0) {
+      return "timeout_target_seen_but_never_left_current_parent";
+    }
+    return "timeout_target_seen_once_then_stayed_on_current_parent";
+  }
+  if (parent_available) {
+    return "timeout_target_seen_current_parent_unclear";
+  }
+  return "timeout_target_seen_parent_unavailable";
 }
 
 void ThreadStockObserverComponent::loop() {
@@ -251,19 +328,43 @@ void ThreadStockObserverComponent::loop() {
                static_cast<unsigned long>(elapsed_ms), parent.mRloc16, parent_extaddr.c_str());
       return;
     }
+
+    if (this->logged_target_parent_response_ && !this->logged_target_reached_ && !this->logged_parent_changed_ &&
+        (this->last_post_so3_status_log_ms_ == 0 || now - this->last_post_so3_status_log_ms_ >= 5000)) {
+      this->last_post_so3_status_log_ms_ = now;
+      ESP_LOGI(TAG,
+               "SO3_post current parent unchanged after %lu ms; since_so3=%lu ms current_parent_rloc16=0x%04x current_parent_extaddr=%s post_so3_target_matches=%lu post_so3_non_target_responses=%lu post_so3_total_responses=%lu",
+               static_cast<unsigned long>(elapsed_ms), static_cast<unsigned long>(elapsed_ms - this->so3_ms_),
+               parent.mRloc16, parent_extaddr.c_str(),
+               static_cast<unsigned long>(this->post_so3_target_parent_response_count_),
+               static_cast<unsigned long>(this->post_so3_non_target_parent_response_count_),
+               static_cast<unsigned long>(this->post_so3_parent_response_count_));
+    }
   }
 
   if (elapsed_ms >= this->observe_timeout_ms_) {
     this->active_ = false;
+    const char *classification = this->timeout_classification_(parent_err == OT_ERROR_NONE, parent);
 
     if (parent_err == OT_ERROR_NONE) {
       ESP_LOGW(TAG,
-               "SO6 timeout after %lu ms; target parent not reached; current parent RLOC16 0x%04x ExtAddr %s",
-               static_cast<unsigned long>(elapsed_ms), parent.mRloc16,
-               this->extaddr_to_string_(parent.mExtAddress).c_str());
+               "SO6 timeout after %lu ms; classification=%s; target parent not reached; current parent RLOC16 0x%04x ExtAddr %s; total_parent_responses=%lu target_parent_responses=%lu post_so3_total_responses=%lu post_so3_target_matches=%lu post_so3_non_target_responses=%lu",
+               static_cast<unsigned long>(elapsed_ms), classification, parent.mRloc16,
+               this->extaddr_to_string_(parent.mExtAddress).c_str(),
+               static_cast<unsigned long>(this->total_parent_response_count_),
+               static_cast<unsigned long>(this->total_target_parent_response_count_),
+               static_cast<unsigned long>(this->post_so3_parent_response_count_),
+               static_cast<unsigned long>(this->post_so3_target_parent_response_count_),
+               static_cast<unsigned long>(this->post_so3_non_target_parent_response_count_));
     } else {
-      ESP_LOGW(TAG, "SO6 timeout after %lu ms; target parent not reached; current parent unavailable",
-               static_cast<unsigned long>(elapsed_ms));
+      ESP_LOGW(TAG,
+               "SO6 timeout after %lu ms; classification=%s; target parent not reached; current parent unavailable; total_parent_responses=%lu target_parent_responses=%lu post_so3_total_responses=%lu post_so3_target_matches=%lu post_so3_non_target_responses=%lu",
+               static_cast<unsigned long>(elapsed_ms), classification,
+               static_cast<unsigned long>(this->total_parent_response_count_),
+               static_cast<unsigned long>(this->total_target_parent_response_count_),
+               static_cast<unsigned long>(this->post_so3_parent_response_count_),
+               static_cast<unsigned long>(this->post_so3_target_parent_response_count_),
+               static_cast<unsigned long>(this->post_so3_non_target_parent_response_count_));
     }
   }
 }

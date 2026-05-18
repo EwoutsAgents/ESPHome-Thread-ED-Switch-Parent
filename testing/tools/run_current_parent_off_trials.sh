@@ -11,6 +11,7 @@ SCENARIO="${1:-stock-observed}"
 COUNT="${2:-10}"
 DURATION="${3:-80}"
 MODE="current-parent-off"
+EFFECTIVE_DURATION="$DURATION"
 STATE_DIR="testing/logs/.batch_state"
 mkdir -p "$STATE_DIR" testing/logs
 STATE_FILE="$STATE_DIR/${SCENARIO}-${MODE}.state"
@@ -53,6 +54,30 @@ PREPARED_TO_SEARCH_DELAY="${STOCK_CURRENT_PARENT_OFF_PREPARED_TO_SEARCH_DELAY:-1
 OBSERVE_TIMEOUT="${STOCK_CURRENT_PARENT_OFF_OBSERVE_TIMEOUT:-45s}"
 PROBE_TIMEOUT_MS="${STOCK_CURRENT_PARENT_OFF_PROBE_TIMEOUT_MS:-25000}"
 PROBE_RETRY_INTERVAL="${STOCK_CURRENT_PARENT_OFF_PROBE_RETRY_INTERVAL:-2s}"
+
+duration_to_seconds_ceil() {
+  python3 - <<'PY' "$1"
+import math, re, sys
+value = sys.argv[1].strip().lower()
+m = re.fullmatch(r'([0-9]+)(ms|s)?', value)
+if not m:
+    raise SystemExit(1)
+amount = int(m.group(1))
+unit = m.group(2) or 's'
+seconds = amount / 1000 if unit == 'ms' else amount
+print(math.ceil(seconds))
+PY
+}
+
+OBSERVE_TIMEOUT_SECONDS="$(duration_to_seconds_ceil "$OBSERVE_TIMEOUT")"
+PREPARED_TO_SEARCH_DELAY_SECONDS="$(duration_to_seconds_ceil "$PREPARED_TO_SEARCH_DELAY")"
+PROBE_TIMEOUT_SECONDS="$(( (PROBE_TIMEOUT_MS + 999) / 1000 ))"
+CURRENT_PARENT_OFF_CAPTURE_BUFFER_SECONDS="${STOCK_CURRENT_PARENT_OFF_CAPTURE_BUFFER_TIMEOUT:-30}"
+MIN_CURRENT_PARENT_OFF_DURATION=$(( TARGET_SUPPRESSION_HOLD_SECONDS + CURRENT_PARENT_OFF_HOLD_SECONDS + PROBE_TIMEOUT_SECONDS + OBSERVE_TIMEOUT_SECONDS + PREPARED_TO_SEARCH_DELAY_SECONDS + CURRENT_PARENT_OFF_CAPTURE_BUFFER_SECONDS ))
+if (( EFFECTIVE_DURATION < MIN_CURRENT_PARENT_OFF_DURATION )); then
+  echo "[cp-off] increasing capture duration from ${DURATION}s to ${MIN_CURRENT_PARENT_OFF_DURATION}s to cover preconditioning + observe timeout"
+  EFFECTIVE_DURATION="$MIN_CURRENT_PARENT_OFF_DURATION"
+fi
 
 refresh_target_parent_extaddr() {
   local live_extaddr
@@ -141,7 +166,7 @@ for ((i=DONE+1; i<=TARGET_ATTEMPTS; i++)); do
 
   python3 testing/tools/capture_logs.py \
     --config "$CHILD_CONFIG" \
-    --duration "$DURATION" \
+    --duration "$EFFECTIVE_DURATION" \
     --out "$LOG" \
     --node child="$CHILD_PORT" \
     --reset-label child >"${LOG%.log}.capture.out" 2>&1 &

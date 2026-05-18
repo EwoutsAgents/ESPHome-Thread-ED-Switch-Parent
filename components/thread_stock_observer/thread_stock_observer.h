@@ -54,6 +54,8 @@ class ThreadStockObserverComponent : public Component {
   bool extaddr_matches_(const otExtAddress &a, const otExtAddress &b) const;
   std::string extaddr_to_string_(const otExtAddress &addr) const;
   bool current_parent_matches_target_(otInstance *instance, otRouterInfo *out_parent);
+  bool current_parent_matches_initial_(const otRouterInfo &parent) const;
+  const char *timeout_classification_(bool parent_available, const otRouterInfo &parent) const;
 
   void reset_run_state_();
   bool prepare_stock_search_internal_(bool current_parent_off_mode);
@@ -75,7 +77,17 @@ class ThreadStockObserverComponent : public Component {
   bool logged_target_parent_response_{false};
   bool logged_parent_changed_{false};
   bool logged_target_reached_{false};
+  bool logged_post_target_non_target_response_{false};
+  bool logged_post_target_repeat_response_{false};
   bool prepared_{false};
+
+  uint32_t so3_ms_{0};
+  uint32_t last_post_so3_status_log_ms_{0};
+  uint32_t total_parent_response_count_{0};
+  uint32_t total_target_parent_response_count_{0};
+  uint32_t post_so3_parent_response_count_{0};
+  uint32_t post_so3_target_parent_response_count_{0};
+  uint32_t post_so3_non_target_parent_response_count_{0};
 };
 
 }  // namespace thread_stock_observer

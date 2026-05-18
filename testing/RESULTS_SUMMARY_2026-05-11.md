@@ -1,6 +1,34 @@
 # Thread Parent-Switch Benchmark Results (2026-05-11)
 
-## Latest stock-observed current-parent-off update (2026-05-17)
+## Latest stock-observed current-parent-off update (2026-05-18)
+
+A fresh rerun was executed after adding variant-style stock diagnostics and timeout taxonomy (`SO_invariant_*`, `SO3_post_*`, explicit `SO6 classification=...`).
+
+Latest current-parent-off rerun window: `20260518-111656` .. `20260518-114535`
+
+- attempts: 15
+- valid trials: 10/10
+- valid-trial outcomes: `success_target_reached` 10/10
+- non-valid classifications:
+  - 4× `timeout_target_seen_but_never_left_current_parent`
+  - 1× `capture_truncated_after_target_seen`
+- disruption method: `usb-thread-off-hold` via `thread_ctl.py off-verify-disabled-hold`
+
+Valid-trial outcomes only:
+- `success_target_reached`: 10/10
+- `timeout_target_not_reached`: 0/10
+- SO2 observed: 10/10
+- SO3 observed: 10/10
+- SO4 parent changed: 10/10
+- SO5 target reached: 10/10
+- SO6 timeout/failure: 0/10
+- median `SO3 - SO1`: **1849.0 ms**
+- median `SO4 - SO1`: **2337.0 ms**
+- median `SO5 - SO1`: **2340.0 ms**
+
+Interpretation: stock-observed current-parent-off now has a variant-style valid batch with full 10/10 successful target reaches. The new diagnostics also explain the excluded attempts: in the repeated `timeout_target_seen_but_never_left_current_parent` cases, the child observed the target (and usually saw both target and non-target responses after `SO3`) but stayed attached to the original parent for the full timeout window. The remaining excluded attempt is now explained as `capture_truncated_after_target_seen`, which came from the capture ending before `SO5` or `SO6`; the runner has been updated to extend capture duration so future batches should not fall into that ambiguous bucket.
+
+## Previous stock-observed current-parent-off update (2026-05-17)
 
 The stock `current-parent-off` path was tightened to copy the multicast anti-`initial_parent_already_target` strategy more faithfully:
 
@@ -276,24 +304,24 @@ The gated reruns replace the earlier non-publishable variant interpretation. `T3
 ## Final comparison / conclusion
 
 Using the strict target-based metrics:
-- stock-observed current-parent-off median `SO5 - SO1`: **3140 ms** in the latest valid-only rerun (6/10 target reaches)
+- stock-observed current-parent-off median `SO5 - SO1`: **2340 ms** in the latest valid-only rerun (**10/10** target reaches)
 - variant-mcast steady median `T6 - T3`: **4625 ms**
 - variant-ucast steady median `T6 - T3`: **5963.5 ms**
 
 Using the new stock search-phase basis:
-- stock-observed current-parent-off median `SO3 - SO1`: **1742.5 ms**
-- stock-observed current-parent-off median `SO5 - SO1`: **3140 ms**
+- stock-observed current-parent-off median `SO3 - SO1`: **1849.0 ms**
+- stock-observed current-parent-off median `SO5 - SO1`: **2340 ms**
 - stock-observed steady median `SO5 - SO1`: **6690.5 ms**
 - variant-mcast steady median `T6 - T3`: **4625 ms**
 - variant-ucast steady median `T6 - T3`: **5963.5 ms**
 
 Interpretation:
-- **stock-observed current-parent-off** is now the fastest successful median in the latest `SO1`-anchored dataset, but only on **6/10** valid trials.
-- **variant-mcast** still has the strongest complete result because it contributes **10/10 valid attach-start-to-target-match measurements** at a still-fast median.
+- **stock-observed current-parent-off** is now the fastest successful median in the latest `SO1`-anchored dataset and now does so on a full **10/10 valid-trial** batch.
+- **variant-mcast** remains the strongest target-steered comparison path because it still contributes a clean **10/10 valid attach-start-to-target-match** dataset with explicit selected-parent attach semantics.
 - **variant-ucast** remains slower than variant-mcast and faster than stock steady on the `SO1`/`T3` search-phase basis.
-- The evidence quality is now much stronger across all paths: stock current-parent-off no longer collapses into invalid starts or all-timeout batches, and the variant scenarios remain fully publishable.
+- The new stock diagnostics materially improved evidence quality: rejected stock attempts are now explainable, with the dominant excluded class being `timeout_target_seen_but_never_left_current_parent` rather than vague timeout buckets.
 
-Bottom line: the project now has a cleaner stock-observed timing basis as well as the already-publishable variant basis. The fresh 2026-05-16 stock reruns improve evidence quality substantially: stock steady is gated, valid-only, and now summarized from `SO1 search started`, while stock current-parent-off no longer depends on the misleading `serial-reset` classification path.
+Bottom line: the project now has a publishable stock-observed current-parent-off batch at roughly the same evidence quality level as the variant batches: valid-only gating, explicit precondition evidence, and a clear explanation of excluded attempts.
 
 ## Commands used
 
@@ -304,11 +332,13 @@ Bottom line: the project now has a cleaner stock-observed timing basis as well a
 - Current-parent-off batch run:
   - `testing/tools/run_current_parent_off_trials.sh stock-observed 10 80`
   - latest tuned rerun: `testing/tools/run_current_parent_off_trials.sh stock-observed 10 120`
+  - latest diagnostic rerun: `testing/tools/run_current_parent_off_trials.sh stock-observed 10 120`
 - Extractor:
   - `python3 testing/tools/extract_switch_timings.py --in <log> --label child --scenario stock-observed --mode <steady|current-parent-off> --out <csv>`
 - Stock batch summary on the new `SO1` basis:
   - `python3 testing/tools/summarize_stock_observed_batches.py --glob 'testing/logs/stock-observed-steady-20260516-*.csv' --stamp-min 20260516-115511 --stamp-max 20260516-122728 --field delta_ms_from_search_start`
   - `python3 testing/tools/summarize_stock_observed_batches.py --glob 'testing/logs/stock-observed-current-parent-off-20260516-*.csv' --stamp-min 20260516-131043 --stamp-max 20260516-132244 --field delta_ms_from_search_start`
   - `python3 testing/tools/summarize_stock_observed_batches.py --glob 'testing/logs/stock-observed-current-parent-off-20260517-*.csv' --stamp-min 20260517-225012 --stamp-max 20260517-230837 --field delta_ms_from_search_start`
+  - `python3 testing/tools/summarize_stock_observed_batches.py --glob 'testing/logs/stock-observed-current-parent-off-20260518-*.csv' --field delta_ms_from_search_start`
 - Integrity check:
   - `python3 testing/tools/check_stock_observed_integrity.py`

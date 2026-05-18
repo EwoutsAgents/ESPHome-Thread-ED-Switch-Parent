@@ -27,6 +27,9 @@ STOCK_OBSERVED_PATTERNS = {
     "SO1_search_started": re.compile(r"SO1 search started"),
     "SO2_parent_response_observed": re.compile(r"SO2 parent response observed"),
     "SO3_target_parent_response_observed": re.compile(r"SO3 target parent response observed"),
+    "SO3_post_target_response_repeated": re.compile(r"SO3_post target response repeated"),
+    "SO3_post_non_target_response_after_target": re.compile(r"SO3_post non-target response after target observed"),
+    "SO3_post_current_parent_unchanged": re.compile(r"SO3_post current parent unchanged"),
     "SO4_parent_changed": re.compile(r"SO4 parent changed"),
     "SO5_target_parent_reached": re.compile(r"SO5 target parent reached"),
     "SO6_timeout_or_failure": re.compile(r"SO6 (timeout|failure)"),
@@ -73,6 +76,8 @@ META_PATTERNS = {
     "variant_target_suppression_end": re.compile(r"^#\s*variant-target-suppression-end\s+(.+)$"),
     "variant_restore_to_switch_delay_ms": re.compile(r"^#\s*variant-restore-to-switch-delay-ms\s+(\d+)$"),
 }
+
+CAPTURE_END_PATTERN = re.compile(r"^#\s*capture-end\s+(.+)$", re.MULTILINE)
 
 
 def parse_ts(s: str) -> dt.datetime:
@@ -173,10 +178,17 @@ def main() -> int:
             target_parent_extaddr = m_target.group(1).lower()
         if args.scenario == "stock-observed" and not classification:
             initial_parent = meta["initial_parent_extaddr"].lower() if meta["initial_parent_extaddr"] else ""
+            m_timeout_classification = re.search(r"SO6 timeout after .*?classification=([a-z_]+)", input_text)
             if "SO_invalid_instrumentation" in events:
                 classification = "invalid_instrumentation"
             elif initial_parent and target_parent_extaddr and initial_parent == target_parent_extaddr:
                 classification = "initial_parent_already_target"
+            elif m_timeout_classification:
+                classification = m_timeout_classification.group(1)
+            elif "SO3_target_parent_response_observed" in events and "SO5_target_parent_reached" not in events and "SO6_timeout_or_failure" not in events:
+                classification = "capture_truncated_after_target_seen"
+            elif "SO1_search_started" in events and "SO3_target_parent_response_observed" not in events and "SO5_target_parent_reached" not in events and "SO6_timeout_or_failure" not in events:
+                classification = "capture_truncated_before_target_outcome"
             elif args.mode in ("current-parent-off", "forced-current-parent-off"):
                 if "SO5_target_parent_reached" in events:
                     classification = "success_target_reached"
