@@ -28,6 +28,8 @@ Valid-trial outcomes only:
 
 Interpretation: stock-observed current-parent-off now has a variant-style valid batch with full 10/10 successful target reaches. The new diagnostics also explain the excluded attempts: in the repeated `timeout_target_seen_but_never_left_current_parent` cases, the child observed the target (and usually saw both target and non-target responses after `SO3`) but stayed attached to the original parent for the full timeout window. The remaining excluded attempt is now explained as `capture_truncated_after_target_seen`, which came from the capture ending before `SO5` or `SO6`; the runner has been updated to extend capture duration so future batches should not fall into that ambiguous bucket.
 
+Follow-up validation on 2026-05-18 showed that current-parent suppression duration was the decisive knob for reliable forced stock switching. A 60 s current-parent hold still allowed sticky-current-parent failures because the hold could expire before `SO1 search started`, while a 120 s hold produced a clean 3/3 success batch (`20260518-145027` .. `20260518-145834`). Under that 120 s hold, the successful trials had median `SO3 - SO1 = 325 ms`, median `SO5 - SO1 = 1022 ms`, and a tightly clustered median `SO5 - SO3 = 697 ms`. Based on that evidence, `testing/tools/run_current_parent_off_trials.sh` now uses a 120 s default `STOCK_CURRENT_PARENT_OFF_HOLD_TIMEOUT`, and the runner records `disable-end` when the hold process actually finishes.
+
 ## Previous stock-observed current-parent-off update (2026-05-17)
 
 The stock `current-parent-off` path was tightened to copy the multicast anti-`initial_parent_already_target` strategy more faithfully:

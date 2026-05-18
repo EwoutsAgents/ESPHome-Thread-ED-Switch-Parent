@@ -17,7 +17,7 @@ Primary metrics:
 
 | scenario | mode | trials | valid trials | SO4 successes | SO5 successes | median SO4-disruption_time (ms) | median SO5-disruption_time (ms) | median SO4-SO1 (ms) | median SO5-SO1 (ms) | median SO6-SO1 (ms) | disruption method | notes |
 |---|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---|---|
-| stock-observed | current-parent-off | 10 | 10 | 10 | 10 | N/A | N/A | 2337.0 | 2340.0 | N/A | usb-thread-off-hold | latest 2026-05-18 rerun with variant-style stock diagnostics; 10/10 valid trials reached target |
+| stock-observed | current-parent-off | 10 | 10 | 10 | 10 | N/A | N/A | 2337.0 | 2340.0 | N/A | usb-thread-off-hold | latest 2026-05-18 rerun with variant-style stock diagnostics; 10/10 valid trials reached target; follow-up on the same day showed a 120 s current-parent hold is the reliable default for forced-switch runs |
 
 ## Table 2 — Variant switch-act
 
@@ -49,6 +49,7 @@ Primary metrics:
 - **variant-mcast** remains the cleanest target-steered comparison path at **4625 ms** median `T6 - T3`.
 - **variant-ucast** remains slightly slower at **5963.5 ms** median `T6 - T3`.
 - So the benchmark is now in a much cleaner state for reporting: both variant and stock current-parent-off now have valid-only gated batches with explicit evidence about excluded attempts.
+- A same-day hold-duration validation showed that the stock forced-switch runner needs the current parent held off past real `SO1` start; a 120 s hold produced a clean 3/3 success confirmation batch with median `SO5 - SO1 = 1022 ms` and median `SO5 - SO3 = 697 ms`, so 120 s is now the recommended/default stock current-parent-off hold.
 
 ## Current status vs publishability criteria
 
