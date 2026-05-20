@@ -1,5 +1,24 @@
 # Thread Parent-Switch Benchmark Results (2026-05-11)
 
+## Current forced-switch rerun status (2026-05-20)
+
+A fresh stock-observed `current-parent-off` rerun was started after tightening the forced-switch validity rule so the current-parent hold must remain active past the real stock search start (`SO1`). The runner now defaults to a 180 s current-parent hold and rejects attempts that do not keep the hold active for at least 10 s past `SO1` (`hold_not_active_past_so1`).
+
+Run status at stop time:
+- batch was manually stopped during trial 5
+- completed attempts: 4
+- valid trials: 0/3 target
+- completed-trial classifications: all 4 were effectively pre-search gate stalls (`SO1` never started; extractor output remained `unclassified`)
+
+Observed behavior in the completed attempts:
+- the child consistently stayed on the non-target current parent (`588c81fffe5db0e0`)
+- the gate never released into stock search because it did not obtain the required non-target Parent Response evidence / restoration sequence
+- trials 2 and 3 ended with repeated zero-response SG4 restore probes
+- trial 4 briefly saw both routers again (`2 Parent Responses, 1 target match` in the probe) but still ended before any `SO1` release
+- the interrupted trial 5 also remained in SG1 retry behavior, repeatedly observing either zero responses or target-only responses with no representative non-target Parent Response
+
+Interpretation: the new forced-switch rule is active, but this short rerun did not yet produce any valid forced-switch stock trials. The current blocker is again in the pre-search gating path, not in the post-search stock parent-selection phase.
+
 ## Latest stock-observed current-parent-off update (2026-05-18)
 
 A fresh rerun was executed after adding variant-style stock diagnostics and timeout taxonomy (`SO_invariant_*`, `SO3_post_*`, explicit `SO6 classification=...`).

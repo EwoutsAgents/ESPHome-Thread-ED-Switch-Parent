@@ -1,5 +1,9 @@
 # Results: Parent-Switch Act Timing (current)
 
+## Current rerun status note (2026-05-20)
+
+A fresh stock `current-parent-off` rerun was started after changing the forced-switch criterion so the current-parent hold must stay active past the real stock search start (`SO1`). At stop time, the rerun had completed 4 attempts with 0 valid trials accepted. None of those completed attempts reached `SO1`; all remained stuck in the pre-search gate and therefore do not change the published switch-act comparison tables below.
+
 ## Scope
 This report separates **switch-act** and **end-to-end** metrics for:
 1. stock-observed current-parent-off

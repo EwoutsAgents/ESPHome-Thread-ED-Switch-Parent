@@ -36,6 +36,18 @@ For `variant-mcast` and `variant-ucast` steady runs, the child now defaults to t
 - `batch_precondition_release_delay_ms: 75000ms`
 - auto-trigger remains disabled by the batch runner during steady variant captures
 
+## Current stock current-parent-off validity rule
+For a run to count as a true forced-switch stock trial, the current-parent hold must remain active past the real stock search start (`SO1`).
+
+Current runner defaults:
+- `STOCK_CURRENT_PARENT_OFF_HOLD_TIMEOUT=180`
+- `STOCK_CURRENT_PARENT_OFF_REQUIRE_HOLD_PAST_SO1_SECONDS=10`
+
+If the hold ends too early relative to `SO1`, the runner now marks the attempt as:
+- `hold_not_active_past_so1`
+
+This prevents restored-current-parent competition runs from being counted as forced-switch stock evidence.
+
 The batch runner also now:
 - refreshes the target router ExtAddr from live router control before flash/capture when available
 - passes the refreshed `target_parent_extaddr` into the child config

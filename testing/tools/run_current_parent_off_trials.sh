@@ -45,7 +45,7 @@ THREAD_CTL=".venv/bin/python testing/tools/thread_ctl.py"
 TARGET_PARENT_EXTADDR_RUNTIME="${TARGET_PARENT_EXTADDR,,}"
 ROUTER_PRIMARY_EXTADDR_RUNTIME="${ROUTER_PRIMARY_EXTADDR,,}"
 ROUTER_SECONDARY_EXTADDR_RUNTIME="${ROUTER_SECONDARY_EXTADDR,,}"
-CURRENT_PARENT_OFF_HOLD_SECONDS="${STOCK_CURRENT_PARENT_OFF_HOLD_TIMEOUT:-120}"
+CURRENT_PARENT_OFF_HOLD_SECONDS="${STOCK_CURRENT_PARENT_OFF_HOLD_TIMEOUT:-180}"
 THREAD_OFF_READY_TIMEOUT="${STOCK_CURRENT_PARENT_OFF_READY_TIMEOUT:-12}"
 TARGET_SUPPRESSION_HOLD_SECONDS="${STOCK_CURRENT_PARENT_OFF_TARGET_SUPPRESSION_TIMEOUT:-20}"
 TARGET_SUPPRESSION_READY_TIMEOUT="${STOCK_CURRENT_PARENT_OFF_TARGET_SUPPRESSION_READY_TIMEOUT:-12}"
@@ -54,6 +54,8 @@ PREPARED_TO_SEARCH_DELAY="${STOCK_CURRENT_PARENT_OFF_PREPARED_TO_SEARCH_DELAY:-1
 OBSERVE_TIMEOUT="${STOCK_CURRENT_PARENT_OFF_OBSERVE_TIMEOUT:-45s}"
 PROBE_TIMEOUT_MS="${STOCK_CURRENT_PARENT_OFF_PROBE_TIMEOUT_MS:-25000}"
 PROBE_RETRY_INTERVAL="${STOCK_CURRENT_PARENT_OFF_PROBE_RETRY_INTERVAL:-2s}"
+RESTORE_REQUIRED_CONFIRMATIONS="${STOCK_CURRENT_PARENT_OFF_RESTORE_REQUIRED_CONFIRMATIONS:-2}"
+REQUIRE_HOLD_PAST_SO1_SECONDS="${STOCK_CURRENT_PARENT_OFF_REQUIRE_HOLD_PAST_SO1_SECONDS:-10}"
 
 duration_to_seconds_ceil() {
   python3 - <<'PY' "$1"
@@ -66,6 +68,32 @@ amount = int(m.group(1))
 unit = m.group(2) or 's'
 seconds = amount / 1000 if unit == 'ms' else amount
 print(math.ceil(seconds))
+PY
+}
+
+extract_log_timestamp() {
+  python3 - <<'PY' "$1" "$2"
+import re, sys
+path, pattern = sys.argv[1:3]
+rx = re.compile(pattern)
+with open(path, 'r', encoding='utf-8', errors='ignore') as fh:
+    for line in fh:
+        if rx.search(line):
+            print(line.split()[0])
+            raise SystemExit(0)
+raise SystemExit(1)
+PY
+}
+
+timestamp_diff_seconds() {
+  python3 - <<'PY' "$1" "$2"
+from datetime import datetime
+import sys
+start, end = sys.argv[1:3]
+fmt = '%Y-%m-%dT%H:%M:%S.%fZ'
+start_dt = datetime.strptime(start.replace('+00:00', 'Z'), fmt)
+end_dt = datetime.strptime(end.replace('+00:00', 'Z'), fmt)
+print((end_dt - start_dt).total_seconds())
 PY
 }
 
@@ -127,6 +155,7 @@ fi
   -s observe_timeout "$OBSERVE_TIMEOUT" \
   -s probe_timeout_ms "$PROBE_TIMEOUT_MS" \
   -s probe_retry_interval "$PROBE_RETRY_INTERVAL" \
+  -s restore_required_confirmations "$RESTORE_REQUIRED_CONFIRMATIONS" \
   run "$CHILD_CONFIG" --device "$CHILD_PORT" --no-logs >"$FLASH_LOG" 2>&1
 
 LAST_ATTEMPT="$DONE"
@@ -268,6 +297,27 @@ for ((i=DONE+1; i<=TARGET_ATTEMPTS; i++)); do
 
   wait "$CAP_PID" || true
 
+  SO1_TIMESTAMP=""
+  if SO1_TIMESTAMP="$(extract_log_timestamp "$LOG" 'SO1 search started' 2>/dev/null)"; then
+    :
+  else
+    SO1_TIMESTAMP=""
+  fi
+
+  if [[ -z "$TRIAL_CLASSIFICATION" && -n "$SO1_TIMESTAMP" && -n "$DISABLE_END" ]]; then
+    HOLD_PAST_SO1_SECONDS="$(timestamp_diff_seconds "$SO1_TIMESTAMP" "$DISABLE_END")"
+    if ! python3 - <<'PY' "$HOLD_PAST_SO1_SECONDS" "$REQUIRE_HOLD_PAST_SO1_SECONDS"
+import sys
+actual = float(sys.argv[1])
+required = float(sys.argv[2])
+raise SystemExit(0 if actual >= required else 1)
+PY
+    then
+      TRIAL_CLASSIFICATION="hold_not_active_past_so1"
+      echo "[cp-off] trial $i invalid for forced-switch: current-parent hold ended ${HOLD_PAST_SO1_SECONDS}s after SO1 (required ${REQUIRE_HOLD_PAST_SO1_SECONDS}s)"
+    fi
+  fi
+
   {
     echo "# trial $i"
     [[ -n "$CURRENT_EXTADDR" ]] && echo "# current-parent-extaddr $CURRENT_EXTADDR"
@@ -276,6 +326,7 @@ for ((i=DONE+1; i<=TARGET_ATTEMPTS; i++)); do
     echo "# disable-method $DISABLE_METHOD"
     [[ -n "$DISABLE_START" ]] && echo "# disable-start $DISABLE_START"
     [[ -n "$DISABLE_END" ]] && echo "# disable-end $DISABLE_END"
+    [[ -n "$SO1_TIMESTAMP" ]] && echo "# so1-timestamp $SO1_TIMESTAMP"
     if [[ -n "$TRIAL_CLASSIFICATION" ]]; then
       echo "# classification $TRIAL_CLASSIFICATION"
     fi
