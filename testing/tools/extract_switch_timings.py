@@ -36,6 +36,14 @@ STOCK_OBSERVED_PATTERNS = {
     "SO_invalid_instrumentation": re.compile(r"SO6 failure; invalid instrumentation"),
 }
 
+STOCK_PARENT_LOSS_PATTERNS = {
+    "PL0_measurement_armed": re.compile(r"PL0 measurement armed; initial_parent="),
+    "PL2_recovery_started": re.compile(r"PL2 recovery/search started"),
+    "PL3_parent_changed": re.compile(r"PL3 parent changed"),
+    "PL4_target_parent_reached": re.compile(r"PL4 target parent reached"),
+    "PL5_timeout": re.compile(r"PL5 timeout"),
+}
+
 COMMON_PATTERNS = {
     "C0_request": re.compile(r"(SO0 request|SO0 current-parent-off prepare|T0 request|Requested Thread parent switch)"),
     "C1_workflow_started": re.compile(
@@ -49,6 +57,7 @@ COMMON_PATTERNS = {
 TS_PREFIX = re.compile(r"^(?P<ts>\d{4}-\d{2}-\d{2}T[^ ]+)\s+\[(?P<label>[^\]]+)\]\s+(?P<msg>.*)$")
 
 SCENARIOS = {
+    "stock-parent-loss": [*STOCK_PARENT_LOSS_PATTERNS.keys()],
     "stock-observed": [*STOCK_OBSERVED_PATTERNS.keys(), *COMMON_PATTERNS.keys()],
     "variant-mcast": [*VARIANT_PATTERNS.keys(), *COMMON_PATTERNS.keys()],
     "variant-ucast": [*VARIANT_PATTERNS.keys(), *COMMON_PATTERNS.keys()],
@@ -59,6 +68,11 @@ SCENARIOS = {
 META_PATTERNS = {
     "classification": re.compile(r"^#\s*classification\s+(.+)$"),
     "initial_parent_extaddr": re.compile(r"^#\s*current-parent-extaddr\s+([0-9a-fA-F]{16})$"),
+    "parent_loss_initial_parent_extaddr": re.compile(r"^#\s*initial_parent_extaddr\s+([0-9a-fA-F]{16})$"),
+    "parent_loss_target_parent_extaddr": re.compile(r"^#\s*target_parent_extaddr\s+([0-9a-fA-F]{16})$"),
+    "parent_loss_final_parent_extaddr": re.compile(r"^#\s*final_parent_extaddr\s+([0-9a-fA-F]{16})$"),
+    "parent_loss_r1_off_time": re.compile(r"^#\s*parent-loss-r1-off\s+(.+)$"),
+    "measurement_state_cleared": re.compile(r"^#\s*measurement-state-cleared\s+(\S+)$"),
     "initial_parent_rloc16": re.compile(r"^#\s*current-parent-rloc16\s+(0x[0-9a-fA-F]{4})$"),
     "disabled_router_label": re.compile(r"^#\s*disabled-router-label\s+(\S+)$"),
     "disable_method": re.compile(r"^#\s*disable-method\s+(\S+)$"),
@@ -90,6 +104,7 @@ def main() -> int:
     parser.add_argument("--label", default="child", help="Node label to analyze (from capture prefix).")
     parser.add_argument("--scenario", choices=list(SCENARIOS.keys()), default="auto")
     parser.add_argument("--mode", default="steady")
+    parser.add_argument("--trial", default="")
     parser.add_argument("--out", type=Path, default=Path("testing/logs/switch_timings.csv"))
     args = parser.parse_args()
 
@@ -97,6 +112,11 @@ def main() -> int:
     meta: dict[str, str] = {
         "classification": "",
         "initial_parent_extaddr": "",
+        "parent_loss_initial_parent_extaddr": "",
+        "parent_loss_target_parent_extaddr": "",
+        "parent_loss_final_parent_extaddr": "",
+        "parent_loss_r1_off_time": "",
+        "measurement_state_cleared": "",
         "initial_parent_rloc16": "",
         "disabled_router_label": "",
         "disable_method": "",
@@ -120,6 +140,7 @@ def main() -> int:
     all_patterns: dict[str, re.Pattern[str]] = {}
     all_patterns.update(VARIANT_PATTERNS)
     all_patterns.update(STOCK_OBSERVED_PATTERNS)
+    all_patterns.update(STOCK_PARENT_LOSS_PATTERNS)
     all_patterns.update(COMMON_PATTERNS)
 
     selected_events = SCENARIOS[args.scenario]
@@ -155,6 +176,68 @@ def main() -> int:
                 continue
             if all_patterns[key].search(msg):
                 events[key] = ts
+
+    if args.scenario == "stock-parent-loss":
+        args.out.parent.mkdir(parents=True, exist_ok=True)
+        initial_parent_extaddr = (meta["parent_loss_initial_parent_extaddr"] or meta["initial_parent_extaddr"]).lower()
+        target_parent_extaddr = meta["parent_loss_target_parent_extaddr"].lower()
+        final_parent_extaddr = meta["parent_loss_final_parent_extaddr"].lower()
+        if not initial_parent_extaddr:
+            m = re.search(r"PL0 measurement armed; initial_parent=([0-9a-fA-F]{16})", input_text)
+            if m:
+                initial_parent_extaddr = m.group(1).lower()
+        if not target_parent_extaddr:
+            m = re.search(r"PL0 measurement armed; .*?target_parent=([0-9a-fA-F]{16})", input_text)
+            if m:
+                target_parent_extaddr = m.group(1).lower()
+        if not final_parent_extaddr:
+            m = re.search(r"PL4 target parent reached after .*? current=([0-9a-fA-F]{16})", input_text)
+            if m:
+                final_parent_extaddr = m.group(1).lower()
+
+        r1_off_ts = parse_ts(meta["parent_loss_r1_off_time"]) if meta["parent_loss_r1_off_time"] else None
+        recovery_ts = events.get("PL2_recovery_started")
+        parent_changed_ts = events.get("PL3_parent_changed")
+        target_reached_ts = events.get("PL4_target_parent_reached")
+
+        def delta_ms(start: dt.datetime | None, end: dt.datetime | None) -> str:
+            if start is None or end is None:
+                return ""
+            return str(int((end - start).total_seconds() * 1000))
+
+        detection_latency_ms = delta_ms(r1_off_ts, recovery_ts)
+        switching_time_ms = delta_ms(recovery_ts, target_reached_ts)
+        total_failover_ms = delta_ms(r1_off_ts, target_reached_ts)
+
+        with args.out.open("w", newline="", encoding="utf-8") as f:
+            writer = csv.writer(f)
+            writer.writerow([
+                "scenario", "trial", "classification", "initial_parent_extaddr", "target_parent_extaddr", "final_parent_extaddr",
+                "r1_off_time_utc", "recovery_start_time_utc", "parent_changed_time_utc", "target_parent_reached_time_utc",
+                "detection_latency_ms", "switching_time_ms", "total_failover_ms", "measurement_state_cleared", "source_log"
+            ])
+            writer.writerow([
+                args.scenario,
+                args.trial,
+                meta["classification"],
+                initial_parent_extaddr,
+                target_parent_extaddr,
+                final_parent_extaddr,
+                meta["parent_loss_r1_off_time"],
+                recovery_ts.isoformat() if recovery_ts else "",
+                parent_changed_ts.isoformat() if parent_changed_ts else "",
+                target_reached_ts.isoformat() if target_reached_ts else "",
+                detection_latency_ms,
+                switching_time_ms,
+                total_failover_ms,
+                meta["measurement_state_cleared"],
+                str(args.infile),
+            ])
+
+        print(f"Wrote {args.out}")
+        for key in selected_events:
+            print(f"{key}: {events.get(key).isoformat() if key in events else '<missing>'}")
+        return 0
 
     args.out.parent.mkdir(parents=True, exist_ok=True)
     with args.out.open("w", newline="", encoding="utf-8") as f:

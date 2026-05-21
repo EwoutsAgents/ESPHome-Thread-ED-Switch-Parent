@@ -27,6 +27,8 @@ void ThreadStockObserverComponent::dump_config() {
   ESP_LOGCONFIG(TAG, "Thread stock observer:");
   ESP_LOGCONFIG(TAG, "  Target configured: %s", YESNO(this->target_configured_));
   ESP_LOGCONFIG(TAG, "  Target ExtAddr: %s", this->extaddr_to_string_(this->target_extaddr_).c_str());
+  ESP_LOGCONFIG(TAG, "  Initial parent configured: %s", YESNO(this->initial_parent_configured_));
+  ESP_LOGCONFIG(TAG, "  Initial parent ExtAddr: %s", this->extaddr_to_string_(this->initial_parent_expected_extaddr_).c_str());
   ESP_LOGCONFIG(TAG, "  Observe timeout: %u ms", this->observe_timeout_ms_);
   ESP_LOGCONFIG(TAG, "  Log Parent Responses: %s", YESNO(this->log_parent_responses_));
   ESP_LOGCONFIG(TAG, "  Parent Response hook registered: %s", YESNO(this->callback_registered_));
@@ -45,9 +47,25 @@ void ThreadStockObserverComponent::set_target_parent_extaddr(const std::string &
   ESP_LOGI(TAG, "Configured target parent ExtAddr %s", this->extaddr_to_string_(this->target_extaddr_).c_str());
 }
 
+void ThreadStockObserverComponent::set_initial_parent_extaddr(const std::string &value) {
+  otExtAddress parsed{};
+  if (!this->parse_extaddr_(value, &parsed)) {
+    ESP_LOGW(TAG, "Invalid initial parent extaddr: %s", value.c_str());
+    this->initial_parent_configured_ = false;
+    return;
+  }
+
+  this->initial_parent_expected_extaddr_ = parsed;
+  this->initial_parent_configured_ = true;
+  ESP_LOGI(TAG, "Configured initial parent ExtAddr %s",
+           this->extaddr_to_string_(this->initial_parent_expected_extaddr_).c_str());
+}
+
 void ThreadStockObserverComponent::reset_run_state_() {
   this->active_ = false;
+  this->parent_loss_active_ = false;
   this->prepared_ = false;
+  this->logged_recovery_start_ = false;
   this->logged_first_parent_response_ = false;
   this->logged_target_parent_response_ = false;
   this->logged_parent_changed_ = false;
@@ -61,6 +79,44 @@ void ThreadStockObserverComponent::reset_run_state_() {
   this->post_so3_parent_response_count_ = 0;
   this->post_so3_target_parent_response_count_ = 0;
   this->post_so3_non_target_parent_response_count_ = 0;
+}
+
+void ThreadStockObserverComponent::arm_parent_loss_measurement() {
+  if (!this->target_configured_ || !this->initial_parent_configured_) {
+    ESP_LOGW(TAG, "PL0 arm ignored; initial/target parent extaddr is not fully configured");
+    return;
+  }
+
+  auto lock = esphome::openthread::InstanceLock::try_acquire(0);
+  if (!lock.has_value()) {
+    ESP_LOGW(TAG, "PL0 arm ignored; could not lock OpenThread instance");
+    return;
+  }
+
+  otRouterInfo parent{};
+  if (otThreadGetParentInfo(lock->get_instance(), &parent) != OT_ERROR_NONE) {
+    ESP_LOGW(TAG, "PL0 arm ignored; current parent unavailable");
+    return;
+  }
+
+  if (!this->extaddr_matches_(parent.mExtAddress, this->initial_parent_expected_extaddr_)) {
+    ESP_LOGW(TAG, "PL0 arm ignored; current parent %s does not match expected initial parent %s",
+             this->extaddr_to_string_(parent.mExtAddress).c_str(),
+             this->extaddr_to_string_(this->initial_parent_expected_extaddr_).c_str());
+    return;
+  }
+
+  this->reset_run_state_();
+  this->initial_parent_rloc16_ = parent.mRloc16;
+  this->initial_parent_extaddr_ = parent.mExtAddress;
+  this->t0_ms_ = millis();
+  this->parent_loss_active_ = true;
+  this->active_ = true;
+
+  ESP_LOGI(TAG, "PL0 measurement armed; initial_parent=%s target_parent=%s current_rloc16=0x%04x observe_timeout_ms=%u",
+           this->extaddr_to_string_(this->initial_parent_extaddr_).c_str(),
+           this->extaddr_to_string_(this->target_extaddr_).c_str(),
+           this->initial_parent_rloc16_, this->observe_timeout_ms_);
 }
 
 bool ThreadStockObserverComponent::prepare_stock_search_internal_(bool current_parent_off_mode) {
@@ -301,9 +357,65 @@ void ThreadStockObserverComponent::loop() {
   otInstance *instance = lock->get_instance();
   const uint32_t now = millis();
   const uint32_t elapsed_ms = now - this->t0_ms_;
+  const otDeviceRole role = otThreadGetDeviceRole(instance);
 
   otRouterInfo parent{};
   const otError parent_err = otThreadGetParentInfo(instance, &parent);
+
+  if (this->parent_loss_active_) {
+    if (!this->logged_recovery_start_) {
+      const bool parent_still_initial = parent_err == OT_ERROR_NONE && this->current_parent_matches_initial_(parent);
+      if (role != OT_DEVICE_ROLE_CHILD || !parent_still_initial) {
+        this->logged_recovery_start_ = true;
+        if (parent_err == OT_ERROR_NONE) {
+          ESP_LOGI(TAG,
+                   "PL2 recovery/search started after %lu ms; role=%d current_parent=%s rloc16=0x%04x",
+                   static_cast<unsigned long>(elapsed_ms), static_cast<int>(role),
+                   this->extaddr_to_string_(parent.mExtAddress).c_str(), parent.mRloc16);
+        } else {
+          ESP_LOGI(TAG, "PL2 recovery/search started after %lu ms; role=%d current_parent=unavailable",
+                   static_cast<unsigned long>(elapsed_ms), static_cast<int>(role));
+        }
+      }
+    }
+
+    if (parent_err == OT_ERROR_NONE) {
+      const std::string parent_extaddr = this->extaddr_to_string_(parent.mExtAddress);
+      const bool parent_changed = !this->current_parent_matches_initial_(parent);
+
+      if (!this->logged_parent_changed_ && parent_changed) {
+        this->logged_parent_changed_ = true;
+        ESP_LOGI(TAG, "PL3 parent changed after %lu ms; previous=%s current=%s current_rloc16=0x%04x",
+                 static_cast<unsigned long>(elapsed_ms),
+                 this->extaddr_to_string_(this->initial_parent_extaddr_).c_str(),
+                 parent_extaddr.c_str(), parent.mRloc16);
+      }
+
+      if (!this->logged_target_reached_ && this->extaddr_matches_(parent.mExtAddress, this->target_extaddr_)) {
+        this->logged_target_reached_ = true;
+        this->parent_loss_active_ = false;
+        this->active_ = false;
+        ESP_LOGI(TAG, "PL4 target parent reached after %lu ms; current=%s current_rloc16=0x%04x",
+                 static_cast<unsigned long>(elapsed_ms), parent_extaddr.c_str(), parent.mRloc16);
+        return;
+      }
+    }
+
+    if (elapsed_ms >= this->observe_timeout_ms_) {
+      this->parent_loss_active_ = false;
+      this->active_ = false;
+      if (parent_err == OT_ERROR_NONE) {
+        ESP_LOGW(TAG, "PL5 timeout after %lu ms; target parent not reached; final_parent=%s current_rloc16=0x%04x role=%d",
+                 static_cast<unsigned long>(elapsed_ms),
+                 this->extaddr_to_string_(parent.mExtAddress).c_str(), parent.mRloc16,
+                 static_cast<int>(role));
+      } else {
+        ESP_LOGW(TAG, "PL5 timeout after %lu ms; target parent not reached; final_parent=unavailable role=%d",
+                 static_cast<unsigned long>(elapsed_ms), static_cast<int>(role));
+      }
+    }
+    return;
+  }
 
   if (parent_err == OT_ERROR_NONE) {
     const std::string parent_extaddr = this->extaddr_to_string_(parent.mExtAddress);

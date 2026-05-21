@@ -1,0 +1,154 @@
+substitutions:
+  thread_channel: "15"
+  thread_pan_id: "0x1234"
+  thread_network_key: "0x00112233445566778899aabbccddeeff"
+  thread_ext_pan_id: "0x1111222233334444"
+  thread_network_name: "OpenClawBench"
+  thread_pskc: "0x445566778899aabbccddeeff00112233"
+  thread_mesh_local_prefix: "fd11:22::/64"
+  initial_parent_extaddr: "588c81fffe5db0e0"
+  target_parent_extaddr: "588c81fffe5db0c4"
+  auto_trigger_switch: "true"
+  auto_trigger_delay: "5s"
+  stabilize_delay: "10s"
+  stabilize_delay_ms: "10000"
+  poll_interval: "1s"
+  observe_timeout: "120s"
+
+esphome:
+  name: child-stock-parent-loss
+  friendly_name: Thread Child Stock Parent Loss
+  on_boot:
+    priority: -100
+    then:
+      - script.execute: stock_parent_loss_startup
+
+esp32:
+  board: esp32-c6-devkitm-1
+  framework:
+    type: esp-idf
+
+logger:
+  level: VERY_VERBOSE
+  hardware_uart: UART0
+
+network:
+  enable_ipv6: true
+
+api:
+
+ota:
+  - platform: esphome
+
+openthread:
+  device_type: MTD
+  channel: ${thread_channel}
+  pan_id: ${thread_pan_id}
+  network_key: ${thread_network_key}
+  ext_pan_id: ${thread_ext_pan_id}
+  network_name: "${thread_network_name}"
+  pskc: ${thread_pskc}
+  mesh_local_prefix: ${thread_mesh_local_prefix}
+
+external_components:
+  - source:
+      type: local
+      path: ../../components
+    components: [thread_stock_observer, thread_preferred_parent]
+
+thread_stock_observer:
+  id: stock_parent_loss_observer
+  initial_parent_extaddr: "${initial_parent_extaddr}"
+  target_parent_extaddr: "${target_parent_extaddr}"
+  observe_timeout: ${observe_timeout}
+  log_parent_responses: false
+
+thread_preferred_parent:
+  id: stock_parent_loss_preconditioner
+  parent_extaddr: "${initial_parent_extaddr}"
+  max_attempts: 3
+  retry_interval: 8s
+  selected_attach_timeout: 24s
+  parent_request_unicast: false
+  early_attach_on_target: true
+  early_attach_delay: 500ms
+  require_selected_parent_hook: true
+  log_parent_responses: true
+
+globals:
+  - id: stock_parent_loss_request_sent
+    type: bool
+    restore_value: no
+    initial_value: "false"
+  - id: stock_parent_loss_measurement_announced
+    type: bool
+    restore_value: no
+    initial_value: "false"
+  - id: stock_parent_loss_r1_stable_since_ms
+    type: uint32_t
+    restore_value: no
+    initial_value: "0"
+
+script:
+  - id: stock_parent_loss_startup
+    mode: single
+    then:
+      - if:
+          condition:
+            lambda: 'return ${auto_trigger_switch};'
+          then:
+            - delay: ${auto_trigger_delay}
+            - if:
+                condition:
+                  lambda: 'return !id(stock_parent_loss_request_sent);'
+                then:
+                  - logger.log:
+                      level: INFO
+                      format: "PLP0 preconditioning: forcing ED onto R1 %s before measuring failover to R2 %s"
+                      args: ['"${initial_parent_extaddr}"', '"${target_parent_extaddr}"']
+                  - lambda: 'id(stock_parent_loss_request_sent) = true;'
+                  - button.press: stock_parent_loss_force_r1_button
+
+interval:
+  - interval: ${poll_interval}
+    then:
+      - lambda: |-
+          if (!id(stock_parent_loss_request_sent) || id(stock_parent_loss_measurement_announced)) {
+            return;
+          }
+
+          const std::string current = id(stock_parent_loss_preconditioner).current_parent_extaddr();
+          const std::string expected = "${initial_parent_extaddr}";
+          const std::string target = "${target_parent_extaddr}";
+          const uint32_t now = millis();
+
+          if (current == expected) {
+            if (id(stock_parent_loss_r1_stable_since_ms) == 0) {
+              id(stock_parent_loss_r1_stable_since_ms) = now;
+              ESP_LOGI("stock_parent_loss", "PLP1 preferred parent reached; current=%s target=%s", current.c_str(), target.c_str());
+              return;
+            }
+
+            const uint32_t stable_ms = now - id(stock_parent_loss_r1_stable_since_ms);
+            if (stable_ms >= ${stabilize_delay_ms}) {
+              ESP_LOGI("stock_parent_loss", "PLP2 stabilization complete after %lu ms on R1; arming stock parent-loss measurement", static_cast<unsigned long>(stable_ms));
+              id(stock_parent_loss_observer).arm_parent_loss_measurement();
+              if (id(stock_parent_loss_observer).parent_loss_measurement_active()) {
+                id(stock_parent_loss_measurement_announced) = true;
+              }
+            }
+            return;
+          }
+
+          if (id(stock_parent_loss_r1_stable_since_ms) != 0) {
+            ESP_LOGW("stock_parent_loss", "PLP1 lost expected R1 before measurement arm; current=%s expected=%s", current.c_str(), expected.c_str());
+          }
+          id(stock_parent_loss_r1_stable_since_ms) = 0;
+
+button:
+  - platform: template
+    id: stock_parent_loss_force_r1_button
+    name: "Stock parent-loss: force R1"
+    on_press:
+      - lambda: |-
+          id(stock_parent_loss_preconditioner).request_switch("${initial_parent_extaddr}");

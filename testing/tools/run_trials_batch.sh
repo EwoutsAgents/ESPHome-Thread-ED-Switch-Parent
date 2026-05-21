@@ -18,10 +18,15 @@ mkdir -p "$STATE_DIR" testing/logs
 case "$SCENARIO" in
   stock) CONFIG="testing/configs/child_stock.yaml" ;;
   stock-observed) CONFIG="testing/configs/child_stock_observed.yaml" ;;
+  stock-parent-loss) CONFIG="testing/configs/child_stock_parent_loss.yaml" ;;
   variant-mcast) CONFIG="testing/configs/child_variant_multicast.yaml" ;;
   variant-ucast) CONFIG="testing/configs/child_variant_unicast.yaml" ;;
   *) echo "Unknown scenario: $SCENARIO" >&2; exit 1 ;;
 esac
+
+if [[ "$SCENARIO" == "stock-parent-loss" ]]; then
+  exec testing/tools/run_stock_parent_loss_trials.sh "$COUNT" "$DURATION"
+fi
 
 if [[ "$MODE" != "steady" && "$MODE" != "forced-failover" ]]; then
   echo "Unknown mode: $MODE (use steady|forced-failover)" >&2

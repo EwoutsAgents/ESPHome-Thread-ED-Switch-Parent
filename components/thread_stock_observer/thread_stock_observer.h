@@ -37,12 +37,15 @@ class ThreadStockObserverComponent : public Component {
   void dump_config() override;
 
   void set_target_parent_extaddr(const std::string &value);
+  void set_initial_parent_extaddr(const std::string &value);
   void set_observe_timeout(uint32_t timeout_ms) { this->observe_timeout_ms_ = timeout_ms; }
   void set_log_parent_responses(bool enabled) { this->log_parent_responses_ = enabled; }
 
   void start_stock_search();
   void prepare_stock_search();
   void start_prepared_stock_search();
+  void arm_parent_loss_measurement();
+  bool parent_loss_measurement_active() const { return this->parent_loss_active_; }
 
  protected:
   static constexpr const char *TAG = "thread_stock_observer";
@@ -62,17 +65,21 @@ class ThreadStockObserverComponent : public Component {
   void start_observation_after_search_(otError err, bool current_parent_off_mode);
 
   bool active_{false};
+  bool parent_loss_active_{false};
   bool callback_registered_{false};
   bool target_configured_{false};
+  bool initial_parent_configured_{false};
   bool log_parent_responses_{true};
 
   uint32_t t0_ms_{0};
   uint32_t observe_timeout_ms_{16000};
 
   otExtAddress target_extaddr_{};
+  otExtAddress initial_parent_expected_extaddr_{};
   uint16_t initial_parent_rloc16_{0xFFFE};
   otExtAddress initial_parent_extaddr_{};
 
+  bool logged_recovery_start_{false};
   bool logged_first_parent_response_{false};
   bool logged_target_parent_response_{false};
   bool logged_parent_changed_{false};
