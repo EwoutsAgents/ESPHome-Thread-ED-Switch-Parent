@@ -1,32 +1,35 @@
 # Copy this file to stock_test_devices.toml and edit the serial ports.
-# Keep the same physical ESP32-C6 board assigned to the same role across reruns.
+# Keep the same physical ESP32-C6 assigned to each role across reruns.
 
 [devices]
-# Linux examples: /dev/ttyACM0, /dev/ttyACM1, /dev/ttyUSB0
-# macOS examples: /dev/cu.usbmodem101, /dev/cu.usbserial-0001
-# Windows examples: COM3, COM4, COM5
 router1 = "/dev/ttyACM0"
 child = "/dev/ttyACM1"
 router2 = "/dev/ttyACM2"
 
-# Optional: any other connected ESP32-C6 boards that should be wiped with empty.yaml
-# before the timed stock test starts.
-extra_reset_ports = []
-
 [paths]
-config_dir = "configs"
-log_dir = "logs"
+# These are relative to this TOML file unless absolute.
+configs_dir = "configs"
+logs_dir = "logs"
 
 [esphome]
-# The runner prefers a repository-local venv by default. With this package in <repo>/testing,
-# this points at <repo>/venv/bin/esphome. Override with ESPHOME_BIN or --esphome-bin.
-bin = "../venv/bin/esphome"
-# `run` compiles and flashes with --no-logs. Use `upload` only when firmware has already been built.
-flash_command = "run"
-# upload_speed = "460800"
+# Optional. If omitted or missing, the runner auto-detects:
+#   ../.venv/bin/esphome
+#   ../venv/bin/esphome
+#   ./.venv/bin/esphome
+#   ./venv/bin/esphome
+#   PATH
+# bin = "../.venv/bin/esphome"
+
+# The default is the important measurement behavior:
+# compile all firmware first, then use upload-only commands during the timed test.
+precompile = true
+clean_before_compile = false
+
+# Optional serial upload speed. Leave commented to use ESPHome's default.
+# upload_speed = 460800
 
 [timing]
-after_router1_flash = 10
-after_child_flash_before_router2 = 30
-after_router2_flash_before_router1_empty = 60
-after_router1_empty_log_duration = 300
+after_router1_seconds = 10
+after_child_seconds = 30
+after_router2_seconds = 60
+after_router1_removed_seconds = 300

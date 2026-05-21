@@ -1,11 +1,16 @@
-PYTHON ?= ../venv/bin/python
-RUNNER := scripts/run_stock_test.py
 CONFIG ?= stock_test_devices.toml
+RUNNER := ./run_stock_test.sh --config $(CONFIG)
 
-.PHONY: dry-run run-stock
+.PHONY: stock-test dry-run precompile-only clean-before-compile
+
+stock-test:
+	$(RUNNER)
 
 dry-run:
-	$(PYTHON) $(RUNNER) --config $(CONFIG) --dry-run
+	$(RUNNER) --dry-run
 
-run-stock:
-	$(PYTHON) $(RUNNER) --config $(CONFIG)
+precompile-only:
+	$(RUNNER) --precompile-only
+
+clean-before-compile:
+	$(RUNNER) --clean-before-compile
