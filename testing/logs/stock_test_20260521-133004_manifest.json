@@ -1,0 +1,169 @@
+{
+  "child_log_file": "/home/ewout/.openclaw/workspace-softwaredeveloper/ESPHome-Thread-ED-Switch-Parent/testing/logs/stock_child_20260521-133004.log",
+  "command_log_file": "/home/ewout/.openclaw/workspace-softwaredeveloper/ESPHome-Thread-ED-Switch-Parent/testing/logs/stock_test_20260521-133004_commands.log",
+  "config_dir": "/home/ewout/.openclaw/workspace-softwaredeveloper/ESPHome-Thread-ED-Switch-Parent/testing/configs",
+  "devices": {
+    "child": "/dev/ttyACM3",
+    "router1": "/dev/ttyACM1",
+    "router2": "/dev/ttyACM4"
+  },
+  "dry_run": false,
+  "ended_utc": "2026-05-21T11:35:15+00:00",
+  "esphome_bin": "/home/ewout/.openclaw/workspace-softwaredeveloper/ESPHome-Thread-ED-Switch-Parent/.venv/bin/esphome",
+  "extra_reset_ports": [],
+  "flash_command": "run",
+  "log_dir": "/home/ewout/.openclaw/workspace-softwaredeveloper/ESPHome-Thread-ED-Switch-Parent/testing/logs",
+  "run_id": "20260521-133004",
+  "started_utc": "2026-05-21T11:30:04+00:00",
+  "status": "completed",
+  "steps": [
+    {
+      "command": [
+        "/home/ewout/.openclaw/workspace-softwaredeveloper/ESPHome-Thread-ED-Switch-Parent/.venv/bin/esphome",
+        "run",
+        "/home/ewout/.openclaw/workspace-softwaredeveloper/ESPHome-Thread-ED-Switch-Parent/testing/configs/empty.yaml",
+        "--device",
+        "/dev/ttyACM1",
+        "--no-logs"
+      ],
+      "ended_utc": "2026-05-21T11:30:49+00:00",
+      "label": "Initial reset: flash router1 with empty.yaml",
+      "returncode": 0,
+      "started_utc": "2026-05-21T11:30:04+00:00"
+    },
+    {
+      "command": [
+        "/home/ewout/.openclaw/workspace-softwaredeveloper/ESPHome-Thread-ED-Switch-Parent/.venv/bin/esphome",
+        "run",
+        "/home/ewout/.openclaw/workspace-softwaredeveloper/ESPHome-Thread-ED-Switch-Parent/testing/configs/empty.yaml",
+        "--device",
+        "/dev/ttyACM3",
+        "--no-logs"
+      ],
+      "ended_utc": "2026-05-21T11:30:58+00:00",
+      "label": "Initial reset: flash child with empty.yaml",
+      "returncode": 0,
+      "started_utc": "2026-05-21T11:30:49+00:00"
+    },
+    {
+      "command": [
+        "/home/ewout/.openclaw/workspace-softwaredeveloper/ESPHome-Thread-ED-Switch-Parent/.venv/bin/esphome",
+        "run",
+        "/home/ewout/.openclaw/workspace-softwaredeveloper/ESPHome-Thread-ED-Switch-Parent/testing/configs/empty.yaml",
+        "--device",
+        "/dev/ttyACM4",
+        "--no-logs"
+      ],
+      "ended_utc": "2026-05-21T11:31:07+00:00",
+      "label": "Initial reset: flash router2 with empty.yaml",
+      "returncode": 0,
+      "started_utc": "2026-05-21T11:30:58+00:00"
+    },
+    {
+      "command": [
+        "/home/ewout/.openclaw/workspace-softwaredeveloper/ESPHome-Thread-ED-Switch-Parent/.venv/bin/esphome",
+        "run",
+        "/home/ewout/.openclaw/workspace-softwaredeveloper/ESPHome-Thread-ED-Switch-Parent/testing/configs/stock_router_1.yaml",
+        "--device",
+        "/dev/ttyACM1",
+        "--no-logs"
+      ],
+      "ended_utc": "2026-05-21T11:32:26+00:00",
+      "label": "Flash router 1 with stock_router_1.yaml",
+      "returncode": 0,
+      "started_utc": "2026-05-21T11:31:07+00:00"
+    },
+    {
+      "ended_utc": "2026-05-21T11:32:27+00:00",
+      "label": "router 1 settle before child joins",
+      "seconds": 1.0,
+      "started_utc": "2026-05-21T11:32:26+00:00"
+    },
+    {
+      "command": [
+        "/home/ewout/.openclaw/workspace-softwaredeveloper/ESPHome-Thread-ED-Switch-Parent/.venv/bin/esphome",
+        "run",
+        "/home/ewout/.openclaw/workspace-softwaredeveloper/ESPHome-Thread-ED-Switch-Parent/testing/configs/stock_child.yaml",
+        "--device",
+        "/dev/ttyACM3",
+        "--no-logs"
+      ],
+      "ended_utc": "2026-05-21T11:33:42+00:00",
+      "label": "Flash child with stock_child.yaml",
+      "returncode": 0,
+      "started_utc": "2026-05-21T11:32:27+00:00"
+    },
+    {
+      "command": [
+        "/home/ewout/.openclaw/workspace-softwaredeveloper/ESPHome-Thread-ED-Switch-Parent/.venv/bin/esphome",
+        "logs",
+        "/home/ewout/.openclaw/workspace-softwaredeveloper/ESPHome-Thread-ED-Switch-Parent/testing/configs/stock_child.yaml",
+        "--device",
+        "/dev/ttyACM3"
+      ],
+      "label": "Start child log capture",
+      "started_utc": "2026-05-21T11:33:42+00:00"
+    },
+    {
+      "ended_utc": "2026-05-21T11:33:43+00:00",
+      "label": "child attached/logging before router 2 is introduced",
+      "seconds": 1.0,
+      "started_utc": "2026-05-21T11:33:42+00:00"
+    },
+    {
+      "command": [
+        "/home/ewout/.openclaw/workspace-softwaredeveloper/ESPHome-Thread-ED-Switch-Parent/.venv/bin/esphome",
+        "run",
+        "/home/ewout/.openclaw/workspace-softwaredeveloper/ESPHome-Thread-ED-Switch-Parent/testing/configs/stock_router_2.yaml",
+        "--device",
+        "/dev/ttyACM4",
+        "--no-logs"
+      ],
+      "ended_utc": "2026-05-21T11:35:04+00:00",
+      "label": "Flash router 2 with stock_router_2.yaml",
+      "returncode": 0,
+      "started_utc": "2026-05-21T11:33:43+00:00"
+    },
+    {
+      "ended_utc": "2026-05-21T11:35:05+00:00",
+      "label": "router 2 present before router 1 is removed",
+      "seconds": 1.0,
+      "started_utc": "2026-05-21T11:35:04+00:00"
+    },
+    {
+      "command": [
+        "/home/ewout/.openclaw/workspace-softwaredeveloper/ESPHome-Thread-ED-Switch-Parent/.venv/bin/esphome",
+        "run",
+        "/home/ewout/.openclaw/workspace-softwaredeveloper/ESPHome-Thread-ED-Switch-Parent/testing/configs/empty.yaml",
+        "--device",
+        "/dev/ttyACM1",
+        "--no-logs"
+      ],
+      "ended_utc": "2026-05-21T11:35:14+00:00",
+      "label": "Flash router 1 with empty.yaml to remove first parent",
+      "returncode": 0,
+      "started_utc": "2026-05-21T11:35:05+00:00"
+    },
+    {
+      "ended_utc": "2026-05-21T11:35:15+00:00",
+      "label": "continue child log capture after router 1 removal",
+      "seconds": 1.0,
+      "started_utc": "2026-05-21T11:35:14+00:00"
+    },
+    {
+      "ended_utc": "2026-05-21T11:35:15+00:00",
+      "label": "Stop child log capture",
+      "result": {
+        "returncode": 1,
+        "stopped": true
+      }
+    }
+  ],
+  "timing_seconds": {
+    "after_child_flash_before_router2": 1.0,
+    "after_router1_empty_log_duration": 1.0,
+    "after_router1_flash": 1.0,
+    "after_router2_flash_before_router1_empty": 1.0
+  },
+  "upload_speed": null
+}
