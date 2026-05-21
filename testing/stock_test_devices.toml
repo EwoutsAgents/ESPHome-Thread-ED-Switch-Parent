@@ -1,0 +1,35 @@
+# Copy this file to stock_test_devices.toml and edit the serial ports.
+# Keep the same physical ESP32-C6 assigned to each role across reruns.
+
+[devices]
+router1 = "/dev/ttyACM1"
+child = "/dev/ttyACM3"
+router2 = "/dev/ttyACM4"
+
+[paths]
+# These are relative to this TOML file unless absolute.
+configs_dir = "configs"
+logs_dir = "logs"
+
+[esphome]
+# Optional. If omitted or missing, the runner auto-detects:
+#   ../.venv/bin/esphome
+#   ../venv/bin/esphome
+#   ./.venv/bin/esphome
+#   ./venv/bin/esphome
+#   PATH
+# bin = "../.venv/bin/esphome"
+
+# The default is the important measurement behavior:
+# compile all firmware first, then use upload-only commands during the timed test.
+precompile = true
+clean_before_compile = false
+
+# Optional serial upload speed. Leave commented to use ESPHome's default.
+# upload_speed = 460800
+
+[timing]
+after_router1_seconds = 10
+after_child_seconds = 30
+after_router2_seconds = 60
+after_router1_removed_seconds = 300

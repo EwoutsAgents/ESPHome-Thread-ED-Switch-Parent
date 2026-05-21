@@ -1,0 +1,2174 @@
+# Command: /home/ewout/.openclaw/workspace-softwaredeveloper/ESPHome-Thread-ED-Switch-Parent/.venv/bin/esphome logs /home/ewout/.openclaw/workspace-softwaredeveloper/ESPHome-Thread-ED-Switch-Parent/testing/configs/stock_child.yaml --device /dev/ttyACM3
+# Started UTC: 2026-05-21T14:12:02+00:00
+INFO ESPHome 2026.4.5
+INFO Reading configuration /home/ewout/.openclaw/workspace-softwaredeveloper/ESPHome-Thread-ED-Switch-Parent/testing/configs/stock_child.yaml...
+INFO Starting log output from /dev/ttyACM3 with baud rate 115200
+[16:12:02.273][I][logger:120]: Log initialized
+[16:12:02.273][I][app:067]: Running through setup()
+[16:12:02.284][V][app:068]: Sorting components by setup priority
+[16:12:02.284][V][component:236]: Setup logger
+[16:12:02.284][V][component:248]: Setup logger took 0ms
+[16:12:02.296][V][component:236]: Setup preferences
+[16:12:02.305][V][scheduler:217]: Scheduler interval for (null) is 60000ms, offset 1678ms
+[16:12:02.305][V][component:248]: Setup preferences took 0ms
+[16:12:02.305][V][component:236]: Setup openthread
+[16:12:02.373][C][component:246]: Setup openthread took 93ms
+[16:12:02.373][V][component:236]: Setup mdns
+[16:12:02.384][V][component:248]: Setup mdns took 0ms
+[16:12:02.384][V][component:236]: Setup openthread
+[16:12:02.395][D][openthread:157]: Setting up SRP services. count = 1
+[16:12:02.395][D][openthread:207]: Added service: _http._tcp
+[16:12:02.395][D][openthread:211]: Finished SRP setup
+[16:12:02.406][V][component:248]: Setup openthread took 12ms
+[16:12:02.406][I][app:123]: setup() finished successfully!
+[16:12:02.418][D][openthread:114][ot_main]: Thread Version: 4
+[16:12:02.429][D][openthread:138][ot_main]: Link Mode Device Type: FALSE, Network Data: FALSE, RX On When Idle: TRUE
+[16:12:02.429][I][openthread:153][ot_main]: Activating dataset...
+[16:12:02.440][I][app:154]: ESPHome version 2026.4.5 compiled on 2026-05-21 16:05:09 +0200
+[16:12:02.451][I][app:161]: ESP32 Chip: ESP32-C6 rev0.2, 1 core(s)
+[16:12:02.451][C][logger:219]: Logger:
+[16:12:02.451][C][logger:219]:   Max Level: VERY_VERBOSE
+[16:12:02.451][C][logger:219]:   Initial Level: VERY_VERBOSE
+[16:12:02.462][C][logger:226]:   Log Baud Rate: 115200
+[16:12:02.462][C][logger:226]:   Hardware UART: UART0
+[16:12:02.462][C][logger:235]:   Task Log Buffer Size: 768 bytes
+[16:12:02.473][W][logger:251]: VERY_VERBOSE logging is active — significant performance impact, short-term debugging only
+[16:12:02.484][W][logger:251]:   May cause connection instability. Set log level to DEBUG or lower for long-term use.
+[16:12:02.496][VV][component:292]: logger loop disabled
+[16:12:02.496][C][openthread:029]: Open Thread:
+[16:12:02.496][C][openthread:033]:   Device Type: MTD
+[16:12:02.506][C][openthread:040]:   Device is configured as Minimal End Device (MED)
+[16:12:02.506][C][mdns:194]: mDNS:
+[16:12:02.506][C][mdns:194]:   Hostname: stock-child
+[16:12:02.517][V][mdns:199]:   Services:
+[16:12:02.517][V][mdns:201]:   - _http, _tcp, 80
+[16:12:02.517][V][mdns:204]:     TXT: version = 2026.4.5
+[16:12:13.071]ESP-ROM:esp32c6-20220919
+[16:12:13.071]Build:Sep 19 2022
+[16:12:13.071]rst:0x8 (TG1_WDT_HPSYS),boot:0xc (SPI_FAST_FLASH_BOOT)
+[16:12:13.071]Saved PC:0x40803e72
+WARNING Decoded 0x40803e72: rv_utils_wait_for_intr at /home/ewout/.platformio/packages/framework-espidf/components/riscv/include/riscv/rv_utils.h:79
+ (inlined by) esp_cpu_wait_for_intr at /home/ewout/.platformio/packages/framework-espidf/components/esp_hw_support/cpu.c:62
+[16:12:13.397]SPIWP:0xee
+[16:12:13.397]mode:DIO, clock div:2
+[16:12:13.397]load:0x40875730,len:0x16f4
+[16:12:13.397]load:0x4086b910,len:0xed0
+[16:12:13.397]load:0x4086e610,len:0x3190
+[16:12:13.397]entry 0x4086b910
+[16:12:13.397]I (24) boot: ESP-IDF 5.5.4 2nd stage bootloader
+[16:12:13.397]I (24) boot: compile time May 21 2026 16:06:02
+[16:12:13.397]I (25) boot: chip revision: v0.2
+[16:12:13.397]I (25) boot: efuse block revision: v0.3
+[16:12:13.397]I (28) boot.esp32c6: SPI Speed      : 80MHz
+[16:12:13.397]I (32) boot.esp32c6: SPI Mode       : DIO
+[16:12:13.397]I (35) boot.esp32c6: SPI Flash Size : 4MB
+[16:12:13.397]W (39) boot.esp32c6: PRO CPU has been reset by WDT.
+[16:12:13.397]I (44) boot: Enabling RNG early entropy source...
+[16:12:13.397]I (48) boot: Partition Table:
+[16:12:13.397]I (51) boot: ## Label            Usage          Type ST Offset   Length
+[16:12:13.397]I (57) boot:  0 otadata          OTA data         01 00 00009000 00002000
+[16:12:13.397]I (64) boot:  1 phy_init         RF data          01 01 0000b000 00001000
+[16:12:13.397]I (70) boot:  2 app0             OTA app          00 10 00010000 001c0000
+[16:12:13.397]I (77) boot:  3 app1             OTA app          00 11 001d0000 001c0000
+[16:12:13.397]I (83) boot:  4 nvs              WiFi data        01 02 00390000 00070000
+[16:12:13.397]I (90) boot: End of partition table
+[16:12:13.397]I (93) esp_image: segment 0: paddr=00010020 vaddr=42070020 size=16534h ( 91444) map
+[16:12:13.397]I (118) esp_image: segment 1: paddr=0002655c vaddr=40800000 size=09abch ( 39612) load
+[16:12:13.397]I (127) esp_image: segment 2: paddr=00030020 vaddr=42000020 size=6e9f4h (453108) map
+[16:12:13.397]I (214) esp_image: segment 3: paddr=0009ea1c vaddr=40809abc size=03700h ( 14080) load
+[16:12:13.397]I (218) esp_image: segment 4: paddr=000a2124 vaddr=4080d1c0 size=02a68h ( 10856) load
+[16:12:13.397]I (224) boot: Loaded app from partition at offset 0x10000
+[16:12:13.397]I (225) boot: Disabling RNG early entropy source...
+[16:12:13.397][I][logger:120]: Log initialized
+[16:12:13.397][I][app:067]: Running through setup()
+[16:12:13.397][V][app:068]: Sorting components by setup priority
+[16:12:13.397][V][component:236]: Setup logger
+[16:12:13.397][V][component:248]: Setup logger took 0ms
+[16:12:13.397][V][component:236]: Setup preferences
+[16:12:13.397][V][scheduler:217]: Scheduler interval for (null) is 60000ms, offset 929ms
+[16:12:13.397][V][component:248]: Setup preferences took 0ms
+[16:12:13.397][V][component:236]: Setup openthread
+[16:12:13.440][C][component:246]: Setup openthread took 96ms
+[16:12:13.440][V][component:236]: Setup mdns
+[16:12:13.451][V][component:248]: Setup mdns took 0ms
+[16:12:13.451][V][component:236]: Setup openthread
+[16:12:13.463][D][openthread:157]: Setting up SRP services. count = 1
+[16:12:13.463][D][openthread:207]: Added service: _http._tcp
+[16:12:13.463][D][openthread:211]: Finished SRP setup
+[16:12:13.470][V][component:248]: Setup openthread took 15ms
+[16:12:14.382][I][app:123]: setup() fin\x80ESP-ROM:esp32c6-20220919
+[16:12:14.382]Build:Sep 19 2022
+[16:12:14.382]rst:0x8 (TG1_WDT_HPSYS),boot:0xc (SPI_FAST_FLASH_BOOT)
+[16:12:14.382]Saved PC:0x4000001e
+[16:12:14.393]SPIWP:0xee
+[16:12:14.393]mode:DIO, clock div:2
+[16:12:14.393]load:0x40875730,len:0x16f4
+[16:12:14.393]load:0x4086b910,len:0xed0
+[16:12:14.393]load:0x4086e610,len:0x3190
+[16:12:14.404]entry 0x4086b910
+[16:12:14.404]I (24) boot: ESP-IDF 5.5.4 2nd stage bootloader
+[16:12:14.404]I (24) boot: compile time May 21 2026 16:06:02
+[16:12:14.415]I (25) boot: chip revision: v0.2
+[16:12:14.415]I (25) boot: efuse block revision: v0.3
+[16:12:14.415]I (31) boot.esp32c6: SPI Speed      : 80MHz
+[16:12:14.426]I (39) boot.esp32c6: SPI Mode       : DIO
+[16:12:14.426]I (47) boot.esp32c6: SPI Flash Size : 4MB
+[16:12:14.426]W (54) boot.esp32c6: PRO CPU has been reset by WDT.
+[16:12:14.437]I (63) boot: Enabling RNG early entropy source...
+[16:12:14.437]I (72) boot: Partition Table:
+[16:12:14.437]I (78) boot: ## Label            Usage          Type ST Offset   Length
+[16:12:14.448]I (90) boot:  0 otadata          OTA data         01 00 00009000 00002000
+[16:12:14.460]I (103) boot:  1 phy_init         RF data          01 01 0000b000 00001000
+[16:12:14.460]I (116) boot:  2 app0             OTA app          00 10 00010000 001c0000
+[16:12:14.471]I (130) boot:  3 app1             OTA app          00 11 001d0000 001c0000
+[16:12:14.471]I (143) boot:  4 nvs              WiFi data        01 02 00390000 00070000
+[16:12:14.481]I (156) boot: End of partition table
+[16:12:14.481]I (163) esp_image: segment 0: paddr=00010020 vaddr=42070020 size=16534h ( 91444) map
+[16:12:14.493]I (202) esp_image: segment 1: paddr=0002655c vaddr=40800000 size=09abch ( 39612) load
+[16:12:14.497]I (214) esp_image: segment 2: paddr=00030020 vaddr=42000020 size=6e9f4h (453108) map
+[16:12:14.558]I (331) esp_image: segment 3: paddr=0009ea1c vaddr=40809abc size=03700h ( 14080) load
+[16:12:14.569]I (336) esp_image: segment 4: paddr=000a2124 vaddr=4080d1c0 size=02a68h ( 10856) load
+[16:12:14.569]I (346) boot: Loaded app from partition at offset 0x10000
+[16:12:14.572]I (349) boot: Disabling RNG early entropy source...
+[16:12:22.224]ESP-ROM:esp32c6-20220919
+[16:12:22.238]Build:Sep 19 2022
+[16:12:22.238]rst:0x10 (LP_WDT_SYS),boot:0xc (SPI_FAST_FLASH_BOOT)
+[16:12:22.238]SPIWP:0xee
+[16:12:22.238]mode:DIO, clock div:2
+[16:12:22.245]load:0x40875730,len:0x16f4
+[16:12:22.245]load:0x4086b910,len:0xed0
+[16:12:22.245]load:0x4086e610,len:0x3190
+[16:12:22.245]entry 0x4086b910
+[16:12:22.257]I (24) boot: ESP-IDF 5.5.4 2nd stage bootloader
+[16:12:22.257]I (24) boot: compile time May 21 2026 16:06:02
+[16:12:22.268]I (25) boot: chip revision: v0.2
+[16:12:22.268]I (25) boot: efuse block revision: v0.3
+[16:12:22.268]I (27) boot.esp32c6: SPI Speed      : 80MHz
+[16:12:22.279]I (31) boot.esp32c6: SPI Mode       : DIO
+[16:12:22.279]I (35) boot.esp32c6: SPI Flash Size : 4MB
+[16:12:22.279]I (39) boot: Enabling RNG early entropy source...
+[16:12:22.290]I (43) boot: Partition Table:
+[16:12:22.290]I (46) boot: ## Label            Usage          Type ST Offset   Length
+[16:12:22.301]I (52) boot:  0 otadata          OTA data         01 00 00009000 00002000
+[16:12:22.301]I (59) boot:  1 phy_init         RF data          01 01 0000b000 00001000
+[16:12:22.312]I (65) boot:  2 app0             OTA app          00 10 00010000 001c0000
+[16:12:22.312]I (72) boot:  3 app1             OTA app          00 11 001d0000 001c0000
+[16:12:22.323]I (78) boot:  4 nvs              WiFi data        01 02 00390000 00070000
+[16:12:22.323]I (85) boot: End of partition table
+[16:12:22.329]I (88) esp_image: segment 0: paddr=00010020 vaddr=42070020 size=16534h ( 91444) map
+[16:12:22.343]I (113) esp_image: segment 1: paddr=0002655c vaddr=40800000 size=09abch ( 39612) load
+[16:12:22.352]I (122) esp_image: segment 2: paddr=00030020 vaddr=42000020 size=6e9f4h (453108) map
+[16:12:22.442]I (209) esp_image: segment 3: paddr=0009ea1c vaddr=40809abc size=03700h ( 14080) load
+[16:12:22.453]I (213) esp_image: segment 4: paddr=000a2124 vaddr=4080d1c0 size=02a68h ( 10856) load
+[16:12:22.453]I (219) boot: Loaded app from partition at offset 0x10000
+[16:12:22.456]I (220) boot: Disabling RNG early entropy source...
+[16:12:22.496][I][logger:120]: Log initialized
+[16:12:22.496][I][app:067]: Running through setup()
+[16:12:22.507][V][app:068]: Sorting components by setup priority
+[16:12:22.507][V][component:236]: Setup logger
+[16:12:22.507][V][component:248]: Setup logger took 0ms
+[16:12:22.518][V][component:236]: Setup preferences
+[16:12:22.528][V][scheduler:217]: Scheduler interval for (null) is 60000ms, offset 2098ms
+[16:12:22.528][V][component:248]: Setup preferences took 0ms
+[16:12:22.528][V][component:236]: Setup openthread
+[16:12:22.592][C][component:246]: Setup openthread took 95ms
+[16:12:22.610][V][component:236]: Setup mdns
+[16:12:22.610][V][component:248]: Setup mdns took 0ms
+[16:12:22.621][V][component:236]: Setup openthread
+[16:12:22.621][D][openthread:157]: Setting up SRP services. count = 1
+[16:12:22.627][D][openthread:207]: Added service: _http._tcp
+[16:12:22.627][D][openthread:211]: Finished SRP setup
+[16:12:22.638][ U\xb55\xbd\xb5\xc1\xbd\xb9\x95\xb9\xd1\xe9248]: Setup openthread took 1ms
+[16:12:22.638][I][app:123]: setup() finished successfully!
+[16:12:23.539][D][openthreadESP-ROM:esp32c6-20220919
+[16:12:23.539]Build:Sep 19 2022
+[16:12:23.539]rst:0x8 (TG1_WDT_HPSYS),boot:0xc (SPI_FAST_FLASH_BOOT)
+[16:12:23.539]Saved PC:0x40803e7a
+WARNING Decoded 0x40803e7a: esp_cpu_wait_for_intr at /home/ewout/.platformio/packages/framework-espidf/components/esp_hw_support/cpu.c:64
+[16:12:23.863]SPIWP:0xee
+[16:12:23.863]mode:DIO, clock div:2
+[16:12:23.863]load:0x40875730,len:0x16f4
+[16:12:23.863]load:0x4086b910,len:0xed0
+[16:12:23.863]load:0x4086e610,len:0x3190
+[16:12:23.863]entry 0x4086b910
+[16:12:23.863]I (24) boot: ESP-IDF 5.5.4 2nd stage bootloader
+[16:12:23.863]I (24) boot: compile time May 21 2026 16:06:02
+[16:12:23.863]I (25) boot: chip revision: v0.2
+[16:12:23.863]I (25) boot: efuse block revision: v0.3
+[16:12:23.863]I (31) boot.esp32c6: SPI Speed      : 80MHz
+[16:12:23.863]I (39) boot.esp32c6: SPI Mode       : DIO
+[16:12:23.863]I (47) boot.esp32c6: SPI Flash Size : 4MB
+[16:12:23.863]W (54) boot.esp32c6: PRO CPU has been reset by WDT.
+[16:12:23.863]I (63) boot: Enabling RNG early entropy source...
+[16:12:23.863]I (72) boot: Partition Table:
+[16:12:23.863]I (78) boot: ## Label            Usage          Type ST Offset   Length
+[16:12:23.863]I (90) boot:  0 otadata          OTA data         01 00 00009000 00002000
+[16:12:23.863]I (103) boot:  1 phy_init         RF data          01 01 0000b000 00001000
+[16:12:23.863]I (116) boot:  2 app0             OTA app          00 10 00010000 001c0000
+[16:12:23.863]I (130) boot:  3 app1             OTA app          00 11 001d0000 001c0000
+[16:12:23.863]I (143) boot:  4 nvs              WiFi data        01 02 00390000 00070000
+[16:12:23.863]I (156) boot: End of partition table
+[16:12:23.863]I (163) esp_image: segment 0: paddr=00010020 vaddr=42070020 size=16534h ( 91444) map
+[16:12:23.863]I (202) esp_image: segment 1: paddr=0002655c vaddr=40800000 size=09abch ( 39612) load
+[16:12:23.863]I (214) esp_image: segment 2: paddr=00030020 vaddr=42000020 size=6e9f4h (453108) map
+[16:12:23.863]I (331) esp_image: segment 3: paddr=0009ea1c vaddr=40809abc size=03700h ( 14080) load
+[16:12:23.863]I (336) esp_image: segment 4: paddr=000a2124 vaddr=4080d1c0 size=02a68h ( 10856) load
+[16:12:23.863]I (346) boot: Loaded app from partition at offset 0x10000
+[16:12:23.863]I (349) boot: Disabling RNG early entropy source...
+[16:12:31.377]ESP-ROM:esp32c6-20220919
+[16:12:31.391]Build:Sep 19 2022
+[16:12:31.391]rst:0x10 (LP_WDT_SYS),boot:0xc (SPI_FAST_FLASH_BOOT)
+[16:12:31.391]SPIWP:0xee
+[16:12:31.391]mode:DIO, clock div:2
+[16:12:31.398]load:0x40875730,len:0x16f4
+[16:12:31.398]load:0x4086b910,len:0xed0
+[16:12:31.398]load:0x4086e610,len:0x3190
+[16:12:31.398]entry 0x4086b910
+[16:12:31.409]I (24) boot: ESP-IDF 5.5.4 2nd stage bootloader
+[16:12:31.409]I (24) boot: compile time May 21 2026 16:06:02
+[16:12:31.420]I (25) boot: chip revision: v0.2
+[16:12:31.420]I (25) boot: efuse block revision: v0.3
+[16:12:31.420]I (27) boot.esp32c6: SPI Speed      : 80MHz
+[16:12:31.432]I (31) boot.esp32c6: SPI Mode       : DIO
+[16:12:31.432]I (35) boot.esp32c6: SPI Flash Size : 4MB
+[16:12:31.432]I (39) boot: Enabling RNG early entropy source...
+[16:12:31.443]I (43) boot: Partition Table:
+[16:12:31.443]I (46) boot: ## Label            Usage          Type ST Offset   Length
+[16:12:31.454]I (52) boot:  0 otadata          OTA data         01 00 00009000 00002000
+[16:12:31.454]I (59) boot:  1 phy_init         RF data          01 01 0000b000 00001000
+[16:12:31.465]I (65) boot:  2 app0             OTA app          00 10 00010000 001c0000
+[16:12:31.465]I (72) boot:  3 app1             OTA app          00 11 001d0000 001c0000
+[16:12:31.476]I (78) boot:  4 nvs              WiFi data        01 02 00390000 00070000
+[16:12:31.476]I (85) boot: End of partition table
+[16:12:31.481]I (88) esp_image: segment 0: paddr=00010020 vaddr=42070020 size=16534h ( 91444) map
+[16:12:31.495]I (113) esp_image: segment 1: paddr=0002655c vaddr=40800000 size=09abch ( 39612) load
+[16:12:31.504]I (122) esp_image: segment 2: paddr=00030020 vaddr=42000020 size=6e9f4h (453108) map
+[16:12:31.595]I (209) esp_image: segment 3: paddr=0009ea1c vaddr=40809abc size=03700h ( 14080) load
+[16:12:31.606]I (213) esp_image: segment 4: paddr=000a2124 vaddr=4080d1c0 size=02a68h ( 10856) load
+[16:12:31.606]I (219) boot: Loaded app from partition at offset 0x10000
+[16:12:31.609]I (220) boot: Disabling RNG early entropy source...
+[16:12:31.649][I][logger:120]: Log initialized
+[16:12:31.649][I][app:067]: Running through setup()
+[16:12:31.660][V][app:068]: Sorting components by setup priority
+[16:12:31.660][V][component:236]: Setup logger
+[16:12:31.660][V][component:248]: Setup logger took 0ms
+[16:12:31.671][V][component:236]: Setup preferences
+[16:12:31.680][V][scheduler:217]: Scheduler interval for (null) is 60000ms, offset 1623ms
+[16:12:31.680][V][component:248]: Setup preferences took 0ms
+[16:12:31.680][V][component:236]: Setup openthread
+[16:12:31.748][C][component:246]: Setup openthread took 95ms
+[16:12:31.748][V][component:236]: Setup mdns
+[16:12:31.765][V][component:248]: Setup mdns took 0ms
+[16:12:31.765][V][component:236]: Setup openthread
+[16:12:31.776][D][openthread:157]: Setting up SRP services. count = 1
+[16:12:31.776][D][openthread:207]: Added service: _http._tcp
+[16:12:31.787][D][openthread:211]: Finished SRP setup
+[16:12:31.787][V][component:248]: Setup openthread took 0ms
+[16:12:31.798][I][app:123]: setup() finished successfully!
+[16:12:31.798][D][openthread:114][ot_main]: Thread Version: 4
+[16:12:31.810][D][openthread:138][ot_main]: Link Mode Device Type: FALSE, Network Data: FALSE, RX On When Idle: TRUE
+[16:12:31.821][I][openthread:153][ot_main]: Activating dataset...
+[16:12:31.821][I][app:154]: ESPHome version 2026.4.5 compiled on 2026-05-21 16:05:09 +0200
+[16:12:31.832][I][app:161]: ESP32 Chip: ESP32-C6 rev0.2, 1 core(s)
+[16:12:31.832][C][logger:219]: Logger:
+[16:12:31.832][C][logger:219]:   Max Level: VERY_VERBOSE
+[16:12:31.843][C][logger:219]:   Initial Level: VERY_VERBOSE
+[16:12:31.843][C][logger:226]:   Log Baud Rate: 115200
+[16:12:31.843][C][logger:226]:   Hardware UART: UART0
+[16:12:31.854][C][logger:235]:   Task Log Buffer Size: 768 bytes
+[16:12:31.865][W][logger:251]: VERY_VERBOSE logging is active — significant performance impact, short-term debugging only
+[16:12:31.865][W][logger:251]:   May cause connection instability. Set log level to DEBUG or lower for long-term use.
+[16:12:31.876][VV][component:292]: logger loop disabled
+[16:12:31.876][C][openthread:029]: Open Thread:
+[16:12:31.876][C][openthread:033]:   Device Type: MTD
+[16:12:31.887][C][openthread:040]:   Device is configured as Minimal End Device (MED)
+[16:12:31.887][C][mdns:194]: mDNS:
+[16:12:31.898][C][mdns:194]:   Hostname: stock-child
+[16:12:31.898][V][mdns:199]:   Services:
+[16:12:31.898][V][mdns:201]:   - _http, _tcp, 80
+[16:12:31.900][V][mdns:204]:     TXT: version = 2026.4.5
+[16:16:33.729]ESP-ROM:esp32c6-20220919
+[16:16:33.729]Build:Sep 19 2022
+[16:16:33.729]rst:0x8 (TG1_WDT_HPSYS),boot:0xc (SPI_FAST_FLASH_BOOT)
+[16:16:33.729]Saved PC:0x40803e72
+WARNING Decoded 0x40803e72: rv_utils_wait_for_intr at /home/ewout/.platformio/packages/framework-espidf/components/riscv/include/riscv/rv_utils.h:79
+ (inlined by) esp_cpu_wait_for_intr at /home/ewout/.platformio/packages/framework-espidf/components/esp_hw_support/cpu.c:62
+[16:16:34.054]SPIWP:0xee
+[16:16:34.054]mode:DIO, clock div:2
+[16:16:34.054]load:0x40875730,len:0x16f4
+[16:16:34.054]load:0x4086b910,len:0xed0
+[16:16:34.054]load:0x4086e610,len:0x3190
+[16:16:34.054]entry 0x4086b910
+[16:16:34.054]I (24) boot: ESP-IDF 5.5.4 2nd stage bootloader
+[16:16:34.054]I (24) boot: compile time May 21 2026 16:06:02
+[16:16:34.054]I (25) boot: chip revision: v0.2
+[16:16:34.054]I (25) boot: efuse block revision: v0.3
+[16:16:34.054]I (28) boot.esp32c6: SPI Speed      : 80MHz
+[16:16:34.054]I (32) boot.esp32c6: SPI Mode       : DIO
+[16:16:34.054]I (35) boot.esp32c6: SPI Flash Size : 4MB
+[16:16:34.054]W (39) boot.esp32c6: PRO CPU has been reset by WDT.
+[16:16:34.054]I (44) boot: Enabling RNG early entropy source...
+[16:16:34.054]I (48) boot: Partition Table:
+[16:16:34.054]I (51) boot: ## Label            Usage          Type ST Offset   Length
+[16:16:34.054]I (57) boot:  0 otadata          OTA data         01 00 00009000 00002000
+[16:16:34.054]I (64) boot:  1 phy_init         RF data          01 01 0000b000 00001000
+[16:16:34.054]I (70) boot:  2 app0             OTA app          00 10 00010000 001c0000
+[16:16:34.054]I (77) boot:  3 app1             OTA app          00 11 001d0000 001c0000
+[16:16:34.054]I (83) boot:  4 nvs              WiFi data        01 02 00390000 00070000
+[16:16:34.054]I (90) boot: End of partition table
+[16:16:34.054]I (93) esp_image: segment 0: paddr=00010020 vaddr=42070020 size=16534h ( 91444) map
+[16:16:34.054]I (118) esp_image: segment 1: paddr=0002655c vaddr=40800000 size=09abch ( 39612) load
+[16:16:34.054]I (127) esp_image: segment 2: paddr=00030020 vaddr=42000020 size=6e9f4h (453108) map
+[16:16:34.054]I (214) esp_image: segment 3: paddr=0009ea1c vaddr=40809abc size=03700h ( 14080) load
+[16:16:34.054]I (218) esp_image: segment 4: paddr=000a2124 vaddr=4080d1c0 size=02a68h ( 10856) load
+[16:16:34.054]I (224) boot: Loaded app from partition at offset 0x10000
+[16:16:34.054]I (225) boot: Disabling RNG early entropy source...
+[16:16:34.054][I][logger:120]: Log initialized
+[16:16:34.054][I][app:067]: Running through setup()
+[16:16:34.054][V][app:068]: Sorting components by setup priority
+[16:16:34.054][V][component:236]: Setup logger
+[16:16:34.054][V][component:248]: Setup logger took 0ms
+[16:16:34.054][V][component:236]: Setup preferences
+[16:16:34.054][V][scheduler:217]: Scheduler interval for (null) is 60000ms, offset 6ms
+[16:16:34.054][V][component:248]: Setup preferences took 0ms
+[16:16:34.054][V][component:236]: Setup openthread
+[16:16:38.996]E (5290) task_wdt: Task watchdog got triggered. The following tasks/users did not reset the watchdog in time:
+[16:16:39.007]E (5290) task_wdt:  - loopTask (CPU 0)
+[16:16:39.007]E (5290) task_wdt: Tasks currently running:
+[16:16:39.007]E (5290) task_wdt: CPU 0: ot_main
+[16:16:39.013]E (5290) task_wdt: Aborting.
+[16:16:39.013]E (5290) task_wdt: Print CPU 0 (current core) registers
+
+
+[16:16:39.063]Core  0 register dump:
+[16:16:39.063]MEPC    : 0x40004408  RA      : 0x408028fe  SP      : 0x40822550  GP      : 0x4080d9c4  
+[16:16:39.074]TP      : 0x40822860  T0      : 0x00fe00f2  T1      : 0x4205f38e  T2      : 0x00fe00f3  
+[16:16:39.085]S0/FP   : 0x40816000  S1      : 0x00000000  A0      : 0x00000010  A1      : 0x0001fffc  
+[16:16:39.096]A2      : 0x5ffa8013  A3      : 0x600a1000  A4      : 0xc0000a50  A5      : 0x600a1000  
+[16:16:39.096]A6      : 0x40004160  A7      : 0x00fe00f1  S2      : 0x40822bb8  S3      : 0x00000000  
+[16:16:39.107]S4      : 0x4082332c  S5      : 0x00000000  S6      : 0x0007e1ff  S7      : 0x00000000  
+[16:16:39.118]S8      : 0x00000000  S9      : 0x00000000  S10     : 0x00000000  S11     : 0x00000000  
+[16:16:39.118]T3      : 0x010100f1  T4      : 0x00ff00f3  T5      : 0x010200f2  T6      : 0x00fe00fa  
+[16:16:39.129]MSTATUS : 0x40822bb8  MTVEC   : 0x00000000  MCAUSE  : 0x4080d6cc  MTVAL   : 0x4205e954  
+[16:16:39.129]MHARTID : 0x40822bb8  
+
+[16:16:39.129]Stack memory:
+[16:16:39.140]40822550: 0x40822bb8 0x00000000 0x4080d6cc 0x4205e954 0x40822bb8 0x00000000 0x4080d6cc 0x4205f2bc
+[16:16:39.151]40822570: 0x00000000 0x00000000 0x010200fa 0x01000100 0x010100f9 0x01000100 0x00ff00f8 0x01000100
+[16:16:39.163]40822590: 0x010500f3 0x01000100 0x010300f2 0x01000100 0x00fe0101 0x01000100 0x00000000 0x00000000
+[16:16:39.163]408225b0: 0x00000000 0x00000000 0x0000006b 0x00000084 0x00000000 0x0e0b0000 0x0d090813 0x05010501
+[16:16:39.174]408225d0: 0x00000301 0x00f72600 0x00f600fd 0x420000fc 0x5454000a 0x4c505050 0x484c4c4c 0x3c3c3c44
+[16:16:39.185]408225f0: 0x484c4c4c 0x00000000 0x00000000 0x00000000 0x00000000 0x00000000 0x00000000 0x00000000
+[16:16:39.196]40822610: 0x00000000 0x00000000 0x00000000 0x00000000 0x00000000 0x00000000 0x00000000 0x00000000
+[16:16:39.207]40822630: 0x00000000 0x00000000 0x00000000 0x00000000 0x00000000 0x00000000 0x00000000 0x00000000
+[16:16:39.207]40822650: 0x00000000 0x00000000 0x00000000 0x00000000 0x00000000 0x00000000 0x00000000 0x00000000
+[16:16:39.218]40822670: 0x00000003 0x4082332c 0x40822bb8 0x4206a96e 0x40817000 0x40822874 0xff818c58 0xc4b05dfe
+[16:16:39.229]40822690: 0x40817000 0x00000000 0x00000000 0x40811ab0 0x40817000 0x40817000 0x00000004 0x408055de
+[16:16:39.240]408226b0: 0x00000001 0x40822734 0x00000000 0x40803d40 0x00000000 0x00000000 0x00000000 0x4206dfa2
+[16:16:39.240]408226d0: 0x00000001 0x40822734 0x00000000 0x4202bccc 0x00000001 0x40822734 0x00000000 0x4202b532
+[16:16:39.251]408226f0: 0xa5a5a5a5 0xa5a5a5a5 0xa5a5a5a5 0x00000000 0x00000000 0x00000000 0x4080fd38 0x42029c30
+[16:16:39.263]40822710: 0xa5a5a5a5 0xa5a5a5a5 0x4080fd38 0x42001e6c 0xa5a5a5a5 0xa5a5a5a5 0xa5a5a5a5 0xa5a5a5a5
+[16:16:39.274]40822730: 0xa5a5a5a5 0x00000000 0x00000000 0x00000000 0x00000000 0x00000000 0x00000000 0x00000000
+[16:16:39.285]40822750: 0x00000000 0x00000000 0x00000000 0x00000000 0x00000000 0x00000000 0x00000000 0x00000000
+[16:16:39.285]40822770: 0x00000000 0x00000000 0x00000000 0x00000000 0x00000000 0x00000000 0x00000000 0x00000000
+[16:16:39.296]40822790: 0x00000000 0x00000000 0x00000000 0x00000000 0x00000000 0x00000000 0x00000000 0x00000000
+[16:16:39.307]408227b0: 0x00000000 0x00000000 0x00000000 0x00000000 0x00000000 0x00000000 0x00000000 0x00000000
+[16:16:39.318]408227d0: 0x00000000 0x00000000 0x00000000 0x00000000 0x00000000 0x00000000 0x00000000 0x00000000
+[16:16:39.318]408227f0: 0x00000000 0x00000000 0x00000000 0x00000000 0x00000000 0x00000000 0x42070cc0 0x00000a0a
+[16:16:39.329]40822810: 0x00000000 0x00000000 0x00000000 0x00000000 0x00000000 0x00000000 0x00000000 0x420020cc
+[16:16:39.340]40822830: 0x00000000 0x00000000 0x00000000 0x00000000 0x00000000 0x00000000 0x00000000 0x00000000
+[16:16:39.351]40822850: 0x00000000 0xa5a5a5a5 0xa5a5a5a5 0xa5a5a5a5 0xa5a5a5a5 0xa5a5a5a5 0xa5a5a5a5 0xa5a5a5a5
+[16:16:39.351]40822870: 0x00000150 0x408224d0 0x00000000 0x40810538 0x40810538 0x40822874 0x40810530 0x00000014
+[16:16:39.363]40822890: 0x00000000 0x00000000 0x40822874 0x00000000 0x00000005 0x40820070 0x6d5f746f 0x006e6961
+[16:16:39.374]408228b0: 0x00000000 0x00000000 0x40822860 0x00000005 0x00000001 0x00000000 0x00000000 0x00000000
+[16:16:39.385]408228d0: 0x40817828 0x40817890 0x408178f8 0x00000000 0x00000000 0x00000001 0x00000000 0x00000000
+[16:16:39.396]408228f0: 0x00000000 0x42026206 0x00000000 0x00000000 0x00000000 0x00000000 0x00000000 0x00000000
+[16:16:39.396]40822910: 0x00000000 0x00000000 0x00000000 0x00000000 0x00000000 0x00000000 0x00000000 0x00000000
+[16:16:39.407]40822930: 0x00000000 0x00000000 0x00000000 0x00000000 0x00000000 0x00000000 0x00000000 0x00000000
+
+
+
+[16:16:39.407]ELF file SHA256: 2925ecf56
+
+[16:16:39.407]Rebooting...
+[16:16:39.423]ESP-ROM:esp32c6-20220919
+[16:16:39.423]Build:Sep 19 2022
+[16:16:39.423]rst:0xc (SW_CPU),boot:0xc (SPI_FAST_FLASH_BOOT)
+[16:16:39.423]Saved PC:0x4001975a
+[16:16:39.423]SPIWP:0xee
+[16:16:39.434]mode:DIO, clock div:2
+[16:16:39.434]load:0x40875730,len:0x16f4
+[16:16:39.434]load:0x4086b910,len:0xed0
+[16:16:39.434]load:0x4086e610,len:0x3190
+[16:16:39.434]entry 0x4086b910
+[16:16:39.445]I (26) boot: ESP-IDF 5.5.4 2nd stage bootloader
+[16:16:39.445]I (27) boot: compile time May 21 2026 16:06:02
+[16:16:39.456]I (28) boot: chip revision: v0.2
+[16:16:39.456]I (29) boot: efuse block revision: v0.3
+[16:16:39.456]I (30) boot.esp32c6: SPI Speed      : 80MHz
+[16:16:39.467]I (34) boot.esp32c6: SPI Mode       : DIO
+[16:16:39.467]I (38) boot.esp32c6: SPI Flash Size : 4MB
+[16:16:39.467]I (42) boot: Enabling RNG early entropy source...
+[16:16:39.478]I (46) boot: Partition Table:
+[16:16:39.478]I (49) boot: ## Label            Usage          Type ST Offset   Length
+[16:16:39.490]I (55) boot:  0 otadata          OTA data         01 00 00009000 00002000
+[16:16:39.490]I (62) boot:  1 phy_init         RF data          01 01 0000b000 00001000
+[16:16:39.501]I (68) boot:  2 app0             OTA app          00 10 00010000 001c0000
+[16:16:39.501]I (75) boot:  3 app1             OTA app          00 11 001d0000 001c0000
+[16:16:39.512]I (81) boot:  4 nvs              WiFi data        01 02 00390000 00070000
+[16:16:39.512]I (88) boot: End of partition table
+[16:16:39.517]I (91) esp_image: segment 0: paddr=00010020 vaddr=42070020 size=16534h ( 91444) map
+[16:16:39.548]I (133) esp_image: segment 1: paddr=0002655c vaddr=40800000 size=09abch ( 39612) load
+[16:16:39.566]I (151) esp_image: segment 2: paddr=00030020 vaddr=42000020 size=6e9f4h (453108) map
+[16:16:39.741]I (323) esp_image: segment 3: paddr=0009ea1c vaddr=40809abc size=03700h ( 14080) load
+[16:16:39.745]I (330) esp_image: segment 4: paddr=000a2124 vaddr=4080d1c0 size=02a68h ( 10856) load
+[16:16:39.760]I (343) boot: Loaded app from partition at offset 0x10000
+[16:16:39.760]I (343) boot: Disabling RNG early entropy source...
+[16:16:39.800][I][logger:120]: Log initialized
+[16:16:39.800][I][app:067]: Running through setup()
+[16:16:39.811][V][app:068]: Sorting components by setup priority
+[16:16:39.811][V][component:236]: Setup logger
+[16:16:39.811][V][component:248]: Setup logger took 0ms
+[16:16:39.823][V][component:236]: Setup preferences
+[16:16:39.832][V][scheduler:217]: Scheduler interval for (null) is 60000ms, offset 619ms
+[16:16:39.832][V][component:248]: Setup preferences took 0ms
+[16:16:39.832][V][component:236]: Setup openthread
+[16:16:39.917][C][component:246]: Setup openthread took 98ms
+[16:16:39.917][V][component:236]: Setup mdns
+[16:16:39.924][V][component:248]: Setup mdns took 0ms
+[16:16:39.924][V][component:236]: Setup openthread
+[16:16:40.836][0;3ESP-ROM:esp32c6-20220919
+[16:16:40.836]Build:Sep 19 2022
+[16:16:40.836]rst:0x8 (TG1_WDT_HPSYS),boot:0xc (SPI_FAST_FLASH_BOOT)
+[16:16:40.836]Saved PC:0x00000068
+[16:16:40.847]SPIWP:0xee
+[16:16:40.847]mode:DIO, clock div:2
+[16:16:40.847]load:0x40875730,len:0x16f4
+[16:16:40.847]load:0x4086b910,len:0xed0
+[16:16:40.847]load:0x4086e610,len:0x3190
+[16:16:40.848]entry 0x4086b910
+[16:16:40.859]I (24) boot: ESP-IDF 5.5.4 2nd stage bootloader
+[16:16:40.859]I (24) boot: compile time May 21 2026 16:06:02
+[16:16:40.870]I (25) boot: chip revision: v0.2
+[16:16:40.870]I (25) boot: efuse block revision: v0.3
+[16:16:40.870]I (31) boot.esp32c6: SPI Speed      : 80MHz
+[16:16:40.881]I (39) boot.esp32c6: SPI Mode       : DIO
+[16:16:40.881]I (47) boot.esp32c6: SPI Flash Size : 4MB
+[16:16:40.881]W (54) boot.esp32c6: PRO CPU has been reset by WDT.
+[16:16:40.892]I (63) boot: Enabling RNG early entropy source...
+[16:16:40.892]I (72) boot: Partition Table:
+[16:16:40.892]I (78) boot: ## Label            Usage          Type ST Offset   Length
+[16:16:40.903]I (90) boot:  0 otadata          OTA data         01 00 00009000 00002000
+[16:16:40.914]I (103) boot:  1 phy_init         RF data          01 01 0000b000 00001000
+[16:16:40.914]I (116) boot:  2 app0             OTA app          00 10 00010000 001c0000
+[16:16:40.925]I (130) boot:  3 app1             OTA app          00 11 001d0000 001c0000
+[16:16:40.925]I (143) boot:  4 nvs              WiFi data        01 02 00390000 00070000
+[16:16:40.936]I (156) boot: End of partition table
+[16:16:40.936]I (163) esp_image: segment 0: paddr=00010020 vaddr=42070020 size=16534h ( 91444) map
+[16:16:40.948]I (202) esp_image: segment 1: paddr=0002655c vaddr=40800000 size=09abch ( 39612) load
+[16:16:40.952]I (214) esp_image: segment 2: paddr=00030020 vaddr=42000020 size=6e9f4h (453108) map
+[16:16:41.013]I (331) esp_image: segment 3: paddr=0009ea1c vaddr=40809abc size=03700h ( 14080) load
+[16:16:41.024]I (336) esp_image: segment 4: paddr=000a2124 vaddr=4080d1c0 size=02a68h ( 10856) load
+[16:16:41.024]I (346) boot: Loaded app from partition at offset 0x10000
+[16:16:41.026]I (349) boot: Disabling RNG early entropy source...
+[16:16:48.708]ESP-ROM:esp32c6-20220919
+[16:16:48.722]Build:Sep 19 2022
+[16:16:48.722]rst:0x10 (LP_WDT_SYS),boot:0xc (SPI_FAST_FLASH_BOOT)
+[16:16:48.722]SPIWP:0xee
+[16:16:48.722]mode:DIO, clock div:2
+[16:16:48.729]load:0x40875730,len:0x16f4
+[16:16:48.729]load:0x4086b910,len:0xed0
+[16:16:48.729]load:0x4086e610,len:0x3190
+[16:16:48.729]entry 0x4086b910
+[16:16:48.740]I (24) boot: ESP-IDF 5.5.4 2nd stage bootloader
+[16:16:48.740]I (24) boot: compile time May 21 2026 16:06:02
+[16:16:48.752]I (25) boot: chip revision: v0.2
+[16:16:48.752]I (25) boot: efuse block revision: v0.3
+[16:16:48.752]I (27) boot.esp32c6: SPI Speed      : 80MHz
+[16:16:48.763]I (31) boot.esp32c6: SPI Mode       : DIO
+[16:16:48.763]I (35) boot.esp32c6: SPI Flash Size : 4MB
+[16:16:48.763]I (39) boot: Enabling RNG early entropy source...
+[16:16:48.774]I (43) boot: Partition Table:
+[16:16:48.774]I (46) boot: ## Label            Usage          Type ST Offset   Length
+[16:16:48.785]I (52) boot:  0 otadata          OTA data         01 00 00009000 00002000
+[16:16:48.785]I (59) boot:  1 phy_init         RF data          01 01 0000b000 00001000
+[16:16:48.796]I (65) boot:  2 app0             OTA app          00 10 00010000 001c0000
+[16:16:48.796]I (72) boot:  3 app1             OTA app          00 11 001d0000 001c0000
+[16:16:48.807]I (78) boot:  4 nvs              WiFi data        01 02 00390000 00070000
+[16:16:48.807]I (85) boot: End of partition table
+[16:16:48.812]I (88) esp_image: segment 0: paddr=00010020 vaddr=42070020 size=16534h ( 91444) map
+[16:16:48.826]I (113) esp_image: segment 1: paddr=0002655c vaddr=40800000 size=09abch ( 39612) load
+[16:16:48.835]I (122) esp_image: segment 2: paddr=00030020 vaddr=42000020 size=6e9f4h (453108) map
+[16:16:48.926]I (209) esp_image: segment 3: paddr=0009ea1c vaddr=40809abc size=03700h ( 14080) load
+[16:16:48.937]I (213) esp_image: segment 4: paddr=000a2124 vaddr=4080d1c0 size=02a68h ( 10856) load
+[16:16:48.937]I (219) boot: Loaded app from partition at offset 0x10000
+[16:16:48.940]I (220) boot: Disabling RNG early entropy source...
+[16:16:48.980][I][logger:120]: Log initialized
+[16:16:48.980][I][app:067]: Running through setup()
+[16:16:48.991][V][app:068]: Sorting components by setup priority
+[16:16:48.991][V][component:236]: Setup logger
+[16:16:48.991][V][component:248]: Setup logger took 0ms
+[16:16:49.002][V][component:236]: Setup preferences
+[16:16:49.012][V][scheduler:217]: Scheduler interval for (null) is 60000ms, offset 1393ms
+[16:16:49.012][V][component:248]: Setup preferences took 0ms
+[16:16:49.012][V][component:236]: Setup openthread
+[16:16:49.095][C][component:246]: Setup openthread took 109ms
+[16:16:49.095][V][component:236]: Setup mdns
+[16:16:49.998][V][component:248]: SetupESP-ROM:esp32c6-20220919
+[16:16:49.998]Build:Sep 19 2022
+[16:16:49.998]rst:0x8 (TG1_WDT_HPSYS),boot:0xc (SPI_FAST_FLASH_BOOT)
+[16:16:49.998]Saved PC:0x40000018
+[16:16:50.009]SPIWP:0xee
+[16:16:50.009]mode:DIO, clock div:2
+[16:16:50.009]load:0x40875730,len:0x16f4
+[16:16:50.009]load:0x4086b910,len:0xed0
+[16:16:50.009]load:0x4086e610,len:0x3190
+[16:16:50.009]entry 0x4086b910
+[16:16:50.020]I (24) boot: ESP-IDF 5.5.4 2nd stage bootloader
+[16:16:50.020]I (24) boot: compile time May 21 2026 16:06:02
+[16:16:50.031]I (25) boot: chip revision: v0.2
+[16:16:50.031]I (25) boot: efuse block revision: v0.3
+[16:16:50.031]I (31) boot.esp32c6: SPI Speed      : 80MHz
+[16:16:50.042]I (39) boot.esp32c6: SPI Mode       : DIO
+[16:16:50.042]I (47) boot.esp32c6: SPI Flash Size : 4MB
+[16:16:50.042]W (54) boot.esp32c6: PRO CPU has been reset by WDT.
+[16:16:50.054]I (63) boot: Enabling RNG early entropy source...
+[16:16:50.054]I (72) boot: Partition Table:
+[16:16:50.054]I (78) boot: ## Label            Usage          Type ST Offset   Length
+[16:16:50.065]I (90) boot:  0 otadata          OTA data         01 00 00009000 00002000
+[16:16:50.076]I (103) boot:  1 phy_init         RF data          01 01 0000b000 00001000
+[16:16:50.076]I (116) boot:  2 app0             OTA app          00 10 00010000 001c0000
+[16:16:50.087]I (130) boot:  3 app1             OTA app          00 11 001d0000 001c0000
+[16:16:50.087]I (143) boot:  4 nvs              WiFi data        01 02 00390000 00070000
+[16:16:50.098]I (156) boot: End of partition table
+[16:16:50.098]I (163) esp_image: segment 0: paddr=00010020 vaddr=42070020 size=16534h ( 91444) map
+[16:16:50.110]I (202) esp_image: segment 1: paddr=0002655c vaddr=40800000 size=09abch ( 39612) load
+[16:16:50.114]I (214) esp_image: segment 2: paddr=00030020 vaddr=42000020 size=6e9f4h (453108) map
+[16:16:50.175]I (331) esp_image: segment 3: paddr=0009ea1c vaddr=40809abc size=03700h ( 14080) load
+[16:16:50.186]I (336) esp_image: segment 4: paddr=000a2124 vaddr=4080d1c0 size=02a68h ( 10856) load
+[16:16:50.186]I (346) boot: Loaded app from partition at offset 0x10000
+[16:16:50.188]I (349) boot: Disabling RNG early entropy source...
+[16:16:57.875]ESP-ROM:esp32c6-20220919
+[16:16:57.889]Build:Sep 19 2022
+[16:16:57.889]rst:0x10 (LP_WDT_SYS),boot:0xc (SPI_FAST_FLASH_BOOT)
+[16:16:57.889]SPIWP:0xee
+[16:16:57.889]mode:DIO, clock div:2
+[16:16:57.896]load:0x40875730,len:0x16f4
+[16:16:57.896]load:0x4086b910,len:0xed0
+[16:16:57.896]load:0x4086e610,len:0x3190
+[16:16:57.896]entry 0x4086b910
+[16:16:57.907]I (24) boot: ESP-IDF 5.5.4 2nd stage bootloader
+[16:16:57.907]I (24) boot: compile time May 21 2026 16:06:02
+[16:16:57.918]I (25) boot: chip revision: v0.2
+[16:16:57.918]I (25) boot: efuse block revision: v0.3
+[16:16:57.918]I (27) boot.esp32c6: SPI Speed      : 80MHz
+[16:16:57.929]I (31) boot.esp32c6: SPI Mode       : DIO
+[16:16:57.929]I (35) boot.esp32c6: SPI Flash Size : 4MB
+[16:16:57.929]I (39) boot: Enabling RNG early entropy source...
+[16:16:57.940]I (43) boot: Partition Table:
+[16:16:57.941]I (46) boot: ## Label            Usage          Type ST Offset   Length
+[16:16:57.952]I (52) boot:  0 otadata          OTA data         01 00 00009000 00002000
+[16:16:57.952]I (59) boot:  1 phy_init         RF data          01 01 0000b000 00001000
+[16:16:57.963]I (65) boot:  2 app0             OTA app          00 10 00010000 001c0000
+[16:16:57.963]I (72) boot:  3 app1             OTA app          00 11 001d0000 001c0000
+[16:16:57.974]I (78) boot:  4 nvs              WiFi data        01 02 00390000 00070000
+[16:16:57.974]I (85) boot: End of partition table
+[16:16:57.979]I (88) esp_image: segment 0: paddr=00010020 vaddr=42070020 size=16534h ( 91444) map
+[16:16:57.993]I (113) esp_image: segment 1: paddr=0002655c vaddr=40800000 size=09abch ( 39612) load
+[16:16:58.002]I (122) esp_image: segment 2: paddr=00030020 vaddr=42000020 size=6e9f4h (453108) map
+[16:16:58.093]I (209) esp_image: segment 3: paddr=0009ea1c vaddr=40809abc size=03700h ( 14080) load
+[16:16:58.104]I (213) esp_image: segment 4: paddr=000a2124 vaddr=4080d1c0 size=02a68h ( 10856) load
+[16:16:58.104]I (219) boot: Loaded app from partition at offset 0x10000
+[16:16:58.107]I (220) boot: Disabling RNG early entropy source...
+[16:16:58.147][I][logger:120]: Log initialized
+[16:16:58.147][I][app:067]: Running through setup()
+[16:16:58.158][V][app:068]: Sorting components by setup priority
+[16:16:58.158][V][component:236]: Setup logger
+[16:16:58.158][V][component:248]: Setup logger took 0ms
+[16:16:58.169][V][component:236]: Setup preferences
+[16:16:58.178][V][scheduler:217]: Scheduler interval for (null) is 60000ms, offset 4837ms
+[16:16:58.178][V][component:248]: Setup preferences took 0ms
+[16:16:58.178][V][component:236]: Setup openthread
+[16:16:58.248][C][component:246]: Setup openthread took 95ms
+[16:16:58.248][V][component:236]: Setup mdns
+[16:16:58.259][V][component:248]: Setup mdns took 0ms
+[16:16:58.259][V][component:236]: Setup openthread
+[16:16:58.270][D][openthread:157]: Setting up SRP services. count = 1
+[16:16:58.270][D][openthread:207]: Added service: _http._tcp
+[16:16:58.270][D][openthread:211]: Finished SRP setup
+[16:16:58.280][V]\xb6component:248]: Setup openthread took 15ms
+[16:16:58.280][I][app:123]: setup() finished successfully!
+[16:16:59.182]ESP-ROM:esp32c6-20220919
+[16:16:59.182]Build:Sep 19 2022
+[16:16:59.182]rst:0x8 (TG1_WDT_HPSYS),boot:0xc (SPI_FAST_FLASH_BOOT)
+[16:16:59.182]Saved PC:0x40032a02
+[16:16:59.193]SPIWP:0xee
+[16:16:59.193]mode:DIO, clock div:2
+[16:16:59.193]load:0x40875730,len:0x16f4
+[16:16:59.193]load:0x4086b910,len:0xed0
+[16:16:59.193]load:0x4086e610,len:0x3190
+[16:16:59.193]entry 0x4086b910
+[16:16:59.204]I (24) boot: ESP-IDF 5.5.4 2nd stage bootloader
+[16:16:59.204]I (24) boot: compile time May 21 2026 16:06:02
+[16:16:59.215]I (25) boot: chip revision: v0.2
+[16:16:59.215]I (25) boot: efuse block revision: v0.3
+[16:16:59.215]I (28) boot.esp32c6: SPI Speed      : 80MHz
+[16:16:59.226]I (32) boot.esp32c6: SPI Mode       : DIO
+[16:16:59.226]I (35) boot.esp32c6: SPI Flash Size : 4MB
+[16:16:59.226]W (39) boot.esp32c6: PRO CPU has been reset by WDT.
+[16:16:59.238]I (44) boot: Enabling RNG early entropy source...
+[16:16:59.238]I (48) boot: Partition Table:
+[16:16:59.238]I (51) boot: ## Label            Usage          Type ST Offset   Length
+[16:16:59.249]I (57) boot:  0 otadata          OTA data         01 00 00009000 00002000
+[16:16:59.260]I (64) boot:  1 phy_init         RF data          01 01 0000b000 00001000
+[16:16:59.260]I (70) boot:  2 app0             OTA app          00 10 00010000 001c0000
+[16:16:59.271]I (77) boot:  3 app1             OTA app          00 11 001d0000 001c0000
+[16:16:59.271]I (83) boot:  4 nvs              WiFi data        01 02 00390000 00070000
+[16:16:59.281]I (90) boot: End of partition table
+[16:16:59.281]I (93) esp_image: segment 0: paddr=00010020 vaddr=42070020 size=16534h ( 91444) map
+[16:16:59.295]I (118) esp_image: segment 1: paddr=0002655c vaddr=40800000 size=09abch ( 39612) load
+[16:16:59.304]I (127) esp_image: segment 2: paddr=00030020 vaddr=42000020 size=6e9f4h (453108) map
+[16:16:59.394]I (214) esp_image: segment 3: paddr=0009ea1c vaddr=40809abc size=03700h ( 14080) load
+[16:16:59.406]I (218) esp_image: segment 4: paddr=000a2124 vaddr=4080d1c0 size=02a68h ( 10856) load
+[16:16:59.406]I (224) boot: Loaded app from partition at offset 0x10000
+[16:16:59.409]I (225) boot: Disabling RNG early entropy source...
+[16:16:59.449][I][logger:120]: Log initialized
+[16:16:59.449][I][app:067]: Running through setup()
+[16:16:59.460][V][app:068]: Sorting components by setup priority
+[16:16:59.460][V][component:236]: Setup logger
+[16:16:59.460][V][component:248]: Setup logger took 0ms
+[16:16:59.471][V][component:236]: Setup preferences
+[16:16:59.480][V][scheduler:217]: Scheduler interval for (null) is 60000ms, offset 3746ms
+[16:16:59.480][V][component:248]: Setup preferences took 0ms
+[16:16:59.480][V][component:236]: Setup openthread
+[16:16:59.551][C][component:246]: Setup openthread took 96ms
+[16:16:59.551][V][component:236]: Setup mdns
+[16:16:59.557][V][component:248]: Setup mdns took 0ms
+[16:16:59.567][V][component:236]: Setup openthread[0R[D][openthread:157]: Setting up SRP services. count = 1
+[16:17:00.470][D][openthread:207]: Added servicESP-ROM:esp32c6-20220919
+[16:17:00.470]Build:Sep 19 2022
+[16:17:00.470]rst:0x8 (TG1_WDT_HPSYS),boot:0xc (SPI_FAST_FLASH_BOOT)
+[16:17:00.470]Saved PC:0x40000004
+[16:17:00.481]SPIWP:0xee
+[16:17:00.481]mode:DIO, clock div:2
+[16:17:00.481]load:0x40875730,len:0x16f4
+[16:17:00.481]load:0x4086b910,len:0xed0
+[16:17:00.481]load:0x4086e610,len:0x3190
+[16:17:00.481]entry 0x4086b910
+[16:17:00.492]I (24) boot: ESP-IDF 5.5.4 2nd stage bootloader
+[16:17:00.492]I (24) boot: compile time May 21 2026 16:06:02
+[16:17:00.503]I (25) boot: chip revision: v0.2
+[16:17:00.503]I (25) boot: efuse block revision: v0.3
+[16:17:00.503]I (28) boot.esp32c6: SPI Speed      : 80MHz
+[16:17:00.514]I (32) boot.esp32c6: SPI Mode       : DIO
+[16:17:00.514]I (35) boot.esp32c6: SPI Flash Size : 4MB
+[16:17:00.514]W (39) boot.esp32c6: PRO CPU has been reset by WDT.
+[16:17:00.525]I (44) boot: Enabling RNG early entropy source...
+[16:17:00.525]I (48) boot: Partition Table:
+[16:17:00.525]I (51) boot: ## Label            Usage          Type ST Offset   Length
+[16:17:00.537]I (57) boot:  0 otadata          OTA data         01 00 00009000 00002000
+[16:17:00.548]I (64) boot:  1 phy_init         RF data          01 01 0000b000 00001000
+[16:17:00.548]I (70) boot:  2 app0             OTA app          00 10 00010000 001c0000
+[16:17:00.559]I (77) boot:  3 app1             OTA app          00 11 001d0000 001c0000
+[16:17:00.559]I (83) boot:  4 nvs              WiFi data        01 02 00390000 00070000
+[16:17:00.569]I (90) boot: End of partition table
+[16:17:00.569]I (93) esp_image: segment 0: paddr=00010020 vaddr=42070020 size=16534h ( 91444) map
+[16:17:00.583]I (118) esp_image: segment 1: paddr=0002655c vaddr=40800000 size=09abch ( 39612) load
+[16:17:00.592]I (127) esp_image: segment 2: paddr=00030020 vaddr=42000020 size=6e9f4h (453108) map
+[16:17:00.683]I (214) esp_image: segment 3: paddr=0009ea1c vaddr=40809abc size=03700h ( 14080) load
+[16:17:00.694]I (218) esp_image: segment 4: paddr=000a2124 vaddr=4080d1c0 size=02a68h ( 10856) load
+[16:17:00.694]I (224) boot: Loaded app from partition at offset 0x10000
+[16:17:00.696]I (225) boot: Disabling RNG early entropy source...
+[16:17:00.737][I][logger:120]: Log initialized
+[16:17:00.737][I][app:067]: Running through setup()
+[16:17:00.747][V][app:068]: Sorting components by setup priority
+[16:17:00.747][V][component:236]: Setup logger
+[16:17:00.747][V][component:248]: Setup logger took 0ms
+[16:17:00.759][V][component:236]: Setup preferences
+[16:17:00.769][V][scheduler:217]: Scheduler interval for (null) is 60000ms, offset 4644ms
+[16:17:00.769][V][component:248]: Setup preferences took 0ms
+[16:17:00.769][V][component:236]: Setup openthread
+[16:17:00.854] \xab\xa8\xb55\xbd\xb5\xc1\xbd\xb9\x95\xb9\xd1\xe9246]: Setup openthread took 95ms
+[16:17:00.854][V][component:236]: Setup mdns
+[16:17:01.755][V][component:248]: SetupESP-ROM:esp32c6-20220919
+[16:17:01.755]Build:Sep 19 2022
+[16:17:01.755]rst:0x8 (TG1_WDT_HPSYS),boot:0xc (SPI_FAST_FLASH_BOOT)
+[16:17:01.755]Saved PC:0x40000008
+[16:17:01.766]SPIWP:0xee
+[16:17:01.766]mode:DIO, clock div:2
+[16:17:01.766]load:0x40875730,len:0x16f4
+[16:17:01.766]load:0x4086b910,len:0xed0
+[16:17:01.766]load:0x4086e610,len:0x3190
+[16:17:01.766]entry 0x4086b910
+[16:17:01.777]I (24) boot: ESP-IDF 5.5.4 2nd stage bootloader
+[16:17:01.777]I (24) boot: compile time May 21 2026 16:06:02
+[16:17:01.788]I (25) boot: chip revision: v0.2
+[16:17:01.788]I (25) boot: efuse block revision: v0.3
+[16:17:01.788]I (31) boot.esp32c6: SPI Speed      : 80MHz
+[16:17:01.799]I (39) boot.esp32c6: SPI Mode       : DIO
+[16:17:01.799]I (47) boot.esp32c6: SPI Flash Size : 4MB
+[16:17:01.799]W (54) boot.esp32c6: PRO CPU has been reset by WDT.
+[16:17:01.810]I (63) boot: Enabling RNG early entropy source...
+[16:17:01.810]I (72) boot: Partition Table:
+[16:17:01.810]I (78) boot: ## Label            Usage          Type ST Offset   Length
+[16:17:01.821]I (90) boot:  0 otadata          OTA data         01 00 00009000 00002000
+[16:17:01.833]I (103) boot:  1 phy_init         RF data          01 01 0000b000 00001000
+[16:17:01.833]I (116) boot:  2 app0             OTA app          00 10 00010000 001c0000
+[16:17:01.844]I (130) boot:  3 app1             OTA app          00 11 001d0000 001c0000
+[16:17:01.844]I (143) boot:  4 nvs              WiFi data        01 02 00390000 00070000
+[16:17:01.855]I (156) boot: End of partition table
+[16:17:01.855]I (163) esp_image: segment 0: paddr=00010020 vaddr=42070020 size=16534h ( 91444) map
+[16:17:01.866]I (202) esp_image: segment 1: paddr=0002655c vaddr=40800000 size=09abch ( 39612) load
+[16:17:01.870]I (214) esp_image: segment 2: paddr=00030020 vaddr=42000020 size=6e9f4h (453108) map
+[16:17:01.931]I (331) esp_image: segment 3: paddr=0009ea1c vaddr=40809abc size=03700h ( 14080) load
+[16:17:01.942]I (336) esp_image: segment 4: paddr=000a2124 vaddr=4080d1c0 size=02a68h ( 10856) load
+[16:17:01.942]I (346) boot: Loaded app from partition at offset 0x10000
+[16:17:01.945]I (349) boot: Disabling RNG early entropy source...
+[16:17:09.614]ESP-ROM:esp32c6-20220919
+[16:17:09.627]Build:Sep 19 2022
+[16:17:09.627]rst:0x10 (LP_WDT_SYS),boot:0xc (SPI_FAST_FLASH_BOOT)
+[16:17:09.627]SPIWP:0xee
+[16:17:09.627]mode:DIO, clock div:2
+[16:17:09.635]load:0x40875730,len:0x16f4
+[16:17:09.635]load:0x4086b910,len:0xed0
+[16:17:09.635]load:0x4086e610,len:0x3190
+[16:17:09.635]entry 0x4086b910
+[16:17:09.646]I (24) boot: ESP-IDF 5.5.4 2nd stage bootloader
+[16:17:09.646]I (24) boot: compile time May 21 2026 16:06:02
+[16:17:09.658]I (25) boot: chip revision: v0.2
+[16:17:09.658]I (25) boot: efuse block revision: v0.3
+[16:17:09.658]I (27) boot.esp32c6: SPI Speed      : 80MHz
+[16:17:09.669]I (31) boot.esp32c6: SPI Mode       : DIO
+[16:17:09.669]I (35) boot.esp32c6: SPI Flash Size : 4MB
+[16:17:09.669]I (39) boot: Enabling RNG early entropy source...
+[16:17:09.679]I (43) boot: Partition Table:
+[16:17:09.679]I (46) boot: ## Label            Usage          Type ST Offset   Length
+[16:17:09.691]I (52) boot:  0 otadata          OTA data         01 00 00009000 00002000
+[16:17:09.691]I (59) boot:  1 phy_init         RF data          01 01 0000b000 00001000
+[16:17:09.702]I (65) boot:  2 app0             OTA app          00 10 00010000 001c0000
+[16:17:09.702]I (72) boot:  3 app1             OTA app          00 11 001d0000 001c0000
+[16:17:09.713]I (78) boot:  4 nvs              WiFi data        01 02 00390000 00070000
+[16:17:09.713]I (85) boot: End of partition table
+[16:17:09.718]I (88) esp_image: segment 0: paddr=00010020 vaddr=42070020 size=16534h ( 91444) map
+[16:17:09.732]I (113) esp_image: segment 1: paddr=0002655c vaddr=40800000 size=09abch ( 39612) load
+[16:17:09.741]I (122) esp_image: segment 2: paddr=00030020 vaddr=42000020 size=6e9f4h (453108) map
+[16:17:09.832]I (209) esp_image: segment 3: paddr=0009ea1c vaddr=40809abc size=03700h ( 14080) load
+[16:17:09.843]I (213) esp_image: segment 4: paddr=000a2124 vaddr=4080d1c0 size=02a68h ( 10856) load
+[16:17:09.843]I (219) boot: Loaded app from partition at offset 0x10000
+[16:17:09.845]I (220) boot: Disabling RNG early entropy source...
+[16:17:09.886][I][logger:120]: Log initialized
+[16:17:09.886][I][app:067]: Running through setup()
+[16:17:09.896][V][app:068]: Sorting components by setup priority
+[16:17:09.896][V][component:236]: Setup logger
+[16:17:09.896][V][component:248]: Setup logger took 0ms
+[16:17:09.908][V][component:236]: Setup preferences
+[16:17:09.917][V][scheduler:217]: Scheduler interval for (null) is 60000ms, offset 1911ms
+[16:17:09.917][V][component:248]: Setup preferences took 0ms
+[16:17:09.917][V][component:236]: Setup openthread
+[16:17:09.989][C][component:246]: Setup openthread took 96ms
+[16:17:09.989][V][component:236]: Setup mdns
+[16:17:09.999][V][component:248]: Setup mdns took 0ms
+[16:17:09.999][V][component:236]: Setup openthread
+[16:17:10.009][D][openthread:157]: Setting up SRP services. count = 1
+[16:17:10.009][D][openthread:207]: Added service: _http._tcp
+[16:17:10.023][D][openthread:211]: Finished SRP setu  m\xc1m
+[16:17:10.023][V][component:248]: Setup openthread took 13ms
+[16:17:10.925][I][app:123]: setup() finished suESP-ROM:esp32c6-20220919
+[16:17:10.925]Build:Sep 19 2022
+[16:17:10.925]rst:0x8 (TG1_WDT_HPSYS),boot:0xc (SPI_FAST_FLASH_BOOT)
+[16:17:10.925]Saved PC:0x40803e72
+WARNING Decoded 0x40803e72: rv_utils_wait_for_intr at /home/ewout/.platformio/packages/framework-espidf/components/riscv/include/riscv/rv_utils.h:79
+ (inlined by) esp_cpu_wait_for_intr at /home/ewout/.platformio/packages/framework-espidf/components/esp_hw_support/cpu.c:62
+[16:17:11.252]SPIWP:0xee
+[16:17:11.252]mode:DIO, clock div:2
+[16:17:11.252]load:0x40875730,len:0x16f4
+[16:17:11.252]load:0x4086b910,len:0xed0
+[16:17:11.252]load:0x4086e610,len:0x3190
+[16:17:11.252]entry 0x4086b910
+[16:17:11.252]I (24) boot: ESP-IDF 5.5.4 2nd stage bootloader
+[16:17:11.252]I (24) boot: compile time May 21 2026 16:06:02
+[16:17:11.252]I (25) boot: chip revision: v0.2
+[16:17:11.252]I (25) boot: efuse block revision: v0.3
+[16:17:11.252]I (28) boot.esp32c6: SPI Speed      : 80MHz
+[16:17:11.252]I (32) boot.esp32c6: SPI Mode       : DIO
+[16:17:11.252]I (35) boot.esp32c6: SPI Flash Size : 4MB
+[16:17:11.252]W (39) boot.esp32c6: PRO CPU has been reset by WDT.
+[16:17:11.252]I (44) boot: Enabling RNG early entropy source...
+[16:17:11.252]I (48) boot: Partition Table:
+[16:17:11.252]I (51) boot: ## Label            Usage          Type ST Offset   Length
+[16:17:11.252]I (57) boot:  0 otadata          OTA data         01 00 00009000 00002000
+[16:17:11.252]I (64) boot:  1 phy_init         RF data          01 01 0000b000 00001000
+[16:17:11.252]I (70) boot:  2 app0             OTA app          00 10 00010000 001c0000
+[16:17:11.252]I (77) boot:  3 app1             OTA app          00 11 001d0000 001c0000
+[16:17:11.252]I (83) boot:  4 nvs              WiFi data        01 02 00390000 00070000
+[16:17:11.252]I (90) boot: End of partition table
+[16:17:11.252]I (93) esp_image: segment 0: paddr=00010020 vaddr=42070020 size=16534h ( 91444) map
+[16:17:11.252]I (118) esp_image: segment 1: paddr=0002655c vaddr=40800000 size=09abch ( 39612) load
+[16:17:11.252]I (127) esp_image: segment 2: paddr=00030020 vaddr=42000020 size=6e9f4h (453108) map
+[16:17:11.252]I (214) esp_image: segment 3: paddr=0009ea1c vaddr=40809abc size=03700h ( 14080) load
+[16:17:11.252]I (218) esp_image: segment 4: paddr=000a2124 vaddr=4080d1c0 size=02a68h ( 10856) load
+[16:17:11.252]I (224) boot: Loaded app from partition at offset 0x10000
+[16:17:11.252]I (225) boot: Disabling RNG early entropy source...
+[16:17:11.252][I][logger:120]: Log initialized
+[16:17:11.252][I][app:067]: Running through setup()
+[16:17:11.252][V][app:068]: Sorting components by setup priority
+[16:17:11.252][V][component:236]: Setup logger
+[16:17:11.252][V][component:248]: Setup logger took 0ms
+[16:17:11.252][V][component:236]: Setup preferences
+[16:17:11.252][V][scheduler:217]: Scheduler interval for (null) is 60000ms, offset 4178ms
+[16:17:11.252][V][component:248]: Setup preferences took 0ms
+[16:17:11.252][V][component:236]: Setup openthread
+[16:17:11.289][C][component:246]: Setup openthread took 96ms
+[16:17:11.313][V][component:236]: Setup mdns
+[16:17:11.313][V][component:248]: Setup mdns took 0ms
+[16:17:11.316][V][component:236]: Setup openthread
+[16:17:12.316][D][openthrea      ESP-ROM:esp32c6-20220919
+[16:17:12.316]Build:Sep 19 2022
+[16:17:12.316]rst:0x8 (TG1_WDT_HPSYS),boot:0xc (SPI_FAST_FLASH_BOOT)
+[16:17:12.316]Saved PC:0x2000085c
+[16:17:12.327]SPIWP:0xee
+[16:17:12.327]mode:DIO, clock div:2
+[16:17:12.327]load:0x40875730,len:0x16f4
+[16:17:12.327]load:0x4086b910,len:0xed0
+[16:17:12.327]load:0x4086e610,len:0x3190
+[16:17:12.327]entry 0x4086b910
+[16:17:12.339]I (24) boot: ESP-IDF 5.5.4 2nd stage bootloader
+[16:17:12.339]I (24) boot: compile time May 21 2026 16:06:02
+[16:17:12.350]I (25) boot: chip revision: v0.2
+[16:17:12.350]I (25) boot: efuse block revision: v0.3
+[16:17:12.350]I (28) boot.esp32c6: SPI Speed      : 80MHz
+[16:17:12.361]I (32) boot.esp32c6: SPI Mode       : DIO
+[16:17:12.361]I (35) boot.esp32c6: SPI Flash Size : 4MB
+[16:17:12.361]W (39) boot.esp32c6: PRO CPU has been reset by WDT.
+[16:17:12.372]I (44) boot: Enabling RNG early entropy source...
+[16:17:12.372]I (48) boot: Partition Table:
+[16:17:12.372]I (51) boot: ## Label            Usage          Type ST Offset   Length
+[16:17:12.383]I (57) boot:  0 otadata          OTA data         01 00 00009000 00002000
+[16:17:12.394]I (64) boot:  1 phy_init         RF data          01 01 0000b000 00001000
+[16:17:12.394]I (70) boot:  2 app0             OTA app          00 10 00010000 001c0000
+[16:17:12.405]I (77) boot:  3 app1             OTA app          00 11 001d0000 001c0000
+[16:17:12.405]I (83) boot:  4 nvs              WiFi data        01 02 00390000 00070000
+[16:17:12.415]I (90) boot: End of partition table
+[16:17:12.415]I (93) esp_image: segment 0: paddr=00010020 vaddr=42070020 size=16534h ( 91444) map
+[16:17:12.429]I (118) esp_image: segment 1: paddr=0002655c vaddr=40800000 size=09abch ( 39612) load
+[16:17:12.439]I (127) esp_image: segment 2: paddr=00030020 vaddr=42000020 size=6e9f4h (453108) map
+[16:17:12.529]I (214) esp_image: segment 3: paddr=0009ea1c vaddr=40809abc size=03700h ( 14080) load
+[16:17:12.540]I (218) esp_image: segment 4: paddr=000a2124 vaddr=4080d1c0 size=02a68h ( 10856) load
+[16:17:12.540]I (224) boot: Loaded app from partition at offset 0x10000
+[16:17:12.543]I (225) boot: Disabling RNG early entropy source...
+[16:17:12.583][I][logger:120]: Log initialized
+[16:17:12.583][I][app:067]: Running through setup()
+[16:17:12.594][V][app:068]: Sorting components by setup priority
+[16:17:12.594][V][component:236]: Setup logger
+[16:17:12.594][V][component:248]: Setup logger took 0ms
+[16:17:12.605][V][component:236]: Setup preferences
+[16:17:12.615][V][scheduler:217]: Scheduler interval for (null) is 60000ms, offset 2705ms
+[16:17:12.615][V][component:248]: Setup preferences took 0ms
+[16:17:12.615][V][component:236]: Setup openthread
+[16:17:17.584]E (5292) task_wdt: Task watchdog got triggered. The following tasks/users did not reset the watchdog in time:
+[16:17:17.595]E (5292) task_wdt:  - loopTask (CPU 0)
+[16:17:17.595]E (5292) task_wdt: Tasks currently running:
+[16:17:17.595]E (5292) task_wdt: CPU 0: ot_main
+[16:17:17.600]E (5292) task_wdt: Aborting.
+[16:17:17.600]E (5292) task_wdt: Print CPU 0 (current core) registers
+
+
+[16:17:17.650]Core  0 register dump:
+[16:17:17.650]MEPC    : 0x40004408  RA      : 0x408028fe  SP      : 0x40822550  GP      : 0x4080d9c4  
+[16:17:17.661]TP      : 0x40822860  T0      : 0x00fe00f2  T1      : 0x4205f38e  T2      : 0x00fe00f3  
+[16:17:17.672]S0/FP   : 0x40816000  S1      : 0x00000000  A0      : 0x00000010  A1      : 0x0001fffc  
+[16:17:17.683]A2      : 0x5ffa8013  A3      : 0x600a1000  A4      : 0xc0000a50  A5      : 0x600a1000  
+[16:17:17.683]A6      : 0x40004160  A7      : 0x00fe00f1  S2      : 0x40822bb8  S3      : 0x00000000  
+[16:17:17.694]S4      : 0x4082332c  S5      : 0x00000000  S6      : 0x0007e1ff  S7      : 0x00000000  
+[16:17:17.705]S8      : 0x00000000  S9      : 0x00000000  S10     : 0x00000000  S11     : 0x00000000  
+[16:17:17.705]T3      : 0x010100f1  T4      : 0x00ff00f3  T5      : 0x010200f2  T6      : 0x00fe00fa  
+[16:17:17.716]MSTATUS : 0x40822bb8  MTVEC   : 0x00000000  MCAUSE  : 0x4080d6cc  MTVAL   : 0x4205e954  
+[16:17:17.716]MHARTID : 0x40822bb8  
+
+[16:17:17.716]Stack memory:
+[16:17:17.728]40822550: 0x40822bb8 0x00000000 0x4080d6cc 0x4205e954 0x40822bb8 0x00000000 0x4080d6cc 0x4205f2bc
+[16:17:17.739]40822570: 0x00000000 0x00000000 0x010200fa 0x01000100 0x010100f9 0x01000100 0x00ff00f8 0x01000100
+[16:17:17.750]40822590: 0x010500f3 0x01000100 0x010300f2 0x01000100 0x00fe0101 0x01000100 0x00000000 0x00000000
+[16:17:17.750]408225b0: 0x00000000 0x00000000 0x0000006b 0x00000084 0x00000000 0x0e0b0000 0x0d090813 0x05010501
+[16:17:17.761]408225d0: 0x00000301 0x00f72600 0x00f600fd 0x420000fc 0x5454000a 0x4c505050 0x484c4c4c 0x3c3c3c44
+[16:17:17.772]408225f0: 0x484c4c4c 0x00000000 0x00000000 0x00000000 0x00000000 0x00000000 0x00000000 0x00000000
+[16:17:17.783]40822610: 0x00000000 0x00000000 0x00000000 0x00000000 0x00000000 0x00000000 0x00000000 0x00000000
+[16:17:17.795]40822630: 0x00000000 0x00000000 0x00000000 0x00000000 0x00000000 0x00000000 0x00000000 0x00000000
+[16:17:17.795]40822650: 0x00000000 0x00000000 0x00000000 0x00000000 0x00000000 0x00000000 0x00000000 0x00000000
+[16:17:17.806]40822670: 0x00000003 0x4082332c 0x40822bb8 0x4206a96e 0x40817000 0x40822874 0xff818c58 0xc4b05dfe
+[16:17:17.817]40822690: 0x40817000 0x00000000 0x00000000 0x40811ab0 0x40817000 0x40817000 0x00000004 0x408055de
+[16:17:17.828]408226b0: 0x00000001 0x40822734 0x00000000 0x40803d40 0x00000000 0x00000000 0x00000000 0x4206dfa2
+[16:17:17.828]408226d0: 0x00000001 0x40822734 0x00000000 0x4202bccc 0x00000001 0x40822734 0x00000000 0x4202b532
+[16:17:17.839]408226f0: 0xa5a5a5a5 0xa5a5a5a5 0xa5a5a5a5 0x00000000 0x00000000 0x00000000 0x4080fd38 0x42029c30
+[16:17:17.850]40822710: 0xa5a5a5a5 0xa5a5a5a5 0x4080fd38 0x42001e6c 0xa5a5a5a5 0xa5a5a5a5 0xa5a5a5a5 0xa5a5a5a5
+[16:17:17.861]40822730: 0xa5a5a5a5 0x00000000 0x00000000 0x00000000 0x00000000 0x00000000 0x00000000 0x00000000
+[16:17:17.872]40822750: 0x00000000 0x00000000 0x00000000 0x00000000 0x00000000 0x00000000 0x00000000 0x00000000
+[16:17:17.872]40822770: 0x00000000 0x00000000 0x00000000 0x00000000 0x00000000 0x00000000 0x00000000 0x00000000
+[16:17:17.883]40822790: 0x00000000 0x00000000 0x00000000 0x00000000 0x00000000 0x00000000 0x00000000 0x00000000
+[16:17:17.895]408227b0: 0x00000000 0x00000000 0x00000000 0x00000000 0x00000000 0x00000000 0x00000000 0x00000000
+[16:17:17.906]408227d0: 0x00000000 0x00000000 0x00000000 0x00000000 0x00000000 0x00000000 0x00000000 0x00000000
+[16:17:17.906]408227f0: 0x00000000 0x00000000 0x00000000 0x00000000 0x00000000 0x00000000 0x42070cc0 0x00000a0a
+[16:17:17.917]40822810: 0x00000000 0x00000000 0x00000000 0x00000000 0x00000000 0x00000000 0x00000000 0x420020cc
+[16:17:17.928]40822830: 0x00000000 0x00000000 0x00000000 0x00000000 0x00000000 0x00000000 0x00000000 0x00000000
+[16:17:17.939]40822850: 0x00000000 0xa5a5a5a5 0xa5a5a5a5 0xa5a5a5a5 0xa5a5a5a5 0xa5a5a5a5 0xa5a5a5a5 0xa5a5a5a5
+[16:17:17.939]40822870: 0x00000150 0x408224d0 0x00000000 0x40810538 0x40810538 0x40822874 0x40810530 0x00000014
+[16:17:17.950]40822890: 0x00000000 0x00000000 0x40822874 0x00000000 0x00000005 0x40820070 0x6d5f746f 0x006e6961
+[16:17:17.961]408228b0: 0x00000000 0x00000000 0x40822860 0x00000005 0x00000001 0x00000000 0x00000000 0x00000000
+[16:17:17.972]408228d0: 0x40817828 0x40817890 0x408178f8 0x00000000 0x00000000 0x00000001 0x00000000 0x00000000
+[16:17:17.983]408228f0: 0x00000000 0x42026206 0x00000000 0x00000000 0x00000000 0x00000000 0x00000000 0x00000000
+[16:17:17.983]40822910: 0x00000000 0x00000000 0x00000000 0x00000000 0x00000000 0x00000000 0x00000000 0x00000000
+[16:17:17.995]40822930: 0x00000000 0x00000000 0x00000000 0x00000000 0x00000000 0x00000000 0x00000000 0x00000000
+
+
+
+[16:17:17.995]ELF file SHA256: 2925ecf56
+
+[16:17:17.995]Rebooting...
+[16:17:18.011]ESP-ROM:esp32c6-20220919
+[16:17:18.011]Build:Sep 19 2022
+[16:17:18.011]rst:0xc (SW_CPU),boot:0xc (SPI_FAST_FLASH_BOOT)
+[16:17:18.011]Saved PC:0x4001975a
+[16:17:18.011]SPIWP:0xee
+[16:17:18.022]mode:DIO, clock div:2
+[16:17:18.022]load:0x40875730,len:0x16f4
+[16:17:18.022]load:0x4086b910,len:0xed0
+[16:17:18.022]load:0x4086e610,len:0x3190
+[16:17:18.022]entry 0x4086b910
+[16:17:18.033]I (26) boot: ESP-IDF 5.5.4 2nd stage bootloader
+[16:17:18.033]I (27) boot: compile time May 21 2026 16:06:02
+[16:17:18.033]I (28) boot: chip revision: v0.2
+[16:17:18.044]I (29) boot: efuse block revision: v0.3
+[16:17:18.044]I (30) boot.esp32c6: SPI Speed      : 80MHz
+[16:17:18.044]I (34) boot.esp32c6: SPI Mode       : DIO
+[16:17:18.055]I (38) boot.esp32c6: SPI Flash Size : 4MB
+[16:17:18.055]I (42) boot: Enabling RNG early entropy source...
+[16:17:18.055]I (46) boot: Partition Table:
+[16:17:18.067]I (49) boot: ## Label            Usage          Type ST Offset   Length
+[16:17:18.078]I (55) boot:  0 otadata          OTA data         01 00 00009000 00002000
+[16:17:18.078]I (62) boot:  1 phy_init         RF data          01 01 0000b000 00001000
+[16:17:18.089]I (68) boot:  2 app0             OTA app          00 10 00010000 001c0000
+[16:17:18.089]I (75) boot:  3 app1             OTA app          00 11 001d0000 001c0000
+[16:17:18.100]I (81) boot:  4 nvs              WiFi data        01 02 00390000 00070000
+[16:17:18.100]I (88) boot: End of partition table
+[16:17:18.105]I (91) esp_image: segment 0: paddr=00010020 vaddr=42070020 size=16534h ( 91444) map
+[16:17:18.136]I (133) esp_image: segment 1: paddr=0002655c vaddr=40800000 size=09abch ( 39612) load
+[16:17:18.154]I (151) esp_image: segment 2: paddr=00030020 vaddr=42000020 size=6e9f4h (453108) map
+[16:17:18.329]I (323) esp_image: segment 3: paddr=0009ea1c vaddr=40809abc size=03700h ( 14080) load
+[16:17:18.333]I (330) esp_image: segment 4: paddr=000a2124 vaddr=4080d1c0 size=02a68h ( 10856) load
+[16:17:18.348]I (343) boot: Loaded app from partition at offset 0x10000
+[16:17:18.348]I (343) boot: Disabling RNG early entropy source...
+[16:17:18.388][I][logger:120]: Log initialized
+[16:17:18.388][I][app:067]: Running through setup()
+[16:17:18.399][V][app:068]: Sorting components by setup priority
+[16:17:18.399][V][component:236]: Setup logger
+[16:17:18.399][V][component:248]: Setup logger took 0ms
+[16:17:18.410][V][component:236]: Setup preferences
+[16:17:18.420][V][scheduler:217]: Scheduler interval for (null) is 60000ms, offset 3379ms
+[16:17:18.420][V][component:248]: Setup preferences took 0ms
+[16:17:18.420][V][component:236]: Setup openthread
+[16:17:18.502][C][component:246]: Setup openthread took 98ms
+[16:17:18.515][V][component:236]: Setup mdns[  m
+[16:17:18.515][V][component:248]: Setup mdns took 0ms
+[16:17:19.418][V][component:236]: Setup openthreadSP-ROM:esp32c6-20220919
+[16:17:19.418]Build:Sep 19 2022
+[16:17:19.418]rst:0x8 (TG1_WDT_HPSYS),boot:0xc (SPI_FAST_FLASH_BOOT)
+[16:17:19.418]Saved PC:0x4004c3d2
+[16:17:19.429]SPIWP:0xee
+[16:17:19.429]mode:DIO, clock div:2
+[16:17:19.429]load:0x40875730,len:0x16f4
+[16:17:19.429]load:0x4086b910,len:0xed0
+[16:17:19.429]load:0x4086e610,len:0x3190
+[16:17:19.429]entry 0x4086b910
+[16:17:19.440]I (24) boot: ESP-IDF 5.5.4 2nd stage bootloader
+[16:17:19.440]I (24) boot: compile time May 21 2026 16:06:02
+[16:17:19.451]I (25) boot: chip revision: v0.2
+[16:17:19.451]I (25) boot: efuse block revision: v0.3
+[16:17:19.451]I (31) boot.esp32c6: SPI Speed      : 80MHz
+[16:17:19.463]I (39) boot.esp32c6: SPI Mode       : DIO
+[16:17:19.463]I (47) boot.esp32c6: SPI Flash Size : 4MB
+[16:17:19.463]W (54) boot.esp32c6: PRO CPU has been reset by WDT.
+[16:17:19.474]I (63) boot: Enabling RNG early entropy source...
+[16:17:19.474]I (72) boot: Partition Table:
+[16:17:19.474]I (78) boot: ## Label            Usage          Type ST Offset   Length
+[16:17:19.485]I (90) boot:  0 otadata          OTA data         01 00 00009000 00002000
+[16:17:19.496]I (103) boot:  1 phy_init         RF data          01 01 0000b000 00001000
+[16:17:19.496]I (116) boot:  2 app0             OTA app          00 10 00010000 001c0000
+[16:17:19.507]I (130) boot:  3 app1             OTA app          00 11 001d0000 001c0000
+[16:17:19.507]I (143) boot:  4 nvs              WiFi data        01 02 00390000 00070000
+[16:17:19.518]I (156) boot: End of partition table
+[16:17:19.518]I (163) esp_image: segment 0: paddr=00010020 vaddr=42070020 size=16534h ( 91444) map
+[16:17:19.529]I (202) esp_image: segment 1: paddr=0002655c vaddr=40800000 size=09abch ( 39612) load
+[16:17:19.533]I (214) esp_image: segment 2: paddr=00030020 vaddr=42000020 size=6e9f4h (453108) map
+[16:17:19.594]I (331) esp_image: segment 3: paddr=0009ea1c vaddr=40809abc size=03700h ( 14080) load
+[16:17:19.605]I (336) esp_image: segment 4: paddr=000a2124 vaddr=4080d1c0 size=02a68h ( 10856) load
+[16:17:19.605]I (346) boot: Loaded app from partition at offset 0x10000
+[16:17:19.608]I (349) boot: Disabling RNG early entropy source...
+[16:17:27.311]ESP-ROM:esp32c6-20220919
+[16:17:27.325]Build:Sep 19 2022
+[16:17:27.325]rst:0x10 (LP_WDT_SYS),boot:0xc (SPI_FAST_FLASH_BOOT)
+[16:17:27.325]SPIWP:0xee
+[16:17:27.325]mode:DIO, clock div:2
+[16:17:27.332]load:0x40875730,len:0x16f4
+[16:17:27.332]load:0x4086b910,len:0xed0
+[16:17:27.332]load:0x4086e610,len:0x3190
+[16:17:27.332]entry 0x4086b910
+[16:17:27.343]I (24) boot: ESP-IDF 5.5.4 2nd stage bootloader
+[16:17:27.343]I (24) boot: compile time May 21 2026 16:06:02
+[16:17:27.354]I (25) boot: chip revision: v0.2
+[16:17:27.354]I (25) boot: efuse block revision: v0.3
+[16:17:27.354]I (27) boot.esp32c6: SPI Speed      : 80MHz
+[16:17:27.365]I (31) boot.esp32c6: SPI Mode       : DIO
+[16:17:27.365]I (35) boot.esp32c6: SPI Flash Size : 4MB
+[16:17:27.365]I (39) boot: Enabling RNG early entropy source...
+[16:17:27.377]I (43) boot: Partition Table:
+[16:17:27.377]I (46) boot: ## Label            Usage          Type ST Offset   Length
+[16:17:27.388]I (52) boot:  0 otadata          OTA data         01 00 00009000 00002000
+[16:17:27.388]I (59) boot:  1 phy_init         RF data          01 01 0000b000 00001000
+[16:17:27.398]I (65) boot:  2 app0             OTA app          00 10 00010000 001c0000
+[16:17:27.398]I (72) boot:  3 app1             OTA app          00 11 001d0000 001c0000
+[16:17:27.410]I (78) boot:  4 nvs              WiFi data        01 02 00390000 00070000
+[16:17:27.410]I (85) boot: End of partition table
+[16:17:27.415]I (88) esp_image: segment 0: paddr=00010020 vaddr=42070020 size=16534h ( 91444) map
+[16:17:27.429]I (113) esp_image: segment 1: paddr=0002655c vaddr=40800000 size=09abch ( 39612) load
+[16:17:27.438]I (122) esp_image: segment 2: paddr=00030020 vaddr=42000020 size=6e9f4h (453108) map
+[16:17:27.529]I (209) esp_image: segment 3: paddr=0009ea1c vaddr=40809abc size=03700h ( 14080) load
+[16:17:27.540]I (213) esp_image: segment 4: paddr=000a2124 vaddr=4080d1c0 size=02a68h ( 10856) load
+[16:17:27.540]I (219) boot: Loaded app from partition at offset 0x10000
+[16:17:27.542]I (220) boot: Disabling RNG early entropy source...
+[16:17:27.583][I][logger:120]: Log initialized
+[16:17:27.583][I][app:067]: Running through setup()
+[16:17:27.594][V][app:068]: Sorting components by setup priority
+[16:17:27.594][V][component:236]: Setup logger
+[16:17:27.594][V][component:248]: Setup logger took 0ms
+[16:17:27.605][V][component:236]: Setup preferences
+[16:17:27.614][V][scheduler:217]: Scheduler interval for (null) is 60000ms, offset 1639ms
+[16:17:27.614][V][component:248]: Setup preferences took 0ms
+[16:17:27.614][V][component:236]: Setup openthread
+[16:17:27.685][C][component:246]: Setup openthread took 96ms
+[16:17:27.685][V][component:236]: Setup mdns
+[16:17:27.696][V][component:248]: Setup mdns took 0ms
+[16:17:27.696][V][component:236]: Setup openthread
+[16:17:27.706][D][openthread:157]: Setting up SRP services. count = 1
+[16:17:27.706][D][openthread:207]: Added service: _http._tcp
+[16:17:27.718][D][openthread:211]: Finished SRP setup\xfb [0m
+[16:17:27.718][V][component:248]: Setup openthread took 15ms
+[16:17:27.718][I][app:123]: setup() finished successfully!
+[16:17:28.620]SP-ROM:esp32c6-20220919
+[16:17:28.620]Build:Sep 19 2022
+[16:17:28.620]rst:0x8 (TG1_WDT_HPSYS),boot:0xc (SPI_FAST_FLASH_BOOT)
+[16:17:28.620]Saved PC:0x4000000a
+[16:17:28.631]SPIWP:0xee
+[16:17:28.631]mode:DIO, clock div:2
+[16:17:28.631]load:0x40875730,len:0x16f4
+[16:17:28.631]load:0x4086b910,len:0xed0
+[16:17:28.631]load:0x4086e610,len:0x3190
+[16:17:28.631]entry 0x4086b910
+[16:17:28.642]I (24) boot: ESP-IDF 5.5.4 2nd stage bootloader
+[16:17:28.642]I (24) boot: compile time May 21 2026 16:06:02
+[16:17:28.653]I (25) boot: chip revision: v0.2
+[16:17:28.653]I (25) boot: efuse block revision: v0.3
+[16:17:28.653]I (28) boot.esp32c6: SPI Speed      : 80MHz
+[16:17:28.664]I (32) boot.esp32c6: SPI Mode       : DIO
+[16:17:28.664]I (35) boot.esp32c6: SPI Flash Size : 4MB
+[16:17:28.664]W (39) boot.esp32c6: PRO CPU has been reset by WDT.
+[16:17:28.675]I (44) boot: Enabling RNG early entropy source...
+[16:17:28.675]I (48) boot: Partition Table:
+[16:17:28.675]I (51) boot: ## Label            Usage          Type ST Offset   Length
+[16:17:28.686]I (57) boot:  0 otadata          OTA data         01 00 00009000 00002000
+[16:17:28.698]I (64) boot:  1 phy_init         RF data          01 01 0000b000 00001000
+[16:17:28.698]I (70) boot:  2 app0             OTA app          00 10 00010000 001c0000
+[16:17:28.709]I (77) boot:  3 app1             OTA app          00 11 001d0000 001c0000
+[16:17:28.709]I (83) boot:  4 nvs              WiFi data        01 02 00390000 00070000
+[16:17:28.719]I (90) boot: End of partition table
+[16:17:28.719]I (93) esp_image: segment 0: paddr=00010020 vaddr=42070020 size=16534h ( 91444) map
+[16:17:28.733]I (118) esp_image: segment 1: paddr=0002655c vaddr=40800000 size=09abch ( 39612) load
+[16:17:28.742]I (127) esp_image: segment 2: paddr=00030020 vaddr=42000020 size=6e9f4h (453108) map
+[16:17:28.833]I (214) esp_image: segment 3: paddr=0009ea1c vaddr=40809abc size=03700h ( 14080) load
+[16:17:28.844]I (218) esp_image: segment 4: paddr=000a2124 vaddr=4080d1c0 size=02a68h ( 10856) load
+[16:17:28.844]I (224) boot: Loaded app from partition at offset 0x10000
+[16:17:28.846]I (225) boot: Disabling RNG early entropy source...
+[16:17:28.886][I][logger:120]: Log initialized
+[16:17:28.886][I][app:067]: Running through setup()
+[16:17:28.897][V][app:068]: Sorting components by setup priority
+[16:17:28.897][V][component:236]: Setup logger
+[16:17:28.897][V][component:248]: Setup logger took 0ms
+[16:17:28.909][V][component:236]: Setup preferences
+[16:17:28.918][V][scheduler:217]: Scheduler interval for (null) is 60000ms, offset 1836ms
+[16:17:28.918][V][component:248]: Setup preferences took 0ms
+[16:17:28.918][V][component:236]: Setup openthread
+[16:17:29.907][C][component:246]: S5 ESP-ROM:esp32c6-20220919
+[16:17:29.907]Build:Sep 19 2022
+[16:17:29.907]rst:0x8 (TG1_WDT_HPSYS),boot:0xc (SPI_FAST_FLASH_BOOT)
+[16:17:29.907]Saved PC:0x40800008
+WARNING Decoded 0x40800008: _vector_table at /home/ewout/.platformio/packages/framework-espidf/components/riscv/vectors_intc.S:56
+[16:17:30.230]SPIWP:0xee
+[16:17:30.230]mode:DIO, clock div:2
+[16:17:30.230]load:0x40875730,len:0x16f4
+[16:17:30.230]load:0x4086b910,len:0xed0
+[16:17:30.230]load:0x4086e610,len:0x3190
+[16:17:30.230]entry 0x4086b910
+[16:17:30.230]I (24) boot: ESP-IDF 5.5.4 2nd stage bootloader
+[16:17:30.230]I (24) boot: compile time May 21 2026 16:06:02
+[16:17:30.230]I (25) boot: chip revision: v0.2
+[16:17:30.230]I (25) boot: efuse block revision: v0.3
+[16:17:30.230]I (28) boot.esp32c6: SPI Speed      : 80MHz
+[16:17:30.230]I (32) boot.esp32c6: SPI Mode       : DIO
+[16:17:30.230]I (35) boot.esp32c6: SPI Flash Size : 4MB
+[16:17:30.230]W (39) boot.esp32c6: PRO CPU has been reset by WDT.
+[16:17:30.230]I (44) boot: Enabling RNG early entropy source...
+[16:17:30.230]I (48) boot: Partition Table:
+[16:17:30.230]I (51) boot: ## Label            Usage          Type ST Offset   Length
+[16:17:30.230]I (57) boot:  0 otadata          OTA data         01 00 00009000 00002000
+[16:17:30.230]I (64) boot:  1 phy_init         RF data          01 01 0000b000 00001000
+[16:17:30.230]I (70) boot:  2 app0             OTA app          00 10 00010000 001c0000
+[16:17:30.230]I (77) boot:  3 app1             OTA app          00 11 001d0000 001c0000
+[16:17:30.230]I (83) boot:  4 nvs              WiFi data        01 02 00390000 00070000
+[16:17:30.230]I (90) boot: End of partition table
+[16:17:30.230]I (93) esp_image: segment 0: paddr=00010020 vaddr=42070020 size=16534h ( 91444) map
+[16:17:30.230]I (118) esp_image: segment 1: paddr=0002655c vaddr=40800000 size=09abch ( 39612) load
+[16:17:30.230]I (127) esp_image: segment 2: paddr=00030020 vaddr=42000020 size=6e9f4h (453108) map
+[16:17:30.230]I (214) esp_image: segment 3: paddr=0009ea1c vaddr=40809abc size=03700h ( 14080) load
+[16:17:30.230]I (218) esp_image: segment 4: paddr=000a2124 vaddr=4080d1c0 size=02a68h ( 10856) load
+[16:17:30.230]I (224) boot: Loaded app from partition at offset 0x10000
+[16:17:30.230]I (225) boot: Disabling RNG early entropy source...
+[16:17:30.230][I][logger:120]: Log initialized
+[16:17:30.230][I][app:067]: Running through setup()
+[16:17:30.230][V][app:068]: Sorting components by setup priority
+[16:17:30.230][V][component:236]: Setup logger
+[16:17:30.230][V][component:248]: Setup logger took 0ms
+[16:17:30.230][V][component:236]: Setup preferences
+[16:17:30.230][V][scheduler:217]: Scheduler interval for (null) is 60000ms, offset 3857ms
+[16:17:30.230][V][component:248]: Setup preferences took 0ms
+[16:17:30.230][V][component:236]: Setup openthread
+[16:17:30.275][C][component:246]: Setup openthread took 95ms
+[16:17:30.275][V][component:236]: Setup mdns
+[16:17:30.286][V][component:248]: Setup mdns took 0ms
+[16:17:30.286][V][component:236]: Setup openthread
+[16:17:30.288][D][openthread:157]: Setting up SRP services. count = 1
+[16:17:30.298][D][opent\x9a\xaeV\x91\xe9207]: Added service: _http._tcp
+[16:17:30.298][D][openthread:211]: Finished SRP setup
+[16:17:31.200][V][component:248]:ESP-ROM:esp32c6-20220919
+[16:17:31.200]Build:Sep 19 2022
+[16:17:31.200]rst:0x8 (TG1_WDT_HPSYS),boot:0xc (SPI_FAST_FLASH_BOOT)
+[16:17:31.200]SPIWP:0xee
+[16:17:31.210]mode:DIO, clock div:2
+[16:17:31.210]load:0x40875730,len:0x16f4
+[16:17:31.210]load:0x4086b910,len:0xed0
+[16:17:31.210]load:0x4086e610,len:0x3190
+[16:17:31.210]entry 0x4086b910
+[16:17:31.221]I (22) boot: ESP-IDF 5.5.4 2nd stage bootloader
+[16:17:31.221]I (22) boot: compile time May 21 2026 16:06:02
+[16:17:31.232]I (23) boot: chip revision: v0.2
+[16:17:31.232]I (24) boot: efuse block revision: v0.3
+[16:17:31.232]I (30) boot.esp32c6: SPI Speed      : 80MHz
+[16:17:31.243]I (37) boot.esp32c6: SPI Mode       : DIO
+[16:17:31.243]I (45) boot.esp32c6: SPI Flash Size : 4MB
+[16:17:31.243]W (52) boot.esp32c6: PRO CPU has been reset by WDT.
+[16:17:31.254]I (61) boot: Enabling RNG early entropy source...
+[16:17:31.254]I (70) boot: Partition Table:
+[16:17:31.254]I (76) boot: ## Label            Usage          Type ST Offset   Length
+[16:17:31.265]I (88) boot:  0 otadata          OTA data         01 00 00009000 00002000
+[16:17:31.276]I (101) boot:  1 phy_init         RF data          01 01 0000b000 00001000
+[16:17:31.276]I (115) boot:  2 app0             OTA app          00 10 00010000 001c0000
+[16:17:31.287]I (128) boot:  3 app1             OTA app          00 11 001d0000 001c0000
+[16:17:31.287]I (141) boot:  4 nvs              WiFi data        01 02 00390000 00070000
+[16:17:31.298]I (154) boot: End of partition table
+[16:17:31.298]I (161) esp_image: segment 0: paddr=00010020 vaddr=42070020 size=16534h ( 91444) map
+[16:17:31.310]I (200) esp_image: segment 1: paddr=0002655c vaddr=40800000 size=09abch ( 39612) load
+[16:17:31.314]I (212) esp_image: segment 2: paddr=00030020 vaddr=42000020 size=6e9f4h (453108) map
+[16:17:31.374]I (330) esp_image: segment 3: paddr=0009ea1c vaddr=40809abc size=03700h ( 14080) load
+[16:17:31.386]I (335) esp_image: segment 4: paddr=000a2124 vaddr=4080d1c0 size=02a68h ( 10856) load
+[16:17:31.386]I (344) boot: Loaded app from partition at offset 0x10000
+[16:17:31.388]I (348) boot: Disabling RNG early entropy source...
+[16:17:39.056]ESP-ROM:esp32c6-20220919
+[16:17:39.070]Build:Sep 19 2022
+[16:17:39.070]rst:0x10 (LP_WDT_SYS),boot:0xc (SPI_FAST_FLASH_BOOT)
+[16:17:39.070]SPIWP:0xee
+[16:17:39.070]mode:DIO, clock div:2
+[16:17:39.077]load:0x40875730,len:0x16f4
+[16:17:39.077]load:0x4086b910,len:0xed0
+[16:17:39.077]load:0x4086e610,len:0x3190
+[16:17:39.077]entry 0x4086b910
+[16:17:39.089]I (24) boot: ESP-IDF 5.5.4 2nd stage bootloader
+[16:17:39.089]I (24) boot: compile time May 21 2026 16:06:02
+[16:17:39.100]I (25) boot: chip revision: v0.2
+[16:17:39.100]I (25) boot: efuse block revision: v0.3
+[16:17:39.100]I (27) boot.esp32c6: SPI Speed      : 80MHz
+[16:17:39.111]I (31) boot.esp32c6: SPI Mode       : DIO
+[16:17:39.111]I (35) boot.esp32c6: SPI Flash Size : 4MB
+[16:17:39.111]I (39) boot: Enabling RNG early entropy source...
+[16:17:39.122]I (43) boot: Partition Table:
+[16:17:39.122]I (46) boot: ## Label            Usage          Type ST Offset   Length
+[16:17:39.133]I (52) boot:  0 otadata          OTA data         01 00 00009000 00002000
+[16:17:39.133]I (59) boot:  1 phy_init         RF data          01 01 0000b000 00001000
+[16:17:39.144]I (65) boot:  2 app0             OTA app          00 10 00010000 001c0000
+[16:17:39.144]I (72) boot:  3 app1             OTA app          00 11 001d0000 001c0000
+[16:17:39.155]I (78) boot:  4 nvs              WiFi data        01 02 00390000 00070000
+[16:17:39.155]I (85) boot: End of partition table
+[16:17:39.161]I (88) esp_image: segment 0: paddr=00010020 vaddr=42070020 size=16534h ( 91444) map
+[16:17:39.175]I (113) esp_image: segment 1: paddr=0002655c vaddr=40800000 size=09abch ( 39612) load
+[16:17:39.183]I (122) esp_image: segment 2: paddr=00030020 vaddr=42000020 size=6e9f4h (453108) map
+[16:17:39.274]I (209) esp_image: segment 3: paddr=0009ea1c vaddr=40809abc size=03700h ( 14080) load
+[16:17:39.285]I (213) esp_image: segment 4: paddr=000a2124 vaddr=4080d1c0 size=02a68h ( 10856) load
+[16:17:39.285]I (219) boot: Loaded app from partition at offset 0x10000
+[16:17:39.288]I (220) boot: Disabling RNG early entropy source...
+[16:17:39.328][I][logger:120]: Log initialized
+[16:17:39.328][I][app:067]: Running through setup()
+[16:17:39.339][V][app:068]: Sorting components by setup priority
+[16:17:39.339][V][component:236]: Setup logger
+[16:17:39.339][V][component:248]: Setup logger took 0ms
+[16:17:39.350][V][component:236]: Setup preferences
+[16:17:39.359][V][scheduler:217]: Scheduler interval for (null) is 60000ms, offset 1474ms
+[16:17:39.359][V][component:248]: Setup preferences took 0ms
+[16:17:39.359][V][component:236]: Setup openthread
+[16:17:39.428][C][component:246]: Setup openthread took 94ms
+[16:17:39.428][V][component:236]: Setup mdns
+[16:17:39.439][V][component:248]: Setup mdns took 0ms
+[16:17:39.439][V][component:236]: Setup openthread
+[16:17:39.442][D][openthread:157]: Setting up SRP services. count = 1
+[16:17:39.455][D][openthread:207]  Added service: _http._tcp
+[16:17:39.455][D][openthread:211]: Finished SRP setup
+[16:17:40.358][V][component:248]ESP-ROM:esp32c6-20220919
+[16:17:40.358]Build:Sep 19 2022
+[16:17:40.358]rst:0x8 (TG1_WDT_HPSYS),boot:0xc (SPI_FAST_FLASH_BOOT)
+[16:17:40.358]Saved PC:0x40001010
+[16:17:40.368]SPIWP:0xee
+[16:17:40.368]mode:DIO, clock div:2
+[16:17:40.368]load:0x40875730,len:0x16f4
+[16:17:40.368]load:0x4086b910,len:0xed0
+[16:17:40.368]load:0x4086e610,len:0x3190
+[16:17:40.368]entry 0x4086b910
+[16:17:40.380]I (24) boot: ESP-IDF 5.5.4 2nd stage bootloader
+[16:17:40.380]I (24) boot: compile time May 21 2026 16:06:02
+[16:17:40.391]I (25) boot: chip revision: v0.2
+[16:17:40.391]I (25) boot: efuse block revision: v0.3
+[16:17:40.391]I (28) boot.esp32c6: SPI Speed      : 80MHz
+[16:17:40.402]I (32) boot.esp32c6: SPI Mode       : DIO
+[16:17:40.402]I (35) boot.esp32c6: SPI Flash Size : 4MB
+[16:17:40.402]W (39) boot.esp32c6: PRO CPU has been reset by WDT.
+[16:17:40.413]I (44) boot: Enabling RNG early entropy source...
+[16:17:40.413]I (48) boot: Partition Table:
+[16:17:40.413]I (51) boot: ## Label            Usage          Type ST Offset   Length
+[16:17:40.425]I (57) boot:  0 otadata          OTA data         01 00 00009000 00002000
+[16:17:40.435]I (64) boot:  1 phy_init         RF data          01 01 0000b000 00001000
+[16:17:40.435]I (70) boot:  2 app0             OTA app          00 10 00010000 001c0000
+[16:17:40.447]I (77) boot:  3 app1             OTA app          00 11 001d0000 001c0000
+[16:17:40.447]I (83) boot:  4 nvs              WiFi data        01 02 00390000 00070000
+[16:17:40.457]I (90) boot: End of partition table
+[16:17:40.457]I (93) esp_image: segment 0: paddr=00010020 vaddr=42070020 size=16534h ( 91444) map
+[16:17:40.471]I (118) esp_image: segment 1: paddr=0002655c vaddr=40800000 size=09abch ( 39612) load
+[16:17:40.480]I (127) esp_image: segment 2: paddr=00030020 vaddr=42000020 size=6e9f4h (453108) map
+[16:17:40.571]I (214) esp_image: segment 3: paddr=0009ea1c vaddr=40809abc size=03700h ( 14080) load
+[16:17:40.582]I (218) esp_image: segment 4: paddr=000a2124 vaddr=4080d1c0 size=02a68h ( 10856) load
+[16:17:40.582]I (224) boot: Loaded app from partition at offset 0x10000
+[16:17:40.584]I (225) boot: Disabling RNG early entropy source...
+[16:17:40.624][I][logger:120]: Log initialized
+[16:17:40.624][I][app:067]: Running through setup()
+[16:17:40.635][V][app:068]: Sorting components by setup priority
+[16:17:40.635][V][component:236]: Setup logger
+[16:17:40.635][V][component:248]: Setup logger took 0ms
+[16:17:40.647][V][component:236]: Setup preferences
+[16:17:40.656][V][scheduler:217]: Scheduler interval for (null) is 60000ms, offset 176ms
+[16:17:40.656][V][component:248]: Setup preferences took 0ms
+[16:17:40.656][V][component:236]: Setup openthread
+[16:17:40.728][C][component:246]: Setup openthread took 97ms
+[16:17:40.728][V][component:236]: Setup mdns
+[16:17:40.735][V][component:248]: Setup mdns took 0ms
+[16:17:40.735][V][component:236]: Setup openthread
+[16:17:41.654][D][openthr\xe5  ESP-ROM:esp32c6-20220919
+[16:17:41.654]Build:Sep 19 2022
+[16:17:41.654]rst:0x8 (TG1_WDT_HPSYS),boot:0xc (SPI_FAST_FLASH_BOOT)
+[16:17:41.654]Saved PC:0x40803e72
+WARNING Decoded 0x40803e72: rv_utils_wait_for_intr at /home/ewout/.platformio/packages/framework-espidf/components/riscv/include/riscv/rv_utils.h:79
+ (inlined by) esp_cpu_wait_for_intr at /home/ewout/.platformio/packages/framework-espidf/components/esp_hw_support/cpu.c:62
+[16:17:41.979]SPIWP:0xee
+[16:17:41.979]mode:DIO, clock div:2
+[16:17:41.979]load:0x40875730,len:0x16f4
+[16:17:41.979]load:0x4086b910,len:0xed0
+[16:17:41.979]load:0x4086e610,len:0x3190
+[16:17:41.979]entry 0x4086b910
+[16:17:41.979]I (24) boot: ESP-IDF 5.5.4 2nd stage bootloader
+[16:17:41.979]I (24) boot: compile time May 21 2026 16:06:02
+[16:17:41.979]I (25) boot: chip revision: v0.2
+[16:17:41.979]I (25) boot: efuse block revision: v0.3
+[16:17:41.979]I (28) boot.esp32c6: SPI Speed      : 80MHz
+[16:17:41.979]I (32) boot.esp32c6: SPI Mode       : DIO
+[16:17:41.979]I (35) boot.esp32c6: SPI Flash Size : 4MB
+[16:17:41.979]W (39) boot.esp32c6: PRO CPU has been reset by WDT.
+[16:17:41.979]I (44) boot: Enabling RNG early entropy source...
+[16:17:41.979]I (48) boot: Partition Table:
+[16:17:41.979]I (51) boot: ## Label            Usage          Type ST Offset   Length
+[16:17:41.979]I (57) boot:  0 otadata          OTA data         01 00 00009000 00002000
+[16:17:41.979]I (64) boot:  1 phy_init         RF data          01 01 0000b000 00001000
+[16:17:41.979]I (70) boot:  2 app0             OTA app          00 10 00010000 001c0000
+[16:17:41.979]I (77) boot:  3 app1             OTA app          00 11 001d0000 001c0000
+[16:17:41.979]I (83) boot:  4 nvs              WiFi data        01 02 00390000 00070000
+[16:17:41.979]I (90) boot: End of partition table
+[16:17:41.979]I (93) esp_image: segment 0: paddr=00010020 vaddr=42070020 size=16534h ( 91444) map
+[16:17:41.979]I (118) esp_image: segment 1: paddr=0002655c vaddr=40800000 size=09abch ( 39612) load
+[16:17:41.979]I (127) esp_image: segment 2: paddr=00030020 vaddr=42000020 size=6e9f4h (453108) map
+[16:17:41.979]I (214) esp_image: segment 3: paddr=0009ea1c vaddr=40809abc size=03700h ( 14080) load
+[16:17:41.979]I (218) esp_image: segment 4: paddr=000a2124 vaddr=4080d1c0 size=02a68h ( 10856) load
+[16:17:41.979]I (224) boot: Loaded app from partition at offset 0x10000
+[16:17:41.979]I (225) boot: Disabling RNG early entropy source...
+[16:17:41.979][I][logger:120]: Log initialized
+[16:17:41.979][I][app:067]: Running through setup()
+[16:17:41.979][V][app:068]: Sorting components by setup priority
+[16:17:41.979][V][component:236]: Setup logger
+[16:17:41.979][V][component:248]: Setup logger took 0ms
+[16:17:41.979][V][component:236]: Setup preferences
+[16:17:41.979][V][scheduler:217]: Scheduler interval for (null) is 60000ms, offset 834ms
+[16:17:41.979][V][component:248]: Setup preferences took 0ms
+[16:17:41.979][V][component:236]: Setup openthread
+[16:17:46.921]E (5292) task_wdt: Task watchdog got triggered. The following tasks/users did not reset the watchdog in time:
+[16:17:46.932]E (5292) task_wdt:  - loopTask (CPU 0)
+[16:17:46.932]E (5292) task_wdt: Tasks currently running:
+[16:17:46.932]E (5292) task_wdt: CPU 0: ot_main
+[16:17:46.938]E (5292) task_wdt: Aborting.
+[16:17:46.938]E (5292) task_wdt: Print CPU 0 (current core) registers
+
+
+[16:17:46.988]Core  0 register dump:
+[16:17:46.988]MEPC    : 0x40004408  RA      : 0x408028fe  SP      : 0x40822550  GP      : 0x4080d9c4  
+[16:17:46.999]TP      : 0x40822860  T0      : 0x00fe00f2  T1      : 0x4205f38e  T2      : 0x00fe00f3  
+[16:17:47.010]S0/FP   : 0x40816000  S1      : 0x00000000  A0      : 0x00000010  A1      : 0x0001fffc  
+[16:17:47.021]A2      : 0x5ffa8013  A3      : 0x600a1000  A4      : 0xc0000a50  A5      : 0x600a1000  
+[16:17:47.021]A6      : 0x40004160  A7      : 0x00fe00f1  S2      : 0x40822bb8  S3      : 0x00000000  
+[16:17:47.032]S4      : 0x4082332c  S5      : 0x00000000  S6      : 0x0007e1ff  S7      : 0x00000000  
+[16:17:47.043]S8      : 0x00000000  S9      : 0x00000000  S10     : 0x00000000  S11     : 0x00000000  
+[16:17:47.043]T3      : 0x010100f1  T4      : 0x00ff00f3  T5      : 0x010200f2  T6      : 0x00fe00fa  
+[16:17:47.055]MSTATUS : 0x40822bb8  MTVEC   : 0x00000000  MCAUSE  : 0x4080d6cc  MTVAL   : 0x4205e954  
+[16:17:47.055]MHARTID : 0x40822bb8  
+
+[16:17:47.055]Stack memory:
+[16:17:47.066]40822550: 0x40822bb8 0x00000000 0x4080d6cc 0x4205e954 0x40822bb8 0x00000000 0x4080d6cc 0x4205f2bc
+[16:17:47.077]40822570: 0x00000000 0x00000000 0x010200fa 0x01000100 0x010100f9 0x01000100 0x00ff00f8 0x01000100
+[16:17:47.088]40822590: 0x010500f3 0x01000100 0x010300f2 0x01000100 0x00fe0101 0x01000100 0x00000000 0x00000000
+[16:17:47.088]408225b0: 0x00000000 0x00000000 0x0000006b 0x00000084 0x00000000 0x0e0b0000 0x0d090813 0x05010501
+[16:17:47.099]408225d0: 0x00000301 0x00f72600 0x00f600fd 0x420000fc 0x5454000a 0x4c505050 0x484c4c4c 0x3c3c3c44
+[16:17:47.110]408225f0: 0x484c4c4c 0x00000000 0x00000000 0x00000000 0x00000000 0x00000000 0x00000000 0x00000000
+[16:17:47.121]40822610: 0x00000000 0x00000000 0x00000000 0x00000000 0x00000000 0x00000000 0x00000000 0x00000000
+[16:17:47.132]40822630: 0x00000000 0x00000000 0x00000000 0x00000000 0x00000000 0x00000000 0x00000000 0x00000000
+[16:17:47.132]40822650: 0x00000000 0x00000000 0x00000000 0x00000000 0x00000000 0x00000000 0x00000000 0x00000000
+[16:17:47.143]40822670: 0x00000003 0x4082332c 0x40822bb8 0x4206a96e 0x40817000 0x40822874 0xff818c58 0xc4b05dfe
+[16:17:47.155]40822690: 0x40817000 0x00000000 0x00000000 0x40811ab0 0x40817000 0x40817000 0x00000004 0x408055de
+[16:17:47.166]408226b0: 0x00000001 0x40822734 0x00000000 0x40803d40 0x00000000 0x00000000 0x00000000 0x4206dfa2
+[16:17:47.166]408226d0: 0x00000001 0x40822734 0x00000000 0x4202bccc 0x00000001 0x40822734 0x00000000 0x4202b532
+[16:17:47.177]408226f0: 0xa5a5a5a5 0xa5a5a5a5 0xa5a5a5a5 0x00000000 0x00000000 0x00000000 0x4080fd38 0x42029c30
+[16:17:47.188]40822710: 0xa5a5a5a5 0xa5a5a5a5 0x4080fd38 0x42001e6c 0xa5a5a5a5 0xa5a5a5a5 0xa5a5a5a5 0xa5a5a5a5
+[16:17:47.199]40822730: 0xa5a5a5a5 0x00000000 0x00000000 0x00000000 0x00000000 0x00000000 0x00000000 0x00000000
+[16:17:47.210]40822750: 0x00000000 0x00000000 0x00000000 0x00000000 0x00000000 0x00000000 0x00000000 0x00000000
+[16:17:47.211]40822770: 0x00000000 0x00000000 0x00000000 0x00000000 0x00000000 0x00000000 0x00000000 0x00000000
+[16:17:47.221]40822790: 0x00000000 0x00000000 0x00000000 0x00000000 0x00000000 0x00000000 0x00000000 0x00000000
+[16:17:47.232]408227b0: 0x00000000 0x00000000 0x00000000 0x00000000 0x00000000 0x00000000 0x00000000 0x00000000
+[16:17:47.243]408227d0: 0x00000000 0x00000000 0x00000000 0x00000000 0x00000000 0x00000000 0x00000000 0x00000000
+[16:17:47.243]408227f0: 0x00000000 0x00000000 0x00000000 0x00000000 0x00000000 0x00000000 0x42070cc0 0x00000a0a
+[16:17:47.255]40822810: 0x00000000 0x00000000 0x00000000 0x00000000 0x00000000 0x00000000 0x00000000 0x420020cc
+[16:17:47.266]40822830: 0x00000000 0x00000000 0x00000000 0x00000000 0x00000000 0x00000000 0x00000000 0x00000000
+[16:17:47.277]40822850: 0x00000000 0xa5a5a5a5 0xa5a5a5a5 0xa5a5a5a5 0xa5a5a5a5 0xa5a5a5a5 0xa5a5a5a5 0xa5a5a5a5
+[16:17:47.277]40822870: 0x00000150 0x408224d0 0x00000000 0x40810538 0x40810538 0x40822874 0x40810530 0x00000014
+[16:17:47.288]40822890: 0x00000000 0x00000000 0x40822874 0x00000000 0x00000005 0x40820070 0x6d5f746f 0x006e6961
+[16:17:47.299]408228b0: 0x00000000 0x00000000 0x40822860 0x00000005 0x00000001 0x00000000 0x00000000 0x00000000
+[16:17:47.310]408228d0: 0x40817828 0x40817890 0x408178f8 0x00000000 0x00000000 0x00000001 0x00000000 0x00000000
+[16:17:47.321]408228f0: 0x00000000 0x42026206 0x00000000 0x00000000 0x00000000 0x00000000 0x00000000 0x00000000
+[16:17:47.321]40822910: 0x00000000 0x00000000 0x00000000 0x00000000 0x00000000 0x00000000 0x00000000 0x00000000
+[16:17:47.332]40822930: 0x00000000 0x00000000 0x00000000 0x00000000 0x00000000 0x00000000 0x00000000 0x00000000
+
+
+
+[16:17:47.332]ELF file SHA256: 2925ecf56
+
+[16:17:47.332]Rebooting...
+[16:17:47.349]ESP-ROM:esp32c6-20220919
+[16:17:47.349]Build:Sep 19 2022
+[16:17:47.349]rst:0xc (SW_CPU),boot:0xc (SPI_FAST_FLASH_BOOT)
+[16:17:47.349]Saved PC:0x4001975a
+[16:17:47.349]SPIWP:0xee
+[16:17:47.359]mode:DIO, clock div:2
+[16:17:47.359]load:0x40875730,len:0x16f4
+[16:17:47.359]load:0x4086b910,len:0xed0
+[16:17:47.359]load:0x4086e610,len:0x3190
+[16:17:47.359]entry 0x4086b910
+[16:17:47.370]I (26) boot: ESP-IDF 5.5.4 2nd stage bootloader
+[16:17:47.370]I (27) boot: compile time May 21 2026 16:06:02
+[16:17:47.382]I (28) boot: chip revision: v0.2
+[16:17:47.382]I (29) boot: efuse block revision: v0.3
+[16:17:47.382]I (30) boot.esp32c6: SPI Speed      : 80MHz
+[16:17:47.393]I (34) boot.esp32c6: SPI Mode       : DIO
+[16:17:47.393]I (38) boot.esp32c6: SPI Flash Size : 4MB
+[16:17:47.393]I (42) boot: Enabling RNG early entropy source...
+[16:17:47.404]I (46) boot: Partition Table:
+[16:17:47.404]I (49) boot: ## Label            Usage          Type ST Offset   Length
+[16:17:47.415]I (55) boot:  0 otadata          OTA data         01 00 00009000 00002000
+[16:17:47.415]I (62) boot:  1 phy_init         RF data          01 01 0000b000 00001000
+[16:17:47.426]I (68) boot:  2 app0             OTA app          00 10 00010000 001c0000
+[16:17:47.426]I (75) boot:  3 app1             OTA app          00 11 001d0000 001c0000
+[16:17:47.437]I (81) boot:  4 nvs              WiFi data        01 02 00390000 00070000
+[16:17:47.437]I (88) boot: End of partition table
+[16:17:47.442]I (91) esp_image: segment 0: paddr=00010020 vaddr=42070020 size=16534h ( 91444) map
+[16:17:47.474]I (133) esp_image: segment 1: paddr=0002655c vaddr=40800000 size=09abch ( 39612) load
+[16:17:47.492]I (151) esp_image: segment 2: paddr=00030020 vaddr=42000020 size=6e9f4h (453108) map
+[16:17:47.667]I (323) esp_image: segment 3: paddr=0009ea1c vaddr=40809abc size=03700h ( 14080) load
+[16:17:47.671]I (330) esp_image: segment 4: paddr=000a2124 vaddr=4080d1c0 size=02a68h ( 10856) load
+[16:17:47.685]I (343) boot: Loaded app from partition at offset 0x10000
+[16:17:47.685]I (343) boot: Disabling RNG early entropy source...
+[16:17:47.726][I][logger:120]: Log initialized
+[16:17:47.726][I][app:067]: Running through setup()
+[16:17:47.737][V][app:068]: Sorting components by setup priority
+[16:17:47.737][V][component:236]: Setup logger
+[16:17:47.737][V][component:248]: Setup logger took 0ms
+[16:17:47.748][V][component:236]: Setup preferences
+[16:17:47.758][V][scheduler:217]: Scheduler interval for (null) is 60000ms, offset 3051ms
+[16:17:47.758][V][component:248]: Setup preferences took 0ms
+[16:17:47.758][V][component:236]: Setup openthread
+[16:17:47.841][C][component:246]: Setup openthread took 96ms
+[16:17:47.856][V][com  onent:236]: Setup mdns
+[16:17:47.856][V][component:248]: Setup mdns took 0ms
+[16:17:48.757][V][component:236]: Setup openthreadSP-ROM:esp32c6-20220919
+[16:17:48.757]Build:Sep 19 2022
+[16:17:48.757]rst:0x8 (TG1_WDT_HPSYS),boot:0xc (SPI_FAST_FLASH_BOOT)
+[16:17:48.757]Saved PC:0x40001680
+[16:17:48.769]SPIWP:0xee
+[16:17:48.769]mode:DIO, clock div:2
+[16:17:48.769]load:0x40875730,len:0x16f4
+[16:17:48.769]load:0x4086b910,len:0xed0
+[16:17:48.769]load:0x4086e610,len:0x3190
+[16:17:48.780]entry 0x4086b910
+[16:17:48.780]I (24) boot: ESP-IDF 5.5.4 2nd stage bootloader
+[16:17:48.780]I (24) boot: compile time May 21 2026 16:06:02
+[16:17:48.791]I (25) boot: chip revision: v0.2
+[16:17:48.791]I (25) boot: efuse block revision: v0.3
+[16:17:48.791]I (31) boot.esp32c6: SPI Speed      : 80MHz
+[16:17:48.802]I (39) boot.esp32c6: SPI Mode       : DIO
+[16:17:48.802]I (47) boot.esp32c6: SPI Flash Size : 4MB
+[16:17:48.802]W (54) boot.esp32c6: PRO CPU has been reset by WDT.
+[16:17:48.813]I (63) boot: Enabling RNG early entropy source...
+[16:17:48.813]I (72) boot: Partition Table:
+[16:17:48.813]I (78) boot: ## Label            Usage          Type ST Offset   Length
+[16:17:48.824]I (90) boot:  0 otadata          OTA data         01 00 00009000 00002000
+[16:17:48.835]I (103) boot:  1 phy_init         RF data          01 01 0000b000 00001000
+[16:17:48.835]I (116) boot:  2 app0             OTA app          00 10 00010000 001c0000
+[16:17:48.847]I (130) boot:  3 app1             OTA app          00 11 001d0000 001c0000
+[16:17:48.847]I (143) boot:  4 nvs              WiFi data        01 02 00390000 00070000
+[16:17:48.857]I (156) boot: End of partition table
+[16:17:48.857]I (163) esp_image: segment 0: paddr=00010020 vaddr=42070020 size=16534h ( 91444) map
+[16:17:48.869]I (202) esp_image: segment 1: paddr=0002655c vaddr=40800000 size=09abch ( 39612) load
+[16:17:48.873]I (214) esp_image: segment 2: paddr=00030020 vaddr=42000020 size=6e9f4h (453108) map
+[16:17:48.934]I (331) esp_image: segment 3: paddr=0009ea1c vaddr=40809abc size=03700h ( 14080) load
+[16:17:48.945]I (336) esp_image: segment 4: paddr=000a2124 vaddr=4080d1c0 size=02a68h ( 10856) load
+[16:17:48.945]I (346) boot: Loaded app from partition at offset 0x10000
+[16:17:48.948]I (349) boot: Disabling RNG early entropy source...
+[16:17:56.723]ESP-ROM:esp32c6-20220919
+[16:17:56.737]Build:Sep 19 2022
+[16:17:56.737]rst:0x10 (LP_WDT_SYS),boot:0xc (SPI_FAST_FLASH_BOOT)
+[16:17:56.737]SPIWP:0xee
+[16:17:56.737]mode:DIO, clock div:2
+[16:17:56.745]load:0x40875730,len:0x16f4
+[16:17:56.745]load:0x4086b910,len:0xed0
+[16:17:56.745]load:0x4086e610,len:0x3190
+[16:17:56.745]entry 0x4086b910
+[16:17:56.756]I (24) boot: ESP-IDF 5.5.4 2nd stage bootloader
+[16:17:56.756]I (24) boot: compile time May 21 2026 16:06:02
+[16:17:56.767]I (25) boot: chip revision: v0.2
+[16:17:56.767]I (25) boot: efuse block revision: v0.3
+[16:17:56.767]I (27) boot.esp32c6: SPI Speed      : 80MHz
+[16:17:56.778]I (31) boot.esp32c6: SPI Mode       : DIO
+[16:17:56.778]I (35) boot.esp32c6: SPI Flash Size : 4MB
+[16:17:56.778]I (39) boot: Enabling RNG early entropy source...
+[16:17:56.789]I (43) boot: Partition Table:
+[16:17:56.789]I (46) boot: ## Label            Usage          Type ST Offset   Length
+[16:17:56.800]I (52) boot:  0 otadata          OTA data         01 00 00009000 00002000
+[16:17:56.800]I (59) boot:  1 phy_init         RF data          01 01 0000b000 00001000
+[16:17:56.812]I (65) boot:  2 app0             OTA app          00 10 00010000 001c0000
+[16:17:56.812]I (72) boot:  3 app1             OTA app          00 11 001d0000 001c0000
+[16:17:56.823]I (78) boot:  4 nvs              WiFi data        01 02 00390000 00070000
+[16:17:56.823]I (85) boot: End of partition table
+[16:17:56.828]I (88) esp_image: segment 0: paddr=00010020 vaddr=42070020 size=16534h ( 91444) map
+[16:17:56.842]I (113) esp_image: segment 1: paddr=0002655c vaddr=40800000 size=09abch ( 39612) load
+[16:17:56.851]I (122) esp_image: segment 2: paddr=00030020 vaddr=42000020 size=6e9f4h (453108) map
+[16:17:56.942]I (209) esp_image: segment 3: paddr=0009ea1c vaddr=40809abc size=03700h ( 14080) load
+[16:17:56.953]I (213) esp_image: segment 4: paddr=000a2124 vaddr=4080d1c0 size=02a68h ( 10856) load
+[16:17:56.953]I (219) boot: Loaded app from partition at offset 0x10000
+[16:17:56.955]I (220) boot: Disabling RNG early entropy source...
+[16:17:56.995][I][logger:120]: Log initialized
+[16:17:56.995][I][app:067]: Running through setup()
+[16:17:57.006][V][app:068]: Sorting components by setup priority
+[16:17:57.006][V][component:236]: Setup logger
+[16:17:57.006][V][component:248]: Setup logger took 0ms
+[16:17:57.018][V][component:236]: Setup preferences
+[16:17:57.027][V][scheduler:217]: Scheduler interval for (null) is 60000ms, offset 8ms
+[16:17:57.027][V][component:248]: Setup preferences took 0ms
+[16:17:57.027][V][component:236]: Setup openthread
+[16:17:57.111][C][c\xff@[\xbd\xb9\x95\xb9\xd1\xe9246]: Setup openthread took 97ms
+[16:17:57.111][V][component:236]: Setup mdns
+[16:17:58.013][V][component:248]: SetupESP-ROM:esp32c6-20220919
+[16:17:58.013]Build:Sep 19 2022
+[16:17:58.013]rst:0x8 (TG1_WDT_HPSYS),boot:0xc (SPI_FAST_FLASH_BOOT)
+[16:17:58.013]Saved PC:0x40803e72
+WARNING Decoded 0x40803e72: rv_utils_wait_for_intr at /home/ewout/.platformio/packages/framework-espidf/components/riscv/include/riscv/rv_utils.h:79
+ (inlined by) esp_cpu_wait_for_intr at /home/ewout/.platformio/packages/framework-espidf/components/esp_hw_support/cpu.c:62
+[16:17:58.338]SPIWP:0xee
+[16:17:58.338]mode:DIO, clock div:2
+[16:17:58.338]load:0x40875730,len:0x16f4
+[16:17:58.338]load:0x4086b910,len:0xed0
+[16:17:58.338]load:0x4086e610,len:0x3190
+[16:17:58.338]entry 0x4086b910
+[16:17:58.338]I (24) boot: ESP-IDF 5.5.4 2nd stage bootloader
+[16:17:58.338]I (24) boot: compile time May 21 2026 16:06:02
+[16:17:58.338]I (25) boot: chip revision: v0.2
+[16:17:58.338]I (25) boot: efuse block revision: v0.3
+[16:17:58.338]I (31) boot.esp32c6: SPI Speed      : 80MHz
+[16:17:58.338]I (39) boot.esp32c6: SPI Mode       : DIO
+[16:17:58.338]I (47) boot.esp32c6: SPI Flash Size : 4MB
+[16:17:58.338]W (54) boot.esp32c6: PRO CPU has been reset by WDT.
+[16:17:58.338]I (63) boot: Enabling RNG early entropy source...
+[16:17:58.338]I (72) boot: Partition Table:
+[16:17:58.338]I (78) boot: ## Label            Usage          Type ST Offset   Length
+[16:17:58.338]I (90) boot:  0 otadata          OTA data         01 00 00009000 00002000
+[16:17:58.338]I (103) boot:  1 phy_init         RF data          01 01 0000b000 00001000
+[16:17:58.338]I (116) boot:  2 app0             OTA app          00 10 00010000 001c0000
+[16:17:58.338]I (130) boot:  3 app1             OTA app          00 11 001d0000 001c0000
+[16:17:58.338]I (143) boot:  4 nvs              WiFi data        01 02 00390000 00070000
+[16:17:58.338]I (156) boot: End of partition table
+[16:17:58.338]I (163) esp_image: segment 0: paddr=00010020 vaddr=42070020 size=16534h ( 91444) map
+[16:17:58.338]I (202) esp_image: segment 1: paddr=0002655c vaddr=40800000 size=09abch ( 39612) load
+[16:17:58.338]I (214) esp_image: segment 2: paddr=00030020 vaddr=42000020 size=6e9f4h (453108) map
+[16:17:58.338]I (331) esp_image: segment 3: paddr=0009ea1c vaddr=40809abc size=03700h ( 14080) load
+[16:17:58.338]I (336) esp_image: segment 4: paddr=000a2124 vaddr=4080d1c0 size=02a68h ( 10856) load
+[16:17:58.338]I (346) boot: Loaded app from partition at offset 0x10000
+[16:17:58.338]I (349) boot: Disabling RNG early entropy source...
+[16:18:05.886]ESP-ROM:esp32c6-20220919
+[16:18:05.900]Build:Sep 19 2022
+[16:18:05.900]rst:0x10 (LP_WDT_SYS),boot:0xc (SPI_FAST_FLASH_BOOT)
+[16:18:05.900]SPIWP:0xee
+[16:18:05.900]mode:DIO, clock div:2
+[16:18:05.907]load:0x40875730,len:0x16f4
+[16:18:05.907]load:0x4086b910,len:0xed0
+[16:18:05.907]load:0x4086e610,len:0x3190
+[16:18:05.907]entry 0x4086b910
+[16:18:05.918]I (24) boot: ESP-IDF 5.5.4 2nd stage bootloader
+[16:18:05.918]I (24) boot: compile time May 21 2026 16:06:02
+[16:18:05.929]I (25) boot: chip revision: v0.2
+[16:18:05.929]I (25) boot: efuse block revision: v0.3
+[16:18:05.929]I (27) boot.esp32c6: SPI Speed      : 80MHz
+[16:18:05.941]I (31) boot.esp32c6: SPI Mode       : DIO
+[16:18:05.941]I (35) boot.esp32c6: SPI Flash Size : 4MB
+[16:18:05.941]I (39) boot: Enabling RNG early entropy source...
+[16:18:05.952]I (43) boot: Partition Table:
+[16:18:05.952]I (46) boot: ## Label            Usage          Type ST Offset   Length
+[16:18:05.963]I (52) boot:  0 otadata          OTA data         01 00 00009000 00002000
+[16:18:05.963]I (59) boot:  1 phy_init         RF data          01 01 0000b000 00001000
+[16:18:05.974]I (65) boot:  2 app0             OTA app          00 10 00010000 001c0000
+[16:18:05.974]I (72) boot:  3 app1             OTA app          00 11 001d0000 001c0000
+[16:18:05.985]I (78) boot:  4 nvs              WiFi data        01 02 00390000 00070000
+[16:18:05.985]I (85) boot: End of partition table
+[16:18:05.990]I (88) esp_image: segment 0: paddr=00010020 vaddr=42070020 size=16534h ( 91444) map
+[16:18:06.004]I (113) esp_image: segment 1: paddr=0002655c vaddr=40800000 size=09abch ( 39612) load
+[16:18:06.013]I (122) esp_image: segment 2: paddr=00030020 vaddr=42000020 size=6e9f4h (453108) map
+[16:18:06.104]I (209) esp_image: segment 3: paddr=0009ea1c vaddr=40809abc size=03700h ( 14080) load
+[16:18:06.115]I (213) esp_image: segment 4: paddr=000a2124 vaddr=4080d1c0 size=02a68h ( 10856) load
+[16:18:06.115]I (219) boot: Loaded app from partition at offset 0x10000
+[16:18:06.118]I (220) boot: Disabling RNG early entropy source...
+[16:18:06.158][I][logger:120]: Log initialized
+[16:18:06.158][I][app:067]: Running through setup()
+[16:18:06.169][V][app:068]: Sorting components by setup priority
+[16:18:06.169][V][component:236]: Setup logger
+[16:18:06.169][V][component:248]: Setup logger took 0ms
+[16:18:06.180][V][component:236]: Setup preferences
+[16:18:06.190][V][scheduler:217]: Scheduler interval for (null) is 60000ms, offset 4637ms
+[16:18:06.190][V][component:248]: Setup preferences took 0ms
+[16:18:06.190][V][component:236]: Setup openthread
+[16:18:06.273][C][component:246]: Setup openthread took 98ms
+[16:18:06.273][V][component:236]: Setup mdns
+[16:18:06.276][V][component:248]: Setup mdns took 0ms
+[16:18:07.187][0{;ESP-ROM:esp32c6-20220919
+[16:18:07.187]Build:Sep 19 2022
+[16:18:07.187]rst:0x8 (TG1_WDT_HPSYS),boot:0xc (SPI_FAST_FLASH_BOOT)
+[16:18:07.187]Saved PC:0x40000000
+[16:18:07.198]SPIWP:0xee
+[16:18:07.198]mode:DIO, clock div:2
+[16:18:07.198]load:0x40875730,len:0x16f4
+[16:18:07.198]load:0x4086b910,len:0xed0
+[16:18:07.198]load:0x4086e610,len:0x3190
+[16:18:07.198]entry 0x4086b910
+[16:18:07.210]I (24) boot: ESP-IDF 5.5.4 2nd stage bootloader
+[16:18:07.210]I (24) boot: compile time May 21 2026 16:06:02
+[16:18:07.221]I (25) boot: chip revision: v0.2
+[16:18:07.221]I (25) boot: efuse block revision: v0.3
+[16:18:07.221]I (31) boot.esp32c6: SPI Speed      : 80MHz
+[16:18:07.232]I (39) boot.esp32c6: SPI Mode       : DIO
+[16:18:07.232]I (47) boot.esp32c6: SPI Flash Size : 4MB
+[16:18:07.232]W (54) boot.esp32c6: PRO CPU has been reset by WDT.
+[16:18:07.243]I (63) boot: Enabling RNG early entropy source...
+[16:18:07.243]I (72) boot: Partition Table:
+[16:18:07.243]I (78) boot: ## Label            Usage          Type ST Offset   Length
+[16:18:07.254]I (90) boot:  0 otadata          OTA data         01 00 00009000 00002000
+[16:18:07.265]I (103) boot:  1 phy_init         RF data          01 01 0000b000 00001000
+[16:18:07.265]I (116) boot:  2 app0             OTA app          00 10 00010000 001c0000
+[16:18:07.276]I (130) boot:  3 app1             OTA app          00 11 001d0000 001c0000
+[16:18:07.276]I (143) boot:  4 nvs              WiFi data        01 02 00390000 00070000
+[16:18:07.287]I (156) boot: End of partition table
+[16:18:07.287]I (163) esp_image: segment 0: paddr=00010020 vaddr=42070020 size=16534h ( 91444) map
+[16:18:07.299]I (202) esp_image: segment 1: paddr=0002655c vaddr=40800000 size=09abch ( 39612) load
+[16:18:07.303]I (214) esp_image: segment 2: paddr=00030020 vaddr=42000020 size=6e9f4h (453108) map
+[16:18:07.363]I (331) esp_image: segment 3: paddr=0009ea1c vaddr=40809abc size=03700h ( 14080) load
+[16:18:07.375]I (336) esp_image: segment 4: paddr=000a2124 vaddr=4080d1c0 size=02a68h ( 10856) load
+[16:18:07.375]I (346) boot: Loaded app from partition at offset 0x10000
+[16:18:07.377]I (349) boot: Disabling RNG early entropy source...
+[16:18:15.048]ESP-ROM:esp32c6-20220919
+[16:18:15.062]Build:Sep 19 2022
+[16:18:15.062]rst:0x10 (LP_WDT_SYS),boot:0xc (SPI_FAST_FLASH_BOOT)
+[16:18:15.062]SPIWP:0xee
+[16:18:15.062]mode:DIO, clock div:2
+[16:18:15.069]load:0x40875730,len:0x16f4
+[16:18:15.069]load:0x4086b910,len:0xed0
+[16:18:15.069]load:0x4086e610,len:0x3190
+[16:18:15.069]entry 0x4086b910
+[16:18:15.080]I (24) boot: ESP-IDF 5.5.4 2nd stage bootloader
+[16:18:15.080]I (24) boot: compile time May 21 2026 16:06:02
+[16:18:15.091]I (25) boot: chip revision: v0.2
+[16:18:15.091]I (25) boot: efuse block revision: v0.3
+[16:18:15.091]I (27) boot.esp32c6: SPI Speed      : 80MHz
+[16:18:15.102]I (31) boot.esp32c6: SPI Mode       : DIO
+[16:18:15.102]I (35) boot.esp32c6: SPI Flash Size : 4MB
+[16:18:15.102]I (39) boot: Enabling RNG early entropy source...
+[16:18:15.113]I (43) boot: Partition Table:
+[16:18:15.113]I (46) boot: ## Label            Usage          Type ST Offset   Length
+[16:18:15.125]I (52) boot:  0 otadata          OTA data         01 00 00009000 00002000
+[16:18:15.125]I (59) boot:  1 phy_init         RF data          01 01 0000b000 00001000
+[16:18:15.136]I (65) boot:  2 app0             OTA app          00 10 00010000 001c0000
+[16:18:15.136]I (72) boot:  3 app1             OTA app          00 11 001d0000 001c0000
+[16:18:15.147]I (78) boot:  4 nvs              WiFi data        01 02 00390000 00070000
+[16:18:15.147]I (85) boot: End of partition table
+[16:18:15.152]I (88) esp_image: segment 0: paddr=00010020 vaddr=42070020 size=16534h ( 91444) map
+[16:18:15.166]I (113) esp_image: segment 1: paddr=0002655c vaddr=40800000 size=09abch ( 39612) load
+[16:18:15.175]I (122) esp_image: segment 2: paddr=00030020 vaddr=42000020 size=6e9f4h (453108) map
+[16:18:15.266]I (209) esp_image: segment 3: paddr=0009ea1c vaddr=40809abc size=03700h ( 14080) load
+[16:18:15.277]I (213) esp_image: segment 4: paddr=000a2124 vaddr=4080d1c0 size=02a68h ( 10856) load
+[16:18:15.277]I (219) boot: Loaded app from partition at offset 0x10000
+[16:18:15.280]I (220) boot: Disabling RNG early entropy source...
+[16:18:15.320][I][logger:120]: Log initialized
+[16:18:15.320][I][app:067]: Running through setup()
+[16:18:15.331][V][app:068]: Sorting components by setup priority
+[16:18:15.331][V][component:236]: Setup logger
+[16:18:15.331][V][component:248]: Setup logger took 0ms
+[16:18:15.342][V][component:236]: Setup preferences
+[16:18:15.351][V][scheduler:217]: Scheduler interval for (null) is 60000ms, offset 273ms
+[16:18:15.351][V][component:248]: Setup preferences took 0ms
+[16:18:15.351][V][component:236]: Setup openthread
+[16:18:15.416][C][component:246]: Setup openthread took 96ms
+[16:18:15.434][V][component:236]: Setup mdns
+[16:18:15.434][V][component:248]: Setup mdns took 0ms
+[16:18:15.443][V][component:236]: Setup openthread
+[16:18:15.443][D][openthread:157]: Setting up SRP services. count = 1
+[16:18:16.365][D][openthread:207\xc0  ESP-ROM:esp32c6-20220919
+[16:18:16.365]Build:Sep 19 2022
+[16:18:16.365]rst:0x8 (TG1_WDT_HPSYS),boot:0xc (SPI_FAST_FLASH_BOOT)
+[16:18:16.365]Saved PC:0x0000002c
+[16:18:16.377]SPIWP:0xee
+[16:18:16.377]mode:DIO, clock div:2
+[16:18:16.377]load:0x40875730,len:0x16f4
+[16:18:16.377]load:0x4086b910,len:0xed0
+[16:18:16.377]load:0x4086e610,len:0x3190
+[16:18:16.377]entry 0x4086b910
+[16:18:16.388]I (24) boot: ESP-IDF 5.5.4 2nd stage bootloader
+[16:18:16.388]I (24) boot: compile time May 21 2026 16:06:02
+[16:18:16.399]I (25) boot: chip revision: v0.2
+[16:18:16.399]I (25) boot: efuse block revision: v0.3
+[16:18:16.399]I (28) boot.esp32c6: SPI Speed      : 80MHz
+[16:18:16.410]I (32) boot.esp32c6: SPI Mode       : DIO
+[16:18:16.410]I (35) boot.esp32c6: SPI Flash Size : 4MB
+[16:18:16.410]W (39) boot.esp32c6: PRO CPU has been reset by WDT.
+[16:18:16.422]I (44) boot: Enabling RNG early entropy source...
+[16:18:16.422]I (48) boot: Partition Table:
+[16:18:16.422]I (51) boot: ## Label            Usage          Type ST Offset   Length
+[16:18:16.433]I (57) boot:  0 otadata          OTA data         01 00 00009000 00002000
+[16:18:16.444]I (64) boot:  1 phy_init         RF data          01 01 0000b000 00001000
+[16:18:16.444]I (70) boot:  2 app0             OTA app          00 10 00010000 001c0000
+[16:18:16.455]I (77) boot:  3 app1             OTA app          00 11 001d0000 001c0000
+[16:18:16.455]I (83) boot:  4 nvs              WiFi data        01 02 00390000 00070000
+[16:18:16.465]I (90) boot: End of partition table
+[16:18:16.465]I (93) esp_image: segment 0: paddr=00010020 vaddr=42070020 size=16534h ( 91444) map
+[16:18:16.479]I (118) esp_image: segment 1: paddr=0002655c vaddr=40800000 size=09abch ( 39612) load
+[16:18:16.488]I (127) esp_image: segment 2: paddr=00030020 vaddr=42000020 size=6e9f4h (453108) map
+[16:18:16.578]I (214) esp_image: segment 3: paddr=0009ea1c vaddr=40809abc size=03700h ( 14080) load
+[16:18:16.590]I (218) esp_image: segment 4: paddr=000a2124 vaddr=4080d1c0 size=02a68h ( 10856) load
+[16:18:16.590]I (224) boot: Loaded app from partition at offset 0x10000
+[16:18:16.592]I (225) boot: Disabling RNG early entropy source...
+[16:18:16.632][I][logger:120]: Log initialized
+[16:18:16.632][I][app:067]: Running through setup()
+[16:18:16.643][V][app:068]: Sorting components by setup priority
+[16:18:16.643][V][component:236]: Setup logger
+[16:18:16.643][V][component:248]: Setup logger took 0ms
+[16:18:16.654][V][component:236]: Setup preferences
+[16:18:16.664][V][scheduler:217]: Scheduler interval for (null) is 60000ms, offset 3225ms
+[16:18:16.664][V][component:248]: Setup preferences took 0ms
+[16:18:16.664][V][component:236]: Setup openthread
+[16:18:21.633]E (5292) task_wdt: Task watchdog got triggered. The following tasks/users did not reset the watchdog in time:
+[16:18:21.644]E (5292) task_wdt:  - loopTask (CPU 0)
+[16:18:21.644]E (5292) task_wdt: Tasks currently running:
+[16:18:21.644]E (5292) task_wdt: CPU 0: ot_main
+[16:18:21.650]E (5292) task_wdt: Aborting.
+[16:18:21.650]E (5292) task_wdt: Print CPU 0 (current core) registers
+
+
+[16:18:21.700]Core  0 register dump:
+[16:18:21.700]MEPC    : 0x40004408  RA      : 0x408028fe  SP      : 0x40822550  GP      : 0x4080d9c4  
+[16:18:21.710]TP      : 0x40822860  T0      : 0x00fe00f2  T1      : 0x4205f38e  T2      : 0x00fe00f3  
+[16:18:21.721]S0/FP   : 0x40816000  S1      : 0x00000000  A0      : 0x00000010  A1      : 0x0001fffc  
+[16:18:21.732]A2      : 0x5ffa8013  A3      : 0x600a1000  A4      : 0xc0000a50  A5      : 0x600a1000  
+[16:18:21.732]A6      : 0x40004160  A7      : 0x00fe00f1  S2      : 0x40822bb8  S3      : 0x00000000  
+[16:18:21.743]S4      : 0x4082332c  S5      : 0x00000000  S6      : 0x0007e1ff  S7      : 0x00000000  
+[16:18:21.755]S8      : 0x00000000  S9      : 0x00000000  S10     : 0x00000000  S11     : 0x00000000  
+[16:18:21.755]T3      : 0x010100f1  T4      : 0x00ff00f3  T5      : 0x010200f2  T6      : 0x00fe00fa  
+[16:18:21.766]MSTATUS : 0x40822bb8  MTVEC   : 0x00000000  MCAUSE  : 0x4080d6cc  MTVAL   : 0x4205e954  
+[16:18:21.766]MHARTID : 0x40822bb8  
+
+[16:18:21.766]Stack memory:
+[16:18:21.777]40822550: 0x40822bb8 0x00000000 0x4080d6cc 0x4205e954 0x40822bb8 0x00000000 0x4080d6cc 0x4205f2bc
+[16:18:21.788]40822570: 0x00000000 0x00000000 0x010200fa 0x01000100 0x010100f9 0x01000100 0x00ff00f8 0x01000100
+[16:18:21.800]40822590: 0x010500f3 0x01000100 0x010300f2 0x01000100 0x00fe0101 0x01000100 0x00000000 0x00000000
+[16:18:21.800]408225b0: 0x00000000 0x00000000 0x0000006b 0x00000084 0x00000000 0x0e0b0000 0x0d090813 0x05010501
+[16:18:21.811]408225d0: 0x00000301 0x00f72600 0x00f600fd 0x420000fc 0x5454000a 0x4c505050 0x484c4c4c 0x3c3c3c44
+[16:18:21.822]408225f0: 0x484c4c4c 0x00000000 0x00000000 0x00000000 0x00000000 0x00000000 0x00000000 0x00000000
+[16:18:21.833]40822610: 0x00000000 0x00000000 0x00000000 0x00000000 0x00000000 0x00000000 0x00000000 0x00000000
+[16:18:21.844]40822630: 0x00000000 0x00000000 0x00000000 0x00000000 0x00000000 0x00000000 0x00000000 0x00000000
+[16:18:21.844]40822650: 0x00000000 0x00000000 0x00000000 0x00000000 0x00000000 0x00000000 0x00000000 0x00000000
+[16:18:21.855]40822670: 0x00000003 0x4082332c 0x40822bb8 0x4206a96e 0x40817000 0x40822874 0xff818c58 0xc4b05dfe
+[16:18:21.866]40822690: 0x40817000 0x00000000 0x00000000 0x40811ab0 0x40817000 0x40817000 0x00000004 0x408055de
+[16:18:21.877]408226b0: 0x00000001 0x40822734 0x00000000 0x40803d40 0x00000000 0x00000000 0x00000000 0x4206dfa2
+[16:18:21.877]408226d0: 0x00000001 0x40822734 0x00000000 0x4202bccc 0x00000001 0x40822734 0x00000000 0x4202b532
+[16:18:21.888]408226f0: 0xa5a5a5a5 0xa5a5a5a5 0xa5a5a5a5 0x00000000 0x00000000 0x00000000 0x4080fd38 0x42029c30
+[16:18:21.900]40822710: 0xa5a5a5a5 0xa5a5a5a5 0x4080fd38 0x42001e6c 0xa5a5a5a5 0xa5a5a5a5 0xa5a5a5a5 0xa5a5a5a5
+[16:18:21.911]40822730: 0xa5a5a5a5 0x00000000 0x00000000 0x00000000 0x00000000 0x00000000 0x00000000 0x00000000
+[16:18:21.922]40822750: 0x00000000 0x00000000 0x00000000 0x00000000 0x00000000 0x00000000 0x00000000 0x00000000
+[16:18:21.922]40822770: 0x00000000 0x00000000 0x00000000 0x00000000 0x00000000 0x00000000 0x00000000 0x00000000
+[16:18:21.933]40822790: 0x00000000 0x00000000 0x00000000 0x00000000 0x00000000 0x00000000 0x00000000 0x00000000
+[16:18:21.944]408227b0: 0x00000000 0x00000000 0x00000000 0x00000000 0x00000000 0x00000000 0x00000000 0x00000000
+[16:18:21.955]408227d0: 0x00000000 0x00000000 0x00000000 0x00000000 0x00000000 0x00000000 0x00000000 0x00000000
+[16:18:21.955]408227f0: 0x00000000 0x00000000 0x00000000 0x00000000 0x00000000 0x00000000 0x42070cc0 0x00000a0a
+[16:18:21.966]40822810: 0x00000000 0x00000000 0x00000000 0x00000000 0x00000000 0x00000000 0x00000000 0x420020cc
+[16:18:21.977]40822830: 0x00000000 0x00000000 0x00000000 0x00000000 0x00000000 0x00000000 0x00000000 0x00000000
+[16:18:21.988]40822850: 0x00000000 0xa5a5a5a5 0xa5a5a5a5 0xa5a5a5a5 0xa5a5a5a5 0xa5a5a5a5 0xa5a5a5a5 0xa5a5a5a5
+[16:18:21.988]40822870: 0x00000150 0x408224d0 0x00000000 0x40810538 0x40810538 0x40822874 0x40810530 0x00000014
+[16:18:22.000]40822890: 0x00000000 0x00000000 0x40822874 0x00000000 0x00000005 0x40820070 0x6d5f746f 0x006e6961
+[16:18:22.011]408228b0: 0x00000000 0x00000000 0x40822860 0x00000005 0x00000001 0x00000000 0x00000000 0x00000000
+[16:18:22.022]408228d0: 0x40817828 0x40817890 0x408178f8 0x00000000 0x00000000 0x00000001 0x00000000 0x00000000
+[16:18:22.033]408228f0: 0x00000000 0x42026206 0x00000000 0x00000000 0x00000000 0x00000000 0x00000000 0x00000000
+[16:18:22.033]40822910: 0x00000000 0x00000000 0x00000000 0x00000000 0x00000000 0x00000000 0x00000000 0x00000000
+[16:18:22.044]40822930: 0x00000000 0x00000000 0x00000000 0x00000000 0x00000000 0x00000000 0x00000000 0x00000000
+
+
+
+[16:18:22.044]ELF file SHA256: 2925ecf56
+
+[16:18:22.044]Rebooting...
+[16:18:22.060]ESP-ROM:esp32c6-20220919
+[16:18:22.060]Build:Sep 19 2022
+[16:18:22.060]rst:0xc (SW_CPU),boot:0xc (SPI_FAST_FLASH_BOOT)
+[16:18:22.060]Saved PC:0x4001975a
+[16:18:22.060]SPIWP:0xee
+[16:18:22.071]mode:DIO, clock div:2
+[16:18:22.071]load:0x40875730,len:0x16f4
+[16:18:22.071]load:0x4086b910,len:0xed0
+[16:18:22.071]load:0x4086e610,len:0x3190
+[16:18:22.071]entry 0x4086b910
+[16:18:22.082]I (26) boot: ESP-IDF 5.5.4 2nd stage bootloader
+[16:18:22.082]I (27) boot: compile time May 21 2026 16:06:02
+[16:18:22.093]I (28) boot: chip revision: v0.2
+[16:18:22.093]I (29) boot: efuse block revision: v0.3
+[16:18:22.093]I (30) boot.esp32c6: SPI Speed      : 80MHz
+[16:18:22.104]I (34) boot.esp32c6: SPI Mode       : DIO
+[16:18:22.104]I (38) boot.esp32c6: SPI Flash Size : 4MB
+[16:18:22.104]I (42) boot: Enabling RNG early entropy source...
+[16:18:22.115]I (46) boot: Partition Table:
+[16:18:22.115]I (49) boot: ## Label            Usage          Type ST Offset   Length
+[16:18:22.126]I (55) boot:  0 otadata          OTA data         01 00 00009000 00002000
+[16:18:22.126]I (62) boot:  1 phy_init         RF data          01 01 0000b000 00001000
+[16:18:22.138]I (68) boot:  2 app0             OTA app          00 10 00010000 001c0000
+[16:18:22.138]I (75) boot:  3 app1             OTA app          00 11 001d0000 001c0000
+[16:18:22.149]I (81) boot:  4 nvs              WiFi data        01 02 00390000 00070000
+[16:18:22.149]I (88) boot: End of partition table
+[16:18:22.154]I (91) esp_image: segment 0: paddr=00010020 vaddr=42070020 size=16534h ( 91444) map
+[16:18:22.185]I (133) esp_image: segment 1: paddr=0002655c vaddr=40800000 size=09abch ( 39612) load
+[16:18:22.203]I (151) esp_image: segment 2: paddr=00030020 vaddr=42000020 size=6e9f4h (453108) map
+[16:18:22.378]I (323) esp_image: segment 3: paddr=0009ea1c vaddr=40809abc size=03700h ( 14080) load
+[16:18:22.382]I (330) esp_image: segment 4: paddr=000a2124 vaddr=4080d1c0 size=02a68h ( 10856) load
+[16:18:22.397]I (343) boot: Loaded app from partition at offset 0x10000
+[16:18:22.397]I (343) boot: Disabling RNG early entropy source...
+[16:18:22.437][I][logger:120]: Log initialized
+[16:18:22.437][I][app:067]: Running through setup()
+[16:18:22.449][V][app:068]: Sorting components by setup priority
+[16:18:22.449][V][component:236]: Setup logger
+[16:18:22.449][V][component:248]: Setup logger took 0ms
+[16:18:22.460][V][component:236]: Setup preferences
+[16:18:22.469][V][scheduler:217]: Scheduler interval for (null) is 60000ms, offset 3340ms
+[16:18:22.469][V][component:248]: Setup preferences took 0ms
+[16:18:22.469][V][component:236]: Setup openthread
+[16:18:22.542][C][component:246]: Setup openthread took 98ms
+[16:18:22.542][V][component:236]: Setup mdns
+[16:18:22.548][V][component:248]: Setup mdns took 0ms
+[16:18:22.548][V][component:236]: Setup openthread
+[16:18:22.556][D][openthread:157]: Setting up SRP services. count = 1
+[16:18:23.526][D][open\xff   ESP-ROM:esp32c6-20220919
+[16:18:23.526]Build:Sep 19 2022
+[16:18:23.526]rst:0x8 (TG1_WDT_HPSYS),boot:0xc (SPI_FAST_FLASH_BOOT)
+[16:18:23.526]Saved PC:0x4003f480
+[16:18:23.536]SPIWP:0xee
+[16:18:23.536]mode:DIO, clock div:2
+[16:18:23.536]load:0x40875730,len:0x16f4
+[16:18:23.536]load:0x4086b910,len:0xed0
+[16:18:23.536]load:0x4086e610,len:0x3190
+[16:18:23.536]entry 0x4086b910
+[16:18:23.548]I (24) boot: ESP-IDF 5.5.4 2nd stage bootloader
+[16:18:23.548]I (24) boot: compile time May 21 2026 16:06:02
+[16:18:23.559]I (25) boot: chip revision: v0.2
+[16:18:23.559]I (25) boot: efuse block revision: v0.3
+[16:18:23.559]I (31) boot.esp32c6: SPI Speed      : 80MHz
+[16:18:23.570]I (39) boot.esp32c6: SPI Mode       : DIO
+[16:18:23.570]I (47) boot.esp32c6: SPI Flash Size : 4MB
+[16:18:23.570]W (54) boot.esp32c6: PRO CPU has been reset by WDT.
+[16:18:23.581]I (63) boot: Enabling RNG early entropy source...
+[16:18:23.581]I (72) boot: Partition Table:
+[16:18:23.581]I (78) boot: ## Label            Usage          Type ST Offset   Length
+[16:18:23.592]I (90) boot:  0 otadata          OTA data         01 00 00009000 00002000
+[16:18:23.603]I (103) boot:  1 phy_init         RF data          01 01 0000b000 00001000
+[16:18:23.603]I (116) boot:  2 app0             OTA app          00 10 00010000 001c0000
+[16:18:23.615]I (130) boot:  3 app1             OTA app          00 11 001d0000 001c0000
+[16:18:23.615]I (143) boot:  4 nvs              WiFi data        01 02 00390000 00070000
+[16:18:23.625]I (156) boot: End of partition table
+[16:18:23.625]I (163) esp_image: segment 0: paddr=00010020 vaddr=42070020 size=16534h ( 91444) map
+[16:18:23.637]I (202) esp_image: segment 1: paddr=0002655c vaddr=40800000 size=09abch ( 39612) load
+[16:18:23.641]I (214) esp_image: segment 2: paddr=00030020 vaddr=42000020 size=6e9f4h (453108) map
+[16:18:23.702]I (331) esp_image: segment 3: paddr=0009ea1c vaddr=40809abc size=03700h ( 14080) load
+[16:18:23.713]I (336) esp_image: segment 4: paddr=000a2124 vaddr=4080d1c0 size=02a68h ( 10856) load
+[16:18:23.713]I (346) boot: Loaded app from partition at offset 0x10000
+[16:18:23.716]I (349) boot: Disabling RNG early entropy source...
+[16:18:31.378]ESP-ROM:esp32c6-20220919
+[16:18:31.391]Build:Sep 19 2022
+[16:18:31.391]rst:0x10 (LP_WDT_SYS),boot:0xc (SPI_FAST_FLASH_BOOT)
+[16:18:31.391]SPIWP:0xee
+[16:18:31.391]mode:DIO, clock div:2
+[16:18:31.399]load:0x40875730,len:0x16f4
+[16:18:31.399]load:0x4086b910,len:0xed0
+[16:18:31.399]load:0x4086e610,len:0x3190
+[16:18:31.399]entry 0x4086b910
+[16:18:31.411]I (24) boot: ESP-IDF 5.5.4 2nd stage bootloader
+[16:18:31.411]I (24) boot: compile time May 21 2026 16:06:02
+[16:18:31.422]I (25) boot: chip revision: v0.2
+[16:18:31.422]I (25) boot: efuse block revision: v0.3
+[16:18:31.422]I (27) boot.esp32c6: SPI Speed      : 80MHz
+[16:18:31.433]I (31) boot.esp32c6: SPI Mode       : DIO
+[16:18:31.433]I (35) boot.esp32c6: SPI Flash Size : 4MB
+[16:18:31.433]I (39) boot: Enabling RNG early entropy source...
+[16:18:31.444]I (43) boot: Partition Table:
+[16:18:31.444]I (46) boot: ## Label            Usage          Type ST Offset   Length
+[16:18:31.455]I (52) boot:  0 otadata          OTA data         01 00 00009000 00002000
+[16:18:31.455]I (59) boot:  1 phy_init         RF data          01 01 0000b000 00001000
+[16:18:31.466]I (65) boot:  2 app0             OTA app          00 10 00010000 001c0000
+[16:18:31.466]I (72) boot:  3 app1             OTA app          00 11 001d0000 001c0000
+[16:18:31.477]I (78) boot:  4 nvs              WiFi data        01 02 00390000 00070000
+[16:18:31.477]I (85) boot: End of partition table
+[16:18:31.482]I (88) esp_image: segment 0: paddr=00010020 vaddr=42070020 size=16534h ( 91444) map
+[16:18:31.496]I (113) esp_image: segment 1: paddr=0002655c vaddr=40800000 size=09abch ( 39612) load
+[16:18:31.506]I (122) esp_image: segment 2: paddr=00030020 vaddr=42000020 size=6e9f4h (453108) map
+[16:18:31.596]I (209) esp_image: segment 3: paddr=0009ea1c vaddr=40809abc size=03700h ( 14080) load
+[16:18:31.607]I (213) esp_image: segment 4: paddr=000a2124 vaddr=4080d1c0 size=02a68h ( 10856) load
+[16:18:31.607]I (219) boot: Loaded app from partition at offset 0x10000
+[16:18:31.609]I (220) boot: Disabling RNG early entropy source...
+[16:18:31.650][I][logger:120]: Log initialized
+[16:18:31.650][I][app:067]: Running through setup()
+[16:18:31.661][V][app:068]: Sorting components by setup priority
+[16:18:31.661][V][component:236]: Setup logger
+[16:18:31.661][V][component:248]: Setup logger took 0ms
+[16:18:31.672][V][component:236]: Setup preferences
+[16:18:31.682][V][scheduler:217]: Scheduler interval for (null) is 60000ms, offset 236ms
+[16:18:31.682][V][component:248]: Setup preferences took 0ms
+[16:18:31.682][V][component:236]: Setup openthread
+[16:18:31.751][C][component:246]: Setup openthread took 95ms
+[16:18:31.751][V][component:236]: Setup mdns
+[16:18:31.762][V][component:248]: Setup mdns took 0ms
+[16:18:31.762][V][component:236]: Setup openthread
+[16:18:32.733][D][openthread:157]: Setting up SRP services. count = 1[0\xe0ESP-ROM:esp32c6-20220919
+[16:18:32.733]Build:Sep 19 2022
+[16:18:32.733]rst:0x8 (TG1_WDT_HPSYS),boot:0xc (SPI_FAST_FLASH_BOOT)
+[16:18:32.733]Saved PC:0x40001080
+[16:18:32.744]SPIWP:0xee
+[16:18:32.744]mode:DIO, clock div:2
+[16:18:32.744]load:0x40875730,len:0x16f4
+[16:18:32.744]load:0x4086b910,len:0xed0
+[16:18:32.744]load:0x4086e610,len:0x3190
+[16:18:32.755]entry 0x4086b910
+[16:18:32.755]I (24) boot: ESP-IDF 5.5.4 2nd stage bootloader
+[16:18:32.755]I (24) boot: compile time May 21 2026 16:06:02
+[16:18:32.767]I (25) boot: chip revision: v0.2
+[16:18:32.767]I (25) boot: efuse block revision: v0.3
+[16:18:32.767]I (28) boot.esp32c6: SPI Speed      : 80MHz
+[16:18:32.778]I (32) boot.esp32c6: SPI Mode       : DIO
+[16:18:32.778]I (35) boot.esp32c6: SPI Flash Size : 4MB
+[16:18:32.778]W (39) boot.esp32c6: PRO CPU has been reset by WDT.
+[16:18:32.789]I (44) boot: Enabling RNG early entropy source...
+[16:18:32.789]I (48) boot: Partition Table:
+[16:18:32.789]I (51) boot: ## Label            Usage          Type ST Offset   Length
+[16:18:32.800]I (57) boot:  0 otadata          OTA data         01 00 00009000 00002000
+[16:18:32.811]I (64) boot:  1 phy_init         RF data          01 01 0000b000 00001000
+[16:18:32.811]I (70) boot:  2 app0             OTA app          00 10 00010000 001c0000
+[16:18:32.823]I (77) boot:  3 app1             OTA app          00 11 001d0000 001c0000
+[16:18:32.823]I (83) boot:  4 nvs              WiFi data        01 02 00390000 00070000
+[16:18:32.833]I (90) boot: End of partition table
+[16:18:32.833]I (93) esp_image: segment 0: paddr=00010020 vaddr=42070020 size=16534h ( 91444) map
+[16:18:32.847]I (118) esp_image: segment 1: paddr=0002655c vaddr=40800000 size=09abch ( 39612) load
+[16:18:32.856]I (127) esp_image: segment 2: paddr=00030020 vaddr=42000020 size=6e9f4h (453108) map
+[16:18:32.946]I (214) esp_image: segment 3: paddr=0009ea1c vaddr=40809abc size=03700h ( 14080) load
+[16:18:32.957]I (218) esp_image: segment 4: paddr=000a2124 vaddr=4080d1c0 size=02a68h ( 10856) load
+[16:18:32.957]I (224) boot: Loaded app from partition at offset 0x10000
+[16:18:32.959]I (225) boot: Disabling RNG early entropy source...
+[16:18:33.000][I][logger:120]: Log initialized
+[16:18:33.000][I][app:067]: Running through setup()
+[16:18:33.011][V][app:068]: Sorting components by setup priority
+[16:18:33.011][V][component:236]: Setup logger
+[16:18:33.011][V][component:248]: Setup logger took 0ms
+[16:18:33.022][V][component:236]: Setup preferences
+[16:18:33.032][V][scheduler:217]: Scheduler interval for (null) is 60000ms, offset 355ms
+[16:18:33.032][V][component:248]: Setup preferences took 0ms
+[16:18:33.032][V][component:236]: Setup openthread
+[16:18:38.000]E (5292) task_wdt: Task watchdog got triggered. The following tasks/users did not reset the watchdog in time:
+[16:18:38.011]E (5292) task_wdt:  - loopTask (CPU 0)
+[16:18:38.011]E (5292) task_wdt: Tasks currently running:
+[16:18:38.011]E (5292) task_wdt: CPU 0: ot_main
+[16:18:38.017]E (5292) task_wdt: Aborting.
+[16:18:38.017]E (5292) task_wdt: Print CPU 0 (current core) registers
+
+
+[16:18:38.067]Core  0 register dump:
+[16:18:38.067]MEPC    : 0x40004408  RA      : 0x408028fe  SP      : 0x40822550  GP      : 0x4080d9c4  
+[16:18:38.078]TP      : 0x40822860  T0      : 0x00fe00f2  T1      : 0x4205f38e  T2      : 0x00fe00f3  
+[16:18:38.089]S0/FP   : 0x40816000  S1      : 0x00000000  A0      : 0x00000010  A1      : 0x0001fffc  
+[16:18:38.100]A2      : 0x5ffa8013  A3      : 0x600a1000  A4      : 0xc0000a50  A5      : 0x600a1000  
+[16:18:38.100]A6      : 0x40004160  A7      : 0x00fe00f1  S2      : 0x40822bb8  S3      : 0x00000000  
+[16:18:38.111]S4      : 0x4082332c  S5      : 0x00000000  S6      : 0x0007e1ff  S7      : 0x00000000  
+[16:18:38.122]S8      : 0x00000000  S9      : 0x00000000  S10     : 0x00000000  S11     : 0x00000000  
+[16:18:38.122]T3      : 0x010100f1  T4      : 0x00ff00f3  T5      : 0x010200f2  T6      : 0x00fe00fa  
+[16:18:38.134]MSTATUS : 0x40822bb8  MTVEC   : 0x00000000  MCAUSE  : 0x4080d6cc  MTVAL   : 0x4205e954  
+[16:18:38.134]MHARTID : 0x40822bb8  
+
+[16:18:38.134]Stack memory:
+[16:18:38.145]40822550: 0x40822bb8 0x00000000 0x4080d6cc 0x4205e954 0x40822bb8 0x00000000 0x4080d6cc 0x4205f2bc
+[16:18:38.156]40822570: 0x00000000 0x00000000 0x010200fa 0x01000100 0x010100f9 0x01000100 0x00ff00f8 0x01000100
+[16:18:38.167]40822590: 0x010500f3 0x01000100 0x010300f2 0x01000100 0x00fe0101 0x01000100 0x00000000 0x00000000
+[16:18:38.167]408225b0: 0x00000000 0x00000000 0x0000006b 0x00000084 0x00000000 0x0e0b0000 0x0d090813 0x05010501
+[16:18:38.178]408225d0: 0x00000301 0x00f72600 0x00f600fd 0x420000fc 0x5454000a 0x4c505050 0x484c4c4c 0x3c3c3c44
+[16:18:38.189]408225f0: 0x484c4c4c 0x00000000 0x00000000 0x00000000 0x00000000 0x00000000 0x00000000 0x00000000
+[16:18:38.200]40822610: 0x00000000 0x00000000 0x00000000 0x00000000 0x00000000 0x00000000 0x00000000 0x00000000
+[16:18:38.211]40822630: 0x00000000 0x00000000 0x00000000 0x00000000 0x00000000 0x00000000 0x00000000 0x00000000
+[16:18:38.211]40822650: 0x00000000 0x00000000 0x00000000 0x00000000 0x00000000 0x00000000 0x00000000 0x00000000
+[16:18:38.222]40822670: 0x00000003 0x4082332c 0x40822bb8 0x4206a96e 0x40817000 0x40822874 0xff818c58 0xc4b05dfe
+[16:18:38.234]40822690: 0x40817000 0x00000000 0x00000000 0x40811ab0 0x40817000 0x40817000 0x00000004 0x408055de
+[16:18:38.245]408226b0: 0x00000001 0x40822734 0x00000000 0x40803d40 0x00000000 0x00000000 0x00000000 0x4206dfa2
+[16:18:38.245]408226d0: 0x00000001 0x40822734 0x00000000 0x4202bccc 0x00000001 0x40822734 0x00000000 0x4202b532
+[16:18:38.256]408226f0: 0xa5a5a5a5 0xa5a5a5a5 0xa5a5a5a5 0x00000000 0x00000000 0x00000000 0x4080fd38 0x42029c30
+[16:18:38.267]40822710: 0xa5a5a5a5 0xa5a5a5a5 0x4080fd38 0x42001e6c 0xa5a5a5a5 0xa5a5a5a5 0xa5a5a5a5 0xa5a5a5a5
+[16:18:38.278]40822730: 0xa5a5a5a5 0x00000000 0x00000000 0x00000000 0x00000000 0x00000000 0x00000000 0x00000000
+[16:18:38.289]40822750: 0x00000000 0x00000000 0x00000000 0x00000000 0x00000000 0x00000000 0x00000000 0x00000000
+[16:18:38.289]40822770: 0x00000000 0x00000000 0x00000000 0x00000000 0x00000000 0x00000000 0x00000000 0x00000000
+[16:18:38.300]40822790: 0x00000000 0x00000000 0x00000000 0x00000000 0x00000000 0x00000000 0x00000000 0x00000000
+[16:18:38.311]408227b0: 0x00000000 0x00000000 0x00000000 0x00000000 0x00000000 0x00000000 0x00000000 0x00000000
+[16:18:38.322]408227d0: 0x00000000 0x00000000 0x00000000 0x00000000 0x00000000 0x00000000 0x00000000 0x00000000
+[16:18:38.322]408227f0: 0x00000000 0x00000000 0x00000000 0x00000000 0x00000000 0x00000000 0x42070cc0 0x00000a0a
+[16:18:38.334]40822810: 0x00000000 0x00000000 0x00000000 0x00000000 0x00000000 0x00000000 0x00000000 0x420020cc
+[16:18:38.345]40822830: 0x00000000 0x00000000 0x00000000 0x00000000 0x00000000 0x00000000 0x00000000 0x00000000
+[16:18:38.356]40822850: 0x00000000 0xa5a5a5a5 0xa5a5a5a5 0xa5a5a5a5 0xa5a5a5a5 0xa5a5a5a5 0xa5a5a5a5 0xa5a5a5a5
+[16:18:38.356]40822870: 0x00000150 0x408224d0 0x00000000 0x40810538 0x40810538 0x40822874 0x40810530 0x00000014
+[16:18:38.367]40822890: 0x00000000 0x00000000 0x40822874 0x00000000 0x00000005 0x40820070 0x6d5f746f 0x006e6961
+[16:18:38.378]408228b0: 0x00000000 0x00000000 0x40822860 0x00000005 0x00000001 0x00000000 0x00000000 0x00000000
+[16:18:38.389]408228d0: 0x40817828 0x40817890 0x408178f8 0x00000000 0x00000000 0x00000001 0x00000000 0x00000000
+[16:18:38.400]408228f0: 0x00000000 0x42026206 0x00000000 0x00000000 0x00000000 0x00000000 0x00000000 0x00000000
+[16:18:38.400]40822910: 0x00000000 0x00000000 0x00000000 0x00000000 0x00000000 0x00000000 0x00000000 0x00000000
+[16:18:38.411]40822930: 0x00000000 0x00000000 0x00000000 0x00000000 0x00000000 0x00000000 0x00000000 0x00000000
+
+
+
+[16:18:38.411]ELF file SHA256: 2925ecf56
+
+[16:18:38.411]Rebooting...
+[16:18:38.428]ESP-ROM:esp32c6-20220919
+[16:18:38.428]Build:Sep 19 2022
+[16:18:38.428]rst:0xc (SW_CPU),boot:0xc (SPI_FAST_FLASH_BOOT)
+[16:18:38.428]Saved PC:0x4001975a
+[16:18:38.428]SPIWP:0xee
+[16:18:38.438]mode:DIO, clock div:2
+[16:18:38.438]load:0x40875730,len:0x16f4
+[16:18:38.438]load:0x4086b910,len:0xed0
+[16:18:38.438]load:0x4086e610,len:0x3190
+[16:18:38.438]entry 0x4086b910
+[16:18:38.449]I (26) boot: ESP-IDF 5.5.4 2nd stage bootloader
+[16:18:38.449]I (27) boot: compile time May 21 2026 16:06:02
+[16:18:38.461]I (28) boot: chip revision: v0.2
+[16:18:38.461]I (29) boot: efuse block revision: v0.3
+[16:18:38.461]I (30) boot.esp32c6: SPI Speed      : 80MHz
+[16:18:38.472]I (34) boot.esp32c6: SPI Mode       : DIO
+[16:18:38.472]I (38) boot.esp32c6: SPI Flash Size : 4MB
+[16:18:38.472]I (42) boot: Enabling RNG early entropy source...
+[16:18:38.483]I (46) boot: Partition Table:
+[16:18:38.483]I (49) boot: ## Label            Usage          Type ST Offset   Length
+[16:18:38.494]I (55) boot:  0 otadata          OTA data         01 00 00009000 00002000
+[16:18:38.494]I (62) boot:  1 phy_init         RF data          01 01 0000b000 00001000
+[16:18:38.505]I (68) boot:  2 app0             OTA app          00 10 00010000 001c0000
+[16:18:38.505]I (75) boot:  3 app1             OTA app          00 11 001d0000 001c0000
+[16:18:38.516]I (81) boot:  4 nvs              WiFi data        01 02 00390000 00070000
+[16:18:38.516]I (88) boot: End of partition table
+[16:18:38.521]I (91) esp_image: segment 0: paddr=00010020 vaddr=42070020 size=16534h ( 91444) map
+[16:18:38.553]I (133) esp_image: segment 1: paddr=0002655c vaddr=40800000 size=09abch ( 39612) load
+[16:18:38.571]I (151) esp_image: segment 2: paddr=00030020 vaddr=42000020 size=6e9f4h (453108) map
+[16:18:38.746]I (323) esp_image: segment 3: paddr=0009ea1c vaddr=40809abc size=03700h ( 14080) load
+[16:18:38.750]I (330) esp_image: segment 4: paddr=000a2124 vaddr=4080d1c0 size=02a68h ( 10856) load
+[16:18:38.764]I (343) boot: Loaded app from partition at offset 0x10000
+[16:18:38.764]I (343) boot: Disabling RNG early entropy source...
+[16:18:38.805][I][logger:120]: Log initialized
+[16:18:38.805][I][app:067]: Running through setup()
+[16:18:38.816][V][app:068]: Sorting components by setup priority
+[16:18:38.816][V][component:236]: Setup logger
+[16:18:38.816][V][component:248]: Setup logger took 0ms
+[16:18:38.827][V][component:236]: Setup preferences
+[16:18:38.837][V][scheduler:217]: Scheduler interval for (null) is 60000ms, offset 3204ms
+[16:18:38.837][V][component:248]: Setup preferences took 0ms
+[16:18:38.837][V][component:236]: Setup openthread
+[16:18:38.904][C][component:246]: Setup openthread took 95ms
+[16:18:38.904][V][component:236]: Setup mdns
+[16:18:38.922][V][component:24 \xea\xe9 Setup mdns took 14ms
+[16:18:38.922][V][component:236]: Setup openthread
+[16:18:39.824][D][openthread:157]: SettESP-ROM:esp32c6-20220919
+[16:18:39.824]Build:Sep 19 2022
+[16:18:39.824]rst:0x8 (TG1_WDT_HPSYS),boot:0xc (SPI_FAST_FLASH_BOOT)
+[16:18:39.824]Saved PC:0x40000058
+[16:18:39.836]SPIWP:0xee
+[16:18:39.836]mode:DIO, clock div:2
+[16:18:39.836]load:0x40875730,len:0x16f4
+[16:18:39.836]load:0x4086b910,len:0xed0
+[16:18:39.836]load:0x4086e610,len:0x3190
+[16:18:39.847]entry 0x4086b910
+[16:18:39.847]I (24) boot: ESP-IDF 5.5.4 2nd stage bootloader
+[16:18:39.847]I (24) boot: compile time May 21 2026 16:06:02
+[16:18:39.858]I (25) boot: chip revision: v0.2
+[16:18:39.858]I (25) boot: efuse block revision: v0.3
+[16:18:39.858]I (31) boot.esp32c6: SPI Speed      : 80MHz
+[16:18:39.869]I (39) boot.esp32c6: SPI Mode       : DIO
+[16:18:39.869]I (47) boot.esp32c6: SPI Flash Size : 4MB
+[16:18:39.869]W (54) boot.esp32c6: PRO CPU has been reset by WDT.
+[16:18:39.880]I (63) boot: Enabling RNG early entropy source...
+[16:18:39.880]I (72) boot: Partition Table:
+[16:18:39.880]I (78) boot: ## Label            Usage          Type ST Offset   Length
+[16:18:39.891]I (90) boot:  0 otadata          OTA data         01 00 00009000 00002000
+[16:18:39.902]I (103) boot:  1 phy_init         RF data          01 01 0000b000 00001000
+[16:18:39.902]I (116) boot:  2 app0             OTA app          00 10 00010000 001c0000
+[16:18:39.914]I (130) boot:  3 app1             OTA app          00 11 001d0000 001c0000
+[16:18:39.914]I (143) boot:  4 nvs              WiFi data        01 02 00390000 00070000
+[16:18:39.924]I (156) boot: End of partition table
+[16:18:39.924]I (163) esp_image: segment 0: paddr=00010020 vaddr=42070020 size=16534h ( 91444) map
+[16:18:39.936]I (202) esp_image: segment 1: paddr=0002655c vaddr=40800000 size=09abch ( 39612) load
+[16:18:39.940]I (214) esp_image: segment 2: paddr=00030020 vaddr=42000020 size=6e9f4h (453108) map
+[16:18:40.001]I (331) esp_image: segment 3: paddr=0009ea1c vaddr=40809abc size=03700h ( 14080) load
+[16:18:40.012]I (336) esp_image: segment 4: paddr=000a2124 vaddr=4080d1c0 size=02a68h ( 10856) load
+[16:18:40.012]I (346) boot: Loaded app from partition at offset 0x10000
+[16:18:40.014]I (349) boot: Disabling RNG early entropy source...
+[16:18:47.698]ESP-ROM:esp32c6-20220919
+[16:18:47.712]Build:Sep 19 2022
+[16:18:47.712]rst:0x10 (LP_WDT_SYS),boot:0xc (SPI_FAST_FLASH_BOOT)
+[16:18:47.712]SPIWP:0xee
+[16:18:47.712]mode:DIO, clock div:2
+[16:18:47.719]load:0x40875730,len:0x16f4
+[16:18:47.719]load:0x4086b910,len:0xed0
+[16:18:47.719]load:0x4086e610,len:0x3190
+[16:18:47.719]entry 0x4086b910
+[16:18:47.730]I (24) boot: ESP-IDF 5.5.4 2nd stage bootloader
+[16:18:47.730]I (24) boot: compile time May 21 2026 16:06:02
+[16:18:47.741]I (25) boot: chip revision: v0.2
+[16:18:47.741]I (25) boot: efuse block revision: v0.3
+[16:18:47.741]I (27) boot.esp32c6: SPI Speed      : 80MHz
+[16:18:47.752]I (31) boot.esp32c6: SPI Mode       : DIO
+[16:18:47.752]I (35) boot.esp32c6: SPI Flash Size : 4MB
+[16:18:47.752]I (39) boot: Enabling RNG early entropy source...
+[16:18:47.764]I (43) boot: Partition Table:
+[16:18:47.764]I (46) boot: ## Label            Usage          Type ST Offset   Length
+[16:18:47.775]I (52) boot:  0 otadata          OTA data         01 00 00009000 00002000
+[16:18:47.775]I (59) boot:  1 phy_init         RF data          01 01 0000b000 00001000
+[16:18:47.786]I (65) boot:  2 app0             OTA app          00 10 00010000 001c0000
+[16:18:47.786]I (72) boot:  3 app1             OTA app          00 11 001d0000 001c0000
+[16:18:47.797]I (78) boot:  4 nvs              WiFi data        01 02 00390000 00070000
+[16:18:47.797]I (85) boot: End of partition table
+[16:18:47.802]I (88) esp_image: segment 0: paddr=00010020 vaddr=42070020 size=16534h ( 91444) map
+[16:18:47.816]I (113) esp_image: segment 1: paddr=0002655c vaddr=40800000 size=09abch ( 39612) load
+[16:18:47.825]I (122) esp_image: segment 2: paddr=00030020 vaddr=42000020 size=6e9f4h (453108) map
+[16:18:47.916]I (209) esp_image: segment 3: paddr=0009ea1c vaddr=40809abc size=03700h ( 14080) load
+[16:18:47.927]I (213) esp_image: segment 4: paddr=000a2124 vaddr=4080d1c0 size=02a68h ( 10856) load
+[16:18:47.927]I (219) boot: Loaded app from partition at offset 0x10000
+[16:18:47.930]I (220) boot: Disabling RNG early entropy source...
+[16:18:47.970][I][logger:120]: Log initialized
+[16:18:47.970][I][app:067]: Running through setup()
+[16:18:47.981][V][app:068]: Sorting components by setup priority
+[16:18:47.981][V][component:236]: Setup logger
+[16:18:47.981][V][component:248]: Setup logger took 0ms
+[16:18:47.992][V][component:236]: Setup preferences
+[16:18:48.001][V][scheduler:217]: Scheduler interval for (null) is 60000ms, offset 3765ms
+[16:18:48.001][V][component:248]: Setup preferences took 0ms
+[16:18:48.001][V][component:236]: Setup openthread
+[16:18:48.075][C][component:246]: Setup openthread took 99ms
+[16:18:48.075][V][component:236]: Setup mdns
+[16:18:48.085][V][component:248]: Setup mdns took 0ms
+[16:18:48.085][V][component:236]: Setup openthread
+[16:18:48.096][D][openthread:157]: Setting up SRP serv\x80\x95͹ count = 1
+[16:18:48.096][D][openthread:207]: Added service: _http._tcp
+[16:18:48.997][D][openthread:211]: Finished SESP-ROM:esp32c6-20220919
+[16:18:48.997]Build:Sep 19 2022
+[16:18:48.997]rst:0x8 (TG1_WDT_HPSYS),boot:0xc (SPI_FAST_FLASH_BOOT)
+[16:18:48.997]Saved PC:0x40803e72
+WARNING Decoded 0x40803e72: rv_utils_wait_for_intr at /home/ewout/.platformio/packages/framework-espidf/components/riscv/include/riscv/rv_utils.h:79
+ (inlined by) esp_cpu_wait_for_intr at /home/ewout/.platformio/packages/framework-espidf/components/esp_hw_support/cpu.c:62
+[16:18:49.322]SPIWP:0xee
+[16:18:49.322]mode:DIO, clock div:2
+[16:18:49.322]load:0x40875730,len:0x16f4
+[16:18:49.322]load:0x4086b910,len:0xed0
+[16:18:49.322]load:0x4086e610,len:0x3190
+[16:18:49.322]entry 0x4086b910
+[16:18:49.322]I (24) boot: ESP-IDF 5.5.4 2nd stage bootloader
+[16:18:49.322]I (24) boot: compile time May 21 2026 16:06:02
+[16:18:49.322]I (25) boot: chip revision: v0.2
+[16:18:49.322]I (25) boot: efuse block revision: v0.3
+[16:18:49.322]I (28) boot.esp32c6: SPI Speed      : 80MHz
+[16:18:49.322]I (32) boot.esp32c6: SPI Mode       : DIO
+[16:18:49.322]I (35) boot.esp32c6: SPI Flash Size : 4MB
+[16:18:49.322]W (39) boot.esp32c6: PRO CPU has been reset by WDT.
+[16:18:49.322]I (44) boot: Enabling RNG early entropy source...
+[16:18:49.322]I (48) boot: Partition Table:
+[16:18:49.322]I (51) boot: ## Label            Usage          Type ST Offset   Length
+[16:18:49.322]I (57) boot:  0 otadata          OTA data         01 00 00009000 00002000
+[16:18:49.322]I (64) boot:  1 phy_init         RF data          01 01 0000b000 00001000
+[16:18:49.322]I (70) boot:  2 app0             OTA app          00 10 00010000 001c0000
+[16:18:49.322]I (77) boot:  3 app1             OTA app          00 11 001d0000 001c0000
+[16:18:49.322]I (83) boot:  4 nvs              WiFi data        01 02 00390000 00070000
+[16:18:49.322]I (90) boot: End of partition table
+[16:18:49.322]I (93) esp_image: segment 0: paddr=00010020 vaddr=42070020 size=16534h ( 91444) map
+[16:18:49.322]I (118) esp_image: segment 1: paddr=0002655c vaddr=40800000 size=09abch ( 39612) load
+[16:18:49.322]I (127) esp_image: segment 2: paddr=00030020 vaddr=42000020 size=6e9f4h (453108) map
+[16:18:49.322]I (214) esp_image: segment 3: paddr=0009ea1c vaddr=40809abc size=03700h ( 14080) load
+[16:18:49.322]I (218) esp_image: segment 4: paddr=000a2124 vaddr=4080d1c0 size=02a68h ( 10856) load
+[16:18:49.322]I (224) boot: Loaded app from partition at offset 0x10000
+[16:18:49.322]I (225) boot: Disabling RNG early entropy source...
+[16:18:49.322][I][logger:120]: Log initialized
+[16:18:49.322][I][app:067]: Running through setup()
+[16:18:49.322][V][app:068]: Sorting components by setup priority
+[16:18:49.322][V][component:236]: Setup logger
+[16:18:49.322][V][component:248]: Setup logger took 0ms
+[16:18:49.322][V][component:236]: Setup preferences
+[16:18:49.322][V][scheduler:217]: Scheduler interval for (null) is 60000ms, offset 4934ms
+[16:18:49.322][V][component:248]: Setup preferences took 0ms
+[16:18:49.322][V][component:236]: Setup openthread
+[16:18:49.365][C][component:246]: Setup openthread took 95ms
+[16:18:49.365][V][component:236]: Setup mdns
+[16:18:49.376][V][component:248]: Setup mdns took 0ms
+[16:18:49.376][V][component:236]: Setup openthread
+[16:18:49.387][D][openthread:157]: Setting up SRP services. count = 1
+[16:18:49.387][D][openthread:207]: Added service: _http._tcp
+[16:18:49.387][D][openthread:211]: Finished SRP setup
+[16:18:49.394][V][component:248]: Setup openthread took 13ms
+# Log reader stopped UTC: 2026-05-21T14:18:49+00:00
