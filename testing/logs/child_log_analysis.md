@@ -4,14 +4,14 @@
 
 ### Group summary
 
-| Attach | Request → Response avg (ms) | Request → Response stdev | Response → Child ID Req avg (ms) | Response → Child ID Req stdev | Child ID Req → Response avg (ms) | Child ID Req → Response stdev | Full attach avg (ms) | Full attach stdev | n |
-| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
-| 1 | 227.40 | 119.64 | 518.00 | 124.41 | 78.75 | 0.50 | 825.20 | 34.42 | 5 |
-| 2 | 335.80 | 66.72 | 456.00 | 0.00 | 79.00 | 0.00 | 790.20 | 0.84 | 5 |
+| Attach | Request → Response (ms) | Response → Child ID Req (ms) | Child ID Req → Response (ms) | Full attach (ms) | n |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| 1 | 227.40 ± 119.64 | 518.00 ± 124.41 | 78.75 ± 0.50 | 825.20 ± 34.42 | 5 |
+| 2 | 335.80 ± 66.72 | 456.00 ± 0.00 | 79.00 ± 0.00 | 790.20 ± 0.84 | 5 |
 
-| Failed TX attempts per log avg | Failed TX attempts per log stdev | n |
-| ---: | ---: | ---: |
-| 64.00 | 0.00 | 5 |
+| Failed TX attempts per log | n |
+| ---: | ---: |
+| 64.00 ± 0.00 | 5 |
 
 ### `stock_child_20260529-134804.log`
 
