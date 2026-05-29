@@ -18,7 +18,7 @@ It does not call `esphome run` during the timed sequence. This avoids compile-ti
 - `stock_test_devices.example.toml` — copy this to `stock_test_devices.toml` and edit serial ports.
 - `configs/*.yaml` — current stock configs from the `better_testing` branch.
   - `configs/stock_child.yaml` explicitly sets `CONFIG_OPENTHREAD_PARENT_SEARCH_MTD: n` so the stock-child test does not include ESP-IDF/OpenThread's default periodic MTD parent-search behaviour.
-- `logs/` — generated child logs and JSON run manifests.
+- `logs/stock/` — generated stock child logs and JSON run manifests.
 
 ## Setup
 
@@ -106,7 +106,7 @@ Timed phase:
 
 Each run writes:
 
-- `logs/stock_child_<timestamp>.log`
-- `logs/stock_test_manifest_<timestamp>.json`
+- `logs/stock/stock_child_<timestamp>.log`
+- `logs/stock/stock_test_manifest_<timestamp>.json`
 
 The JSON manifest records every command and wait event, which makes it easier to audit whether a result included compilation in the timed section.

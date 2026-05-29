@@ -249,7 +249,7 @@ def analyze_log(path: Path) -> dict[str, Any]:
 
 
 def default_logs_dir(script_path: Path) -> Path:
-    return script_path.resolve().parent.parent / "logs"
+    return script_path.resolve().parent.parent / "logs" / "stock"
 
 
 def parse_args(argv: list[str]) -> argparse.Namespace:
