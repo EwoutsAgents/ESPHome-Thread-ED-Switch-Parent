@@ -7,7 +7,7 @@ esp32:
   framework:
     type: esp-idf
     sdkconfig_options:
-      CONFIG_OPENTHREAD_PARENT_SEARCH_MTD: n
+      CONFIG_OPENTHREAD_PARENT_SEARCH_MTD: n  # explicitly disables ESP-IDF/OpenThread's default MTD periodic parent-search feature
     log_level: VERBOSE
 
 logger:
