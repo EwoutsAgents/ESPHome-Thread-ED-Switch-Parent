@@ -417,7 +417,7 @@ def render_markdown_report(results: list[dict[str, Any]]) -> str:
         out.append("")
         out.append("### Group summary")
         out.append("")
-        out.append("| Attach | Request → Response (ms) | Response → Child ID Req (ms) | Child ID Req → Response (ms) | Full attach (ms) | n |")
+        out.append("| Attach | Parent Request → Response (ms) | Parent Response → Child ID Req (ms) | Child ID Req → Response (ms) | Full attach (ms) | n |")
         out.append("| --- | ---: | ---: | ---: | ---: | ---: |")
         for attach_index in sorted(summary["attaches"]):
             attach = summary["attaches"][attach_index]

@@ -4,7 +4,7 @@
 
 ### Group summary
 
-| Attach | Request → Response (ms) | Response → Child ID Req (ms) | Child ID Req → Response (ms) | Full attach (ms) | n |
+| Attach | Parent Request → Response (ms) | Parent Response → Child ID Req (ms) | Child ID Req → Response (ms) | Full attach (ms) | n |
 | --- | ---: | ---: | ---: | ---: | ---: |
 | 1 | 227.40 ± 119.64 | 518.00 ± 124.41 | 78.75 ± 0.50 | 825.20 ± 34.42 | 5 |
 | 2 | 335.80 ± 66.72 | 456.00 ± 0.00 | 79.00 ± 0.00 | 790.20 ± 0.84 | 5 |
