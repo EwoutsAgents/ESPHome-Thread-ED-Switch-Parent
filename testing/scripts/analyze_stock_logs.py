@@ -275,33 +275,40 @@ def format_stat(value: float | None) -> str:
     return f"{value:.2f}"
 
 
-def group_summary(group_results: list[dict[str, Any]]) -> dict[str, tuple[float | None, float | None, int]]:
-    timing_values: dict[str, list[int]] = {
-        "parent_request_to_response": [],
-        "parent_response_to_child_id_request": [],
-        "child_id_request_to_response": [],
-        "parent_request_to_child_id_response": [],
-        "failed_tx_attempts": [],
-    }
+def group_summary(group_results: list[dict[str, Any]]) -> dict[str, Any]:
+    attach_summaries: dict[int, dict[str, tuple[float | None, float | None, int]]] = {}
+    max_attach_count = max((len(result["attach_sequences"]) for result in group_results), default=0)
 
-    for result in group_results:
-        timing_values["failed_tx_attempts"].append(result["failed_tx"]["total_failed_attempts"])
-        for seq in result["attach_sequences"]:
-            for key in (
-                "parent_request_to_response",
-                "parent_response_to_child_id_request",
-                "child_id_request_to_response",
-                "parent_request_to_child_id_response",
-            ):
+    for attach_index in range(max_attach_count):
+        timing_values: dict[str, list[int]] = {
+            "parent_request_to_response": [],
+            "parent_response_to_child_id_request": [],
+            "child_id_request_to_response": [],
+            "parent_request_to_child_id_response": [],
+        }
+        for result in group_results:
+            sequences = result["attach_sequences"]
+            if attach_index >= len(sequences):
+                continue
+            seq = sequences[attach_index]
+            for key in timing_values:
                 value = seq["timing_ms"].get(key)
                 if value is not None:
                     timing_values[key].append(value)
 
-    summary: dict[str, tuple[float | None, float | None, int]] = {}
-    for key, values in timing_values.items():
-        mean, stdev = mean_and_stdev(values)
-        summary[key] = (mean, stdev, len(values))
-    return summary
+        attach_summary: dict[str, tuple[float | None, float | None, int]] = {}
+        for key, values in timing_values.items():
+            mean, stdev = mean_and_stdev(values)
+            attach_summary[key] = (mean, stdev, len(values))
+        attach_summaries[attach_index + 1] = attach_summary
+
+    failed_tx_values = [result["failed_tx"]["total_failed_attempts"] for result in group_results]
+    failed_mean, failed_stdev = mean_and_stdev(failed_tx_values)
+
+    return {
+        "attaches": attach_summaries,
+        "failed_tx_attempts": (failed_mean, failed_stdev, len(failed_tx_values)),
+    }
 
 
 def group_results(results: list[dict[str, Any]]) -> dict[str, list[dict[str, Any]]]:
@@ -322,30 +329,33 @@ def render_text_report(results: list[dict[str, Any]]) -> str:
         out.append(f"Group: {group_name}")
         summary = group_summary(grouped[group_name])
         out.append("  Group summary:")
-        out.append(
-            "    request -> response: "
-            f"avg {format_stat(summary['parent_request_to_response'][0])} ms, "
-            f"stdev {format_stat(summary['parent_request_to_response'][1])} ms, "
-            f"n={summary['parent_request_to_response'][2]}"
-        )
-        out.append(
-            "    response -> child id request: "
-            f"avg {format_stat(summary['parent_response_to_child_id_request'][0])} ms, "
-            f"stdev {format_stat(summary['parent_response_to_child_id_request'][1])} ms, "
-            f"n={summary['parent_response_to_child_id_request'][2]}"
-        )
-        out.append(
-            "    child id request -> response: "
-            f"avg {format_stat(summary['child_id_request_to_response'][0])} ms, "
-            f"stdev {format_stat(summary['child_id_request_to_response'][1])} ms, "
-            f"n={summary['child_id_request_to_response'][2]}"
-        )
-        out.append(
-            "    full attach quartet: "
-            f"avg {format_stat(summary['parent_request_to_child_id_response'][0])} ms, "
-            f"stdev {format_stat(summary['parent_request_to_child_id_response'][1])} ms, "
-            f"n={summary['parent_request_to_child_id_response'][2]}"
-        )
+        for attach_index in sorted(summary["attaches"]):
+            attach = summary["attaches"][attach_index]
+            out.append(f"    Attach {attach_index}:")
+            out.append(
+                "      request -> response: "
+                f"avg {format_stat(attach['parent_request_to_response'][0])} ms, "
+                f"stdev {format_stat(attach['parent_request_to_response'][1])} ms, "
+                f"n={attach['parent_request_to_response'][2]}"
+            )
+            out.append(
+                "      response -> child id request: "
+                f"avg {format_stat(attach['parent_response_to_child_id_request'][0])} ms, "
+                f"stdev {format_stat(attach['parent_response_to_child_id_request'][1])} ms, "
+                f"n={attach['parent_response_to_child_id_request'][2]}"
+            )
+            out.append(
+                "      child id request -> response: "
+                f"avg {format_stat(attach['child_id_request_to_response'][0])} ms, "
+                f"stdev {format_stat(attach['child_id_request_to_response'][1])} ms, "
+                f"n={attach['child_id_request_to_response'][2]}"
+            )
+            out.append(
+                "      full attach quartet: "
+                f"avg {format_stat(attach['parent_request_to_child_id_response'][0])} ms, "
+                f"stdev {format_stat(attach['parent_request_to_child_id_response'][1])} ms, "
+                f"n={attach['parent_request_to_child_id_response'][2]}"
+            )
         out.append(
             "    failed tx attempts per log: "
             f"avg {format_stat(summary['failed_tx_attempts'][0])}, "
@@ -400,26 +410,28 @@ def render_markdown_report(results: list[dict[str, Any]]) -> str:
         out.append("")
         out.append("### Group summary")
         out.append("")
-        out.append("- request -> response: "
-                   f"avg **{format_stat(summary['parent_request_to_response'][0])} ms**, "
-                   f"stdev **{format_stat(summary['parent_request_to_response'][1])} ms**, "
-                   f"n={summary['parent_request_to_response'][2]}")
-        out.append("- response -> child id request: "
-                   f"avg **{format_stat(summary['parent_response_to_child_id_request'][0])} ms**, "
-                   f"stdev **{format_stat(summary['parent_response_to_child_id_request'][1])} ms**, "
-                   f"n={summary['parent_response_to_child_id_request'][2]}")
-        out.append("- child id request -> response: "
-                   f"avg **{format_stat(summary['child_id_request_to_response'][0])} ms**, "
-                   f"stdev **{format_stat(summary['child_id_request_to_response'][1])} ms**, "
-                   f"n={summary['child_id_request_to_response'][2]}")
-        out.append("- full attach quartet: "
-                   f"avg **{format_stat(summary['parent_request_to_child_id_response'][0])} ms**, "
-                   f"stdev **{format_stat(summary['parent_request_to_child_id_response'][1])} ms**, "
-                   f"n={summary['parent_request_to_child_id_response'][2]}")
-        out.append("- failed tx attempts per log: "
-                   f"avg **{format_stat(summary['failed_tx_attempts'][0])}**, "
-                   f"stdev **{format_stat(summary['failed_tx_attempts'][1])}**, "
-                   f"n={summary['failed_tx_attempts'][2]}")
+        out.append("| Attach | Request → Response avg (ms) | Request → Response stdev | Response → Child ID Req avg (ms) | Response → Child ID Req stdev | Child ID Req → Response avg (ms) | Child ID Req → Response stdev | Full attach avg (ms) | Full attach stdev | n |")
+        out.append("| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |")
+        for attach_index in sorted(summary["attaches"]):
+            attach = summary["attaches"][attach_index]
+            out.append(
+                f"| {attach_index} "
+                f"| {format_stat(attach['parent_request_to_response'][0])} "
+                f"| {format_stat(attach['parent_request_to_response'][1])} "
+                f"| {format_stat(attach['parent_response_to_child_id_request'][0])} "
+                f"| {format_stat(attach['parent_response_to_child_id_request'][1])} "
+                f"| {format_stat(attach['child_id_request_to_response'][0])} "
+                f"| {format_stat(attach['child_id_request_to_response'][1])} "
+                f"| {format_stat(attach['parent_request_to_child_id_response'][0])} "
+                f"| {format_stat(attach['parent_request_to_child_id_response'][1])} "
+                f"| {attach['parent_request_to_child_id_response'][2]} |"
+            )
+        out.append("")
+        out.append("| Failed TX attempts per log avg | Failed TX attempts per log stdev | n |")
+        out.append("| ---: | ---: | ---: |")
+        out.append(
+            f"| {format_stat(summary['failed_tx_attempts'][0])} | {format_stat(summary['failed_tx_attempts'][1])} | {summary['failed_tx_attempts'][2]} |"
+        )
         out.append("")
 
         for result in grouped[group_name]:
