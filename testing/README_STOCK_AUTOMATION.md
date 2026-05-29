@@ -16,6 +16,7 @@ It does not call `esphome run` during the timed sequence. This avoids compile-ti
 - `run_stock_test.sh` — convenience wrapper that prefers the repository-local Python venv.
 - `stock_test_devices.example.toml` — copy this to `stock_test_devices.toml` and edit serial ports.
 - `configs/*.yaml` — current stock configs from the `better_testing` branch.
+  - `configs/stock_child.yaml` explicitly sets `CONFIG_OPENTHREAD_PARENT_SEARCH_MTD: n` so the stock-child test does not include ESP-IDF/OpenThread's default periodic MTD parent-search behaviour.
 - `logs/` — generated child logs and JSON run manifests.
 
 ## Setup
@@ -75,6 +76,8 @@ Use this when you want to force all firmware artifacts to be rebuilt before the 
 ```bash
 ./run_stock_test.sh --config stock_test_devices.toml --clean-before-compile
 ```
+
+This is recommended after changing `sdkconfig_options`, so the generated ESP-IDF config is rebuilt from scratch.
 
 ## Actual command phases
 
