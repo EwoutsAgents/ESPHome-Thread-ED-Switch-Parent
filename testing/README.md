@@ -15,17 +15,6 @@ The methods for testing stock performance is as follows:
 
 Make sure that any reruns of the above use the same ESP32C6 for each yaml.
 
-## Stock child configuration note
-
-`configs/stock_child.yaml` explicitly disables ESP-IDF/OpenThread's default MTD periodic parent-search feature via:
-
-```yaml
-sdkconfig_options:
-  CONFIG_OPENTHREAD_PARENT_SEARCH_MTD: n
-```
-
-This keeps the stock-child test focused on passive stock attachment/re-attachment behaviour without background periodic better-parent checks influencing the result.
-
 # Other testing
 TBA
 
