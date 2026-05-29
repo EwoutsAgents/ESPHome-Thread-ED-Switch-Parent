@@ -2,7 +2,7 @@ In this directory the parent switching performance is tested against the stock o
 
 # Stock testing methods
 The methods for testing stock performance is as follows:
-1. Reset the setup by flashing all connected ESP32C6 with `empty.yaml` to ensure no lingering firmware messes up the testing.
+1. Reset the setup by flashing all connected ESP32C6s with `empty.yaml` and using the `erase_flash` parameter in the flash command (`esptool.py`) to ensure no lingering firmware or configuration messes up the testing.
 2. Flash the first ESP32C6 with `stock_router_1.yaml`.
 3. Wait 10 seconds.
 4. Flash the second ESP32C6 with `stock_child.yaml`, record its logs in a `.log` file.
