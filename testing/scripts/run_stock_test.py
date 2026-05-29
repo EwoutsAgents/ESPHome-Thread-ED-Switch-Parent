@@ -57,6 +57,7 @@ class Settings:
     configs_dir: Path
     logs_dir: Path
     esphome_bin: str
+    esptool_bin: str
     upload_speed: str | None = None
     precompile: bool = True
     clean_before_compile: bool = False
@@ -157,6 +158,39 @@ def resolve_esphome_bin(
     )
 
 
+def resolve_esptool_bin(*, testing_dir: Path, dry_run: bool) -> str:
+    repo_root = testing_dir.parent
+    candidates = [
+        repo_root / ".venv" / "bin" / "esptool.py",
+        repo_root / ".venv" / "bin" / "esptool",
+        repo_root / "venv" / "bin" / "esptool.py",
+        repo_root / "venv" / "bin" / "esptool",
+        testing_dir / ".venv" / "bin" / "esptool.py",
+        testing_dir / ".venv" / "bin" / "esptool",
+        testing_dir / "venv" / "bin" / "esptool.py",
+        testing_dir / "venv" / "bin" / "esptool",
+    ]
+    for candidate in candidates:
+        resolved = candidate.resolve()
+        if dry_run or resolved.exists():
+            if resolved.exists() or dry_run:
+                return str(resolved)
+
+    for name in ("esptool.py", "esptool"):
+        path_bin = shutil.which(name)
+        if path_bin:
+            return path_bin
+
+    if dry_run:
+        return "esptool.py"
+
+    searched = "\n  - ".join(str(p.resolve()) for p in candidates)
+    raise SystemExit(
+        "Could not find esptool.py/esptool for erase_flash reset step.\n"
+        f"Searched:\n  - {searched}\n  - PATH"
+    )
+
+
 def load_settings(args: argparse.Namespace) -> Settings:
     config_file = Path(args.config).expanduser().resolve()
     if not config_file.exists():
@@ -219,6 +253,7 @@ def load_settings(args: argparse.Namespace) -> Settings:
             testing_dir=testing_dir,
             dry_run=args.dry_run,
         ),
+        esptool_bin=resolve_esptool_bin(testing_dir=testing_dir, dry_run=args.dry_run),
         upload_speed=str(esphome_raw.get("upload_speed")) if esphome_raw.get("upload_speed") else None,
         precompile=precompile,
         clean_before_compile=clean_before_compile,
@@ -253,6 +288,11 @@ def run_command(
 
 def esphome_base(settings: Settings) -> list[str]:
     return [settings.esphome_bin]
+
+
+def erase_flash(settings: Settings, role: str, *, dry_run: bool, manifest: list[dict[str, Any]]) -> None:
+    cmd = [settings.esptool_bin, "--chip", "esp32c6", "--port", settings.devices[role], "erase_flash"]
+    run_command(cmd, dry_run=dry_run, manifest=manifest)
 
 
 def precompile_all(settings: Settings, *, dry_run: bool, manifest: list[dict[str, Any]]) -> None:
@@ -344,8 +384,11 @@ def run_timed_sequence(settings: Settings, *, dry_run: bool, manifest: list[dict
     child_logger: subprocess.Popen[str] | None = None
     child_log_path: Path | None = None
     try:
+        erase_flash(settings, "router1", dry_run=dry_run, manifest=manifest)
         upload(settings, "router1", "empty", dry_run=dry_run, manifest=manifest)
+        erase_flash(settings, "child", dry_run=dry_run, manifest=manifest)
         upload(settings, "child", "empty", dry_run=dry_run, manifest=manifest)
+        erase_flash(settings, "router2", dry_run=dry_run, manifest=manifest)
         upload(settings, "router2", "empty", dry_run=dry_run, manifest=manifest)
 
         upload(settings, "router1", "router1", dry_run=dry_run, manifest=manifest)
@@ -377,6 +420,7 @@ def write_manifest(settings: Settings, manifest: list[dict[str, Any]], *, dry_ru
         "configs_dir": str(settings.configs_dir),
         "logs_dir": str(settings.logs_dir),
         "esphome_bin": settings.esphome_bin,
+        "esptool_bin": settings.esptool_bin,
         "precompile": settings.precompile,
         "clean_before_compile": settings.clean_before_compile,
         "devices": settings.devices,
@@ -407,6 +451,7 @@ def main(argv: list[str]) -> int:
     manifest: list[dict[str, Any]] = []
 
     log(f"Using ESPHome: {settings.esphome_bin}")
+    log(f"Using esptool: {settings.esptool_bin}")
     log(f"Using configs: {settings.configs_dir}")
     log(f"Using logs: {settings.logs_dir}")
 

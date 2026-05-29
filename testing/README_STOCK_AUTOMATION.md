@@ -92,7 +92,7 @@ esphome compile configs/stock_router_2.yaml
 
 Timed phase:
 
-1. `upload empty.yaml` to router 1, child, and router 2.
+1. `esptool.py --chip esp32c6 --port <port> erase_flash`, then `upload empty.yaml`, for router 1, child, and router 2.
 2. `upload stock_router_1.yaml` to router 1.
 3. Wait 10 seconds.
 4. `upload stock_child.yaml` to child and start `esphome logs` for the child.
