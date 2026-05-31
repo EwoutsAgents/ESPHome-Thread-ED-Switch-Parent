@@ -16,6 +16,8 @@ It does not call `esphome run` during the timed sequence. This avoids compile-ti
 - `scripts/run_stock_test.py` — main automation runner.
 - `run_stock_test.sh` — convenience wrapper that prefers the repository-local Python venv.
 - `stock_test_devices.example.toml` — copy this to `stock_test_devices.toml` and edit serial ports.
+  - Optional extra device entries such as `unused` are erased and flashed with `empty.yaml` before the timed sequence starts.
+  - Optional `[sniffer]` settings can start/stop an IEEE 802.15.4 capture command during the timed sequence.
 - `configs/*.yaml` — current stock configs from the `better_testing` branch.
   - `configs/stock_child.yaml` explicitly sets `CONFIG_OPENTHREAD_PARENT_SEARCH_MTD: n` so the stock-child test does not include ESP-IDF/OpenThread's default periodic MTD parent-search behaviour.
 - `logs/stock/` — generated stock child logs and JSON run manifests.
@@ -37,6 +39,18 @@ Assign each physical ESP32-C6 to a stable role:
 router1 = "/dev/ttyACM0"
 child = "/dev/ttyACM1"
 router2 = "/dev/ttyACM2"
+unused = "/dev/ttyACM3"
+```
+
+Optional sniffer integration:
+
+```toml
+[timing]
+sniffer_lead_in_seconds = 5
+
+[sniffer]
+enabled = true
+command = ["ssh", "rpi-802154-sniffer", "~/bin/nrf802154-sniff"]
 ```
 
 Do not swap these assignments between reruns unless you deliberately restart the experiment design.
@@ -93,20 +107,24 @@ esphome compile configs/stock_router_2.yaml
 
 Timed phase:
 
-1. `erase_flash`, then `upload empty.yaml`, for router 1, child, and router 2.
-2. `upload stock_router_1.yaml` to router 1.
-3. Wait 10 seconds.
-4. `upload stock_child.yaml` to child and start `esphome logs` for the child.
-5. Wait 30 seconds.
-6. `upload stock_router_2.yaml` to router 2.
-7. Wait 60 seconds.
-8. `upload empty.yaml` to router 1.
-9. Wait 300 seconds while child logging continues.
-10. Stop child logging.
+1. `erase_flash`, then `upload empty.yaml`, for router 1, child, router 2, and any extra configured ESP32-C6 roles such as `unused`.
+2. Start the optional sniffer capture command.
+3. Wait `sniffer_lead_in_seconds` so the sniffer is already recording before any test node starts.
+4. `upload stock_router_1.yaml` to router 1.
+5. Wait 10 seconds.
+6. `upload stock_child.yaml` to child and start `esphome logs` for the child.
+7. Wait 30 seconds.
+8. `upload stock_router_2.yaml` to router 2.
+9. Wait 60 seconds.
+10. `upload empty.yaml` to router 1.
+11. Wait 300 seconds while child logging continues.
+12. Stop the optional sniffer capture command.
+13. Stop child logging.
 
 Each run writes:
 
 - `logs/stock/stock_child_<timestamp>.log`
+- `logs/stock/stock_sniffer_<timestamp>.log` when `[sniffer].enabled = true`
 - `logs/stock/stock_test_manifest_<timestamp>.json`
 
 The JSON manifest records every command and wait event, which makes it easier to audit whether a result included compilation in the timed section.

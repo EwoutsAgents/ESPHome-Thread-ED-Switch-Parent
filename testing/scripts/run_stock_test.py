@@ -14,7 +14,6 @@ import json
 import os
 import shlex
 import shutil
-import signal
 import subprocess
 import sys
 import threading
@@ -44,10 +43,18 @@ COMPILE_ORDER = ["empty", "router1", "child", "router2"]
 
 @dataclass
 class Timing:
+    sniffer_lead_in_seconds: int = 5
     after_router1_seconds: int = 10
     after_child_seconds: int = 30
     after_router2_seconds: int = 60
     after_router1_removed_seconds: int = 300
+
+
+@dataclass
+class SnifferSettings:
+    enabled: bool = False
+    command: list[str] = field(default_factory=list)
+    stop_timeout_seconds: int = 10
 
 
 @dataclass
@@ -63,6 +70,7 @@ class Settings:
     clean_before_compile: bool = False
     devices: dict[str, str] = field(default_factory=dict)
     timing: Timing = field(default_factory=Timing)
+    sniffer: SnifferSettings = field(default_factory=SnifferSettings)
 
 
 def now_utc_iso() -> str:
@@ -224,6 +232,7 @@ def load_settings(args: argparse.Namespace) -> Settings:
     esphome_raw = raw.get("esphome", {})
     timing_raw = raw.get("timing", {})
     timing = Timing(
+        sniffer_lead_in_seconds=int(timing_raw.get("sniffer_lead_in_seconds", 5)),
         after_router1_seconds=int(timing_raw.get("after_router1_seconds", 10)),
         after_child_seconds=int(timing_raw.get("after_child_seconds", 30)),
         after_router2_seconds=int(timing_raw.get("after_router2_seconds", 60)),
@@ -239,6 +248,16 @@ def load_settings(args: argparse.Namespace) -> Settings:
     clean_before_compile = bool(esphome_raw.get("clean_before_compile", False))
     if args.clean_before_compile:
         clean_before_compile = True
+
+    sniffer_raw = raw.get("sniffer", {})
+    sniffer_command = sniffer_raw.get("command", [])
+    if sniffer_command and not isinstance(sniffer_command, list):
+        raise SystemExit("[sniffer].command must be a TOML array of strings.")
+    if any(not isinstance(part, str) for part in sniffer_command):
+        raise SystemExit("[sniffer].command must contain only strings.")
+    sniffer_enabled = bool(sniffer_raw.get("enabled", False))
+    if sniffer_enabled and not sniffer_command:
+        raise SystemExit("[sniffer].enabled is true, but [sniffer].command is empty.")
 
     return Settings(
         config_file=config_file,
@@ -259,6 +278,11 @@ def load_settings(args: argparse.Namespace) -> Settings:
         clean_before_compile=clean_before_compile,
         devices={key: str(value) for key, value in devices.items()},
         timing=timing,
+        sniffer=SnifferSettings(
+            enabled=sniffer_enabled,
+            command=[str(part) for part in sniffer_command],
+            stop_timeout_seconds=int(sniffer_raw.get("stop_timeout_seconds", 10)),
+        ),
     )
 
 
@@ -321,6 +345,76 @@ def sleep_step(seconds: int, reason: str, *, dry_run: bool, manifest: list[dict[
         time.sleep(seconds)
 
 
+def extra_empty_roles(settings: Settings) -> list[str]:
+    return sorted(role for role in settings.devices if role not in {"router1", "child", "router2"})
+
+
+def start_sniffer_capture(
+    settings: Settings,
+    *,
+    dry_run: bool,
+    manifest: list[dict[str, Any]],
+) -> tuple[subprocess.Popen[str] | None, Path | None]:
+    if not settings.sniffer.enabled:
+        return None, None
+
+    settings.logs_dir.mkdir(parents=True, exist_ok=True)
+    stamp = dt.datetime.now().strftime("%Y%m%d-%H%M%S")
+    log_path = settings.logs_dir / f"stock_sniffer_{stamp}.log"
+    cmd = settings.sniffer.command
+    manifest.append({"time_utc": now_utc_iso(), "cmd": cmd, "sniffer_log_path": str(log_path), "dry_run": dry_run})
+    log(("DRY-RUN " if dry_run else "START ") + quote_cmd(cmd) + f" > {log_path}")
+
+    if dry_run:
+        return None, log_path
+
+    log_file = log_path.open("w", encoding="utf-8", errors="replace")
+    log_file.write(f"# Command: {quote_cmd(cmd)}\n")
+    log_file.write(f"# Started UTC: {now_utc_iso()}\n")
+    log_file.flush()
+
+    process = subprocess.Popen(
+        cmd,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.STDOUT,
+        text=True,
+        encoding="utf-8",
+        errors="replace",
+        bufsize=1,
+    )
+
+    def pump() -> None:
+        try:
+            assert process.stdout is not None
+            for line in process.stdout:
+                print(line, end="")
+                log_file.write(line)
+                log_file.flush()
+        finally:
+            log_file.write(f"# Log reader stopped UTC: {now_utc_iso()}\n")
+            log_file.close()
+
+    thread = threading.Thread(target=pump, name="sniffer-log-pump", daemon=True)
+    thread.start()
+    return process, log_path
+
+
+def stop_sniffer_capture(settings: Settings, process: subprocess.Popen[str] | None, *, dry_run: bool) -> None:
+    if dry_run or process is None:
+        return
+    if process.poll() is not None:
+        log(f"Sniffer process already exited with code {process.returncode}.")
+        return
+    log("Stopping sniffer capture process.")
+    process.terminate()
+    try:
+        process.wait(timeout=settings.sniffer.stop_timeout_seconds)
+    except subprocess.TimeoutExpired:
+        log("Sniffer process did not stop after SIGTERM; killing it.")
+        process.kill()
+        process.wait(timeout=10)
+
+
 def start_child_log(settings: Settings, *, dry_run: bool, manifest: list[dict[str, Any]]) -> tuple[subprocess.Popen[str] | None, Path]:
     settings.logs_dir.mkdir(parents=True, exist_ok=True)
     stamp = dt.datetime.now().strftime("%Y%m%d-%H%M%S")
@@ -379,20 +473,33 @@ def stop_child_log(process: subprocess.Popen[str] | None, *, dry_run: bool) -> N
         process.wait(timeout=10)
 
 
-def run_timed_sequence(settings: Settings, *, dry_run: bool, manifest: list[dict[str, Any]]) -> Path | None:
+def run_timed_sequence(settings: Settings, *, dry_run: bool, manifest: list[dict[str, Any]]) -> tuple[Path | None, Path | None]:
     log("Starting timed upload/logging sequence. Upload-only commands are used from here onward.")
     child_logger: subprocess.Popen[str] | None = None
     child_log_path: Path | None = None
+    sniffer_process: subprocess.Popen[str] | None = None
+    sniffer_log_path: Path | None = None
     try:
-        erase_flash(settings, "router1", dry_run=dry_run, manifest=manifest)
-        upload(settings, "router1", "empty", dry_run=dry_run, manifest=manifest)
-        erase_flash(settings, "child", dry_run=dry_run, manifest=manifest)
-        upload(settings, "child", "empty", dry_run=dry_run, manifest=manifest)
-        erase_flash(settings, "router2", dry_run=dry_run, manifest=manifest)
-        upload(settings, "router2", "empty", dry_run=dry_run, manifest=manifest)
+        for role in ["router1", "child", "router2", *extra_empty_roles(settings)]:
+            erase_flash(settings, role, dry_run=dry_run, manifest=manifest)
+            upload(settings, role, "empty", dry_run=dry_run, manifest=manifest)
+
+        sniffer_process, sniffer_log_path = start_sniffer_capture(settings, dry_run=dry_run, manifest=manifest)
+        if settings.sniffer.enabled:
+            sleep_step(
+                settings.timing.sniffer_lead_in_seconds,
+                "sniffer started; wait before flashing router 1",
+                dry_run=dry_run,
+                manifest=manifest,
+            )
 
         upload(settings, "router1", "router1", dry_run=dry_run, manifest=manifest)
-        sleep_step(settings.timing.after_router1_seconds, "router 1 has been flashed; wait before adding child", dry_run=dry_run, manifest=manifest)
+        sleep_step(
+            settings.timing.after_router1_seconds,
+            "router 1 has been flashed; wait before adding child",
+            dry_run=dry_run,
+            manifest=manifest,
+        )
 
         upload(settings, "child", "child", dry_run=dry_run, manifest=manifest)
         child_logger, child_log_path = start_child_log(settings, dry_run=dry_run, manifest=manifest)
@@ -403,12 +510,22 @@ def run_timed_sequence(settings: Settings, *, dry_run: bool, manifest: list[dict
 
         upload(settings, "router1", "empty", dry_run=dry_run, manifest=manifest)
         sleep_step(settings.timing.after_router1_removed_seconds, "router 1 removed; keep recording child", dry_run=dry_run, manifest=manifest)
-        return child_log_path
+        stop_sniffer_capture(settings, sniffer_process, dry_run=dry_run)
+        sniffer_process = None
+        return child_log_path, sniffer_log_path
     finally:
+        stop_sniffer_capture(settings, sniffer_process, dry_run=dry_run)
         stop_child_log(child_logger, dry_run=dry_run)
 
 
-def write_manifest(settings: Settings, manifest: list[dict[str, Any]], *, dry_run: bool, child_log: Path | None) -> Path:
+def write_manifest(
+    settings: Settings,
+    manifest: list[dict[str, Any]],
+    *,
+    dry_run: bool,
+    child_log: Path | None,
+    sniffer_log: Path | None,
+) -> Path:
     settings.logs_dir.mkdir(parents=True, exist_ok=True)
     stamp = dt.datetime.now().strftime("%Y%m%d-%H%M%S")
     path = settings.logs_dir / f"stock_test_manifest_{stamp}.json"
@@ -426,6 +543,12 @@ def write_manifest(settings: Settings, manifest: list[dict[str, Any]], *, dry_ru
         "devices": settings.devices,
         "timing": settings.timing.__dict__,
         "child_log": str(child_log) if child_log else None,
+        "sniffer": {
+            "enabled": settings.sniffer.enabled,
+            "command": settings.sniffer.command,
+            "stop_timeout_seconds": settings.sniffer.stop_timeout_seconds,
+            "log": str(sniffer_log) if sniffer_log else None,
+        },
         "events": manifest,
     }
     path.write_text(json.dumps(payload, indent=2) + "\n", encoding="utf-8")
@@ -456,6 +579,7 @@ def main(argv: list[str]) -> int:
     log(f"Using logs: {settings.logs_dir}")
 
     child_log: Path | None = None
+    sniffer_log: Path | None = None
     try:
         if settings.precompile:
             precompile_all(settings, dry_run=args.dry_run, manifest=manifest)
@@ -465,12 +589,20 @@ def main(argv: list[str]) -> int:
         if args.precompile_only:
             log("Precompile-only requested; not starting timed test sequence.")
         else:
-            child_log = run_timed_sequence(settings, dry_run=args.dry_run, manifest=manifest)
+            child_log, sniffer_log = run_timed_sequence(settings, dry_run=args.dry_run, manifest=manifest)
     finally:
-        manifest_path = write_manifest(settings, manifest, dry_run=args.dry_run, child_log=child_log)
+        manifest_path = write_manifest(
+            settings,
+            manifest,
+            dry_run=args.dry_run,
+            child_log=child_log,
+            sniffer_log=sniffer_log,
+        )
         log(f"Wrote manifest: {manifest_path}")
         if child_log:
             log(f"Child log: {child_log}")
+        if sniffer_log:
+            log(f"Sniffer log: {sniffer_log}")
 
     return 0
 

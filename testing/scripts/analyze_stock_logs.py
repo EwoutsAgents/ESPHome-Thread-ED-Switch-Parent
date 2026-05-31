@@ -22,8 +22,10 @@ import glob
 import json
 import re
 import statistics
+import subprocess
 import sys
 from dataclasses import asdict, dataclass, field
+from datetime import datetime
 from pathlib import Path
 from typing import Any
 
@@ -38,9 +40,12 @@ MESH_FROM_RE = re.compile(r"MeshForwarder-: Received IPv6 UDP msg, .* from:([0-9
 MESH_TO_RE = re.compile(r"MeshForwarder-: Sent IPv6 UDP msg, .* to:([0-9a-f]+),?")
 IP_SRC_DST_RE = re.compile(r"MeshForwarder-:\s+(src|dst):\[([^\]]+)\]")
 PARENT_INFO_RE = re.compile(r"Saved ParentInfo \{extaddr:([0-9a-f]+), version:\d+\}")
+RADIO_EXTADDR_RE = re.compile(r"RadioExtAddress:\s*([0-9a-f]+)")
 TX_FAILED_RE = re.compile(
     r"Frame tx attempt (\d+)/(\d+) failed, error:([^,]+), .*?seqnum:(\d+)(?:, .*?dst:([0-9a-f]+))?"
 )
+NETWORK_KEY_RE = re.compile(r"network_key:\s*0x([0-9a-fA-F]{32})")
+SAVE_PCAP_RE = re.compile(r"Saving (?:test )?capture to (\S+\.pcapng)")
 
 
 @dataclass
@@ -61,9 +66,23 @@ class AttachSequence:
     parent_ipv6: str | None = None
     parent_rloc16: str | None = None
     parent_extaddr: str | None = None
+    child_extaddr: str | None = None
     line_no: int = 0
+    timing_source: str = "unavailable"
+    pcap_frame_numbers: dict[str, int] = field(default_factory=dict)
+    pcap_event_times: dict[str, str | None] = field(default_factory=dict)
 
     def to_summary(self) -> dict[str, Any]:
+        pcap_start = parse_formatted_ms(self.pcap_event_times.get("send_parent_request"))
+        pcap_parent_resp = parse_formatted_ms(self.pcap_event_times.get("receive_parent_response"))
+        pcap_child_req = parse_formatted_ms(self.pcap_event_times.get("send_child_id_request"))
+        pcap_child_resp = parse_formatted_ms(self.pcap_event_times.get("receive_child_id_response"))
+        timing_ms = {
+            "parent_request_to_response": delta_ms(pcap_start, pcap_parent_resp),
+            "parent_response_to_child_id_request": delta_ms(pcap_parent_resp, pcap_child_req),
+            "child_id_request_to_response": delta_ms(pcap_child_req, pcap_child_resp),
+            "parent_request_to_child_id_response": delta_ms(pcap_start, pcap_child_resp),
+        }
         result = {
             "send_parent_request": format_ms(self.send_parent_request_ms),
             "receive_parent_response": format_ms(self.receive_parent_response_ms),
@@ -72,12 +91,11 @@ class AttachSequence:
             "parent_ipv6": self.parent_ipv6,
             "parent_extaddr": self.parent_extaddr,
             "parent_rloc16": self.parent_rloc16,
-            "timing_ms": {
-                "parent_request_to_response": delta_ms(self.send_parent_request_ms, self.receive_parent_response_ms),
-                "parent_response_to_child_id_request": delta_ms(self.receive_parent_response_ms, self.send_child_id_request_ms),
-                "child_id_request_to_response": delta_ms(self.send_child_id_request_ms, self.receive_child_id_response_ms),
-                "parent_request_to_child_id_response": delta_ms(self.send_parent_request_ms, self.receive_child_id_response_ms),
-            },
+            "child_extaddr": self.child_extaddr,
+            "timing_source": self.timing_source,
+            "timing_ms": timing_ms,
+            "pcap_event_times": self.pcap_event_times,
+            "pcap_frame_numbers": self.pcap_frame_numbers,
         }
         return result
 
@@ -106,6 +124,14 @@ def format_ms(value: int | None) -> str | None:
     hh, rem = divmod(total_seconds, 3600)
     mm, ss = divmod(rem, 60)
     return f"{hh:02d}:{mm:02d}:{ss:02d}.{ms:03d}"
+
+
+def parse_formatted_ms(value: str | None) -> int | None:
+    if value is None:
+        return None
+    hh, mm, rest = value.split(":")
+    ss, ms = rest.split(".")
+    return (((int(hh) * 60) + int(mm)) * 60 + int(ss)) * 1000 + int(ms)
 
 
 def delta_ms(start: int | None, end: int | None) -> int | None:
@@ -149,6 +175,217 @@ def log_group_name(path: Path) -> str:
     return match.group(1) if match else stem
 
 
+def normalize_extaddr(extaddr: str | None) -> str | None:
+    if extaddr is None:
+        return None
+    compact = extaddr.replace(":", "").strip().lower()
+    if len(compact) != 16:
+        return compact
+    return ":".join(compact[i : i + 2] for i in range(0, 16, 2))
+
+
+def local_ms_from_epoch(epoch_value: str) -> int:
+    dt = datetime.fromtimestamp(float(epoch_value)).astimezone()
+    return (((dt.hour * 60) + dt.minute) * 60 + dt.second) * 1000 + (dt.microsecond // 1000)
+
+
+def manifest_for_log(log_path: Path) -> dict[str, Any] | None:
+    logs_dir = log_path.parent
+    for manifest_path in sorted(logs_dir.glob("stock_test_manifest_*.json"), reverse=True):
+        try:
+            manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+        except (OSError, json.JSONDecodeError):
+            continue
+        if manifest.get("child_log") == str(log_path):
+            manifest["_manifest_path"] = str(manifest_path)
+            return manifest
+    return None
+
+
+def sniffer_pcap_path(sniffer_log_path: Path) -> str | None:
+    try:
+        lines = sniffer_log_path.read_text(encoding="utf-8", errors="replace").splitlines()
+    except OSError:
+        return None
+    for line in lines:
+        if match := SAVE_PCAP_RE.search(line):
+            return match.group(1)
+    return None
+
+
+def network_key_for_child_log(manifest: dict[str, Any]) -> str | None:
+    for event in manifest.get("events", []):
+        cmd = event.get("cmd") or []
+        if len(cmd) >= 3 and cmd[1] == "logs":
+            config_path = Path(cmd[2])
+            try:
+                config_text = config_path.read_text(encoding="utf-8", errors="replace")
+            except OSError:
+                return None
+            if match := NETWORK_KEY_RE.search(config_text):
+                return match.group(1).lower()
+    return None
+
+
+def build_pcap_runner(manifest: dict[str, Any], pcap_path: str, tshark_args: list[str]) -> list[str]:
+    sniffer = manifest.get("sniffer") or {}
+    cmd = sniffer.get("command") or []
+    if len(cmd) >= 2 and cmd[0] == "ssh":
+        remote_host = cmd[1]
+        quoted = " ".join(subprocess.list2cmdline([arg]) if " " in arg else subprocess.list2cmdline([arg]) for arg in tshark_args)
+        return ["ssh", remote_host, quoted]
+    return ["tshark", "-r", pcap_path, *tshark_args]
+
+
+def decode_pcap_attach_rows(manifest: dict[str, Any], pcap_path: str, network_key: str) -> list[dict[str, Any]]:
+    tshark_args = [
+        "tshark",
+        "-r",
+        pcap_path,
+        "-o",
+        f'uat:ieee802154_keys:"{network_key}","1","Thread hash"',
+        "-o",
+        "thread.thr_seq_ctr:00000000",
+        "-o",
+        "wpan.802154_fcs_ok:FALSE",
+        "-o",
+        "wpan.802154_sec_suite:AES-128 Encryption, 32-bit Integrity Protection",
+        "-T",
+        "fields",
+        "-Y",
+        "mle.cmd == 9 || mle.cmd == 10 || mle.cmd == 11 || mle.cmd == 12",
+        "-e",
+        "frame.number",
+        "-e",
+        "frame.time_epoch",
+        "-e",
+        "mle.cmd",
+        "-e",
+        "wpan.src64",
+        "-e",
+        "wpan.dst64",
+    ]
+    runner = build_pcap_runner(manifest, pcap_path, tshark_args)
+    proc = subprocess.run(runner, capture_output=True, text=True, check=True)
+    rows: list[dict[str, Any]] = []
+    for line in proc.stdout.splitlines():
+        parts = line.split("\t")
+        if len(parts) < 5:
+            continue
+        frame_no, epoch, cmd, src64, dst64 = parts[:5]
+        rows.append(
+            {
+                "frame_number": int(frame_no),
+                "epoch": float(epoch),
+                "cmd": int(cmd),
+                "src64": src64.lower(),
+                "dst64": dst64.lower(),
+                "local_ms": local_ms_from_epoch(epoch),
+            }
+        )
+    return rows
+
+
+def find_pcap_sequence_rows(seq: AttachSequence, rows: list[dict[str, Any]]) -> dict[str, dict[str, Any]] | None:
+    child_extaddr = normalize_extaddr(seq.child_extaddr)
+    parent_extaddr = normalize_extaddr(seq.parent_extaddr)
+    if not child_extaddr or not parent_extaddr:
+        return None
+
+    req = next(
+        (
+            row
+            for row in rows
+            if row["cmd"] == 9
+            and row["src64"] == child_extaddr
+            and abs(row["local_ms"] - seq.send_parent_request_ms) <= 5000
+        ),
+        None,
+    )
+    if req is None:
+        return None
+
+    resp = next(
+        (
+            row
+            for row in rows
+            if row["cmd"] == 10
+            and row["src64"] == parent_extaddr
+            and row["dst64"] == child_extaddr
+            and row["local_ms"] >= req["local_ms"]
+            and row["local_ms"] - req["local_ms"] <= 5000
+        ),
+        None,
+    )
+    if resp is None:
+        return None
+
+    child_req = next(
+        (
+            row
+            for row in rows
+            if row["cmd"] == 11
+            and row["src64"] == child_extaddr
+            and row["dst64"] == parent_extaddr
+            and row["local_ms"] >= resp["local_ms"]
+            and row["local_ms"] - resp["local_ms"] <= 5000
+        ),
+        None,
+    )
+    if child_req is None:
+        return None
+
+    child_resp = next(
+        (
+            row
+            for row in rows
+            if row["cmd"] == 12
+            and row["src64"] == parent_extaddr
+            and row["dst64"] == child_extaddr
+            and row["local_ms"] >= child_req["local_ms"]
+            and row["local_ms"] - child_req["local_ms"] <= 5000
+        ),
+        None,
+    )
+    if child_resp is None:
+        return None
+
+    return {
+        "send_parent_request": req,
+        "receive_parent_response": resp,
+        "send_child_id_request": child_req,
+        "receive_child_id_response": child_resp,
+    }
+
+
+def enrich_sequences_with_pcap(log_path: Path, sequences: list[AttachSequence]) -> None:
+    manifest = manifest_for_log(log_path)
+    if manifest is None:
+        return
+    sniffer = manifest.get("sniffer") or {}
+    sniffer_log = sniffer.get("log")
+    if not sniffer_log:
+        return
+    pcap_path = sniffer_pcap_path(Path(sniffer_log))
+    if not pcap_path:
+        return
+    network_key = network_key_for_child_log(manifest)
+    if not network_key:
+        return
+    try:
+        rows = decode_pcap_attach_rows(manifest, pcap_path, network_key)
+    except (subprocess.CalledProcessError, OSError):
+        return
+
+    for seq in sequences:
+        matched = find_pcap_sequence_rows(seq, rows)
+        if not matched:
+            continue
+        seq.timing_source = "pcap"
+        seq.pcap_frame_numbers = {key: value["frame_number"] for key, value in matched.items()}
+        seq.pcap_event_times = {key: format_ms(value["local_ms"]) for key, value in matched.items()}
+
+
 def analyze_log(path: Path) -> dict[str, Any]:
     lines = path.read_text(encoding="utf-8", errors="replace").splitlines()
 
@@ -160,10 +397,15 @@ def analyze_log(path: Path) -> dict[str, Any]:
 
     pending_mesh_direction: str | None = None
     pending_mesh_extaddr: str | None = None
+    child_extaddr: str | None = None
 
     for line_no, line in enumerate(lines, start=1):
         timestamp_ms = parse_timestamp_ms(line)
         if timestamp_ms is None:
+            continue
+
+        if child_extaddr is None and (match := RADIO_EXTADDR_RE.search(line)):
+            child_extaddr = match.group(1).lower()
             continue
 
         if match := MESH_FROM_RE.search(line):
@@ -210,7 +452,7 @@ def analyze_log(path: Path) -> dict[str, Any]:
         if PARENT_REQ_RE.search(line):
             if current is not None:
                 sequences.append(current)
-            current = AttachSequence(send_parent_request_ms=timestamp_ms, line_no=line_no)
+            current = AttachSequence(send_parent_request_ms=timestamp_ms, line_no=line_no, child_extaddr=child_extaddr)
             continue
 
         if current is None:
@@ -239,6 +481,8 @@ def analyze_log(path: Path) -> dict[str, Any]:
     if current is not None:
         current.parent_extaddr = resolve_parent_extaddr(current, mesh_events=mesh_events, parent_info_events=parent_info_events)
         sequences.append(current)
+
+    enrich_sequences_with_pcap(path, sequences)
 
     return {
         "group": log_group_name(path),
@@ -385,10 +629,16 @@ def render_text_report(results: list[dict[str, Any]]) -> str:
                     out.append(f"      parent ipv6: {seq['parent_ipv6']}")
                     out.append(f"      parent extaddr: {seq['parent_extaddr']}")
                     out.append(f"      parent rloc16: {seq['parent_rloc16']}")
+                    out.append(f"      timing source: {seq['timing_source']}")
                     out.append(f"      request -> response: {seq['timing_ms']['parent_request_to_response']} ms")
                     out.append(f"      response -> child id request: {seq['timing_ms']['parent_response_to_child_id_request']} ms")
                     out.append(f"      child id request -> response: {seq['timing_ms']['child_id_request_to_response']} ms")
                     out.append(f"      full attach quartet: {seq['timing_ms']['parent_request_to_child_id_response']} ms")
+                    if seq["timing_source"] == "pcap":
+                        out.append(f"      pcap parent request: {seq['pcap_event_times'].get('send_parent_request')} (frame {seq['pcap_frame_numbers'].get('send_parent_request')})")
+                        out.append(f"      pcap parent response: {seq['pcap_event_times'].get('receive_parent_response')} (frame {seq['pcap_frame_numbers'].get('receive_parent_response')})")
+                        out.append(f"      pcap child id request: {seq['pcap_event_times'].get('send_child_id_request')} (frame {seq['pcap_frame_numbers'].get('send_child_id_request')})")
+                        out.append(f"      pcap child id response: {seq['pcap_event_times'].get('receive_child_id_response')} (frame {seq['pcap_frame_numbers'].get('receive_child_id_response')})")
 
             failed = result["failed_tx"]
             out.append(f"    failed tx attempts: {failed['total_failed_attempts']}")
@@ -455,10 +705,16 @@ def render_markdown_report(results: list[dict[str, Any]]) -> str:
                     out.append(f"- parent ipv6: `{seq['parent_ipv6']}`")
                     out.append(f"- parent extaddr: `{seq['parent_extaddr']}`")
                     out.append(f"- parent rloc16: `{seq['parent_rloc16']}`")
+                    out.append(f"- timing source: **{seq['timing_source']}**")
                     out.append(f"- request -> response: **{seq['timing_ms']['parent_request_to_response']} ms**")
                     out.append(f"- response -> child id request: **{seq['timing_ms']['parent_response_to_child_id_request']} ms**")
                     out.append(f"- child id request -> response: **{seq['timing_ms']['child_id_request_to_response']} ms**")
                     out.append(f"- full attach quartet: **{seq['timing_ms']['parent_request_to_child_id_response']} ms**")
+                    if seq["timing_source"] == "pcap":
+                        out.append(f"- pcap parent request: `{seq['pcap_event_times'].get('send_parent_request')}` (frame {seq['pcap_frame_numbers'].get('send_parent_request')})")
+                        out.append(f"- pcap parent response: `{seq['pcap_event_times'].get('receive_parent_response')}` (frame {seq['pcap_frame_numbers'].get('receive_parent_response')})")
+                        out.append(f"- pcap child id request: `{seq['pcap_event_times'].get('send_child_id_request')}` (frame {seq['pcap_frame_numbers'].get('send_child_id_request')})")
+                        out.append(f"- pcap child id response: `{seq['pcap_event_times'].get('receive_child_id_response')}` (frame {seq['pcap_frame_numbers'].get('receive_child_id_response')})")
                     out.append("")
 
             failed = result["failed_tx"]
@@ -484,7 +740,7 @@ def print_text_report(results: list[dict[str, Any]]) -> None:
 def main(argv: list[str]) -> int:
     args = parse_args(argv)
     logs_dir = args.logs_dir.resolve()
-    log_paths = sorted(Path(path) for path in glob.glob(str(logs_dir / "*.log")))
+    log_paths = sorted(Path(path) for path in glob.glob(str(logs_dir / "*_child_*.log")))
     results = [analyze_log(path) for path in log_paths]
 
     if args.json:

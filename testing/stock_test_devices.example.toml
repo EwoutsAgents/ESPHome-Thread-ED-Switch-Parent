@@ -5,6 +5,9 @@
 router1 = "/dev/ttyACM0"
 child = "/dev/ttyACM1"
 router2 = "/dev/ttyACM2"
+# Optional extra ESP32-C6 boards that should also be erased and flashed with
+# empty.yaml before the timed sequence begins.
+# unused = "/dev/ttyACM3"
 
 [paths]
 # These are relative to this TOML file unless absolute.
@@ -29,7 +32,16 @@ clean_before_compile = false
 # upload_speed = 460800
 
 [timing]
+sniffer_lead_in_seconds = 5
 after_router1_seconds = 10
 after_child_seconds = 30
 after_router2_seconds = 60
 after_router1_removed_seconds = 300
+
+[sniffer]
+# Optional IEEE 802.15.4 sniffer capture command.
+# When enabled, the runner starts this before flashing router1, waits for the
+# sniffer lead-in above, and stops it after the final 300-second wait.
+enabled = false
+# command = ["ssh", "rpi-802154-sniffer", "~/bin/nrf802154-sniff"]
+stop_timeout_seconds = 10
