@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Run the stock ESPHome/OpenThread parent-switching test.
+"""Run the unicast no-early-attach ESPHome/OpenThread parent-switching test.
 
 The important invariant is that all firmware is compiled before the timed test
 sequence starts. During the timed sequence this script uses `esphome upload`,
@@ -35,12 +35,19 @@ except ModuleNotFoundError:  # pragma: no cover - optional local dependency
 CONFIG_NAMES = {
     "empty": "empty.yaml",
     "router1": "stock_router_1.yaml",
-    "child": "stock_child.yaml",
+    "child": "ucast_child_no_early_attach.yaml",
     "router2": "stock_router_2.yaml",
 }
 
 COMPILE_ORDER = ["empty", "router1", "child", "router2"]
 PCAP_PATH_RE = re.compile(r"Saving (?:test )?capture to (\S+\.pcapng)")
+ROUTER2_RADIO_EXTADDR_RE = re.compile(r"RadioExtAddress:\s*([0-9a-f]{16})", re.IGNORECASE)
+ROUTER2_NETWORKINFO_RE = re.compile(
+    r"Saved NetworkInfo \{[^}]*extaddr:([0-9a-f]{16}), role:(?:router|leader)\b",
+    re.IGNORECASE,
+)
+CHILD_MESH_FROM_RE = re.compile(r"from:([0-9a-f]{16}),", re.IGNORECASE)
+CHILD_PARENTINFO_RE = re.compile(r"Saved ParentInfo \{extaddr:([0-9a-f]{16})", re.IGNORECASE)
 
 
 @dataclass
@@ -60,6 +67,13 @@ class SnifferSettings:
 
 
 @dataclass
+class SwitchSettings:
+    target_parent_extaddr: str = ""
+    settle_seconds: int = 2
+    derive_timeout_seconds: int = 12
+
+
+@dataclass
 class Settings:
     config_file: Path
     testing_dir: Path
@@ -74,6 +88,7 @@ class Settings:
     devices: dict[str, str] = field(default_factory=dict)
     timing: Timing = field(default_factory=Timing)
     sniffer: SnifferSettings = field(default_factory=SnifferSettings)
+    switch: SwitchSettings = field(default_factory=SwitchSettings)
 
 
 def now_utc_iso() -> str:
@@ -207,7 +222,7 @@ def load_settings(args: argparse.Namespace) -> Settings:
     if not config_file.exists():
         example = config_file.with_suffix(config_file.suffix + ".example")
         if not example.exists():
-            example = config_file.parent / "stock_test_devices.example.toml"
+            example = config_file.parent / "ucast_no_early_attach_test_devices.example.toml"
         hint = f" Copy {example.name} to {config_file.name} and edit the serial ports." if example.exists() else ""
         raise SystemExit(f"Config file not found: {config_file}.{hint}")
 
@@ -262,6 +277,15 @@ def load_settings(args: argparse.Namespace) -> Settings:
     sniffer_enabled = bool(sniffer_raw.get("enabled", False))
     if sniffer_enabled and not sniffer_command:
         raise SystemExit("[sniffer].enabled is true, but [sniffer].command is empty.")
+    switch_raw = raw.get("switch", {})
+    target_parent_extaddr = str(switch_raw.get("target_parent_extaddr", "")).strip().lower()
+    if not target_parent_extaddr:
+        raise SystemExit("Missing [switch].target_parent_extaddr in TOML config.")
+    compact = target_parent_extaddr.replace(":", "").replace("-", "").replace(" ", "")
+    if compact.startswith("0x"):
+        compact = compact[2:]
+    if len(compact) != 16 or any(ch not in "0123456789abcdef" for ch in compact):
+        raise SystemExit("[switch].target_parent_extaddr must be a valid 16-hex-digit IEEE 802.15.4 ExtAddr.")
 
     return Settings(
         config_file=config_file,
@@ -287,6 +311,11 @@ def load_settings(args: argparse.Namespace) -> Settings:
             enabled=sniffer_enabled,
             command=[str(part) for part in sniffer_command],
             stop_timeout_seconds=int(sniffer_raw.get("stop_timeout_seconds", 10)),
+        ),
+        switch=SwitchSettings(
+            target_parent_extaddr=compact,
+            settle_seconds=int(switch_raw.get("settle_seconds", 2)),
+            derive_timeout_seconds=int(switch_raw.get("derive_timeout_seconds", 12)),
         ),
     )
 
@@ -365,7 +394,7 @@ def start_sniffer_capture(
 
     settings.run_logs_dir.mkdir(parents=True, exist_ok=True)
     stamp = settings.run_logs_dir.name
-    log_path = settings.run_logs_dir / f"stock_sniffer_{stamp}.log"
+    log_path = settings.run_logs_dir / f"ucast_no_early_attach_sniffer_{stamp}.log"
     cmd = settings.sniffer.command
     manifest.append({"time_utc": now_utc_iso(), "cmd": cmd, "sniffer_log_path": str(log_path), "dry_run": dry_run})
 
@@ -509,7 +538,7 @@ def pull_sniffer_pcap(
 def start_child_log(settings: Settings, *, dry_run: bool, manifest: list[dict[str, Any]]) -> tuple[subprocess.Popen[str] | None, Path]:
     settings.run_logs_dir.mkdir(parents=True, exist_ok=True)
     stamp = settings.run_logs_dir.name
-    log_path = settings.run_logs_dir / f"stock_child_{stamp}.log"
+    log_path = settings.run_logs_dir / f"ucast_no_early_attach_child_{stamp}.log"
     cmd = esphome_base(settings) + ["logs", str(config_path(settings, "child")), "--device", settings.devices["child"]]
     manifest.append({"time_utc": now_utc_iso(), "cmd": cmd, "log_path": str(log_path), "dry_run": dry_run})
     log(("DRY-RUN " if dry_run else "START ") + quote_cmd(cmd) + f" > {log_path}")
@@ -517,8 +546,10 @@ def start_child_log(settings: Settings, *, dry_run: bool, manifest: list[dict[st
     if dry_run:
         return None, log_path
 
-    log_file = log_path.open("w", encoding="utf-8", errors="replace")
-    log_file.write(f"# Command: {quote_cmd(cmd)}\n")
+    is_new = not log_path.exists()
+    log_file = log_path.open("a", encoding="utf-8", errors="replace")
+    if is_new:
+        log_file.write(f"# Command: {quote_cmd(cmd)}\n")
     log_file.write(f"# Started UTC: {now_utc_iso()}\n")
     log_file.flush()
 
@@ -564,6 +595,120 @@ def stop_child_log(process: subprocess.Popen[str] | None, *, dry_run: bool) -> N
         process.wait(timeout=10)
 
 
+def parse_router2_extaddr_from_text(text: str) -> str | None:
+    if match := ROUTER2_RADIO_EXTADDR_RE.search(text):
+        return match.group(1).lower()
+    if match := ROUTER2_NETWORKINFO_RE.search(text):
+        return match.group(1).lower()
+    return None
+
+
+def child_seen_extaddrs(path: Path | None) -> list[str]:
+    if path is None or not path.exists():
+        return []
+    text = path.read_text(encoding="utf-8", errors="ignore")
+    return [m.group(1).lower() for m in CHILD_MESH_FROM_RE.finditer(text)]
+
+
+def child_current_parent_extaddr(path: Path | None) -> str | None:
+    if path is None or not path.exists():
+        return None
+    text = path.read_text(encoding="utf-8", errors="ignore")
+    matches = CHILD_PARENTINFO_RE.findall(text)
+    if not matches:
+        return None
+    return matches[-1].lower()
+
+
+def derive_router2_extaddr_from_child_log(
+    settings: Settings,
+    *,
+    child_log_path: Path | None,
+    baseline_extaddrs: set[str],
+    dry_run: bool,
+    manifest: list[dict[str, Any]],
+) -> str:
+    if dry_run:
+        entry = {
+            "time_utc": now_utc_iso(),
+            "event": "derive_router2_extaddr_from_child_log",
+            "derived_extaddr": settings.switch.target_parent_extaddr,
+            "dry_run": True,
+        }
+        manifest.append(entry)
+        log(f"DRY-RUN derive router2 ExtAddr -> {settings.switch.target_parent_extaddr}")
+        return settings.switch.target_parent_extaddr
+
+    seen = child_seen_extaddrs(child_log_path)
+    current_parent = child_current_parent_extaddr(child_log_path)
+    candidates: list[str] = []
+    for ext in seen:
+        if ext in baseline_extaddrs:
+            continue
+        if current_parent is not None and ext == current_parent:
+            continue
+        if ext not in candidates:
+            candidates.append(ext)
+
+    if not candidates:
+        # fallback: pick the most recent non-parent observed ExtAddr
+        for ext in reversed(seen):
+            if current_parent is None or ext != current_parent:
+                if ext not in baseline_extaddrs:
+                    candidates.append(ext)
+                    break
+
+    if candidates:
+        derived = candidates[-1]
+        settings.switch.target_parent_extaddr = derived
+        manifest.append(
+            {
+                "time_utc": now_utc_iso(),
+                "event": "derive_router2_extaddr_result",
+                "derived_extaddr": derived,
+                "source": "child_log",
+                "current_parent_extaddr": current_parent,
+                "baseline_count": len(baseline_extaddrs),
+                "dry_run": False,
+            }
+        )
+        log(f"Derived router2 ExtAddr from child log: {derived}")
+        return derived
+
+    raise SystemExit("Failed to derive router2 ExtAddr from child log observations.")
+
+
+def send_child_switch_command(
+    settings: Settings,
+    *,
+    dry_run: bool,
+    manifest: list[dict[str, Any]],
+) -> None:
+    command = f"extaddr {settings.switch.target_parent_extaddr}\n"
+    port = settings.devices["child"]
+    entry = {
+        "time_utc": now_utc_iso(),
+        "event": "send_child_switch_command",
+        "port": port,
+        "command": command.strip(),
+        "dry_run": dry_run,
+    }
+    manifest.append(entry)
+    log(f"{'DRY-RUN ' if dry_run else 'SEND '}child switch command `{command.strip()}` to {port}")
+    if dry_run:
+        return
+    with open(port, "wb", buffering=0) as fh:
+        fh.write(command.encode("ascii"))
+        fh.flush()
+    if settings.switch.settle_seconds > 0:
+        sleep_step(
+            settings.switch.settle_seconds,
+            "allow child USB CLI to process switch command",
+            dry_run=dry_run,
+            manifest=manifest,
+        )
+
+
 def run_timed_sequence(
     settings: Settings,
     *,
@@ -603,11 +748,26 @@ def run_timed_sequence(
         child_logger, child_log_path = start_child_log(settings, dry_run=dry_run, manifest=manifest)
         sleep_step(settings.timing.after_child_seconds, "child flashed/logging; wait before adding router 2", dry_run=dry_run, manifest=manifest)
 
+        baseline_extaddrs = set(child_seen_extaddrs(child_log_path))
         upload(settings, "router2", "router2", dry_run=dry_run, manifest=manifest)
-        sleep_step(settings.timing.after_router2_seconds, "router 2 has joined; wait before removing router 1", dry_run=dry_run, manifest=manifest)
-
-        upload(settings, "router1", "empty", dry_run=dry_run, manifest=manifest)
-        sleep_step(settings.timing.after_router1_removed_seconds, "router 1 removed; keep recording child", dry_run=dry_run, manifest=manifest)
+        sleep_step(settings.timing.after_router2_seconds, "router 2 has joined; wait before requesting child switch", dry_run=dry_run, manifest=manifest)
+        derive_router2_extaddr_from_child_log(
+            settings,
+            child_log_path=child_log_path,
+            baseline_extaddrs=baseline_extaddrs,
+            dry_run=dry_run,
+            manifest=manifest,
+        )
+        stop_child_log(child_logger, dry_run=dry_run)
+        child_logger = None
+        send_child_switch_command(settings, dry_run=dry_run, manifest=manifest)
+        child_logger, child_log_path = start_child_log(settings, dry_run=dry_run, manifest=manifest)
+        sleep_step(
+            settings.timing.after_router1_removed_seconds,
+            "switch requested; keep recording child",
+            dry_run=dry_run,
+            manifest=manifest,
+        )
         stop_sniffer_capture(settings, sniffer_process, dry_run=dry_run)
         sniffer_process = None
         sniffer_remote_pcap, sniffer_local_pcap = pull_sniffer_pcap(
@@ -634,7 +794,7 @@ def write_manifest(
 ) -> Path:
     settings.run_logs_dir.mkdir(parents=True, exist_ok=True)
     stamp = settings.run_logs_dir.name
-    path = settings.run_logs_dir / f"stock_test_manifest_{stamp}.json"
+    path = settings.run_logs_dir / f"ucast_no_early_attach_test_manifest_{stamp}.json"
     payload = {
         "created_utc": now_utc_iso(),
         "dry_run": dry_run,
@@ -649,6 +809,7 @@ def write_manifest(
         "clean_before_compile": settings.clean_before_compile,
         "devices": settings.devices,
         "timing": settings.timing.__dict__,
+        "switch": settings.switch.__dict__,
         "child_log": str(child_log) if child_log else None,
         "sniffer": {
             "enabled": settings.sniffer.enabled,
@@ -665,8 +826,8 @@ def write_manifest(
 
 
 def parse_args(argv: list[str]) -> argparse.Namespace:
-    parser = argparse.ArgumentParser(description="Run stock ESPHome/OpenThread parent-switching test.")
-    parser.add_argument("--config", default="stock_test_devices.toml", help="Path to device/config TOML file.")
+    parser = argparse.ArgumentParser(description="Run unicast no-early-attach ESPHome/OpenThread parent-switching test.")
+    parser.add_argument("--config", default="ucast_no_early_attach_test_devices.toml", help="Path to device/config TOML file.")
     parser.add_argument("--esphome-bin", help="Override ESPHome executable. Overrides ESPHOME_BIN and TOML.")
     parser.add_argument("--dry-run", action="store_true", help="Print commands and write a manifest without executing ESPHome.")
     parser.add_argument("--precompile-only", action="store_true", help="Compile all firmware and exit before any flashing.")

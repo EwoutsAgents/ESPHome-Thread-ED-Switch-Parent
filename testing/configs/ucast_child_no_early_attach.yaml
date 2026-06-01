@@ -171,11 +171,9 @@ openthread:
 
 external_components:
   - source:
-      type: git
-      url: https://github.com/EwoutBergsma/ESPHome-Thread-ED-Switch-Parent
-      ref: main
+      type: local
+      path: ../../components
     components: [thread_preferred_parent]
-    refresh: 0s
 
 thread_preferred_parent:
   id: preferred_parent
@@ -194,9 +192,8 @@ thread_preferred_parent:
 
   # Optional: start selected-parent attach shortly after the target responds,
   # instead of waiting for the full retry_interval discovery window.
-  early_attach_on_target: true
+  early_attach_on_target: false
   # early_attach_delay: 500ms
 
   require_selected_parent_hook: true
   log_parent_responses: false
-

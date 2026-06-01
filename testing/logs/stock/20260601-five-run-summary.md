@@ -247,3 +247,16 @@
 - highest attempt number seen: **16/16**
 - failed tx by seqnum: seq 220: 16, seq 221: 16, seq 222: 16, seq 223: 16
 - failed tx by dst: `a605ee962ad7a308`: 48
+
+## Update: `20260601-224253` (post sniffer-fix validation)
+
+- Run folder: `testing/logs/stock/20260601-224253/`
+- Manifest: `stock_test_manifest_20260601-224253.json`
+- Child log: `stock_child_20260601-224253.log`
+- Sniffer log: `stock_sniffer_20260601-224253.log`
+- Pcap: `802154-20260601-224333.pcapng`
+- Result: **successful end-to-end run** (precompile + timed sequence + pcap fetch completed; exit code `0`).
+
+Notes:
+- This run validates the sniffer lock mitigation (remote sniffer pre-clean + startup retry) under real hardware execution.
+- The corresponding `.pcapng` is present locally in the run folder, so this run can be used as the new reference baseline for stock behavior after the fix.

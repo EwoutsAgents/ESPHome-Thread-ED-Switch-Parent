@@ -39,6 +39,11 @@ The methods for testing stock performance is as follows:
 13. Stop the `IEEE 802.15.4` sniffer recording.
 14. Copy the resulting sniffer `.pcapng` into the current run folder under `testing/logs/ucast-no-early-attach/<timestamp>/`.
 
+Implemented automation:
+- Copy `ucast_no_early_attach_test_devices.example.toml` to `ucast_no_early_attach_test_devices.toml` and fill in serial ports + `[switch].target_parent_extaddr`.
+- Run `./run_ucast_no_early_attach_test.sh --config ucast_no_early_attach_test_devices.toml`.
+- Or use `make ucast-no-early-attach-test`.
+
 # Other testing
 
 TBA
