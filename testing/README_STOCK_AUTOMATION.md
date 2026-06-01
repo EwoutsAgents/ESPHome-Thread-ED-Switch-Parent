@@ -47,6 +47,10 @@ Optional sniffer integration:
 ```toml
 [timing]
 sniffer_lead_in_seconds = 5
+after_router1_seconds = 5
+after_child_seconds = 10
+after_router2_seconds = 10
+after_router1_removed_seconds = 180
 
 [sniffer]
 enabled = true
@@ -111,13 +115,13 @@ Timed phase:
 2. Start the optional sniffer capture command.
 3. Wait `sniffer_lead_in_seconds` so the sniffer is already recording before any test node starts.
 4. `upload stock_router_1.yaml` to router 1.
-5. Wait 10 seconds.
+5. Wait 5 seconds.
 6. `upload stock_child.yaml` to child and start `esphome logs` for the child.
-7. Wait 30 seconds.
+7. Wait 10 seconds.
 8. `upload stock_router_2.yaml` to router 2.
-9. Wait 60 seconds.
+9. Wait 10 seconds.
 10. `upload empty.yaml` to router 1.
-11. Wait 300 seconds while child logging continues.
+11. Wait 180 seconds while child logging continues.
 12. Stop the optional sniffer capture command.
 13. Copy the resulting sniffer `.pcapng` into `logs/stock/`.
 14. Stop child logging.
