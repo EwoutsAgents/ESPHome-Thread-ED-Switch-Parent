@@ -32,11 +32,19 @@ except ModuleNotFoundError:  # pragma: no cover - optional local dependency
         tomllib = None  # type: ignore[assignment]
 
 
-CONFIG_NAMES = {
-    "empty": "empty.yaml",
-    "router1": "stock_router_1.yaml",
-    "child": "ucast_child_no_early_attach.yaml",
-    "router2": "stock_router_2.yaml",
+VARIANT_PRESETS = {
+    "ucast": {
+        "child_config": "ucast_child_no_early_attach.yaml",
+        "logs_subdir": "ucast-no-early-attach",
+        "name_prefix": "ucast_no_early_attach",
+        "default_config": "ucast_no_early_attach_test_devices.toml",
+    },
+    "mcast": {
+        "child_config": "mcast_child_no_early_attach.yaml",
+        "logs_subdir": "mcast-no-early-attach",
+        "name_prefix": "mcast_no_early_attach",
+        "default_config": "mcast_no_early_attach_test_devices.toml",
+    },
 }
 
 COMPILE_ORDER = ["empty", "router1", "child", "router2"]
@@ -89,6 +97,8 @@ class Settings:
     timing: Timing = field(default_factory=Timing)
     sniffer: SnifferSettings = field(default_factory=SnifferSettings)
     switch: SwitchSettings = field(default_factory=SwitchSettings)
+    variant: str = "ucast"
+    name_prefix: str = "ucast_no_early_attach"
 
 
 def now_utc_iso() -> str:
@@ -222,15 +232,20 @@ def load_settings(args: argparse.Namespace) -> Settings:
     if not config_file.exists():
         example = config_file.with_suffix(config_file.suffix + ".example")
         if not example.exists():
-            example = config_file.parent / "ucast_no_early_attach_test_devices.example.toml"
+            example = config_file.parent / f"{VARIANT_PRESETS[args.variant]['default_config']}.example"
         hint = f" Copy {example.name} to {config_file.name} and edit the serial ports." if example.exists() else ""
         raise SystemExit(f"Config file not found: {config_file}.{hint}")
 
     raw = load_toml(config_file)
+    variant_raw = str(raw.get("variant", {}).get("name", args.variant)).strip().lower()
+    if variant_raw not in VARIANT_PRESETS:
+        raise SystemExit(f"Unsupported variant `{variant_raw}`. Choose one of: {', '.join(sorted(VARIANT_PRESETS))}")
+    variant_preset = VARIANT_PRESETS[variant_raw]
     config_dir = config_file.parent
     testing_dir = resolve_relative(config_dir, raw.get("paths", {}).get("testing_dir"), ".")
     configs_dir = resolve_relative(config_dir, raw.get("paths", {}).get("configs_dir"), "configs")
-    logs_dir = resolve_relative(config_dir, raw.get("paths", {}).get("logs_dir"), "logs")
+    logs_default = f"logs/{variant_preset['logs_subdir']}"
+    logs_dir = resolve_relative(config_dir, raw.get("paths", {}).get("logs_dir"), logs_default)
     run_logs_dir = logs_dir / dt.datetime.now().strftime("%Y%m%d-%H%M%S")
 
     devices = dict(raw.get("devices", {}))
@@ -317,11 +332,19 @@ def load_settings(args: argparse.Namespace) -> Settings:
             settle_seconds=int(switch_raw.get("settle_seconds", 2)),
             derive_timeout_seconds=int(switch_raw.get("derive_timeout_seconds", 12)),
         ),
+        variant=variant_raw,
+        name_prefix=str(variant_preset["name_prefix"]),
     )
 
 
 def config_path(settings: Settings, name: str) -> Path:
-    path = settings.configs_dir / CONFIG_NAMES[name]
+    config_names = {
+        "empty": "empty.yaml",
+        "router1": "stock_router_1.yaml",
+        "child": str(VARIANT_PRESETS[settings.variant]["child_config"]),
+        "router2": "stock_router_2.yaml",
+    }
+    path = settings.configs_dir / config_names[name]
     if not path.exists():
         raise SystemExit(f"Missing ESPHome config: {path}")
     return path
@@ -394,7 +417,7 @@ def start_sniffer_capture(
 
     settings.run_logs_dir.mkdir(parents=True, exist_ok=True)
     stamp = settings.run_logs_dir.name
-    log_path = settings.run_logs_dir / f"ucast_no_early_attach_sniffer_{stamp}.log"
+    log_path = settings.run_logs_dir / f"{settings.name_prefix}_sniffer_{stamp}.log"
     cmd = settings.sniffer.command
     manifest.append({"time_utc": now_utc_iso(), "cmd": cmd, "sniffer_log_path": str(log_path), "dry_run": dry_run})
 
@@ -538,7 +561,7 @@ def pull_sniffer_pcap(
 def start_child_log(settings: Settings, *, dry_run: bool, manifest: list[dict[str, Any]]) -> tuple[subprocess.Popen[str] | None, Path]:
     settings.run_logs_dir.mkdir(parents=True, exist_ok=True)
     stamp = settings.run_logs_dir.name
-    log_path = settings.run_logs_dir / f"ucast_no_early_attach_child_{stamp}.log"
+    log_path = settings.run_logs_dir / f"{settings.name_prefix}_child_{stamp}.log"
     cmd = esphome_base(settings) + ["logs", str(config_path(settings, "child")), "--device", settings.devices["child"]]
     manifest.append({"time_utc": now_utc_iso(), "cmd": cmd, "log_path": str(log_path), "dry_run": dry_run})
     log(("DRY-RUN " if dry_run else "START ") + quote_cmd(cmd) + f" > {log_path}")
@@ -794,7 +817,7 @@ def write_manifest(
 ) -> Path:
     settings.run_logs_dir.mkdir(parents=True, exist_ok=True)
     stamp = settings.run_logs_dir.name
-    path = settings.run_logs_dir / f"ucast_no_early_attach_test_manifest_{stamp}.json"
+    path = settings.run_logs_dir / f"{settings.name_prefix}_test_manifest_{stamp}.json"
     payload = {
         "created_utc": now_utc_iso(),
         "dry_run": dry_run,
@@ -826,8 +849,9 @@ def write_manifest(
 
 
 def parse_args(argv: list[str]) -> argparse.Namespace:
-    parser = argparse.ArgumentParser(description="Run unicast no-early-attach ESPHome/OpenThread parent-switching test.")
-    parser.add_argument("--config", default="ucast_no_early_attach_test_devices.toml", help="Path to device/config TOML file.")
+    parser = argparse.ArgumentParser(description="Run no-early-attach ESPHome/OpenThread parent-switching test.")
+    parser.add_argument("--variant", choices=sorted(VARIANT_PRESETS), default="ucast", help="Select test variant.")
+    parser.add_argument("--config", default=None, help="Path to device/config TOML file.")
     parser.add_argument("--esphome-bin", help="Override ESPHome executable. Overrides ESPHOME_BIN and TOML.")
     parser.add_argument("--dry-run", action="store_true", help="Print commands and write a manifest without executing ESPHome.")
     parser.add_argument("--precompile-only", action="store_true", help="Compile all firmware and exit before any flashing.")
@@ -840,6 +864,8 @@ def parse_args(argv: list[str]) -> argparse.Namespace:
 
 def main(argv: list[str]) -> int:
     args = parse_args(argv)
+    if args.config is None:
+        args.config = str(VARIANT_PRESETS[args.variant]["default_config"])
     settings = load_settings(args)
     manifest: list[dict[str, Any]] = []
 

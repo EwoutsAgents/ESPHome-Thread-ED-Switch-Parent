@@ -44,6 +44,11 @@ Implemented automation:
 - Run `./run_ucast_no_early_attach_test.sh --config ucast_no_early_attach_test_devices.toml`.
 - Or use `make ucast-no-early-attach-test`.
 
+Implemented automation:
+- Copy `mcast_no_early_attach_test_devices.example.toml` to `mcast_no_early_attach_test_devices.toml` and fill in serial ports + `[switch].target_parent_extaddr`.
+- Run `./run_mcast_no_early_attach_test.sh --config mcast_no_early_attach_test_devices.toml`.
+- Or use `make mcast-no-early-attach-test`.
+
 # Multicast no-early-attach testing
 
 The methods for multicast no-early-attach performance testing are as follows:
@@ -64,6 +69,11 @@ The methods for multicast no-early-attach performance testing are as follows:
 
 Configuration note:
 - `mcast_child_no_early_attach.yaml` is based on the unicast variant but explicitly sets `parent_request_unicast: false` and `early_attach_on_target: false`.
+
+Implemented automation:
+- Copy `mcast_no_early_attach_test_devices.example.toml` to `mcast_no_early_attach_test_devices.toml` and fill in serial ports + `[switch].target_parent_extaddr`.
+- Run `./run_mcast_no_early_attach_test.sh --config mcast_no_early_attach_test_devices.toml`.
+- Or use `make mcast-no-early-attach-test`.
 
 # Other testing
 

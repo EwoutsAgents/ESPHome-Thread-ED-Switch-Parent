@@ -1,0 +1,54 @@
+# Copy this file to mcast_no_early_attach_test_devices.toml and edit the serial ports.
+# Keep the same physical ESP32-C6 assigned to each role across reruns.
+
+[devices]
+router1 = "/dev/ttyACM0"
+child = "/dev/ttyACM1"
+router2 = "/dev/ttyACM2"
+# Optional extra ESP32-C6 boards that should also be erased and flashed with
+# empty.yaml before the timed sequence begins.
+# unused = "/dev/ttyACM3"
+
+[paths]
+# These are relative to this TOML file unless absolute.
+configs_dir = "configs"
+logs_dir = "logs/mcast-no-early-attach"
+
+[esphome]
+# Optional. If omitted or missing, the runner auto-detects:
+#   ../.venv/bin/esphome
+#   ../venv/bin/esphome
+#   ./.venv/bin/esphome
+#   ./venv/bin/esphome
+#   PATH
+# bin = "../.venv/bin/esphome"
+
+# The default is the important measurement behavior:
+# compile all firmware first, then use upload-only commands during the timed test.
+precompile = true
+clean_before_compile = false
+
+# Optional serial upload speed. Leave commented to use ESPHome's default.
+# upload_speed = 460800
+
+[timing]
+sniffer_lead_in_seconds = 5
+after_router1_seconds = 5
+after_child_seconds = 10
+after_router2_seconds = 10
+after_router1_removed_seconds = 180  # post-switch recording window
+
+[switch]
+# Required: target parent ExtAddr used for the child USB CLI command:
+#   extaddr <target_parent_extaddr>
+target_parent_extaddr = "00124b0001abcdef"
+settle_seconds = 2
+
+[sniffer]
+# Optional IEEE 802.15.4 sniffer capture command.
+# When enabled, the runner starts this before flashing router1, waits for the
+# sniffer lead-in above, stops it after the final 300-second wait, and copies
+# the resulting .pcapng into logs/mcast-no-early-attach.
+enabled = false
+# command = ["ssh", "rpi-802154-sniffer", "~/bin/nrf802154-sniff"]
+stop_timeout_seconds = 10
