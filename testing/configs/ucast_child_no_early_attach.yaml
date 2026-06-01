@@ -1,0 +1,60 @@
+esphome:
+  name: stock-child
+  friendly_name: stock-child
+
+esp32:
+  variant: esp32c6
+  framework:
+    type: esp-idf
+    sdkconfig_options:
+      CONFIG_OPENTHREAD_PARENT_SEARCH_MTD: n  # explicitly disables ESP-IDF/OpenThread's default MTD periodic parent-search feature
+    log_level: VERBOSE
+
+logger:
+  level: VERY_VERBOSE
+  hardware_uart: USB_SERIAL_JTAG
+
+network:
+  enable_ipv6: true
+
+openthread:
+  device_type: MTD
+  channel: 20
+  network_name: parent-switch
+  network_key: 0xdfd34f0f05cad978ec4e32b0413038ff
+  pan_id: 0x8f28
+  ext_pan_id: 0xd63e8e3e495ebbc3
+  pskc: 0xc23a76e98f1a6483639b1ac1271e2e27
+  mesh_local_prefix: fd53:145f:ed22:ad81::/64
+  force_dataset: true
+
+external_components:
+  - source:
+      type: git
+      url: https://github.com/EwoutBergsma/ESPHome-Thread-ED-Switch-Parent
+      ref: main
+    components: [thread_preferred_parent]
+    refresh: 0s
+
+thread_preferred_parent:
+  id: preferred_parent
+
+  # Alternative: target the parent by RLOC16 instead.
+  # Do not configure parent_extaddr and parent_rloc at the same time.
+  # parent_rloc: 0x5800
+
+  max_attempts: 3
+  retry_interval: 8s
+  selected_attach_timeout: 16s
+
+  # Optional: send the preflight Parent Request directly to the target ExtAddr
+  # instead of the all-routers multicast address.
+  parent_request_unicast: true
+
+  # Optional: start selected-parent attach shortly after the target responds,
+  # instead of waiting for the full retry_interval discovery window.
+  early_attach_on_target: true
+  # early_attach_delay: 500ms
+
+  require_selected_parent_hook: true
+  log_parent_responses: false
