@@ -499,6 +499,14 @@ def default_logs_dir(script_path: Path) -> Path:
 def parse_args(argv: list[str]) -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Analyze stock child logs for attach timing and failed TX attempts.")
     parser.add_argument("--logs-dir", type=Path, default=default_logs_dir(Path(__file__)), help="Directory containing *.log files.")
+    parser.add_argument(
+        "--run-dir",
+        dest="run_dirs",
+        action="append",
+        type=Path,
+        default=[],
+        help="Specific run directory to include. Repeat for multiple runs.",
+    )
     parser.add_argument("--json", action="store_true", help="Emit machine-readable JSON.")
     parser.add_argument("--markdown", action="store_true", help="Emit Markdown instead of plain text.")
     parser.add_argument("--write-markdown", type=Path, help="Write the Markdown report to this path.")
@@ -665,9 +673,9 @@ def render_markdown_report(results: list[dict[str, Any]]) -> str:
         summary = group_summary(grouped[group_name])
         out.append(f"## {group_name}")
         out.append("")
-        out.append("### Group summary")
+        out.append("### Summary")
         out.append("")
-        out.append("| Attach | Parent Request → Response (ms) | Parent Response → Child ID Req (ms) | Child ID Req → Response (ms) | Full attach (ms) | n |")
+        out.append("| Attach | Request → Response (ms) | Response → Child ID Req (ms) | Child ID Req → Response (ms) | Full attach (ms) | n |")
         out.append("| --- | ---: | ---: | ---: | ---: | ---: |")
         for attach_index in sorted(summary["attaches"]):
             attach = summary["attaches"][attach_index]
@@ -709,7 +717,7 @@ def render_markdown_report(results: list[dict[str, Any]]) -> str:
                     out.append(f"- request -> response: **{seq['timing_ms']['parent_request_to_response']} ms**")
                     out.append(f"- response -> child id request: **{seq['timing_ms']['parent_response_to_child_id_request']} ms**")
                     out.append(f"- child id request -> response: **{seq['timing_ms']['child_id_request_to_response']} ms**")
-                    out.append(f"- full attach quartet: **{seq['timing_ms']['parent_request_to_child_id_response']} ms**")
+                    out.append(f"- full attach: **{seq['timing_ms']['parent_request_to_child_id_response']} ms**")
                     if seq["timing_source"] == "pcap":
                         out.append(f"- pcap parent request: `{seq['pcap_event_times'].get('send_parent_request')}` (frame {seq['pcap_frame_numbers'].get('send_parent_request')})")
                         out.append(f"- pcap parent response: `{seq['pcap_event_times'].get('receive_parent_response')}` (frame {seq['pcap_frame_numbers'].get('receive_parent_response')})")
@@ -737,10 +745,20 @@ def print_text_report(results: list[dict[str, Any]]) -> None:
     print(render_text_report(results), end="")
 
 
+def collect_log_paths(logs_dir: Path, run_dirs: list[Path]) -> list[Path]:
+    if run_dirs:
+        log_paths: list[Path] = []
+        for run_dir in run_dirs:
+            resolved = run_dir.resolve()
+            log_paths.extend(sorted(resolved.glob("*_child_*.log")))
+        return sorted({path.resolve() for path in log_paths})
+    return sorted(Path(path) for path in glob.glob(str(logs_dir / "**" / "*_child_*.log"), recursive=True))
+
+
 def main(argv: list[str]) -> int:
     args = parse_args(argv)
     logs_dir = args.logs_dir.resolve()
-    log_paths = sorted(Path(path) for path in glob.glob(str(logs_dir / "**" / "*_child_*.log"), recursive=True))
+    log_paths = collect_log_paths(logs_dir, args.run_dirs)
     results = [analyze_log(path) for path in log_paths]
 
     if args.json:
