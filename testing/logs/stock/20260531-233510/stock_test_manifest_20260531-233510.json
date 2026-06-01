@@ -1,10 +1,11 @@
 {
-  "created_utc": "2026-05-31T19:47:24+00:00",
-  "dry_run": false,
+  "created_utc": "2026-05-31T21:35:10+00:00",
+  "dry_run": true,
   "config_file": "/home/ewout/.openclaw/workspace-softwaredeveloper/ESPHome-Thread-ED-Switch-Parent/testing/stock_test_devices.toml",
   "testing_dir": "/home/ewout/.openclaw/workspace-softwaredeveloper/ESPHome-Thread-ED-Switch-Parent/testing",
   "configs_dir": "/home/ewout/.openclaw/workspace-softwaredeveloper/ESPHome-Thread-ED-Switch-Parent/testing/configs",
   "logs_dir": "/home/ewout/.openclaw/workspace-softwaredeveloper/ESPHome-Thread-ED-Switch-Parent/testing/logs/stock",
+  "run_logs_dir": "/home/ewout/.openclaw/workspace-softwaredeveloper/ESPHome-Thread-ED-Switch-Parent/testing/logs/stock/20260531-233510",
   "esphome_bin": "/home/ewout/.openclaw/workspace-softwaredeveloper/ESPHome-Thread-ED-Switch-Parent/.venv/bin/esphome",
   "esptool_bin": "/home/ewout/.openclaw/workspace-softwaredeveloper/ESPHome-Thread-ED-Switch-Parent/.venv/bin/esptool.py",
   "precompile": true,
@@ -17,12 +18,13 @@
     "unused2": "/dev/serial/by-id/usb-Espressif_USB_JTAG_serial_debug_unit_58:8C:81:5F:D9:28-if00"
   },
   "timing": {
+    "sniffer_lead_in_seconds": 5,
     "after_router1_seconds": 10,
     "after_child_seconds": 30,
     "after_router2_seconds": 60,
     "after_router1_removed_seconds": 300
   },
-  "child_log": "/home/ewout/.openclaw/workspace-softwaredeveloper/ESPHome-Thread-ED-Switch-Parent/testing/logs/stock/stock_child_20260531-214046.log",
+  "child_log": "/home/ewout/.openclaw/workspace-softwaredeveloper/ESPHome-Thread-ED-Switch-Parent/testing/logs/stock/20260531-233510/stock_child_20260531-233510.log",
   "sniffer": {
     "enabled": true,
     "command": [
@@ -31,51 +33,53 @@
       "~/bin/nrf802154-sniff"
     ],
     "stop_timeout_seconds": 10,
-    "log": "/home/ewout/.openclaw/workspace-softwaredeveloper/ESPHome-Thread-ED-Switch-Parent/testing/logs/stock/stock_sniffer_20260531-214032.log"
+    "log": "/home/ewout/.openclaw/workspace-softwaredeveloper/ESPHome-Thread-ED-Switch-Parent/testing/logs/stock/20260531-233510/stock_sniffer_20260531-233510.log",
+    "remote_pcap": null,
+    "local_pcap": null
   },
   "events": [
     {
-      "time_utc": "2026-05-31T19:39:48+00:00",
+      "time_utc": "2026-05-31T21:35:10+00:00",
       "cmd": [
         "/home/ewout/.openclaw/workspace-softwaredeveloper/ESPHome-Thread-ED-Switch-Parent/.venv/bin/esphome",
         "compile",
         "/home/ewout/.openclaw/workspace-softwaredeveloper/ESPHome-Thread-ED-Switch-Parent/testing/configs/empty.yaml"
       ],
       "cwd": "/home/ewout/.openclaw/workspace-softwaredeveloper/ESPHome-Thread-ED-Switch-Parent/testing",
-      "dry_run": false
+      "dry_run": true
     },
     {
-      "time_utc": "2026-05-31T19:39:53+00:00",
+      "time_utc": "2026-05-31T21:35:10+00:00",
       "cmd": [
         "/home/ewout/.openclaw/workspace-softwaredeveloper/ESPHome-Thread-ED-Switch-Parent/.venv/bin/esphome",
         "compile",
         "/home/ewout/.openclaw/workspace-softwaredeveloper/ESPHome-Thread-ED-Switch-Parent/testing/configs/stock_router_1.yaml"
       ],
       "cwd": "/home/ewout/.openclaw/workspace-softwaredeveloper/ESPHome-Thread-ED-Switch-Parent/testing",
-      "dry_run": false
+      "dry_run": true
     },
     {
-      "time_utc": "2026-05-31T19:39:58+00:00",
+      "time_utc": "2026-05-31T21:35:10+00:00",
       "cmd": [
         "/home/ewout/.openclaw/workspace-softwaredeveloper/ESPHome-Thread-ED-Switch-Parent/.venv/bin/esphome",
         "compile",
         "/home/ewout/.openclaw/workspace-softwaredeveloper/ESPHome-Thread-ED-Switch-Parent/testing/configs/stock_child.yaml"
       ],
       "cwd": "/home/ewout/.openclaw/workspace-softwaredeveloper/ESPHome-Thread-ED-Switch-Parent/testing",
-      "dry_run": false
+      "dry_run": true
     },
     {
-      "time_utc": "2026-05-31T19:40:04+00:00",
+      "time_utc": "2026-05-31T21:35:10+00:00",
       "cmd": [
         "/home/ewout/.openclaw/workspace-softwaredeveloper/ESPHome-Thread-ED-Switch-Parent/.venv/bin/esphome",
         "compile",
         "/home/ewout/.openclaw/workspace-softwaredeveloper/ESPHome-Thread-ED-Switch-Parent/testing/configs/stock_router_2.yaml"
       ],
       "cwd": "/home/ewout/.openclaw/workspace-softwaredeveloper/ESPHome-Thread-ED-Switch-Parent/testing",
-      "dry_run": false
+      "dry_run": true
     },
     {
-      "time_utc": "2026-05-31T19:40:09+00:00",
+      "time_utc": "2026-05-31T21:35:10+00:00",
       "cmd": [
         "/home/ewout/.openclaw/workspace-softwaredeveloper/ESPHome-Thread-ED-Switch-Parent/.venv/bin/esptool.py",
         "--chip",
@@ -85,10 +89,10 @@
         "erase_flash"
       ],
       "cwd": "/home/ewout/.openclaw/workspace-softwaredeveloper/ESPHome-Thread-ED-Switch-Parent/testing",
-      "dry_run": false
+      "dry_run": true
     },
     {
-      "time_utc": "2026-05-31T19:40:11+00:00",
+      "time_utc": "2026-05-31T21:35:10+00:00",
       "cmd": [
         "/home/ewout/.openclaw/workspace-softwaredeveloper/ESPHome-Thread-ED-Switch-Parent/.venv/bin/esphome",
         "upload",
@@ -97,10 +101,10 @@
         "/dev/serial/by-id/usb-Espressif_USB_JTAG_serial_debug_unit_58:8C:81:5D:B0:C4-if00"
       ],
       "cwd": "/home/ewout/.openclaw/workspace-softwaredeveloper/ESPHome-Thread-ED-Switch-Parent/testing",
-      "dry_run": false
+      "dry_run": true
     },
     {
-      "time_utc": "2026-05-31T19:40:13+00:00",
+      "time_utc": "2026-05-31T21:35:10+00:00",
       "cmd": [
         "/home/ewout/.openclaw/workspace-softwaredeveloper/ESPHome-Thread-ED-Switch-Parent/.venv/bin/esptool.py",
         "--chip",
@@ -110,10 +114,10 @@
         "erase_flash"
       ],
       "cwd": "/home/ewout/.openclaw/workspace-softwaredeveloper/ESPHome-Thread-ED-Switch-Parent/testing",
-      "dry_run": false
+      "dry_run": true
     },
     {
-      "time_utc": "2026-05-31T19:40:15+00:00",
+      "time_utc": "2026-05-31T21:35:10+00:00",
       "cmd": [
         "/home/ewout/.openclaw/workspace-softwaredeveloper/ESPHome-Thread-ED-Switch-Parent/.venv/bin/esphome",
         "upload",
@@ -122,10 +126,10 @@
         "/dev/serial/by-id/usb-Espressif_USB_JTAG_serial_debug_unit_58:8C:81:5D:B0:E0-if00"
       ],
       "cwd": "/home/ewout/.openclaw/workspace-softwaredeveloper/ESPHome-Thread-ED-Switch-Parent/testing",
-      "dry_run": false
+      "dry_run": true
     },
     {
-      "time_utc": "2026-05-31T19:40:17+00:00",
+      "time_utc": "2026-05-31T21:35:10+00:00",
       "cmd": [
         "/home/ewout/.openclaw/workspace-softwaredeveloper/ESPHome-Thread-ED-Switch-Parent/.venv/bin/esptool.py",
         "--chip",
@@ -135,10 +139,10 @@
         "erase_flash"
       ],
       "cwd": "/home/ewout/.openclaw/workspace-softwaredeveloper/ESPHome-Thread-ED-Switch-Parent/testing",
-      "dry_run": false
+      "dry_run": true
     },
     {
-      "time_utc": "2026-05-31T19:40:19+00:00",
+      "time_utc": "2026-05-31T21:35:10+00:00",
       "cmd": [
         "/home/ewout/.openclaw/workspace-softwaredeveloper/ESPHome-Thread-ED-Switch-Parent/.venv/bin/esphome",
         "upload",
@@ -147,10 +151,10 @@
         "/dev/serial/by-id/usb-Espressif_USB_JTAG_serial_debug_unit_58:8C:81:5D:B1:54-if00"
       ],
       "cwd": "/home/ewout/.openclaw/workspace-softwaredeveloper/ESPHome-Thread-ED-Switch-Parent/testing",
-      "dry_run": false
+      "dry_run": true
     },
     {
-      "time_utc": "2026-05-31T19:40:21+00:00",
+      "time_utc": "2026-05-31T21:35:10+00:00",
       "cmd": [
         "/home/ewout/.openclaw/workspace-softwaredeveloper/ESPHome-Thread-ED-Switch-Parent/.venv/bin/esptool.py",
         "--chip",
@@ -160,10 +164,10 @@
         "erase_flash"
       ],
       "cwd": "/home/ewout/.openclaw/workspace-softwaredeveloper/ESPHome-Thread-ED-Switch-Parent/testing",
-      "dry_run": false
+      "dry_run": true
     },
     {
-      "time_utc": "2026-05-31T19:40:23+00:00",
+      "time_utc": "2026-05-31T21:35:10+00:00",
       "cmd": [
         "/home/ewout/.openclaw/workspace-softwaredeveloper/ESPHome-Thread-ED-Switch-Parent/.venv/bin/esphome",
         "upload",
@@ -172,10 +176,10 @@
         "/dev/serial/by-id/usb-Espressif_USB_JTAG_serial_debug_unit_58:8C:81:5F:D8:C4-if00"
       ],
       "cwd": "/home/ewout/.openclaw/workspace-softwaredeveloper/ESPHome-Thread-ED-Switch-Parent/testing",
-      "dry_run": false
+      "dry_run": true
     },
     {
-      "time_utc": "2026-05-31T19:40:25+00:00",
+      "time_utc": "2026-05-31T21:35:10+00:00",
       "cmd": [
         "/home/ewout/.openclaw/workspace-softwaredeveloper/ESPHome-Thread-ED-Switch-Parent/.venv/bin/esptool.py",
         "--chip",
@@ -185,10 +189,10 @@
         "erase_flash"
       ],
       "cwd": "/home/ewout/.openclaw/workspace-softwaredeveloper/ESPHome-Thread-ED-Switch-Parent/testing",
-      "dry_run": false
+      "dry_run": true
     },
     {
-      "time_utc": "2026-05-31T19:40:26+00:00",
+      "time_utc": "2026-05-31T21:35:10+00:00",
       "cmd": [
         "/home/ewout/.openclaw/workspace-softwaredeveloper/ESPHome-Thread-ED-Switch-Parent/.venv/bin/esphome",
         "upload",
@@ -197,10 +201,26 @@
         "/dev/serial/by-id/usb-Espressif_USB_JTAG_serial_debug_unit_58:8C:81:5F:D9:28-if00"
       ],
       "cwd": "/home/ewout/.openclaw/workspace-softwaredeveloper/ESPHome-Thread-ED-Switch-Parent/testing",
-      "dry_run": false
+      "dry_run": true
     },
     {
-      "time_utc": "2026-05-31T19:40:28+00:00",
+      "time_utc": "2026-05-31T21:35:10+00:00",
+      "cmd": [
+        "ssh",
+        "rpi-802154-sniffer",
+        "~/bin/nrf802154-sniff"
+      ],
+      "sniffer_log_path": "/home/ewout/.openclaw/workspace-softwaredeveloper/ESPHome-Thread-ED-Switch-Parent/testing/logs/stock/20260531-233510/stock_sniffer_20260531-233510.log",
+      "dry_run": true
+    },
+    {
+      "time_utc": "2026-05-31T21:35:10+00:00",
+      "sleep_seconds": 5,
+      "reason": "sniffer started; wait before flashing router 1",
+      "dry_run": true
+    },
+    {
+      "time_utc": "2026-05-31T21:35:10+00:00",
       "cmd": [
         "/home/ewout/.openclaw/workspace-softwaredeveloper/ESPHome-Thread-ED-Switch-Parent/.venv/bin/esphome",
         "upload",
@@ -209,26 +229,16 @@
         "/dev/serial/by-id/usb-Espressif_USB_JTAG_serial_debug_unit_58:8C:81:5D:B0:C4-if00"
       ],
       "cwd": "/home/ewout/.openclaw/workspace-softwaredeveloper/ESPHome-Thread-ED-Switch-Parent/testing",
-      "dry_run": false
+      "dry_run": true
     },
     {
-      "time_utc": "2026-05-31T19:40:32+00:00",
-      "cmd": [
-        "ssh",
-        "rpi-802154-sniffer",
-        "~/bin/nrf802154-sniff"
-      ],
-      "sniffer_log_path": "/home/ewout/.openclaw/workspace-softwaredeveloper/ESPHome-Thread-ED-Switch-Parent/testing/logs/stock/stock_sniffer_20260531-214032.log",
-      "dry_run": false
-    },
-    {
-      "time_utc": "2026-05-31T19:40:32+00:00",
+      "time_utc": "2026-05-31T21:35:10+00:00",
       "sleep_seconds": 10,
       "reason": "router 1 has been flashed; wait before adding child",
-      "dry_run": false
+      "dry_run": true
     },
     {
-      "time_utc": "2026-05-31T19:40:42+00:00",
+      "time_utc": "2026-05-31T21:35:10+00:00",
       "cmd": [
         "/home/ewout/.openclaw/workspace-softwaredeveloper/ESPHome-Thread-ED-Switch-Parent/.venv/bin/esphome",
         "upload",
@@ -237,10 +247,10 @@
         "/dev/serial/by-id/usb-Espressif_USB_JTAG_serial_debug_unit_58:8C:81:5D:B0:E0-if00"
       ],
       "cwd": "/home/ewout/.openclaw/workspace-softwaredeveloper/ESPHome-Thread-ED-Switch-Parent/testing",
-      "dry_run": false
+      "dry_run": true
     },
     {
-      "time_utc": "2026-05-31T19:40:46+00:00",
+      "time_utc": "2026-05-31T21:35:10+00:00",
       "cmd": [
         "/home/ewout/.openclaw/workspace-softwaredeveloper/ESPHome-Thread-ED-Switch-Parent/.venv/bin/esphome",
         "logs",
@@ -248,17 +258,17 @@
         "--device",
         "/dev/serial/by-id/usb-Espressif_USB_JTAG_serial_debug_unit_58:8C:81:5D:B0:E0-if00"
       ],
-      "log_path": "/home/ewout/.openclaw/workspace-softwaredeveloper/ESPHome-Thread-ED-Switch-Parent/testing/logs/stock/stock_child_20260531-214046.log",
-      "dry_run": false
+      "log_path": "/home/ewout/.openclaw/workspace-softwaredeveloper/ESPHome-Thread-ED-Switch-Parent/testing/logs/stock/20260531-233510/stock_child_20260531-233510.log",
+      "dry_run": true
     },
     {
-      "time_utc": "2026-05-31T19:40:46+00:00",
+      "time_utc": "2026-05-31T21:35:10+00:00",
       "sleep_seconds": 30,
       "reason": "child flashed/logging; wait before adding router 2",
-      "dry_run": false
+      "dry_run": true
     },
     {
-      "time_utc": "2026-05-31T19:41:16+00:00",
+      "time_utc": "2026-05-31T21:35:10+00:00",
       "cmd": [
         "/home/ewout/.openclaw/workspace-softwaredeveloper/ESPHome-Thread-ED-Switch-Parent/.venv/bin/esphome",
         "upload",
@@ -267,16 +277,16 @@
         "/dev/serial/by-id/usb-Espressif_USB_JTAG_serial_debug_unit_58:8C:81:5D:B1:54-if00"
       ],
       "cwd": "/home/ewout/.openclaw/workspace-softwaredeveloper/ESPHome-Thread-ED-Switch-Parent/testing",
-      "dry_run": false
+      "dry_run": true
     },
     {
-      "time_utc": "2026-05-31T19:41:21+00:00",
+      "time_utc": "2026-05-31T21:35:10+00:00",
       "sleep_seconds": 60,
       "reason": "router 2 has joined; wait before removing router 1",
-      "dry_run": false
+      "dry_run": true
     },
     {
-      "time_utc": "2026-05-31T19:42:21+00:00",
+      "time_utc": "2026-05-31T21:35:10+00:00",
       "cmd": [
         "/home/ewout/.openclaw/workspace-softwaredeveloper/ESPHome-Thread-ED-Switch-Parent/.venv/bin/esphome",
         "upload",
@@ -285,13 +295,13 @@
         "/dev/serial/by-id/usb-Espressif_USB_JTAG_serial_debug_unit_58:8C:81:5D:B0:C4-if00"
       ],
       "cwd": "/home/ewout/.openclaw/workspace-softwaredeveloper/ESPHome-Thread-ED-Switch-Parent/testing",
-      "dry_run": false
+      "dry_run": true
     },
     {
-      "time_utc": "2026-05-31T19:42:24+00:00",
+      "time_utc": "2026-05-31T21:35:10+00:00",
       "sleep_seconds": 300,
       "reason": "router 1 removed; keep recording child",
-      "dry_run": false
+      "dry_run": true
     }
   ]
 }

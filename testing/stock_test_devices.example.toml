@@ -41,7 +41,8 @@ after_router1_removed_seconds = 300
 [sniffer]
 # Optional IEEE 802.15.4 sniffer capture command.
 # When enabled, the runner starts this before flashing router1, waits for the
-# sniffer lead-in above, and stops it after the final 300-second wait.
+# sniffer lead-in above, stops it after the final 300-second wait, and copies
+# the resulting .pcapng into logs/stock.
 enabled = false
 # command = ["ssh", "rpi-802154-sniffer", "~/bin/nrf802154-sniff"]
 stop_timeout_seconds = 10

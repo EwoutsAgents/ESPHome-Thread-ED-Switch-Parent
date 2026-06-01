@@ -15,6 +15,7 @@ The methods for testing stock performance is as follows:
 11. Flash the first ESP32C6 with `empty.yaml`.
 12. Wait 300 seconds.
 13. Stop the `IEEE 802.15.4` sniffer recording.
+14. Copy the resulting sniffer `.pcapng` into the current run folder under `testing/logs/stock/<timestamp>/`.
 
 Make sure that any reruns of the above use the same ESP32C6 for each yaml.
 

@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Analyze child log timing and failed TX attempts.
 
-Scans all `*.log` files in the testing logs directory using `glob` and reports:
+Scans all child `*.log` files in the testing logs directory tree and reports:
 - Parent attach timing for:
   - Send Parent Request
   - Receive Parent Response
@@ -740,7 +740,7 @@ def print_text_report(results: list[dict[str, Any]]) -> None:
 def main(argv: list[str]) -> int:
     args = parse_args(argv)
     logs_dir = args.logs_dir.resolve()
-    log_paths = sorted(Path(path) for path in glob.glob(str(logs_dir / "*_child_*.log")))
+    log_paths = sorted(Path(path) for path in glob.glob(str(logs_dir / "**" / "*_child_*.log"), recursive=True))
     results = [analyze_log(path) for path in log_paths]
 
     if args.json:

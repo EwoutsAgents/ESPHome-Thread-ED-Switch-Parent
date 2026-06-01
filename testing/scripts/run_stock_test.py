@@ -12,6 +12,7 @@ import argparse
 import datetime as dt
 import json
 import os
+import re
 import shlex
 import shutil
 import subprocess
@@ -39,6 +40,7 @@ CONFIG_NAMES = {
 }
 
 COMPILE_ORDER = ["empty", "router1", "child", "router2"]
+PCAP_PATH_RE = re.compile(r"Saving (?:test )?capture to (\S+\.pcapng)")
 
 
 @dataclass
@@ -63,6 +65,7 @@ class Settings:
     testing_dir: Path
     configs_dir: Path
     logs_dir: Path
+    run_logs_dir: Path
     esphome_bin: str
     esptool_bin: str
     upload_speed: str | None = None
@@ -213,6 +216,7 @@ def load_settings(args: argparse.Namespace) -> Settings:
     testing_dir = resolve_relative(config_dir, raw.get("paths", {}).get("testing_dir"), ".")
     configs_dir = resolve_relative(config_dir, raw.get("paths", {}).get("configs_dir"), "configs")
     logs_dir = resolve_relative(config_dir, raw.get("paths", {}).get("logs_dir"), "logs")
+    run_logs_dir = logs_dir / dt.datetime.now().strftime("%Y%m%d-%H%M%S")
 
     devices = dict(raw.get("devices", {}))
     required = {"router1", "child", "router2"}
@@ -264,6 +268,7 @@ def load_settings(args: argparse.Namespace) -> Settings:
         testing_dir=testing_dir,
         configs_dir=configs_dir,
         logs_dir=logs_dir,
+        run_logs_dir=run_logs_dir,
         esphome_bin=resolve_esphome_bin(
             cli_value=args.esphome_bin,
             env_value=os.environ.get("ESPHOME_BIN"),
@@ -358,9 +363,9 @@ def start_sniffer_capture(
     if not settings.sniffer.enabled:
         return None, None
 
-    settings.logs_dir.mkdir(parents=True, exist_ok=True)
-    stamp = dt.datetime.now().strftime("%Y%m%d-%H%M%S")
-    log_path = settings.logs_dir / f"stock_sniffer_{stamp}.log"
+    settings.run_logs_dir.mkdir(parents=True, exist_ok=True)
+    stamp = settings.run_logs_dir.name
+    log_path = settings.run_logs_dir / f"stock_sniffer_{stamp}.log"
     cmd = settings.sniffer.command
     manifest.append({"time_utc": now_utc_iso(), "cmd": cmd, "sniffer_log_path": str(log_path), "dry_run": dry_run})
     log(("DRY-RUN " if dry_run else "START ") + quote_cmd(cmd) + f" > {log_path}")
@@ -415,10 +420,61 @@ def stop_sniffer_capture(settings: Settings, process: subprocess.Popen[str] | No
         process.wait(timeout=10)
 
 
+def find_pcap_path_in_sniffer_log(log_path: Path | None) -> str | None:
+    if log_path is None or not log_path.exists():
+        return None
+    text = log_path.read_text(encoding="utf-8", errors="replace")
+    matches = PCAP_PATH_RE.findall(text)
+    return matches[-1] if matches else None
+
+
+def sniffer_remote_host(settings: Settings) -> str | None:
+    cmd = settings.sniffer.command
+    if len(cmd) >= 2 and cmd[0] == "ssh":
+        return cmd[1]
+    return None
+
+
+def pull_sniffer_pcap(
+    settings: Settings,
+    *,
+    sniffer_log_path: Path | None,
+    dry_run: bool,
+    manifest: list[dict[str, Any]],
+) -> tuple[str | None, Path | None]:
+    remote_pcap = find_pcap_path_in_sniffer_log(sniffer_log_path)
+    if remote_pcap is None:
+        return None, None
+
+    local_pcap = settings.logs_dir / Path(remote_pcap).name
+    local_pcap = settings.run_logs_dir / Path(remote_pcap).name
+    host = sniffer_remote_host(settings)
+    if host:
+        cmd = ["scp", f"{host}:{remote_pcap}", str(local_pcap)]
+    else:
+        cmd = ["cp", remote_pcap, str(local_pcap)]
+
+    entry = {
+        "time_utc": now_utc_iso(),
+        "cmd": cmd,
+        "remote_pcap_path": remote_pcap,
+        "local_pcap_path": str(local_pcap),
+        "dry_run": dry_run,
+    }
+    manifest.append(entry)
+    log(("DRY-RUN " if dry_run else "FETCH ") + quote_cmd(cmd))
+    if dry_run:
+        return remote_pcap, local_pcap
+
+    local_pcap.parent.mkdir(parents=True, exist_ok=True)
+    subprocess.run(cmd, check=True, text=True)
+    return remote_pcap, local_pcap
+
+
 def start_child_log(settings: Settings, *, dry_run: bool, manifest: list[dict[str, Any]]) -> tuple[subprocess.Popen[str] | None, Path]:
-    settings.logs_dir.mkdir(parents=True, exist_ok=True)
-    stamp = dt.datetime.now().strftime("%Y%m%d-%H%M%S")
-    log_path = settings.logs_dir / f"stock_child_{stamp}.log"
+    settings.run_logs_dir.mkdir(parents=True, exist_ok=True)
+    stamp = settings.run_logs_dir.name
+    log_path = settings.run_logs_dir / f"stock_child_{stamp}.log"
     cmd = esphome_base(settings) + ["logs", str(config_path(settings, "child")), "--device", settings.devices["child"]]
     manifest.append({"time_utc": now_utc_iso(), "cmd": cmd, "log_path": str(log_path), "dry_run": dry_run})
     log(("DRY-RUN " if dry_run else "START ") + quote_cmd(cmd) + f" > {log_path}")
@@ -473,12 +529,19 @@ def stop_child_log(process: subprocess.Popen[str] | None, *, dry_run: bool) -> N
         process.wait(timeout=10)
 
 
-def run_timed_sequence(settings: Settings, *, dry_run: bool, manifest: list[dict[str, Any]]) -> tuple[Path | None, Path | None]:
+def run_timed_sequence(
+    settings: Settings,
+    *,
+    dry_run: bool,
+    manifest: list[dict[str, Any]],
+) -> tuple[Path | None, Path | None, str | None, Path | None]:
     log("Starting timed upload/logging sequence. Upload-only commands are used from here onward.")
     child_logger: subprocess.Popen[str] | None = None
     child_log_path: Path | None = None
     sniffer_process: subprocess.Popen[str] | None = None
     sniffer_log_path: Path | None = None
+    sniffer_remote_pcap: str | None = None
+    sniffer_local_pcap: Path | None = None
     try:
         for role in ["router1", "child", "router2", *extra_empty_roles(settings)]:
             erase_flash(settings, role, dry_run=dry_run, manifest=manifest)
@@ -512,7 +575,13 @@ def run_timed_sequence(settings: Settings, *, dry_run: bool, manifest: list[dict
         sleep_step(settings.timing.after_router1_removed_seconds, "router 1 removed; keep recording child", dry_run=dry_run, manifest=manifest)
         stop_sniffer_capture(settings, sniffer_process, dry_run=dry_run)
         sniffer_process = None
-        return child_log_path, sniffer_log_path
+        sniffer_remote_pcap, sniffer_local_pcap = pull_sniffer_pcap(
+            settings,
+            sniffer_log_path=sniffer_log_path,
+            dry_run=dry_run,
+            manifest=manifest,
+        )
+        return child_log_path, sniffer_log_path, sniffer_remote_pcap, sniffer_local_pcap
     finally:
         stop_sniffer_capture(settings, sniffer_process, dry_run=dry_run)
         stop_child_log(child_logger, dry_run=dry_run)
@@ -525,10 +594,12 @@ def write_manifest(
     dry_run: bool,
     child_log: Path | None,
     sniffer_log: Path | None,
+    sniffer_remote_pcap: str | None,
+    sniffer_local_pcap: Path | None,
 ) -> Path:
-    settings.logs_dir.mkdir(parents=True, exist_ok=True)
-    stamp = dt.datetime.now().strftime("%Y%m%d-%H%M%S")
-    path = settings.logs_dir / f"stock_test_manifest_{stamp}.json"
+    settings.run_logs_dir.mkdir(parents=True, exist_ok=True)
+    stamp = settings.run_logs_dir.name
+    path = settings.run_logs_dir / f"stock_test_manifest_{stamp}.json"
     payload = {
         "created_utc": now_utc_iso(),
         "dry_run": dry_run,
@@ -536,6 +607,7 @@ def write_manifest(
         "testing_dir": str(settings.testing_dir),
         "configs_dir": str(settings.configs_dir),
         "logs_dir": str(settings.logs_dir),
+        "run_logs_dir": str(settings.run_logs_dir),
         "esphome_bin": settings.esphome_bin,
         "esptool_bin": settings.esptool_bin,
         "precompile": settings.precompile,
@@ -548,6 +620,8 @@ def write_manifest(
             "command": settings.sniffer.command,
             "stop_timeout_seconds": settings.sniffer.stop_timeout_seconds,
             "log": str(sniffer_log) if sniffer_log else None,
+            "remote_pcap": sniffer_remote_pcap,
+            "local_pcap": str(sniffer_local_pcap) if sniffer_local_pcap else None,
         },
         "events": manifest,
     }
@@ -576,10 +650,13 @@ def main(argv: list[str]) -> int:
     log(f"Using ESPHome: {settings.esphome_bin}")
     log(f"Using esptool: {settings.esptool_bin}")
     log(f"Using configs: {settings.configs_dir}")
-    log(f"Using logs: {settings.logs_dir}")
+    log(f"Using logs base: {settings.logs_dir}")
+    log(f"Using run logs dir: {settings.run_logs_dir}")
 
     child_log: Path | None = None
     sniffer_log: Path | None = None
+    sniffer_remote_pcap: str | None = None
+    sniffer_local_pcap: Path | None = None
     try:
         if settings.precompile:
             precompile_all(settings, dry_run=args.dry_run, manifest=manifest)
@@ -589,7 +666,9 @@ def main(argv: list[str]) -> int:
         if args.precompile_only:
             log("Precompile-only requested; not starting timed test sequence.")
         else:
-            child_log, sniffer_log = run_timed_sequence(settings, dry_run=args.dry_run, manifest=manifest)
+            child_log, sniffer_log, sniffer_remote_pcap, sniffer_local_pcap = run_timed_sequence(
+                settings, dry_run=args.dry_run, manifest=manifest
+            )
     finally:
         manifest_path = write_manifest(
             settings,
@@ -597,12 +676,16 @@ def main(argv: list[str]) -> int:
             dry_run=args.dry_run,
             child_log=child_log,
             sniffer_log=sniffer_log,
+            sniffer_remote_pcap=sniffer_remote_pcap,
+            sniffer_local_pcap=sniffer_local_pcap,
         )
         log(f"Wrote manifest: {manifest_path}")
         if child_log:
             log(f"Child log: {child_log}")
         if sniffer_log:
             log(f"Sniffer log: {sniffer_log}")
+        if sniffer_local_pcap:
+            log(f"Sniffer pcap: {sniffer_local_pcap}")
 
     return 0
 

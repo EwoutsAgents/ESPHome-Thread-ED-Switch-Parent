@@ -17,10 +17,10 @@ It does not call `esphome run` during the timed sequence. This avoids compile-ti
 - `run_stock_test.sh` — convenience wrapper that prefers the repository-local Python venv.
 - `stock_test_devices.example.toml` — copy this to `stock_test_devices.toml` and edit serial ports.
   - Optional extra device entries such as `unused` are erased and flashed with `empty.yaml` before the timed sequence starts.
-  - Optional `[sniffer]` settings can start/stop an IEEE 802.15.4 capture command during the timed sequence.
+  - Optional `[sniffer]` settings can start/stop an IEEE 802.15.4 capture command during the timed sequence, then pull the resulting `.pcapng` into `logs/stock/`.
 - `configs/*.yaml` — current stock configs from the `better_testing` branch.
   - `configs/stock_child.yaml` explicitly sets `CONFIG_OPENTHREAD_PARENT_SEARCH_MTD: n` so the stock-child test does not include ESP-IDF/OpenThread's default periodic MTD parent-search behaviour.
-- `logs/stock/` — generated stock child logs and JSON run manifests.
+- `logs/stock/` — base directory for generated run folders, stock child logs, `.pcapng` captures, and JSON manifests.
 
 ## Setup
 
@@ -119,12 +119,14 @@ Timed phase:
 10. `upload empty.yaml` to router 1.
 11. Wait 300 seconds while child logging continues.
 12. Stop the optional sniffer capture command.
-13. Stop child logging.
+13. Copy the resulting sniffer `.pcapng` into `logs/stock/`.
+14. Stop child logging.
 
-Each run writes:
+Each run writes into its own timestamped folder:
 
-- `logs/stock/stock_child_<timestamp>.log`
-- `logs/stock/stock_sniffer_<timestamp>.log` when `[sniffer].enabled = true`
-- `logs/stock/stock_test_manifest_<timestamp>.json`
+- `logs/stock/<timestamp>/stock_child_<timestamp>.log`
+- `logs/stock/<timestamp>/stock_sniffer_<timestamp>.log` when `[sniffer].enabled = true`
+- `logs/stock/<timestamp>/<sniffer-capture-basename>.pcapng` when `[sniffer].enabled = true`
+- `logs/stock/<timestamp>/stock_test_manifest_<timestamp>.json`
 
-The JSON manifest records every command and wait event, which makes it easier to audit whether a result included compilation in the timed section.
+The JSON manifest records every command and wait event, including the remote sniffer pcap path and the pulled local pcap path, which makes it easier to audit whether a result included compilation in the timed section.
