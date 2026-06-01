@@ -46,10 +46,10 @@ PCAP_PATH_RE = re.compile(r"Saving (?:test )?capture to (\S+\.pcapng)")
 @dataclass
 class Timing:
     sniffer_lead_in_seconds: int = 5
-    after_router1_seconds: int = 10
-    after_child_seconds: int = 30
-    after_router2_seconds: int = 60
-    after_router1_removed_seconds: int = 300
+    after_router1_seconds: int = 5
+    after_child_seconds: int = 10
+    after_router2_seconds: int = 10
+    after_router1_removed_seconds: int = 180
 
 
 @dataclass
@@ -237,10 +237,10 @@ def load_settings(args: argparse.Namespace) -> Settings:
     timing_raw = raw.get("timing", {})
     timing = Timing(
         sniffer_lead_in_seconds=int(timing_raw.get("sniffer_lead_in_seconds", 5)),
-        after_router1_seconds=int(timing_raw.get("after_router1_seconds", 10)),
-        after_child_seconds=int(timing_raw.get("after_child_seconds", 30)),
-        after_router2_seconds=int(timing_raw.get("after_router2_seconds", 60)),
-        after_router1_removed_seconds=int(timing_raw.get("after_router1_removed_seconds", 300)),
+        after_router1_seconds=int(timing_raw.get("after_router1_seconds", 5)),
+        after_child_seconds=int(timing_raw.get("after_child_seconds", 10)),
+        after_router2_seconds=int(timing_raw.get("after_router2_seconds", 10)),
+        after_router1_removed_seconds=int(timing_raw.get("after_router1_removed_seconds", 180)),
     )
 
     precompile = bool(esphome_raw.get("precompile", True))
