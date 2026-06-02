@@ -32,7 +32,7 @@ The methods for testing stock performance is as follows:
 6. Wait 5 seconds.
 7. Flash the second ESP32-C6 with `ucast_child_no_early_attach.yaml`.
 8. Wait 10 seconds.
-9. Flash the third ESP32-C6 with `stock_router_2.yaml`.
+9. Flash the third ESP32-C6 with `stock_router_2.yaml`. Using it's logs note it's extended address.
 10. Wait 10 seconds.
 11. Instruct the child to change its parent to `stock-router-2` using its extended address.
 12. Wait 180 seconds.
@@ -60,7 +60,7 @@ The methods for multicast no-early-attach performance testing are as follows:
 6. Wait 5 seconds.
 7. Flash the second ESP32-C6 with `mcast_child_no_early_attach.yaml`.
 8. Wait 10 seconds.
-9. Flash the third ESP32-C6 with `stock_router_2.yaml`.
+9. Flash the third ESP32-C6 with `stock_router_2.yaml`. Using it's logs note it's extended address.
 10. Wait 10 seconds.
 11. Instruct the child to change its parent to `stock-router-2` using its extended address.
 12. Wait 180 seconds.
