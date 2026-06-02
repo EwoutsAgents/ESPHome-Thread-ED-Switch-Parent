@@ -74,6 +74,7 @@ class Settings:
     devices: dict[str, str] = field(default_factory=dict)
     timing: Timing = field(default_factory=Timing)
     sniffer: SnifferSettings = field(default_factory=SnifferSettings)
+    capture_router2_log: bool = True
 
 
 def now_utc_iso() -> str:
@@ -288,6 +289,7 @@ def load_settings(args: argparse.Namespace) -> Settings:
             command=[str(part) for part in sniffer_command],
             stop_timeout_seconds=int(sniffer_raw.get("stop_timeout_seconds", 10)),
         ),
+        capture_router2_log=bool(raw.get("diagnostics", {}).get("capture_router2_log", True)),
     )
 
 
@@ -548,6 +550,90 @@ def start_child_log(settings: Settings, *, dry_run: bool, manifest: list[dict[st
     return process, log_path
 
 
+def start_router1_log(settings: Settings, *, dry_run: bool, manifest: list[dict[str, Any]]) -> tuple[subprocess.Popen[str] | None, Path]:
+    settings.run_logs_dir.mkdir(parents=True, exist_ok=True)
+    stamp = settings.run_logs_dir.name
+    log_path = settings.run_logs_dir / f"stock_router1_{stamp}.log"
+    cmd = esphome_base(settings) + ["logs", str(config_path(settings, "router1")), "--device", settings.devices["router1"]]
+    manifest.append({"time_utc": now_utc_iso(), "cmd": cmd, "log_path": str(log_path), "dry_run": dry_run})
+    log(("DRY-RUN " if dry_run else "START ") + quote_cmd(cmd) + f" > {log_path}")
+
+    if dry_run:
+        return None, log_path
+
+    log_file = log_path.open("w", encoding="utf-8", errors="replace")
+    log_file.write(f"# Command: {quote_cmd(cmd)}\n")
+    log_file.write(f"# Started UTC: {now_utc_iso()}\n")
+    log_file.flush()
+
+    process = subprocess.Popen(
+        cmd,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.STDOUT,
+        text=True,
+        encoding="utf-8",
+        errors="replace",
+        bufsize=1,
+    )
+
+    def pump() -> None:
+        try:
+            assert process.stdout is not None
+            for line in process.stdout:
+                print(line, end="")
+                log_file.write(line)
+                log_file.flush()
+        finally:
+            log_file.write(f"# Log reader stopped UTC: {now_utc_iso()}\n")
+            log_file.close()
+
+    thread = threading.Thread(target=pump, name="router1-log-pump", daemon=True)
+    thread.start()
+    return process, log_path
+
+
+def start_router2_log(settings: Settings, *, dry_run: bool, manifest: list[dict[str, Any]]) -> tuple[subprocess.Popen[str] | None, Path]:
+    settings.run_logs_dir.mkdir(parents=True, exist_ok=True)
+    stamp = settings.run_logs_dir.name
+    log_path = settings.run_logs_dir / f"stock_router2_{stamp}.log"
+    cmd = esphome_base(settings) + ["logs", str(config_path(settings, "router2")), "--device", settings.devices["router2"]]
+    manifest.append({"time_utc": now_utc_iso(), "cmd": cmd, "log_path": str(log_path), "dry_run": dry_run})
+    log(("DRY-RUN " if dry_run else "START ") + quote_cmd(cmd) + f" > {log_path}")
+
+    if dry_run:
+        return None, log_path
+
+    log_file = log_path.open("w", encoding="utf-8", errors="replace")
+    log_file.write(f"# Command: {quote_cmd(cmd)}\n")
+    log_file.write(f"# Started UTC: {now_utc_iso()}\n")
+    log_file.flush()
+
+    process = subprocess.Popen(
+        cmd,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.STDOUT,
+        text=True,
+        encoding="utf-8",
+        errors="replace",
+        bufsize=1,
+    )
+
+    def pump() -> None:
+        try:
+            assert process.stdout is not None
+            for line in process.stdout:
+                print(line, end="")
+                log_file.write(line)
+                log_file.flush()
+        finally:
+            log_file.write(f"# Log reader stopped UTC: {now_utc_iso()}\n")
+            log_file.close()
+
+    thread = threading.Thread(target=pump, name="router2-log-pump", daemon=True)
+    thread.start()
+    return process, log_path
+
+
 def stop_child_log(process: subprocess.Popen[str] | None, *, dry_run: bool) -> None:
     if dry_run or process is None:
         return
@@ -564,15 +650,51 @@ def stop_child_log(process: subprocess.Popen[str] | None, *, dry_run: bool) -> N
         process.wait(timeout=10)
 
 
+def stop_router1_log(process: subprocess.Popen[str] | None, *, dry_run: bool) -> None:
+    if dry_run or process is None:
+        return
+    if process.poll() is not None:
+        log(f"Router1 log process already exited with code {process.returncode}.")
+        return
+    log("Stopping router1 log process.")
+    process.terminate()
+    try:
+        process.wait(timeout=10)
+    except subprocess.TimeoutExpired:
+        log("Router1 log process did not stop after SIGTERM; killing it.")
+        process.kill()
+        process.wait(timeout=10)
+
+
+def stop_router2_log(process: subprocess.Popen[str] | None, *, dry_run: bool) -> None:
+    if dry_run or process is None:
+        return
+    if process.poll() is not None:
+        log(f"Router2 log process already exited with code {process.returncode}.")
+        return
+    log("Stopping router2 log process.")
+    process.terminate()
+    try:
+        process.wait(timeout=10)
+    except subprocess.TimeoutExpired:
+        log("Router2 log process did not stop after SIGTERM; killing it.")
+        process.kill()
+        process.wait(timeout=10)
+
+
 def run_timed_sequence(
     settings: Settings,
     *,
     dry_run: bool,
     manifest: list[dict[str, Any]],
-) -> tuple[Path | None, Path | None, str | None, Path | None]:
+) -> tuple[Path | None, Path | None, Path | None, Path | None, str | None, Path | None]:
     log("Starting timed upload/logging sequence. Upload-only commands are used from here onward.")
     child_logger: subprocess.Popen[str] | None = None
     child_log_path: Path | None = None
+    router1_logger: subprocess.Popen[str] | None = None
+    router1_log_path: Path | None = None
+    router2_logger: subprocess.Popen[str] | None = None
+    router2_log_path: Path | None = None
     sniffer_process: subprocess.Popen[str] | None = None
     sniffer_log_path: Path | None = None
     sniffer_remote_pcap: str | None = None
@@ -592,6 +714,8 @@ def run_timed_sequence(
             )
 
         upload(settings, "router1", "router1", dry_run=dry_run, manifest=manifest)
+        if settings.capture_router2_log:
+            router1_logger, router1_log_path = start_router1_log(settings, dry_run=dry_run, manifest=manifest)
         sleep_step(
             settings.timing.after_router1_seconds,
             "router 1 has been flashed; wait before adding child",
@@ -604,8 +728,12 @@ def run_timed_sequence(
         sleep_step(settings.timing.after_child_seconds, "child flashed/logging; wait before adding router 2", dry_run=dry_run, manifest=manifest)
 
         upload(settings, "router2", "router2", dry_run=dry_run, manifest=manifest)
+        if settings.capture_router2_log:
+            router2_logger, router2_log_path = start_router2_log(settings, dry_run=dry_run, manifest=manifest)
         sleep_step(settings.timing.after_router2_seconds, "router 2 has joined; wait before removing router 1", dry_run=dry_run, manifest=manifest)
 
+        stop_router1_log(router1_logger, dry_run=dry_run)
+        router1_logger = None
         upload(settings, "router1", "empty", dry_run=dry_run, manifest=manifest)
         sleep_step(settings.timing.after_router1_removed_seconds, "router 1 removed; keep recording child", dry_run=dry_run, manifest=manifest)
         stop_sniffer_capture(settings, sniffer_process, dry_run=dry_run)
@@ -616,10 +744,12 @@ def run_timed_sequence(
             dry_run=dry_run,
             manifest=manifest,
         )
-        return child_log_path, sniffer_log_path, sniffer_remote_pcap, sniffer_local_pcap
+        return child_log_path, router1_log_path, router2_log_path, sniffer_log_path, sniffer_remote_pcap, sniffer_local_pcap
     finally:
         stop_sniffer_capture(settings, sniffer_process, dry_run=dry_run)
         stop_child_log(child_logger, dry_run=dry_run)
+        stop_router1_log(router1_logger, dry_run=dry_run)
+        stop_router2_log(router2_logger, dry_run=dry_run)
 
 
 def write_manifest(
@@ -628,6 +758,8 @@ def write_manifest(
     *,
     dry_run: bool,
     child_log: Path | None,
+    router1_log: Path | None,
+    router2_log: Path | None,
     sniffer_log: Path | None,
     sniffer_remote_pcap: str | None,
     sniffer_local_pcap: Path | None,
@@ -650,6 +782,8 @@ def write_manifest(
         "devices": settings.devices,
         "timing": settings.timing.__dict__,
         "child_log": str(child_log) if child_log else None,
+        "router1_log": str(router1_log) if router1_log else None,
+        "router2_log": str(router2_log) if router2_log else None,
         "sniffer": {
             "enabled": settings.sniffer.enabled,
             "command": settings.sniffer.command,
@@ -689,6 +823,8 @@ def main(argv: list[str]) -> int:
     log(f"Using run logs dir: {settings.run_logs_dir}")
 
     child_log: Path | None = None
+    router1_log: Path | None = None
+    router2_log: Path | None = None
     sniffer_log: Path | None = None
     sniffer_remote_pcap: str | None = None
     sniffer_local_pcap: Path | None = None
@@ -701,7 +837,7 @@ def main(argv: list[str]) -> int:
         if args.precompile_only:
             log("Precompile-only requested; not starting timed test sequence.")
         else:
-            child_log, sniffer_log, sniffer_remote_pcap, sniffer_local_pcap = run_timed_sequence(
+            child_log, router1_log, router2_log, sniffer_log, sniffer_remote_pcap, sniffer_local_pcap = run_timed_sequence(
                 settings, dry_run=args.dry_run, manifest=manifest
             )
     finally:
@@ -710,6 +846,8 @@ def main(argv: list[str]) -> int:
             manifest,
             dry_run=args.dry_run,
             child_log=child_log,
+            router1_log=router1_log,
+            router2_log=router2_log,
             sniffer_log=sniffer_log,
             sniffer_remote_pcap=sniffer_remote_pcap,
             sniffer_local_pcap=sniffer_local_pcap,
@@ -717,6 +855,10 @@ def main(argv: list[str]) -> int:
         log(f"Wrote manifest: {manifest_path}")
         if child_log:
             log(f"Child log: {child_log}")
+        if router1_log:
+            log(f"Router1 log: {router1_log}")
+        if router2_log:
+            log(f"Router2 log: {router2_log}")
         if sniffer_log:
             log(f"Sniffer log: {sniffer_log}")
         if sniffer_local_pcap:
