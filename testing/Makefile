@@ -1,5 +1,6 @@
 CONFIG ?= stock_test_devices.toml
-RUNNER := ./run_stock_test.sh --config $(CONFIG)
+RUNS ?= 1
+RUNNER := ./run_stock_test.sh --config $(CONFIG) --runs $(RUNS)
 UCAST_CONFIG ?= ucast_no_early_attach_test_devices.toml
 UCAST_RUNNER := ./run_ucast_no_early_attach_test.sh --config $(UCAST_CONFIG)
 MCAST_CONFIG ?= mcast_no_early_attach_test_devices.toml

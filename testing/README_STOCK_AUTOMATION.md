@@ -49,7 +49,7 @@ Optional sniffer integration:
 sniffer_lead_in_seconds = 5
 after_router1_seconds = 5
 after_child_seconds = 10
-after_router2_seconds = 10
+after_router2_seconds = 90
 after_router1_removed_seconds = 180
 
 [sniffer]
@@ -70,6 +70,20 @@ Equivalent Make target:
 
 ```bash
 make stock-test
+```
+
+## Multiple runs
+
+Execute the timed stock test multiple times with one command. The precompile phase still runs only once before the repeated timed sequence starts.
+
+```bash
+./run_stock_test.sh --config stock_test_devices.toml --runs 5
+```
+
+Equivalent Make invocation:
+
+```bash
+make stock-test RUNS=5
 ```
 
 ## Dry run
@@ -119,7 +133,7 @@ Timed phase:
 6. `upload stock_child.yaml` to child and start `esphome logs` for the child.
 7. Wait 10 seconds.
 8. `upload stock_router_2.yaml` to router 2.
-9. Wait 10 seconds.
+9. Wait 90 seconds.
 10. `upload empty.yaml` to router 1.
 11. Wait 180 seconds while child logging continues.
 12. Stop the optional sniffer capture command.
@@ -132,5 +146,7 @@ Each run writes into its own timestamped folder:
 - `logs/stock/<timestamp>/stock_sniffer_<timestamp>.log` when `[sniffer].enabled = true`
 - `logs/stock/<timestamp>/<sniffer-capture-basename>.pcapng` when `[sniffer].enabled = true`
 - `logs/stock/<timestamp>/stock_test_manifest_<timestamp>.json`
+
+When `--runs N` is used, each repeated timed run gets its own folder with a `-runNN` suffix, for example `logs/stock/20260609-030000-run03/`.
 
 The JSON manifest records every command and wait event, including the remote sniffer pcap path and the pulled local pcap path, which makes it easier to audit whether a result included compilation in the timed section.

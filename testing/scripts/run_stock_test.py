@@ -48,7 +48,7 @@ class Timing:
     sniffer_lead_in_seconds: int = 5
     after_router1_seconds: int = 5
     after_child_seconds: int = 10
-    after_router2_seconds: int = 10
+    after_router2_seconds: int = 90
     after_router1_removed_seconds: int = 180
 
 
@@ -79,6 +79,13 @@ class Settings:
 
 def now_utc_iso() -> str:
     return dt.datetime.now(dt.timezone.utc).isoformat(timespec="seconds")
+
+
+def build_run_logs_dir(logs_dir: Path, *, run_index: int | None = None) -> Path:
+    stamp = dt.datetime.now().strftime("%Y%m%d-%H%M%S")
+    if run_index is not None:
+        stamp = f"{stamp}-run{run_index:02d}"
+    return logs_dir / stamp
 
 
 def log(msg: str) -> None:
@@ -217,7 +224,7 @@ def load_settings(args: argparse.Namespace) -> Settings:
     testing_dir = resolve_relative(config_dir, raw.get("paths", {}).get("testing_dir"), ".")
     configs_dir = resolve_relative(config_dir, raw.get("paths", {}).get("configs_dir"), "configs")
     logs_dir = resolve_relative(config_dir, raw.get("paths", {}).get("logs_dir"), "logs")
-    run_logs_dir = logs_dir / dt.datetime.now().strftime("%Y%m%d-%H%M%S")
+    run_logs_dir = build_run_logs_dir(logs_dir)
 
     devices = dict(raw.get("devices", {}))
     required = {"router1", "child", "router2"}
@@ -240,7 +247,7 @@ def load_settings(args: argparse.Namespace) -> Settings:
         sniffer_lead_in_seconds=int(timing_raw.get("sniffer_lead_in_seconds", 5)),
         after_router1_seconds=int(timing_raw.get("after_router1_seconds", 5)),
         after_child_seconds=int(timing_raw.get("after_child_seconds", 10)),
-        after_router2_seconds=int(timing_raw.get("after_router2_seconds", 10)),
+        after_router2_seconds=int(timing_raw.get("after_router2_seconds", 90)),
         after_router1_removed_seconds=int(timing_raw.get("after_router1_removed_seconds", 180)),
     )
 
@@ -757,6 +764,8 @@ def write_manifest(
     manifest: list[dict[str, Any]],
     *,
     dry_run: bool,
+    run_number: int | None,
+    total_runs: int,
     child_log: Path | None,
     router1_log: Path | None,
     router2_log: Path | None,
@@ -775,6 +784,8 @@ def write_manifest(
         "configs_dir": str(settings.configs_dir),
         "logs_dir": str(settings.logs_dir),
         "run_logs_dir": str(settings.run_logs_dir),
+        "run_number": run_number,
+        "total_runs": total_runs,
         "esphome_bin": settings.esphome_bin,
         "esptool_bin": settings.esptool_bin,
         "precompile": settings.precompile,
@@ -802,6 +813,7 @@ def parse_args(argv: list[str]) -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Run stock ESPHome/OpenThread parent-switching test.")
     parser.add_argument("--config", default="stock_test_devices.toml", help="Path to device/config TOML file.")
     parser.add_argument("--esphome-bin", help="Override ESPHome executable. Overrides ESPHOME_BIN and TOML.")
+    parser.add_argument("--runs", type=int, default=1, help="Number of timed test runs to execute. Precompile still happens once.")
     parser.add_argument("--dry-run", action="store_true", help="Print commands and write a manifest without executing ESPHome.")
     parser.add_argument("--precompile-only", action="store_true", help="Compile all firmware and exit before any flashing.")
     parser.add_argument("--skip-precompile", action="store_true", help="Skip precompile phase. Not recommended for measurement runs.")
@@ -813,56 +825,86 @@ def parse_args(argv: list[str]) -> argparse.Namespace:
 
 def main(argv: list[str]) -> int:
     args = parse_args(argv)
+    if args.runs < 1:
+        raise SystemExit("--runs must be at least 1.")
     settings = load_settings(args)
-    manifest: list[dict[str, Any]] = []
 
     log(f"Using ESPHome: {settings.esphome_bin}")
     log(f"Using esptool: {settings.esptool_bin}")
     log(f"Using configs: {settings.configs_dir}")
     log(f"Using logs base: {settings.logs_dir}")
-    log(f"Using run logs dir: {settings.run_logs_dir}")
+    log(f"Requested timed runs: {args.runs}")
+    log(f"Initial run logs dir: {settings.run_logs_dir}")
 
-    child_log: Path | None = None
-    router1_log: Path | None = None
-    router2_log: Path | None = None
-    sniffer_log: Path | None = None
-    sniffer_remote_pcap: str | None = None
-    sniffer_local_pcap: Path | None = None
-    try:
-        if settings.precompile:
-            precompile_all(settings, dry_run=args.dry_run, manifest=manifest)
-        else:
-            log("WARNING: precompile phase skipped. Uploads may fail if the most recent firmware builds do not exist.")
+    precompile_manifest: list[dict[str, Any]] = []
+    if settings.precompile:
+        precompile_all(settings, dry_run=args.dry_run, manifest=precompile_manifest)
+    else:
+        log("WARNING: precompile phase skipped. Uploads may fail if the most recent firmware builds do not exist.")
 
-        if args.precompile_only:
-            log("Precompile-only requested; not starting timed test sequence.")
+    if args.precompile_only:
+        manifest_path = write_manifest(
+            settings,
+            precompile_manifest,
+            dry_run=args.dry_run,
+            run_number=None,
+            total_runs=args.runs,
+            child_log=None,
+            router1_log=None,
+            router2_log=None,
+            sniffer_log=None,
+            sniffer_remote_pcap=None,
+            sniffer_local_pcap=None,
+        )
+        log("Precompile-only requested; not starting timed test sequence.")
+        log(f"Wrote manifest: {manifest_path}")
+        return 0
+
+    for run_number in range(1, args.runs + 1):
+        if args.runs > 1:
+            settings.run_logs_dir = build_run_logs_dir(settings.logs_dir, run_index=run_number)
+            log(f"Starting timed run {run_number}/{args.runs}")
+            log(f"Using run logs dir: {settings.run_logs_dir}")
         else:
+            log("Starting timed run 1/1")
+            log(f"Using run logs dir: {settings.run_logs_dir}")
+
+        manifest: list[dict[str, Any]] = []
+        child_log: Path | None = None
+        router1_log: Path | None = None
+        router2_log: Path | None = None
+        sniffer_log: Path | None = None
+        sniffer_remote_pcap: str | None = None
+        sniffer_local_pcap: Path | None = None
+        try:
             child_log, router1_log, router2_log, sniffer_log, sniffer_remote_pcap, sniffer_local_pcap = run_timed_sequence(
                 settings, dry_run=args.dry_run, manifest=manifest
             )
-    finally:
-        manifest_path = write_manifest(
-            settings,
-            manifest,
-            dry_run=args.dry_run,
-            child_log=child_log,
-            router1_log=router1_log,
-            router2_log=router2_log,
-            sniffer_log=sniffer_log,
-            sniffer_remote_pcap=sniffer_remote_pcap,
-            sniffer_local_pcap=sniffer_local_pcap,
-        )
-        log(f"Wrote manifest: {manifest_path}")
-        if child_log:
-            log(f"Child log: {child_log}")
-        if router1_log:
-            log(f"Router1 log: {router1_log}")
-        if router2_log:
-            log(f"Router2 log: {router2_log}")
-        if sniffer_log:
-            log(f"Sniffer log: {sniffer_log}")
-        if sniffer_local_pcap:
-            log(f"Sniffer pcap: {sniffer_local_pcap}")
+        finally:
+            manifest_path = write_manifest(
+                settings,
+                precompile_manifest + manifest,
+                dry_run=args.dry_run,
+                run_number=run_number,
+                total_runs=args.runs,
+                child_log=child_log,
+                router1_log=router1_log,
+                router2_log=router2_log,
+                sniffer_log=sniffer_log,
+                sniffer_remote_pcap=sniffer_remote_pcap,
+                sniffer_local_pcap=sniffer_local_pcap,
+            )
+            log(f"Wrote manifest: {manifest_path}")
+            if child_log:
+                log(f"Child log: {child_log}")
+            if router1_log:
+                log(f"Router1 log: {router1_log}")
+            if router2_log:
+                log(f"Router2 log: {router2_log}")
+            if sniffer_log:
+                log(f"Sniffer log: {sniffer_log}")
+            if sniffer_local_pcap:
+                log(f"Sniffer pcap: {sniffer_local_pcap}")
 
     return 0
 
