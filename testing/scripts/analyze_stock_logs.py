@@ -534,6 +534,20 @@ def format_avg_stdev(mean: float | None, stdev: float | None, *, suffix: str = "
     return f"{format_stat(mean)} ± {format_stat(stdev)}{tail}"
 
 
+TIMING_LABELS = {
+    "parent_request_to_response": "Request → Response",
+    "parent_response_to_child_id_request": "Response → Child ID Request",
+    "child_id_request_to_response": "Child ID Request → Response",
+    "parent_request_to_child_id_response": "Full Attach",
+}
+
+
+def format_mean_sd(mean: float | None, stdev: float | None) -> str:
+    if mean is None:
+        return "n/a"
+    return f"{format_stat(mean)} ({format_stat(stdev)})"
+
+
 def group_summary(group_results: list[dict[str, Any]]) -> dict[str, Any]:
     attach_summaries: dict[int, dict[str, tuple[float | None, float | None, int]]] = {}
     max_attach_count = max((len(result["attach_sequences"]) for result in group_results), default=0)
@@ -592,33 +606,28 @@ def render_text_report(results: list[dict[str, Any]]) -> str:
             attach = summary["attaches"][attach_index]
             out.append(f"    Attach {attach_index}:")
             out.append(
-                "      request -> response: "
-                f"avg {format_stat(attach['parent_request_to_response'][0])} ms, "
-                f"stdev {format_stat(attach['parent_request_to_response'][1])} ms, "
+                f"      {TIMING_LABELS['parent_request_to_response']}: "
+                f"{format_mean_sd(attach['parent_request_to_response'][0], attach['parent_request_to_response'][1])} ms, "
                 f"n={attach['parent_request_to_response'][2]}"
             )
             out.append(
-                "      response -> child id request: "
-                f"avg {format_stat(attach['parent_response_to_child_id_request'][0])} ms, "
-                f"stdev {format_stat(attach['parent_response_to_child_id_request'][1])} ms, "
+                f"      {TIMING_LABELS['parent_response_to_child_id_request']}: "
+                f"{format_mean_sd(attach['parent_response_to_child_id_request'][0], attach['parent_response_to_child_id_request'][1])} ms, "
                 f"n={attach['parent_response_to_child_id_request'][2]}"
             )
             out.append(
-                "      child id request -> response: "
-                f"avg {format_stat(attach['child_id_request_to_response'][0])} ms, "
-                f"stdev {format_stat(attach['child_id_request_to_response'][1])} ms, "
+                f"      {TIMING_LABELS['child_id_request_to_response']}: "
+                f"{format_mean_sd(attach['child_id_request_to_response'][0], attach['child_id_request_to_response'][1])} ms, "
                 f"n={attach['child_id_request_to_response'][2]}"
             )
             out.append(
-                "      full attach quartet: "
-                f"avg {format_stat(attach['parent_request_to_child_id_response'][0])} ms, "
-                f"stdev {format_stat(attach['parent_request_to_child_id_response'][1])} ms, "
+                f"      {TIMING_LABELS['parent_request_to_child_id_response']}: "
+                f"{format_mean_sd(attach['parent_request_to_child_id_response'][0], attach['parent_request_to_child_id_response'][1])} ms, "
                 f"n={attach['parent_request_to_child_id_response'][2]}"
             )
         out.append(
             "    failed tx attempts per log: "
-            f"avg {format_stat(summary['failed_tx_attempts'][0])}, "
-            f"stdev {format_stat(summary['failed_tx_attempts'][1])}, "
+            f"{format_mean_sd(summary['failed_tx_attempts'][0], summary['failed_tx_attempts'][1])}, "
             f"n={summary['failed_tx_attempts'][2]}"
         )
 
@@ -638,10 +647,10 @@ def render_text_report(results: list[dict[str, Any]]) -> str:
                     out.append(f"      parent extaddr: {seq['parent_extaddr']}")
                     out.append(f"      parent rloc16: {seq['parent_rloc16']}")
                     out.append(f"      timing source: {seq['timing_source']}")
-                    out.append(f"      request -> response: {seq['timing_ms']['parent_request_to_response']} ms")
-                    out.append(f"      response -> child id request: {seq['timing_ms']['parent_response_to_child_id_request']} ms")
-                    out.append(f"      child id request -> response: {seq['timing_ms']['child_id_request_to_response']} ms")
-                    out.append(f"      full attach quartet: {seq['timing_ms']['parent_request_to_child_id_response']} ms")
+                    out.append(f"      {TIMING_LABELS['parent_request_to_response']}: {seq['timing_ms']['parent_request_to_response']} ms")
+                    out.append(f"      {TIMING_LABELS['parent_response_to_child_id_request']}: {seq['timing_ms']['parent_response_to_child_id_request']} ms")
+                    out.append(f"      {TIMING_LABELS['child_id_request_to_response']}: {seq['timing_ms']['child_id_request_to_response']} ms")
+                    out.append(f"      {TIMING_LABELS['parent_request_to_child_id_response']}: {seq['timing_ms']['parent_request_to_child_id_response']} ms")
                     if seq["timing_source"] == "pcap":
                         out.append(f"      pcap parent request: {seq['pcap_event_times'].get('send_parent_request')} (frame {seq['pcap_frame_numbers'].get('send_parent_request')})")
                         out.append(f"      pcap parent response: {seq['pcap_event_times'].get('receive_parent_response')} (frame {seq['pcap_frame_numbers'].get('receive_parent_response')})")
@@ -675,24 +684,18 @@ def render_markdown_report(results: list[dict[str, Any]]) -> str:
         out.append("")
         out.append("### Summary")
         out.append("")
-        out.append("| Attach | Request → Response (ms) | Response → Child ID Req (ms) | Child ID Req → Response (ms) | Full attach (ms) | n |")
-        out.append("| --- | ---: | ---: | ---: | ---: | ---: |")
+        out.append("| Attach | Metric | M (SD), ms | n |")
+        out.append("| --- | --- | ---: | ---: |")
         for attach_index in sorted(summary["attaches"]):
             attach = summary["attaches"][attach_index]
-            out.append(
-                f"| {attach_index} "
-                f"| {format_avg_stdev(attach['parent_request_to_response'][0], attach['parent_request_to_response'][1])} "
-                f"| {format_avg_stdev(attach['parent_response_to_child_id_request'][0], attach['parent_response_to_child_id_request'][1])} "
-                f"| {format_avg_stdev(attach['child_id_request_to_response'][0], attach['child_id_request_to_response'][1])} "
-                f"| {format_avg_stdev(attach['parent_request_to_child_id_response'][0], attach['parent_request_to_child_id_response'][1])} "
-                f"| {attach['parent_request_to_child_id_response'][2]} |"
-            )
+            out.append(f"| {attach_index} | {TIMING_LABELS['parent_request_to_response']} | {format_mean_sd(attach['parent_request_to_response'][0], attach['parent_request_to_response'][1])} | {attach['parent_request_to_response'][2]} |")
+            out.append(f"| {attach_index} | {TIMING_LABELS['parent_response_to_child_id_request']} | {format_mean_sd(attach['parent_response_to_child_id_request'][0], attach['parent_response_to_child_id_request'][1])} | {attach['parent_response_to_child_id_request'][2]} |")
+            out.append(f"| {attach_index} | {TIMING_LABELS['child_id_request_to_response']} | {format_mean_sd(attach['child_id_request_to_response'][0], attach['child_id_request_to_response'][1])} | {attach['child_id_request_to_response'][2]} |")
+            out.append(f"| {attach_index} | {TIMING_LABELS['parent_request_to_child_id_response']} | {format_mean_sd(attach['parent_request_to_child_id_response'][0], attach['parent_request_to_child_id_response'][1])} | {attach['parent_request_to_child_id_response'][2]} |")
         out.append("")
-        out.append("| Failed TX attempts per log | n |")
-        out.append("| ---: | ---: |")
-        out.append(
-            f"| {format_avg_stdev(summary['failed_tx_attempts'][0], summary['failed_tx_attempts'][1])} | {summary['failed_tx_attempts'][2]} |"
-        )
+        out.append("| Metric | M (SD) | n |")
+        out.append("| --- | ---: | ---: |")
+        out.append(f"| Failed TX Attempts per Log | {format_mean_sd(summary['failed_tx_attempts'][0], summary['failed_tx_attempts'][1])} | {summary['failed_tx_attempts'][2]} |")
         out.append("")
 
         for result in grouped[group_name]:
@@ -714,10 +717,10 @@ def render_markdown_report(results: list[dict[str, Any]]) -> str:
                     out.append(f"- parent extaddr: `{seq['parent_extaddr']}`")
                     out.append(f"- parent rloc16: `{seq['parent_rloc16']}`")
                     out.append(f"- timing source: **{seq['timing_source']}**")
-                    out.append(f"- request -> response: **{seq['timing_ms']['parent_request_to_response']} ms**")
-                    out.append(f"- response -> child id request: **{seq['timing_ms']['parent_response_to_child_id_request']} ms**")
-                    out.append(f"- child id request -> response: **{seq['timing_ms']['child_id_request_to_response']} ms**")
-                    out.append(f"- full attach: **{seq['timing_ms']['parent_request_to_child_id_response']} ms**")
+                    out.append(f"- {TIMING_LABELS['parent_request_to_response']}: **{seq['timing_ms']['parent_request_to_response']} ms**")
+                    out.append(f"- {TIMING_LABELS['parent_response_to_child_id_request']}: **{seq['timing_ms']['parent_response_to_child_id_request']} ms**")
+                    out.append(f"- {TIMING_LABELS['child_id_request_to_response']}: **{seq['timing_ms']['child_id_request_to_response']} ms**")
+                    out.append(f"- {TIMING_LABELS['parent_request_to_child_id_response']}: **{seq['timing_ms']['parent_request_to_child_id_response']} ms**")
                     if seq["timing_source"] == "pcap":
                         out.append(f"- pcap parent request: `{seq['pcap_event_times'].get('send_parent_request')}` (frame {seq['pcap_frame_numbers'].get('send_parent_request')})")
                         out.append(f"- pcap parent response: `{seq['pcap_event_times'].get('receive_parent_response')}` (frame {seq['pcap_frame_numbers'].get('receive_parent_response')})")

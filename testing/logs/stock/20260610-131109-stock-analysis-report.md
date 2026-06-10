@@ -4,14 +4,20 @@
 
 ### Summary
 
-| Attach | Request → Response (ms) | Response → Child ID Req (ms) | Child ID Req → Response (ms) | Full attach (ms) | n |
-| --- | ---: | ---: | ---: | ---: | ---: |
-| 1 | 289.46 ± 142.45 | 457.25 ± 141.44 | 58.32 ± 15.49 | 805.04 ± 18.61 | 56 |
-| 2 | 261.95 ± 152.32 | 487.98 ± 152.45 | 59.05 ± 14.59 | 808.98 ± 14.84 | 55 |
+| Attach | Metric | M (SD), ms | n |
+| --- | --- | ---: | ---: |
+| 1 | Request → Response | 289.46 (142.45) | 56 |
+| 1 | Response → Child ID Request | 457.25 (141.44) | 56 |
+| 1 | Child ID Request → Response | 58.32 (15.49) | 56 |
+| 1 | Full Attach | 805.04 (18.61) | 56 |
+| 2 | Request → Response | 261.95 (152.32) | 55 |
+| 2 | Response → Child ID Request | 487.98 (152.45) | 55 |
+| 2 | Child ID Request → Response | 59.05 (14.59) | 55 |
+| 2 | Full Attach | 808.98 (14.84) | 55 |
 
-| Failed TX attempts per log | n |
-| ---: | ---: |
-| 62.73 ± 8.56 | 56 |
+| Metric | M (SD) | n |
+| --- | ---: | ---: |
+| Failed TX Attempts per Log | 62.73 (8.56) | 56 |
 
 ### `stock_child_20260601-115057.log`
 
@@ -25,10 +31,10 @@
 - parent extaddr: `767d521b8f1ba668`
 - parent rloc16: `0x5400`
 - timing source: **pcap**
-- request -> response: **419 ms**
-- response -> child id request: **332 ms**
-- child id request -> response: **14 ms**
-- full attach: **765 ms**
+- Request → Response: **419 ms**
+- Response → Child ID Request: **332 ms**
+- Child ID Request → Response: **14 ms**
+- Full Attach: **765 ms**
 - pcap parent request: `11:52:00.277` (frame 11)
 - pcap parent response: `11:52:00.696` (frame 12)
 - pcap child id request: `11:52:01.028` (frame 14)
@@ -44,10 +50,10 @@
 - parent extaddr: `1284af330ed03bb3`
 - parent rloc16: `0xac00`
 - timing source: **pcap**
-- request -> response: **66 ms**
-- response -> child id request: **683 ms**
-- child id request -> response: **13 ms**
-- full attach: **762 ms**
+- Request → Response: **66 ms**
+- Response → Child ID Request: **683 ms**
+- Child ID Request → Response: **13 ms**
+- Full Attach: **762 ms**
 - pcap parent request: `11:56:01.435` (frame 179)
 - pcap parent response: `11:56:01.501` (frame 180)
 - pcap child id request: `11:56:02.184` (frame 182)
@@ -72,10 +78,10 @@
 - parent extaddr: `da903c040ae68c9c`
 - parent rloc16: `0xe000`
 - timing source: **pcap**
-- request -> response: **319 ms**
-- response -> child id request: **433 ms**
-- child id request -> response: **15 ms**
-- full attach: **767 ms**
+- Request → Response: **319 ms**
+- Response → Child ID Request: **433 ms**
+- Child ID Request → Response: **15 ms**
+- Full Attach: **767 ms**
 - pcap parent request: `12:13:15.439` (frame 11)
 - pcap parent response: `12:13:15.758` (frame 12)
 - pcap child id request: `12:13:16.191` (frame 14)
@@ -91,10 +97,10 @@
 - parent extaddr: `960c79571efb5f08`
 - parent rloc16: `0x3c00`
 - timing source: **pcap**
-- request -> response: **92 ms**
-- response -> child id request: **657 ms**
-- child id request -> response: **13 ms**
-- full attach: **762 ms**
+- Request → Response: **92 ms**
+- Response → Child ID Request: **657 ms**
+- Child ID Request → Response: **13 ms**
+- Full Attach: **762 ms**
 - pcap parent request: `12:17:16.484` (frame 179)
 - pcap parent response: `12:17:16.576` (frame 180)
 - pcap child id request: `12:17:17.233` (frame 182)
@@ -119,10 +125,10 @@
 - parent extaddr: `1ab1863b65df33ed`
 - parent rloc16: `0x7c00`
 - timing source: **pcap**
-- request -> response: **25 ms**
-- response -> child id request: **729 ms**
-- child id request -> response: **14 ms**
-- full attach: **768 ms**
+- Request → Response: **25 ms**
+- Response → Child ID Request: **729 ms**
+- Child ID Request → Response: **14 ms**
+- Full Attach: **768 ms**
 - pcap parent request: `12:20:56.001` (frame 11)
 - pcap parent response: `12:20:56.026` (frame 12)
 - pcap child id request: `12:20:56.755` (frame 14)
@@ -138,10 +144,10 @@
 - parent extaddr: `c682d39f01310b69`
 - parent rloc16: `0x4c00`
 - timing source: **pcap**
-- request -> response: **297 ms**
-- response -> child id request: **452 ms**
-- child id request -> response: **14 ms**
-- full attach: **763 ms**
+- Request → Response: **297 ms**
+- Response → Child ID Request: **452 ms**
+- Child ID Request → Response: **14 ms**
+- Full Attach: **763 ms**
 - pcap parent request: `12:24:56.682` (frame 178)
 - pcap parent response: `12:24:56.979` (frame 179)
 - pcap child id request: `12:24:57.431` (frame 181)
@@ -166,10 +172,10 @@
 - parent extaddr: `e61cac857cc82d78`
 - parent rloc16: `0x4800`
 - timing source: **pcap**
-- request -> response: **423 ms**
-- response -> child id request: **326 ms**
-- child id request -> response: **13 ms**
-- full attach: **762 ms**
+- Request → Response: **423 ms**
+- Response → Child ID Request: **326 ms**
+- Child ID Request → Response: **13 ms**
+- Full Attach: **762 ms**
 - pcap parent request: `12:28:35.431` (frame 11)
 - pcap parent response: `12:28:35.854` (frame 12)
 - pcap child id request: `12:28:36.180` (frame 14)
@@ -185,10 +191,10 @@
 - parent extaddr: `3a08e1d359972937`
 - parent rloc16: `0xf800`
 - timing source: **pcap**
-- request -> response: **317 ms**
-- response -> child id request: **433 ms**
-- child id request -> response: **14 ms**
-- full attach: **764 ms**
+- Request → Response: **317 ms**
+- Response → Child ID Request: **433 ms**
+- Child ID Request → Response: **14 ms**
+- Full Attach: **764 ms**
 - pcap parent request: `12:32:35.962` (frame 184)
 - pcap parent response: `12:32:36.279` (frame 185)
 - pcap child id request: `12:32:36.712` (frame 187)
@@ -213,10 +219,10 @@
 - parent extaddr: `a605ee962ad7a308`
 - parent rloc16: `0x7800`
 - timing source: **pcap**
-- request -> response: **92 ms**
-- response -> child id request: **657 ms**
-- child id request -> response: **14 ms**
-- full attach: **763 ms**
+- Request → Response: **92 ms**
+- Response → Child ID Request: **657 ms**
+- Child ID Request → Response: **14 ms**
+- Full Attach: **763 ms**
 - pcap parent request: `12:36:16.185` (frame 11)
 - pcap parent response: `12:36:16.277` (frame 12)
 - pcap child id request: `12:36:16.934` (frame 14)
@@ -232,10 +238,10 @@
 - parent extaddr: `b28ac9bd69f86000`
 - parent rloc16: `0xc800`
 - timing source: **pcap**
-- request -> response: **418 ms**
-- response -> child id request: **331 ms**
-- child id request -> response: **13 ms**
-- full attach: **762 ms**
+- Request → Response: **418 ms**
+- Response → Child ID Request: **331 ms**
+- Child ID Request → Response: **13 ms**
+- Full Attach: **762 ms**
 - pcap parent request: `12:40:16.820` (frame 189)
 - pcap parent response: `12:40:17.238` (frame 190)
 - pcap child id request: `12:40:17.569` (frame 192)
@@ -260,10 +266,10 @@
 - parent extaddr: `0a73fdd633c7705a`
 - parent rloc16: `0x8000`
 - timing source: **pcap**
-- request -> response: **163 ms**
-- response -> child id request: **586 ms**
-- child id request -> response: **15 ms**
-- full attach: **764 ms**
+- Request → Response: **163 ms**
+- Response → Child ID Request: **586 ms**
+- Child ID Request → Response: **15 ms**
+- Full Attach: **764 ms**
 - pcap parent request: `22:43:54.838` (frame 10)
 - pcap parent response: `22:43:55.001` (frame 11)
 - pcap child id request: `22:43:55.587` (frame 13)
@@ -286,10 +292,10 @@
 - parent extaddr: `8eb967a13ba720f1`
 - parent rloc16: `0x2c00`
 - timing source: **pcap**
-- request -> response: **77 ms**
-- response -> child id request: **671 ms**
-- child id request -> response: **62 ms**
-- full attach: **810 ms**
+- Request → Response: **77 ms**
+- Response → Child ID Request: **671 ms**
+- Child ID Request → Response: **62 ms**
+- Full Attach: **810 ms**
 - pcap parent request: `03:06:26.314` (frame 9)
 - pcap parent response: `03:06:26.391` (frame 10)
 - pcap child id request: `03:06:27.062` (frame 13)
@@ -305,10 +311,10 @@
 - parent extaddr: `0a34495d96548b07`
 - parent rloc16: `0x1800`
 - timing source: **pcap**
-- request -> response: **519 ms**
-- response -> child id request: **231 ms**
-- child id request -> response: **65 ms**
-- full attach: **815 ms**
+- Request → Response: **519 ms**
+- Response → Child ID Request: **231 ms**
+- Child ID Request → Response: **65 ms**
+- Full Attach: **815 ms**
 - pcap parent request: `03:10:27.375` (frame 184)
 - pcap parent response: `03:10:27.894` (frame 185)
 - pcap child id request: `03:10:28.125` (frame 187)
@@ -333,10 +339,10 @@
 - parent extaddr: `2a824e65b0ebd0f5`
 - parent rloc16: `0x3000`
 - timing source: **pcap**
-- request -> response: **175 ms**
-- response -> child id request: **539 ms**
-- child id request -> response: **65 ms**
-- full attach: **779 ms**
+- Request → Response: **175 ms**
+- Response → Child ID Request: **539 ms**
+- Child ID Request → Response: **65 ms**
+- Full Attach: **779 ms**
 - pcap parent request: `03:11:52.000` (frame 10)
 - pcap parent response: `03:11:52.175` (frame 11)
 - pcap child id request: `03:11:52.714` (frame 13)
@@ -352,10 +358,10 @@
 - parent extaddr: `f27e1861e2c6b2af`
 - parent rloc16: `0x0400`
 - timing source: **pcap**
-- request -> response: **454 ms**
-- response -> child id request: **296 ms**
-- child id request -> response: **64 ms**
-- full attach: **814 ms**
+- Request → Response: **454 ms**
+- Response → Child ID Request: **296 ms**
+- Child ID Request → Response: **64 ms**
+- Full Attach: **814 ms**
 - pcap parent request: `03:15:52.621` (frame 180)
 - pcap parent response: `03:15:53.075` (frame 181)
 - pcap child id request: `03:15:53.371` (frame 183)
@@ -380,10 +386,10 @@
 - parent extaddr: `9e58db3693d25004`
 - parent rloc16: `0xbc00`
 - timing source: **pcap**
-- request -> response: **67 ms**
-- response -> child id request: **682 ms**
-- child id request -> response: **67 ms**
-- full attach: **816 ms**
+- Request → Response: **67 ms**
+- Response → Child ID Request: **682 ms**
+- Child ID Request → Response: **67 ms**
+- Full Attach: **816 ms**
 - pcap parent request: `03:17:18.427` (frame 10)
 - pcap parent response: `03:17:18.494` (frame 11)
 - pcap child id request: `03:17:19.176` (frame 13)
@@ -399,10 +405,10 @@
 - parent extaddr: `be7a28ea7f98e0bf`
 - parent rloc16: `0x5400`
 - timing source: **pcap**
-- request -> response: **244 ms**
-- response -> child id request: **507 ms**
-- child id request -> response: **63 ms**
-- full attach: **814 ms**
+- Request → Response: **244 ms**
+- Response → Child ID Request: **507 ms**
+- Child ID Request → Response: **63 ms**
+- Full Attach: **814 ms**
 - pcap parent request: `03:21:19.342` (frame 183)
 - pcap parent response: `03:21:19.586` (frame 185)
 - pcap child id request: `03:21:20.093` (frame 187)
@@ -427,10 +433,10 @@
 - parent extaddr: `525b8c9eb185b733`
 - parent rloc16: `0x7c00`
 - timing source: **pcap**
-- request -> response: **88 ms**
-- response -> child id request: **662 ms**
-- child id request -> response: **64 ms**
-- full attach: **814 ms**
+- Request → Response: **88 ms**
+- Response → Child ID Request: **662 ms**
+- Child ID Request → Response: **64 ms**
+- Full Attach: **814 ms**
 - pcap parent request: `11:57:11.454` (frame 10)
 - pcap parent response: `11:57:11.542` (frame 11)
 - pcap child id request: `11:57:12.204` (frame 13)
@@ -446,10 +452,10 @@
 - parent extaddr: `fac6ad78b6c849df`
 - parent rloc16: `0xe400`
 - timing source: **pcap**
-- request -> response: **136 ms**
-- response -> child id request: **616 ms**
-- child id request -> response: **63 ms**
-- full attach: **815 ms**
+- Request → Response: **136 ms**
+- Response → Child ID Request: **616 ms**
+- Child ID Request → Response: **63 ms**
+- Full Attach: **815 ms**
 - pcap parent request: `12:01:12.191` (frame 187)
 - pcap parent response: `12:01:12.327` (frame 188)
 - pcap child id request: `12:01:12.943` (frame 190)
@@ -474,10 +480,10 @@
 - parent extaddr: `5656a3af182b1c79`
 - parent rloc16: `0x6000`
 - timing source: **pcap**
-- request -> response: **392 ms**
-- response -> child id request: **357 ms**
-- child id request -> response: **63 ms**
-- full attach: **812 ms**
+- Request → Response: **392 ms**
+- Response → Child ID Request: **357 ms**
+- Child ID Request → Response: **63 ms**
+- Full Attach: **812 ms**
 - pcap parent request: `12:02:37.295` (frame 10)
 - pcap parent response: `12:02:37.687` (frame 11)
 - pcap child id request: `12:02:38.044` (frame 13)
@@ -493,10 +499,10 @@
 - parent extaddr: `a2dc3bd2a94ec426`
 - parent rloc16: `0xc000`
 - timing source: **pcap**
-- request -> response: **365 ms**
-- response -> child id request: **385 ms**
-- child id request -> response: **65 ms**
-- full attach: **815 ms**
+- Request → Response: **365 ms**
+- Response → Child ID Request: **385 ms**
+- Child ID Request → Response: **65 ms**
+- Full Attach: **815 ms**
 - pcap parent request: `12:06:37.780` (frame 186)
 - pcap parent response: `12:06:38.145` (frame 187)
 - pcap child id request: `12:06:38.530` (frame 189)
@@ -521,10 +527,10 @@
 - parent extaddr: `d6abf49fdabcf36e`
 - parent rloc16: `0x5800`
 - timing source: **pcap**
-- request -> response: **398 ms**
-- response -> child id request: **352 ms**
-- child id request -> response: **63 ms**
-- full attach: **813 ms**
+- Request → Response: **398 ms**
+- Response → Child ID Request: **352 ms**
+- Child ID Request → Response: **63 ms**
+- Full Attach: **813 ms**
 - pcap parent request: `12:08:02.888` (frame 9)
 - pcap parent response: `12:08:03.286` (frame 11)
 - pcap child id request: `12:08:03.638` (frame 13)
@@ -540,10 +546,10 @@
 - parent extaddr: `66d815e45951b241`
 - parent rloc16: `0x1000`
 - timing source: **pcap**
-- request -> response: **177 ms**
-- response -> child id request: **573 ms**
-- child id request -> response: **64 ms**
-- full attach: **814 ms**
+- Request → Response: **177 ms**
+- Response → Child ID Request: **573 ms**
+- Child ID Request → Response: **64 ms**
+- Full Attach: **814 ms**
 - pcap parent request: `12:12:03.846` (frame 179)
 - pcap parent response: `12:12:04.023` (frame 180)
 - pcap child id request: `12:12:04.596` (frame 182)
@@ -568,10 +574,10 @@
 - parent extaddr: `c2c17f387b0317ea`
 - parent rloc16: `0xec00`
 - timing source: **pcap**
-- request -> response: **496 ms**
-- response -> child id request: **255 ms**
-- child id request -> response: **63 ms**
-- full attach: **814 ms**
+- Request → Response: **496 ms**
+- Response → Child ID Request: **255 ms**
+- Child ID Request → Response: **63 ms**
+- Full Attach: **814 ms**
 - pcap parent request: `12:13:28.931` (frame 9)
 - pcap parent response: `12:13:29.427` (frame 11)
 - pcap child id request: `12:13:29.682` (frame 13)
@@ -587,10 +593,10 @@
 - parent extaddr: `9619cb9d5d34bef1`
 - parent rloc16: `0xd800`
 - timing source: **pcap**
-- request -> response: **212 ms**
-- response -> child id request: **538 ms**
-- child id request -> response: **65 ms**
-- full attach: **815 ms**
+- Request → Response: **212 ms**
+- Response → Child ID Request: **538 ms**
+- Child ID Request → Response: **65 ms**
+- Full Attach: **815 ms**
 - pcap parent request: `12:17:29.820` (frame 179)
 - pcap parent response: `12:17:30.032` (frame 180)
 - pcap child id request: `12:17:30.570` (frame 183)
@@ -615,10 +621,10 @@
 - parent extaddr: `8a14f888a93e90f7`
 - parent rloc16: `0x8400`
 - timing source: **pcap**
-- request -> response: **46 ms**
-- response -> child id request: **704 ms**
-- child id request -> response: **62 ms**
-- full attach: **812 ms**
+- Request → Response: **46 ms**
+- Response → Child ID Request: **704 ms**
+- Child ID Request → Response: **62 ms**
+- Full Attach: **812 ms**
 - pcap parent request: `12:18:54.924` (frame 10)
 - pcap parent response: `12:18:54.970` (frame 11)
 - pcap child id request: `12:18:55.674` (frame 13)
@@ -634,10 +640,10 @@
 - parent extaddr: `c2981c645e5b50e4`
 - parent rloc16: `0xcc00`
 - timing source: **pcap**
-- request -> response: **485 ms**
-- response -> child id request: **263 ms**
-- child id request -> response: **63 ms**
-- full attach: **811 ms**
+- Request → Response: **485 ms**
+- Response → Child ID Request: **263 ms**
+- Child ID Request → Response: **63 ms**
+- Full Attach: **811 ms**
 - pcap parent request: `12:22:55.443` (frame 189)
 - pcap parent response: `12:22:55.928` (frame 190)
 - pcap child id request: `12:22:56.191` (frame 192)
@@ -662,10 +668,10 @@
 - parent extaddr: `3eabe1e0d502f486`
 - parent rloc16: `0x2c00`
 - timing source: **pcap**
-- request -> response: **91 ms**
-- response -> child id request: **661 ms**
-- child id request -> response: **63 ms**
-- full attach: **815 ms**
+- Request → Response: **91 ms**
+- Response → Child ID Request: **661 ms**
+- Child ID Request → Response: **63 ms**
+- Full Attach: **815 ms**
 - pcap parent request: `12:54:18.828` (frame 10)
 - pcap parent response: `12:54:18.919` (frame 11)
 - pcap child id request: `12:54:19.580` (frame 13)
@@ -681,10 +687,10 @@
 - parent extaddr: `0661315c6f4f9359`
 - parent rloc16: `0xa000`
 - timing source: **pcap**
-- request -> response: **99 ms**
-- response -> child id request: **651 ms**
-- child id request -> response: **63 ms**
-- full attach: **813 ms**
+- Request → Response: **99 ms**
+- Response → Child ID Request: **651 ms**
+- Child ID Request → Response: **63 ms**
+- Full Attach: **813 ms**
 - pcap parent request: `12:58:19.780` (frame 189)
 - pcap parent response: `12:58:19.879` (frame 190)
 - pcap child id request: `12:58:20.530` (frame 192)
@@ -709,10 +715,10 @@
 - parent extaddr: `1ef5e6404a2dc4c8`
 - parent rloc16: `0x5400`
 - timing source: **pcap**
-- request -> response: **283 ms**
-- response -> child id request: **432 ms**
-- child id request -> response: **66 ms**
-- full attach: **781 ms**
+- Request → Response: **283 ms**
+- Response → Child ID Request: **432 ms**
+- Child ID Request → Response: **66 ms**
+- Full Attach: **781 ms**
 - pcap parent request: `12:59:44.522` (frame 10)
 - pcap parent response: `12:59:44.805` (frame 11)
 - pcap child id request: `12:59:45.237` (frame 13)
@@ -728,10 +734,10 @@
 - parent extaddr: `9254859da06bd501`
 - parent rloc16: `0x2c00`
 - timing source: **pcap**
-- request -> response: **318 ms**
-- response -> child id request: **432 ms**
-- child id request -> response: **63 ms**
-- full attach: **813 ms**
+- Request → Response: **318 ms**
+- Response → Child ID Request: **432 ms**
+- Child ID Request → Response: **63 ms**
+- Full Attach: **813 ms**
 - pcap parent request: `13:03:45.422` (frame 184)
 - pcap parent response: `13:03:45.740` (frame 185)
 - pcap child id request: `13:03:46.172` (frame 187)
@@ -756,10 +762,10 @@
 - parent extaddr: `42a43dda454b87a8`
 - parent rloc16: `0xb000`
 - timing source: **pcap**
-- request -> response: **262 ms**
-- response -> child id request: **489 ms**
-- child id request -> response: **65 ms**
-- full attach: **816 ms**
+- Request → Response: **262 ms**
+- Response → Child ID Request: **489 ms**
+- Child ID Request → Response: **65 ms**
+- Full Attach: **816 ms**
 - pcap parent request: `13:05:10.480` (frame 9)
 - pcap parent response: `13:05:10.742` (frame 10)
 - pcap child id request: `13:05:11.231` (frame 13)
@@ -775,10 +781,10 @@
 - parent extaddr: `b6d5e44374a9e55b`
 - parent rloc16: `0x8c00`
 - timing source: **pcap**
-- request -> response: **44 ms**
-- response -> child id request: **706 ms**
-- child id request -> response: **64 ms**
-- full attach: **814 ms**
+- Request → Response: **44 ms**
+- Response → Child ID Request: **706 ms**
+- Child ID Request → Response: **64 ms**
+- Full Attach: **814 ms**
 - pcap parent request: `13:09:11.461` (frame 179)
 - pcap parent response: `13:09:11.505` (frame 180)
 - pcap child id request: `13:09:12.211` (frame 182)
@@ -803,10 +809,10 @@
 - parent extaddr: `f66f2b2c2792803d`
 - parent rloc16: `0x0800`
 - timing source: **pcap**
-- request -> response: **285 ms**
-- response -> child id request: **465 ms**
-- child id request -> response: **63 ms**
-- full attach: **813 ms**
+- Request → Response: **285 ms**
+- Response → Child ID Request: **465 ms**
+- Child ID Request → Response: **63 ms**
+- Full Attach: **813 ms**
 - pcap parent request: `13:10:36.223` (frame 9)
 - pcap parent response: `13:10:36.508` (frame 11)
 - pcap child id request: `13:10:36.973` (frame 13)
@@ -822,10 +828,10 @@
 - parent extaddr: `7622de89fde1c284`
 - parent rloc16: `0xc400`
 - timing source: **pcap**
-- request -> response: **256 ms**
-- response -> child id request: **494 ms**
-- child id request -> response: **64 ms**
-- full attach: **814 ms**
+- Request → Response: **256 ms**
+- Response → Child ID Request: **494 ms**
+- Child ID Request → Response: **64 ms**
+- Full Attach: **814 ms**
 - pcap parent request: `13:14:36.691` (frame 190)
 - pcap parent response: `13:14:36.947` (frame 191)
 - pcap child id request: `13:14:37.441` (frame 193)
@@ -850,10 +856,10 @@
 - parent extaddr: `bedb8fc6c5b0f089`
 - parent rloc16: `0xb400`
 - timing source: **pcap**
-- request -> response: **455 ms**
-- response -> child id request: **296 ms**
-- child id request -> response: **63 ms**
-- full attach: **814 ms**
+- Request → Response: **455 ms**
+- Response → Child ID Request: **296 ms**
+- Child ID Request → Response: **63 ms**
+- Full Attach: **814 ms**
 - pcap parent request: `13:16:02.489` (frame 10)
 - pcap parent response: `13:16:02.944` (frame 11)
 - pcap child id request: `13:16:03.240` (frame 13)
@@ -869,10 +875,10 @@
 - parent extaddr: `2a5fb093ea716159`
 - parent rloc16: `0x7800`
 - timing source: **pcap**
-- request -> response: **286 ms**
-- response -> child id request: **464 ms**
-- child id request -> response: **64 ms**
-- full attach: **814 ms**
+- Request → Response: **286 ms**
+- Response → Child ID Request: **464 ms**
+- Child ID Request → Response: **64 ms**
+- Full Attach: **814 ms**
 - pcap parent request: `13:20:03.675` (frame 190)
 - pcap parent response: `13:20:03.961` (frame 191)
 - pcap child id request: `13:20:04.425` (frame 193)
@@ -897,10 +903,10 @@
 - parent extaddr: `0a15b558c755e35f`
 - parent rloc16: `0xa800`
 - timing source: **pcap**
-- request -> response: **467 ms**
-- response -> child id request: **283 ms**
-- child id request -> response: **63 ms**
-- full attach: **813 ms**
+- Request → Response: **467 ms**
+- Response → Child ID Request: **283 ms**
+- Child ID Request → Response: **63 ms**
+- Full Attach: **813 ms**
 - pcap parent request: `13:21:27.782` (frame 9)
 - pcap parent response: `13:21:28.249` (frame 11)
 - pcap child id request: `13:21:28.532` (frame 13)
@@ -916,10 +922,10 @@
 - parent extaddr: `d64ed71451befc49`
 - parent rloc16: `0xec00`
 - timing source: **pcap**
-- request -> response: **290 ms**
-- response -> child id request: **458 ms**
-- child id request -> response: **65 ms**
-- full attach: **813 ms**
+- Request → Response: **290 ms**
+- Response → Child ID Request: **458 ms**
+- Child ID Request → Response: **65 ms**
+- Full Attach: **813 ms**
 - pcap parent request: `13:25:28.424` (frame 178)
 - pcap parent response: `13:25:28.714` (frame 179)
 - pcap child id request: `13:25:29.172` (frame 181)
@@ -944,10 +950,10 @@
 - parent extaddr: `26383cd033c844a6`
 - parent rloc16: `0x7400`
 - timing source: **pcap**
-- request -> response: **292 ms**
-- response -> child id request: **456 ms**
-- child id request -> response: **63 ms**
-- full attach: **811 ms**
+- Request → Response: **292 ms**
+- Response → Child ID Request: **456 ms**
+- Child ID Request → Response: **63 ms**
+- Full Attach: **811 ms**
 - pcap parent request: `13:26:53.495` (frame 10)
 - pcap parent response: `13:26:53.787` (frame 11)
 - pcap child id request: `13:26:54.243` (frame 13)
@@ -963,10 +969,10 @@
 - parent extaddr: `06d865ff5f3814a3`
 - parent rloc16: `0x7800`
 - timing source: **pcap**
-- request -> response: **96 ms**
-- response -> child id request: **654 ms**
-- child id request -> response: **64 ms**
-- full attach: **814 ms**
+- Request → Response: **96 ms**
+- Response → Child ID Request: **654 ms**
+- Child ID Request → Response: **64 ms**
+- Full Attach: **814 ms**
 - pcap parent request: `13:30:54.613` (frame 186)
 - pcap parent response: `13:30:54.709` (frame 187)
 - pcap child id request: `13:30:55.363` (frame 189)
@@ -991,10 +997,10 @@
 - parent extaddr: `7e4bf0a6b643f032`
 - parent rloc16: `0xf800`
 - timing source: **pcap**
-- request -> response: **320 ms**
-- response -> child id request: **432 ms**
-- child id request -> response: **63 ms**
-- full attach: **815 ms**
+- Request → Response: **320 ms**
+- Response → Child ID Request: **432 ms**
+- Child ID Request → Response: **63 ms**
+- Full Attach: **815 ms**
 - pcap parent request: `13:32:19.553` (frame 9)
 - pcap parent response: `13:32:19.873` (frame 11)
 - pcap child id request: `13:32:20.305` (frame 13)
@@ -1010,10 +1016,10 @@
 - parent extaddr: `9273153194608f88`
 - parent rloc16: `0xe800`
 - timing source: **pcap**
-- request -> response: **79 ms**
-- response -> child id request: **670 ms**
-- child id request -> response: **63 ms**
-- full attach: **812 ms**
+- Request → Response: **79 ms**
+- Response → Child ID Request: **670 ms**
+- Child ID Request → Response: **63 ms**
+- Full Attach: **812 ms**
 - pcap parent request: `13:36:20.373` (frame 189)
 - pcap parent response: `13:36:20.452` (frame 190)
 - pcap child id request: `13:36:21.122` (frame 192)
@@ -1038,10 +1044,10 @@
 - parent extaddr: `ba4920f8364c4ef6`
 - parent rloc16: `0x7c00`
 - timing source: **pcap**
-- request -> response: **189 ms**
-- response -> child id request: **560 ms**
-- child id request -> response: **62 ms**
-- full attach: **811 ms**
+- Request → Response: **189 ms**
+- Response → Child ID Request: **560 ms**
+- Child ID Request → Response: **62 ms**
+- Full Attach: **811 ms**
 - pcap parent request: `13:37:45.825` (frame 10)
 - pcap parent response: `13:37:46.014` (frame 11)
 - pcap child id request: `13:37:46.574` (frame 13)
@@ -1057,10 +1063,10 @@
 - parent extaddr: `fa87c11f009e40a5`
 - parent rloc16: `0x8c00`
 - timing source: **pcap**
-- request -> response: **397 ms**
-- response -> child id request: **353 ms**
-- child id request -> response: **63 ms**
-- full attach: **813 ms**
+- Request → Response: **397 ms**
+- Response → Child ID Request: **353 ms**
+- Child ID Request → Response: **63 ms**
+- Full Attach: **813 ms**
 - pcap parent request: `13:41:46.707` (frame 179)
 - pcap parent response: `13:41:47.104` (frame 180)
 - pcap child id request: `13:41:47.457` (frame 182)
@@ -1085,10 +1091,10 @@
 - parent extaddr: `6e177a320c57a3e9`
 - parent rloc16: `0x0000`
 - timing source: **pcap**
-- request -> response: **268 ms**
-- response -> child id request: **483 ms**
-- child id request -> response: **64 ms**
-- full attach: **815 ms**
+- Request → Response: **268 ms**
+- Response → Child ID Request: **483 ms**
+- Child ID Request → Response: **64 ms**
+- Full Attach: **815 ms**
 - pcap parent request: `13:43:11.216` (frame 9)
 - pcap parent response: `13:43:11.484` (frame 10)
 - pcap child id request: `13:43:11.967` (frame 13)
@@ -1104,10 +1110,10 @@
 - parent extaddr: `6ab6841b0226999f`
 - parent rloc16: `0xa800`
 - timing source: **pcap**
-- request -> response: **261 ms**
-- response -> child id request: **488 ms**
-- child id request -> response: **63 ms**
-- full attach: **812 ms**
+- Request → Response: **261 ms**
+- Response → Child ID Request: **488 ms**
+- Child ID Request → Response: **63 ms**
+- Full Attach: **812 ms**
 - pcap parent request: `13:47:12.016` (frame 189)
 - pcap parent response: `13:47:12.277` (frame 190)
 - pcap child id request: `13:47:12.765` (frame 192)
@@ -1132,10 +1138,10 @@
 - parent extaddr: `e68365a2e6e9661d`
 - parent rloc16: `0xc800`
 - timing source: **pcap**
-- request -> response: **458 ms**
-- response -> child id request: **293 ms**
-- child id request -> response: **63 ms**
-- full attach: **814 ms**
+- Request → Response: **458 ms**
+- Response → Child ID Request: **293 ms**
+- Child ID Request → Response: **63 ms**
+- Full Attach: **814 ms**
 - pcap parent request: `13:48:37.299` (frame 9)
 - pcap parent response: `13:48:37.757` (frame 11)
 - pcap child id request: `13:48:38.050` (frame 13)
@@ -1151,10 +1157,10 @@
 - parent extaddr: `8e7f6489ef9e70b5`
 - parent rloc16: `0x7c00`
 - timing source: **pcap**
-- request -> response: **465 ms**
-- response -> child id request: **285 ms**
-- child id request -> response: **63 ms**
-- full attach: **813 ms**
+- Request → Response: **465 ms**
+- Response → Child ID Request: **285 ms**
+- Child ID Request → Response: **63 ms**
+- Full Attach: **813 ms**
 - pcap parent request: `13:52:38.130` (frame 190)
 - pcap parent response: `13:52:38.595` (frame 191)
 - pcap child id request: `13:52:38.880` (frame 193)
@@ -1179,10 +1185,10 @@
 - parent extaddr: `ce9afdd00fbba438`
 - parent rloc16: `0x3800`
 - timing source: **pcap**
-- request -> response: **437 ms**
-- response -> child id request: **357 ms**
-- child id request -> response: **62 ms**
-- full attach: **856 ms**
+- Request → Response: **437 ms**
+- Response → Child ID Request: **357 ms**
+- Child ID Request → Response: **62 ms**
+- Full Attach: **856 ms**
 - pcap parent request: `15:45:19.389` (frame 9)
 - pcap parent response: `15:45:19.826` (frame 10)
 - pcap child id request: `15:45:20.183` (frame 13)
@@ -1198,10 +1204,10 @@
 - parent extaddr: `f6b93c9e6565b643`
 - parent rloc16: `0x3400`
 - timing source: **pcap**
-- request -> response: **43 ms**
-- response -> child id request: **707 ms**
-- child id request -> response: **63 ms**
-- full attach: **813 ms**
+- Request → Response: **43 ms**
+- Response → Child ID Request: **707 ms**
+- Child ID Request → Response: **63 ms**
+- Full Attach: **813 ms**
 - pcap parent request: `15:49:20.201` (frame 185)
 - pcap parent response: `15:49:20.244` (frame 186)
 - pcap child id request: `15:49:20.951` (frame 188)
@@ -1226,10 +1232,10 @@
 - parent extaddr: `42bbd61e2b9126ab`
 - parent rloc16: `0x6800`
 - timing source: **pcap**
-- request -> response: **329 ms**
-- response -> child id request: **419 ms**
-- child id request -> response: **62 ms**
-- full attach: **810 ms**
+- Request → Response: **329 ms**
+- Response → Child ID Request: **419 ms**
+- Child ID Request → Response: **62 ms**
+- Full Attach: **810 ms**
 - pcap parent request: `15:50:45.734` (frame 10)
 - pcap parent response: `15:50:46.063` (frame 11)
 - pcap child id request: `15:50:46.482` (frame 13)
@@ -1245,10 +1251,10 @@
 - parent extaddr: `1eec2697c0703356`
 - parent rloc16: `0xc400`
 - timing source: **pcap**
-- request -> response: **87 ms**
-- response -> child id request: **662 ms**
-- child id request -> response: **64 ms**
-- full attach: **813 ms**
+- Request → Response: **87 ms**
+- Response → Child ID Request: **662 ms**
+- Child ID Request → Response: **64 ms**
+- Full Attach: **813 ms**
 - pcap parent request: `15:54:46.838` (frame 184)
 - pcap parent response: `15:54:46.925` (frame 185)
 - pcap child id request: `15:54:47.587` (frame 187)
@@ -1273,10 +1279,10 @@
 - parent extaddr: `9a89b4ec703cac1a`
 - parent rloc16: `0x8400`
 - timing source: **pcap**
-- request -> response: **395 ms**
-- response -> child id request: **354 ms**
-- child id request -> response: **65 ms**
-- full attach: **814 ms**
+- Request → Response: **395 ms**
+- Response → Child ID Request: **354 ms**
+- Child ID Request → Response: **65 ms**
+- Full Attach: **814 ms**
 - pcap parent request: `16:42:02.529` (frame 10)
 - pcap parent response: `16:42:02.924` (frame 11)
 - pcap child id request: `16:42:03.278` (frame 13)
@@ -1292,10 +1298,10 @@
 - parent extaddr: `228f10db67731a6b`
 - parent rloc16: `0x1800`
 - timing source: **pcap**
-- request -> response: **187 ms**
-- response -> child id request: **563 ms**
-- child id request -> response: **63 ms**
-- full attach: **813 ms**
+- Request → Response: **187 ms**
+- Response → Child ID Request: **563 ms**
+- Child ID Request → Response: **63 ms**
+- Full Attach: **813 ms**
 - pcap parent request: `16:46:03.248` (frame 185)
 - pcap parent response: `16:46:03.435` (frame 186)
 - pcap child id request: `16:46:03.998` (frame 188)
@@ -1320,10 +1326,10 @@
 - parent extaddr: `66ee0d142673e3f3`
 - parent rloc16: `0xe400`
 - timing source: **pcap**
-- request -> response: **279 ms**
-- response -> child id request: **473 ms**
-- child id request -> response: **64 ms**
-- full attach: **816 ms**
+- Request → Response: **279 ms**
+- Response → Child ID Request: **473 ms**
+- Child ID Request → Response: **64 ms**
+- Full Attach: **816 ms**
 - pcap parent request: `16:47:28.282` (frame 10)
 - pcap parent response: `16:47:28.561` (frame 11)
 - pcap child id request: `16:47:29.034` (frame 13)
@@ -1339,10 +1345,10 @@
 - parent extaddr: `aa2c25f518ba18c6`
 - parent rloc16: `0x3c00`
 - timing source: **pcap**
-- request -> response: **44 ms**
-- response -> child id request: **706 ms**
-- child id request -> response: **64 ms**
-- full attach: **814 ms**
+- Request → Response: **44 ms**
+- Response → Child ID Request: **706 ms**
+- Child ID Request → Response: **64 ms**
+- Full Attach: **814 ms**
 - pcap parent request: `16:51:29.414` (frame 186)
 - pcap parent response: `16:51:29.458` (frame 187)
 - pcap child id request: `16:51:30.164` (frame 189)
@@ -1367,10 +1373,10 @@
 - parent extaddr: `529c0cfb5f5e1c99`
 - parent rloc16: `0xc400`
 - timing source: **pcap**
-- request -> response: **45 ms**
-- response -> child id request: **703 ms**
-- child id request -> response: **64 ms**
-- full attach: **812 ms**
+- Request → Response: **45 ms**
+- Response → Child ID Request: **703 ms**
+- Child ID Request → Response: **64 ms**
+- Full Attach: **812 ms**
 - pcap parent request: `16:52:54.721` (frame 10)
 - pcap parent response: `16:52:54.766` (frame 11)
 - pcap child id request: `16:52:55.469` (frame 13)
@@ -1386,10 +1392,10 @@
 - parent extaddr: `a25467629a247334`
 - parent rloc16: `0xf800`
 - timing source: **pcap**
-- request -> response: **450 ms**
-- response -> child id request: **300 ms**
-- child id request -> response: **64 ms**
-- full attach: **814 ms**
+- Request → Response: **450 ms**
+- Response → Child ID Request: **300 ms**
+- Child ID Request → Response: **64 ms**
+- Full Attach: **814 ms**
 - pcap parent request: `16:56:55.602` (frame 191)
 - pcap parent response: `16:56:56.052` (frame 192)
 - pcap child id request: `16:56:56.352` (frame 194)
@@ -1414,10 +1420,10 @@
 - parent extaddr: `ba1ec390ad5af2a2`
 - parent rloc16: `0x6800`
 - timing source: **pcap**
-- request -> response: **74 ms**
-- response -> child id request: **676 ms**
-- child id request -> response: **63 ms**
-- full attach: **813 ms**
+- Request → Response: **74 ms**
+- Response → Child ID Request: **676 ms**
+- Child ID Request → Response: **63 ms**
+- Full Attach: **813 ms**
 - pcap parent request: `16:58:20.728` (frame 10)
 - pcap parent response: `16:58:20.802` (frame 11)
 - pcap child id request: `16:58:21.478` (frame 13)
@@ -1433,10 +1439,10 @@
 - parent extaddr: `b201e899d1210097`
 - parent rloc16: `0x5000`
 - timing source: **pcap**
-- request -> response: **427 ms**
-- response -> child id request: **323 ms**
-- child id request -> response: **64 ms**
-- full attach: **814 ms**
+- Request → Response: **427 ms**
+- Response → Child ID Request: **323 ms**
+- Child ID Request → Response: **64 ms**
+- Full Attach: **814 ms**
 - pcap parent request: `17:02:21.535` (frame 179)
 - pcap parent response: `17:02:21.962` (frame 180)
 - pcap child id request: `17:02:22.285` (frame 182)
@@ -1461,10 +1467,10 @@
 - parent extaddr: `92591cd55c98efdb`
 - parent rloc16: `0x2400`
 - timing source: **pcap**
-- request -> response: **310 ms**
-- response -> child id request: **404 ms**
-- child id request -> response: **68 ms**
-- full attach: **782 ms**
+- Request → Response: **310 ms**
+- Response → Child ID Request: **404 ms**
+- Child ID Request → Response: **68 ms**
+- Full Attach: **782 ms**
 - pcap parent request: `17:03:46.297` (frame 9)
 - pcap parent response: `17:03:46.607` (frame 10)
 - pcap child id request: `17:03:47.011` (frame 12)
@@ -1480,10 +1486,10 @@
 - parent extaddr: `6edbb871419d75a0`
 - parent rloc16: `0xc800`
 - timing source: **pcap**
-- request -> response: **97 ms**
-- response -> child id request: **653 ms**
-- child id request -> response: **63 ms**
-- full attach: **813 ms**
+- Request → Response: **97 ms**
+- Response → Child ID Request: **653 ms**
+- Child ID Request → Response: **63 ms**
+- Full Attach: **813 ms**
 - pcap parent request: `17:07:46.785` (frame 190)
 - pcap parent response: `17:07:46.882` (frame 191)
 - pcap child id request: `17:07:47.535` (frame 193)
@@ -1508,10 +1514,10 @@
 - parent extaddr: `7a44f2190b1f6588`
 - parent rloc16: `0x2000`
 - timing source: **pcap**
-- request -> response: **351 ms**
-- response -> child id request: **400 ms**
-- child id request -> response: **63 ms**
-- full attach: **814 ms**
+- Request → Response: **351 ms**
+- Response → Child ID Request: **400 ms**
+- Child ID Request → Response: **63 ms**
+- Full Attach: **814 ms**
 - pcap parent request: `17:09:12.638` (frame 10)
 - pcap parent response: `17:09:12.989` (frame 11)
 - pcap child id request: `17:09:13.389` (frame 13)
@@ -1527,10 +1533,10 @@
 - parent extaddr: `8a381fcab61b7f5a`
 - parent rloc16: `0x2400`
 - timing source: **pcap**
-- request -> response: **449 ms**
-- response -> child id request: **300 ms**
-- child id request -> response: **64 ms**
-- full attach: **813 ms**
+- Request → Response: **449 ms**
+- Response → Child ID Request: **300 ms**
+- Child ID Request → Response: **64 ms**
+- Full Attach: **813 ms**
 - pcap parent request: `17:13:13.852` (frame 189)
 - pcap parent response: `17:13:14.301` (frame 190)
 - pcap child id request: `17:13:14.601` (frame 192)
@@ -1555,10 +1561,10 @@
 - parent extaddr: `fa9c72384e0e11f4`
 - parent rloc16: `0x5400`
 - timing source: **pcap**
-- request -> response: **466 ms**
-- response -> child id request: **277 ms**
-- child id request -> response: **64 ms**
-- full attach: **807 ms**
+- Request → Response: **466 ms**
+- Response → Child ID Request: **277 ms**
+- Child ID Request → Response: **64 ms**
+- Full Attach: **807 ms**
 - pcap parent request: `17:14:38.457` (frame 9)
 - pcap parent response: `17:14:38.923` (frame 11)
 - pcap child id request: `17:14:39.200` (frame 13)
@@ -1574,10 +1580,10 @@
 - parent extaddr: `aa14a148361e2560`
 - parent rloc16: `0xf800`
 - timing source: **pcap**
-- request -> response: **268 ms**
-- response -> child id request: **482 ms**
-- child id request -> response: **65 ms**
-- full attach: **815 ms**
+- Request → Response: **268 ms**
+- Response → Child ID Request: **482 ms**
+- Child ID Request → Response: **65 ms**
+- Full Attach: **815 ms**
 - pcap parent request: `17:18:39.156` (frame 180)
 - pcap parent response: `17:18:39.424` (frame 181)
 - pcap child id request: `17:18:39.906` (frame 183)
@@ -1602,10 +1608,10 @@
 - parent extaddr: `f28e84c5fba31dca`
 - parent rloc16: `0xd800`
 - timing source: **pcap**
-- request -> response: **464 ms**
-- response -> child id request: **286 ms**
-- child id request -> response: **63 ms**
-- full attach: **813 ms**
+- Request → Response: **464 ms**
+- Response → Child ID Request: **286 ms**
+- Child ID Request → Response: **63 ms**
+- Full Attach: **813 ms**
 - pcap parent request: `17:20:04.864` (frame 9)
 - pcap parent response: `17:20:05.328` (frame 11)
 - pcap child id request: `17:20:05.614` (frame 13)
@@ -1621,10 +1627,10 @@
 - parent extaddr: `8e818b4f4e40e66d`
 - parent rloc16: `0x7000`
 - timing source: **pcap**
-- request -> response: **191 ms**
-- response -> child id request: **560 ms**
-- child id request -> response: **63 ms**
-- full attach: **814 ms**
+- Request → Response: **191 ms**
+- Response → Child ID Request: **560 ms**
+- Child ID Request → Response: **63 ms**
+- Full Attach: **814 ms**
 - pcap parent request: `17:24:05.316` (frame 187)
 - pcap parent response: `17:24:05.507` (frame 188)
 - pcap child id request: `17:24:06.067` (frame 190)
@@ -1649,10 +1655,10 @@
 - parent extaddr: `9ade4ee0e9bc068f`
 - parent rloc16: `0xa000`
 - timing source: **pcap**
-- request -> response: **384 ms**
-- response -> child id request: **364 ms**
-- child id request -> response: **62 ms**
-- full attach: **810 ms**
+- Request → Response: **384 ms**
+- Response → Child ID Request: **364 ms**
+- Child ID Request → Response: **62 ms**
+- Full Attach: **810 ms**
 - pcap parent request: `17:25:31.204` (frame 10)
 - pcap parent response: `17:25:31.588` (frame 11)
 - pcap child id request: `17:25:31.952` (frame 13)
@@ -1668,10 +1674,10 @@
 - parent extaddr: `9e5af9d21a36b849`
 - parent rloc16: `0x7000`
 - timing source: **pcap**
-- request -> response: **383 ms**
-- response -> child id request: **368 ms**
-- child id request -> response: **64 ms**
-- full attach: **815 ms**
+- Request → Response: **383 ms**
+- Response → Child ID Request: **368 ms**
+- Child ID Request → Response: **64 ms**
+- Full Attach: **815 ms**
 - pcap parent request: `17:29:31.868` (frame 192)
 - pcap parent response: `17:29:32.251` (frame 193)
 - pcap child id request: `17:29:32.619` (frame 195)
@@ -1696,10 +1702,10 @@
 - parent extaddr: `dea26af3080b7617`
 - parent rloc16: `0xac00`
 - timing source: **pcap**
-- request -> response: **299 ms**
-- response -> child id request: **451 ms**
-- child id request -> response: **63 ms**
-- full attach: **813 ms**
+- Request → Response: **299 ms**
+- Response → Child ID Request: **451 ms**
+- Child ID Request → Response: **63 ms**
+- Full Attach: **813 ms**
 - pcap parent request: `17:30:56.725` (frame 9)
 - pcap parent response: `17:30:57.024` (frame 10)
 - pcap child id request: `17:30:57.475` (frame 13)
@@ -1715,10 +1721,10 @@
 - parent extaddr: `624af4c33f0a2e54`
 - parent rloc16: `0x0800`
 - timing source: **pcap**
-- request -> response: **126 ms**
-- response -> child id request: **624 ms**
-- child id request -> response: **64 ms**
-- full attach: **814 ms**
+- Request → Response: **126 ms**
+- Response → Child ID Request: **624 ms**
+- Child ID Request → Response: **64 ms**
+- Full Attach: **814 ms**
 - pcap parent request: `17:34:57.874` (frame 180)
 - pcap parent response: `17:34:58.000` (frame 181)
 - pcap child id request: `17:34:58.624` (frame 183)
@@ -1743,10 +1749,10 @@
 - parent extaddr: `0e79d4ce9ea78fad`
 - parent rloc16: `0x5c00`
 - timing source: **pcap**
-- request -> response: **257 ms**
-- response -> child id request: **457 ms**
-- child id request -> response: **65 ms**
-- full attach: **779 ms**
+- Request → Response: **257 ms**
+- Response → Child ID Request: **457 ms**
+- Child ID Request → Response: **65 ms**
+- Full Attach: **779 ms**
 - pcap parent request: `17:36:22.905` (frame 9)
 - pcap parent response: `17:36:23.162` (frame 10)
 - pcap child id request: `17:36:23.619` (frame 13)
@@ -1762,10 +1768,10 @@
 - parent extaddr: `eacf2cfc63849ba3`
 - parent rloc16: `0x3c00`
 - timing source: **pcap**
-- request -> response: **492 ms**
-- response -> child id request: **259 ms**
-- child id request -> response: **64 ms**
-- full attach: **815 ms**
+- Request → Response: **492 ms**
+- Response → Child ID Request: **259 ms**
+- Child ID Request → Response: **64 ms**
+- Full Attach: **815 ms**
 - pcap parent request: `17:40:23.883` (frame 188)
 - pcap parent response: `17:40:24.375` (frame 189)
 - pcap child id request: `17:40:24.634` (frame 191)
@@ -1790,10 +1796,10 @@
 - parent extaddr: `068762a9ca927a4b`
 - parent rloc16: `0xec00`
 - timing source: **pcap**
-- request -> response: **270 ms**
-- response -> child id request: **481 ms**
-- child id request -> response: **63 ms**
-- full attach: **814 ms**
+- Request → Response: **270 ms**
+- Response → Child ID Request: **481 ms**
+- Child ID Request → Response: **63 ms**
+- Full Attach: **814 ms**
 - pcap parent request: `17:41:49.648` (frame 10)
 - pcap parent response: `17:41:49.918` (frame 11)
 - pcap child id request: `17:41:50.399` (frame 13)
@@ -1809,10 +1815,10 @@
 - parent extaddr: `0a04b1c7eb143eff`
 - parent rloc16: `0x6400`
 - timing source: **pcap**
-- request -> response: **200 ms**
-- response -> child id request: **550 ms**
-- child id request -> response: **64 ms**
-- full attach: **814 ms**
+- Request → Response: **200 ms**
+- Response → Child ID Request: **550 ms**
+- Child ID Request → Response: **64 ms**
+- Full Attach: **814 ms**
 - pcap parent request: `17:45:50.303` (frame 179)
 - pcap parent response: `17:45:50.503` (frame 180)
 - pcap child id request: `17:45:51.053` (frame 182)
@@ -1837,10 +1843,10 @@
 - parent extaddr: `7e1c05ebc4824932`
 - parent rloc16: `0x3400`
 - timing source: **pcap**
-- request -> response: **485 ms**
-- response -> child id request: **263 ms**
-- child id request -> response: **62 ms**
-- full attach: **810 ms**
+- Request → Response: **485 ms**
+- Response → Child ID Request: **263 ms**
+- Child ID Request → Response: **62 ms**
+- Full Attach: **810 ms**
 - pcap parent request: `17:47:15.030` (frame 10)
 - pcap parent response: `17:47:15.515` (frame 11)
 - pcap child id request: `17:47:15.778` (frame 13)
@@ -1856,10 +1862,10 @@
 - parent extaddr: `1aa26fa659ff0809`
 - parent rloc16: `0xcc00`
 - timing source: **pcap**
-- request -> response: **497 ms**
-- response -> child id request: **252 ms**
-- child id request -> response: **63 ms**
-- full attach: **812 ms**
+- Request → Response: **497 ms**
+- Response → Child ID Request: **252 ms**
+- Child ID Request → Response: **63 ms**
+- Full Attach: **812 ms**
 - pcap parent request: `17:51:15.839` (frame 178)
 - pcap parent response: `17:51:16.336` (frame 179)
 - pcap child id request: `17:51:16.588` (frame 181)
@@ -1884,10 +1890,10 @@
 - parent extaddr: `12174462e6502ea4`
 - parent rloc16: `0xf800`
 - timing source: **pcap**
-- request -> response: **250 ms**
-- response -> child id request: **499 ms**
-- child id request -> response: **64 ms**
-- full attach: **813 ms**
+- Request → Response: **250 ms**
+- Response → Child ID Request: **499 ms**
+- Child ID Request → Response: **64 ms**
+- Full Attach: **813 ms**
 - pcap parent request: `17:52:41.091` (frame 10)
 - pcap parent response: `17:52:41.341` (frame 11)
 - pcap child id request: `17:52:41.840` (frame 13)
@@ -1903,10 +1909,10 @@
 - parent extaddr: `aef9b3127d2fdc13`
 - parent rloc16: `0x8800`
 - timing source: **pcap**
-- request -> response: **243 ms**
-- response -> child id request: **506 ms**
-- child id request -> response: **63 ms**
-- full attach: **812 ms**
+- Request → Response: **243 ms**
+- Response → Child ID Request: **506 ms**
+- Child ID Request → Response: **63 ms**
+- Full Attach: **812 ms**
 - pcap parent request: `17:56:41.850` (frame 187)
 - pcap parent response: `17:56:42.093` (frame 188)
 - pcap child id request: `17:56:42.599` (frame 190)
@@ -1931,10 +1937,10 @@
 - parent extaddr: `5a196f3ea369401b`
 - parent rloc16: `0x5400`
 - timing source: **pcap**
-- request -> response: **416 ms**
-- response -> child id request: **334 ms**
-- child id request -> response: **65 ms**
-- full attach: **815 ms**
+- Request → Response: **416 ms**
+- Response → Child ID Request: **334 ms**
+- Child ID Request → Response: **65 ms**
+- Full Attach: **815 ms**
 - pcap parent request: `17:58:06.920` (frame 9)
 - pcap parent response: `17:58:07.336` (frame 11)
 - pcap child id request: `17:58:07.670` (frame 13)
@@ -1950,10 +1956,10 @@
 - parent extaddr: `deaeba8b0970591a`
 - parent rloc16: `0x8400`
 - timing source: **pcap**
-- request -> response: **461 ms**
-- response -> child id request: **288 ms**
-- child id request -> response: **63 ms**
-- full attach: **812 ms**
+- Request → Response: **461 ms**
+- Response → Child ID Request: **288 ms**
+- Child ID Request → Response: **63 ms**
+- Full Attach: **812 ms**
 - pcap parent request: `18:02:07.409` (frame 178)
 - pcap parent response: `18:02:07.870` (frame 179)
 - pcap child id request: `18:02:08.158` (frame 181)
@@ -1978,10 +1984,10 @@
 - parent extaddr: `d6b8e6f9779328df`
 - parent rloc16: `0x5000`
 - timing source: **pcap**
-- request -> response: **523 ms**
-- response -> child id request: **225 ms**
-- child id request -> response: **64 ms**
-- full attach: **812 ms**
+- Request → Response: **523 ms**
+- Response → Child ID Request: **225 ms**
+- Child ID Request → Response: **64 ms**
+- Full Attach: **812 ms**
 - pcap parent request: `18:16:57.336` (frame 10)
 - pcap parent response: `18:16:57.859` (frame 11)
 - pcap child id request: `18:16:58.084` (frame 13)
@@ -1997,10 +2003,10 @@
 - parent extaddr: `668c4188fc6a817f`
 - parent rloc16: `0xc000`
 - timing source: **pcap**
-- request -> response: **507 ms**
-- response -> child id request: **245 ms**
-- child id request -> response: **62 ms**
-- full attach: **814 ms**
+- Request → Response: **507 ms**
+- Response → Child ID Request: **245 ms**
+- Child ID Request → Response: **62 ms**
+- Full Attach: **814 ms**
 - pcap parent request: `18:20:58.513` (frame 188)
 - pcap parent response: `18:20:59.020` (frame 189)
 - pcap child id request: `18:20:59.265` (frame 191)
@@ -2025,10 +2031,10 @@
 - parent extaddr: `be82eb49764c0260`
 - parent rloc16: `0x0800`
 - timing source: **pcap**
-- request -> response: **111 ms**
-- response -> child id request: **640 ms**
-- child id request -> response: **63 ms**
-- full attach: **814 ms**
+- Request → Response: **111 ms**
+- Response → Child ID Request: **640 ms**
+- Child ID Request → Response: **63 ms**
+- Full Attach: **814 ms**
 - pcap parent request: `18:22:22.876` (frame 10)
 - pcap parent response: `18:22:22.987` (frame 11)
 - pcap child id request: `18:22:23.627` (frame 13)
@@ -2044,10 +2050,10 @@
 - parent extaddr: `c67d0e7e77eee771`
 - parent rloc16: `0x2000`
 - timing source: **pcap**
-- request -> response: **424 ms**
-- response -> child id request: **325 ms**
-- child id request -> response: **64 ms**
-- full attach: **813 ms**
+- Request → Response: **424 ms**
+- Response → Child ID Request: **325 ms**
+- Child ID Request → Response: **64 ms**
+- Full Attach: **813 ms**
 - pcap parent request: `18:26:23.520` (frame 189)
 - pcap parent response: `18:26:23.944` (frame 190)
 - pcap child id request: `18:26:24.269` (frame 192)
@@ -2072,10 +2078,10 @@
 - parent extaddr: `4a74a6f4bdc82a9d`
 - parent rloc16: `0x9000`
 - timing source: **pcap**
-- request -> response: **297 ms**
-- response -> child id request: **418 ms**
-- child id request -> response: **65 ms**
-- full attach: **780 ms**
+- Request → Response: **297 ms**
+- Response → Child ID Request: **418 ms**
+- Child ID Request → Response: **65 ms**
+- Full Attach: **780 ms**
 - pcap parent request: `18:27:48.781` (frame 9)
 - pcap parent response: `18:27:49.078` (frame 10)
 - pcap child id request: `18:27:49.496` (frame 12)
@@ -2091,10 +2097,10 @@
 - parent extaddr: `3ec3440574207600`
 - parent rloc16: `0x4000`
 - timing source: **pcap**
-- request -> response: **114 ms**
-- response -> child id request: **636 ms**
-- child id request -> response: **63 ms**
-- full attach: **813 ms**
+- Request → Response: **114 ms**
+- Response → Child ID Request: **636 ms**
+- Child ID Request → Response: **63 ms**
+- Full Attach: **813 ms**
 - pcap parent request: `18:31:49.757` (frame 183)
 - pcap parent response: `18:31:49.871` (frame 184)
 - pcap child id request: `18:31:50.507` (frame 186)
@@ -2119,10 +2125,10 @@
 - parent extaddr: `56c44f60f9b4f2e2`
 - parent rloc16: `0x9400`
 - timing source: **pcap**
-- request -> response: **361 ms**
-- response -> child id request: **389 ms**
-- child id request -> response: **64 ms**
-- full attach: **814 ms**
+- Request → Response: **361 ms**
+- Response → Child ID Request: **389 ms**
+- Child ID Request → Response: **64 ms**
+- Full Attach: **814 ms**
 - pcap parent request: `18:33:14.833` (frame 10)
 - pcap parent response: `18:33:15.194` (frame 11)
 - pcap child id request: `18:33:15.583` (frame 13)
@@ -2138,10 +2144,10 @@
 - parent extaddr: `9ebf2e1540d27836`
 - parent rloc16: `0xe400`
 - timing source: **pcap**
-- request -> response: **498 ms**
-- response -> child id request: **250 ms**
-- child id request -> response: **64 ms**
-- full attach: **812 ms**
+- Request → Response: **498 ms**
+- Response → Child ID Request: **250 ms**
+- Child ID Request → Response: **64 ms**
+- Full Attach: **812 ms**
 - pcap parent request: `18:37:15.287` (frame 189)
 - pcap parent response: `18:37:15.785` (frame 190)
 - pcap child id request: `18:37:16.035` (frame 192)
@@ -2166,10 +2172,10 @@
 - parent extaddr: `a6b19ed8c69974b9`
 - parent rloc16: `0x6c00`
 - timing source: **pcap**
-- request -> response: **120 ms**
-- response -> child id request: **632 ms**
-- child id request -> response: **64 ms**
-- full attach: **816 ms**
+- Request → Response: **120 ms**
+- Response → Child ID Request: **632 ms**
+- Child ID Request → Response: **64 ms**
+- Full Attach: **816 ms**
 - pcap parent request: `18:38:41.278` (frame 10)
 - pcap parent response: `18:38:41.398` (frame 11)
 - pcap child id request: `18:38:42.030` (frame 13)
@@ -2185,10 +2191,10 @@
 - parent extaddr: `36f8f6f1ffb7a69e`
 - parent rloc16: `0xc800`
 - timing source: **pcap**
-- request -> response: **237 ms**
-- response -> child id request: **512 ms**
-- child id request -> response: **64 ms**
-- full attach: **813 ms**
+- Request → Response: **237 ms**
+- Response → Child ID Request: **512 ms**
+- Child ID Request → Response: **64 ms**
+- Full Attach: **813 ms**
 - pcap parent request: `18:42:42.287` (frame 174)
 - pcap parent response: `18:42:42.524` (frame 175)
 - pcap child id request: `18:42:43.036` (frame 177)
@@ -2213,10 +2219,10 @@
 - parent extaddr: `caef3dc57b995dc7`
 - parent rloc16: `0xb400`
 - timing source: **pcap**
-- request -> response: **256 ms**
-- response -> child id request: **492 ms**
-- child id request -> response: **62 ms**
-- full attach: **810 ms**
+- Request → Response: **256 ms**
+- Response → Child ID Request: **492 ms**
+- Child ID Request → Response: **62 ms**
+- Full Attach: **810 ms**
 - pcap parent request: `18:44:07.353` (frame 10)
 - pcap parent response: `18:44:07.609` (frame 11)
 - pcap child id request: `18:44:08.101` (frame 13)
@@ -2232,10 +2238,10 @@
 - parent extaddr: `327a988ed11d1736`
 - parent rloc16: `0x8c00`
 - timing source: **pcap**
-- request -> response: **218 ms**
-- response -> child id request: **533 ms**
-- child id request -> response: **63 ms**
-- full attach: **814 ms**
+- Request → Response: **218 ms**
+- Response → Child ID Request: **533 ms**
+- Child ID Request → Response: **63 ms**
+- Full Attach: **814 ms**
 - pcap parent request: `18:48:08.010` (frame 178)
 - pcap parent response: `18:48:08.228` (frame 179)
 - pcap child id request: `18:48:08.761` (frame 181)
@@ -2260,10 +2266,10 @@
 - parent extaddr: `6238a0859c7cdc15`
 - parent rloc16: `0x8000`
 - timing source: **pcap**
-- request -> response: **147 ms**
-- response -> child id request: **604 ms**
-- child id request -> response: **64 ms**
-- full attach: **815 ms**
+- Request → Response: **147 ms**
+- Response → Child ID Request: **604 ms**
+- Child ID Request → Response: **64 ms**
+- Full Attach: **815 ms**
 - pcap parent request: `18:49:33.402` (frame 10)
 - pcap parent response: `18:49:33.549` (frame 11)
 - pcap child id request: `18:49:34.153` (frame 13)
@@ -2279,10 +2285,10 @@
 - parent extaddr: `725b0e066b7f1c58`
 - parent rloc16: `0x5400`
 - timing source: **pcap**
-- request -> response: **147 ms**
-- response -> child id request: **606 ms**
-- child id request -> response: **63 ms**
-- full attach: **816 ms**
+- Request → Response: **147 ms**
+- Response → Child ID Request: **606 ms**
+- Child ID Request → Response: **63 ms**
+- Full Attach: **816 ms**
 - pcap parent request: `18:53:34.523` (frame 189)
 - pcap parent response: `18:53:34.670` (frame 190)
 - pcap child id request: `18:53:35.276` (frame 192)
@@ -2307,10 +2313,10 @@
 - parent extaddr: `360a2aff5fa566c3`
 - parent rloc16: `0xe400`
 - timing source: **pcap**
-- request -> response: **158 ms**
-- response -> child id request: **556 ms**
-- child id request -> response: **64 ms**
-- full attach: **778 ms**
+- Request → Response: **158 ms**
+- Response → Child ID Request: **556 ms**
+- Child ID Request → Response: **64 ms**
+- Full Attach: **778 ms**
 - pcap parent request: `18:54:58.935` (frame 9)
 - pcap parent response: `18:54:59.093` (frame 10)
 - pcap child id request: `18:54:59.649` (frame 13)
@@ -2326,10 +2332,10 @@
 - parent extaddr: `8ecaa2916e2834f1`
 - parent rloc16: `0xec00`
 - timing source: **pcap**
-- request -> response: **403 ms**
-- response -> child id request: **348 ms**
-- child id request -> response: **63 ms**
-- full attach: **814 ms**
+- Request → Response: **403 ms**
+- Response → Child ID Request: **348 ms**
+- Child ID Request → Response: **63 ms**
+- Full Attach: **814 ms**
 - pcap parent request: `18:58:59.767` (frame 190)
 - pcap parent response: `18:59:00.170` (frame 191)
 - pcap child id request: `18:59:00.518` (frame 193)
@@ -2354,10 +2360,10 @@
 - parent extaddr: `564edfb5edfbb91c`
 - parent rloc16: `0x3400`
 - timing source: **pcap**
-- request -> response: **457 ms**
-- response -> child id request: **288 ms**
-- child id request -> response: **63 ms**
-- full attach: **808 ms**
+- Request → Response: **457 ms**
+- Response → Child ID Request: **288 ms**
+- Child ID Request → Response: **63 ms**
+- Full Attach: **808 ms**
 - pcap parent request: `19:00:24.871` (frame 9)
 - pcap parent response: `19:00:25.328` (frame 11)
 - pcap child id request: `19:00:25.616` (frame 13)
@@ -2373,10 +2379,10 @@
 - parent extaddr: `9a8bd8665c55a047`
 - parent rloc16: `0x3c00`
 - timing source: **pcap**
-- request -> response: **69 ms**
-- response -> child id request: **681 ms**
-- child id request -> response: **63 ms**
-- full attach: **813 ms**
+- Request → Response: **69 ms**
+- Response → Child ID Request: **681 ms**
+- Child ID Request → Response: **63 ms**
+- Full Attach: **813 ms**
 - pcap parent request: `19:04:25.987` (frame 190)
 - pcap parent response: `19:04:26.056` (frame 191)
 - pcap child id request: `19:04:26.737` (frame 193)
@@ -2401,10 +2407,10 @@
 - parent extaddr: `ba26cef09f2d31ea`
 - parent rloc16: `0xd000`
 - timing source: **pcap**
-- request -> response: **319 ms**
-- response -> child id request: **432 ms**
-- child id request -> response: **63 ms**
-- full attach: **814 ms**
+- Request → Response: **319 ms**
+- Response → Child ID Request: **432 ms**
+- Child ID Request → Response: **63 ms**
+- Full Attach: **814 ms**
 - pcap parent request: `19:05:51.269` (frame 9)
 - pcap parent response: `19:05:51.588` (frame 11)
 - pcap child id request: `19:05:52.020` (frame 13)
@@ -2420,10 +2426,10 @@
 - parent extaddr: `22efd258792a15c6`
 - parent rloc16: `0x6c00`
 - timing source: **pcap**
-- request -> response: **246 ms**
-- response -> child id request: **505 ms**
-- child id request -> response: **64 ms**
-- full attach: **815 ms**
+- Request → Response: **246 ms**
+- Response → Child ID Request: **505 ms**
+- Child ID Request → Response: **64 ms**
+- Full Attach: **815 ms**
 - pcap parent request: `19:09:52.375` (frame 186)
 - pcap parent response: `19:09:52.621` (frame 187)
 - pcap child id request: `19:09:53.126` (frame 189)
@@ -2448,10 +2454,10 @@
 - parent extaddr: `9e560efd3d1d5843`
 - parent rloc16: `0x2c00`
 - timing source: **pcap**
-- request -> response: **534 ms**
-- response -> child id request: **216 ms**
-- child id request -> response: **65 ms**
-- full attach: **815 ms**
+- Request → Response: **534 ms**
+- Response → Child ID Request: **216 ms**
+- Child ID Request → Response: **65 ms**
+- Full Attach: **815 ms**
 - pcap parent request: `19:11:17.409` (frame 9)
 - pcap parent response: `19:11:17.943` (frame 11)
 - pcap child id request: `19:11:18.159` (frame 13)
@@ -2467,10 +2473,10 @@
 - parent extaddr: `d6a5d0da25a38b06`
 - parent rloc16: `0xb400`
 - timing source: **pcap**
-- request -> response: **92 ms**
-- response -> child id request: **657 ms**
-- child id request -> response: **63 ms**
-- full attach: **812 ms**
+- Request → Response: **92 ms**
+- Response → Child ID Request: **657 ms**
+- Child ID Request → Response: **63 ms**
+- Full Attach: **812 ms**
 - pcap parent request: `19:15:18.320` (frame 191)
 - pcap parent response: `19:15:18.412` (frame 192)
 - pcap child id request: `19:15:19.069` (frame 194)
@@ -2495,10 +2501,10 @@
 - parent extaddr: `521e57ae1dc7a59b`
 - parent rloc16: `0x6c00`
 - timing source: **pcap**
-- request -> response: **408 ms**
-- response -> child id request: **341 ms**
-- child id request -> response: **63 ms**
-- full attach: **812 ms**
+- Request → Response: **408 ms**
+- Response → Child ID Request: **341 ms**
+- Child ID Request → Response: **63 ms**
+- Full Attach: **812 ms**
 - pcap parent request: `19:16:43.380` (frame 10)
 - pcap parent response: `19:16:43.788` (frame 11)
 - pcap child id request: `19:16:44.129` (frame 13)
@@ -2514,10 +2520,10 @@
 - parent extaddr: `262457ad92a778e3`
 - parent rloc16: `0x5400`
 - timing source: **pcap**
-- request -> response: **82 ms**
-- response -> child id request: **669 ms**
-- child id request -> response: **65 ms**
-- full attach: **816 ms**
+- Request → Response: **82 ms**
+- Response → Child ID Request: **669 ms**
+- Child ID Request → Response: **65 ms**
+- Full Attach: **816 ms**
 - pcap parent request: `19:20:43.848` (frame 185)
 - pcap parent response: `19:20:43.930` (frame 186)
 - pcap child id request: `19:20:44.599` (frame 188)
@@ -2542,10 +2548,10 @@
 - parent extaddr: `0ea48bd407723233`
 - parent rloc16: `0x4000`
 - timing source: **pcap**
-- request -> response: **196 ms**
-- response -> child id request: **554 ms**
-- child id request -> response: **62 ms**
-- full attach: **812 ms**
+- Request → Response: **196 ms**
+- Response → Child ID Request: **554 ms**
+- Child ID Request → Response: **62 ms**
+- Full Attach: **812 ms**
 - pcap parent request: `19:22:09.424` (frame 9)
 - pcap parent response: `19:22:09.620` (frame 11)
 - pcap child id request: `19:22:10.174` (frame 13)
@@ -2561,10 +2567,10 @@
 - parent extaddr: `421ea1ed7b76fe0f`
 - parent rloc16: `0xd000`
 - timing source: **pcap**
-- request -> response: **243 ms**
-- response -> child id request: **508 ms**
-- child id request -> response: **64 ms**
-- full attach: **815 ms**
+- Request → Response: **243 ms**
+- Response → Child ID Request: **508 ms**
+- Child ID Request → Response: **64 ms**
+- Full Attach: **815 ms**
 - pcap parent request: `19:26:10.227` (frame 187)
 - pcap parent response: `19:26:10.470` (frame 188)
 - pcap child id request: `19:26:10.978` (frame 190)
@@ -2589,10 +2595,10 @@
 - parent extaddr: `da262d7877146ba1`
 - parent rloc16: `0x3800`
 - timing source: **pcap**
-- request -> response: **262 ms**
-- response -> child id request: **486 ms**
-- child id request -> response: **66 ms**
-- full attach: **814 ms**
+- Request → Response: **262 ms**
+- Response → Child ID Request: **486 ms**
+- Child ID Request → Response: **66 ms**
+- Full Attach: **814 ms**
 - pcap parent request: `19:27:35.035` (frame 10)
 - pcap parent response: `19:27:35.297` (frame 11)
 - pcap child id request: `19:27:35.783` (frame 13)
@@ -2608,10 +2614,10 @@
 - parent extaddr: `1a1970942fc808d1`
 - parent rloc16: `0x4c00`
 - timing source: **pcap**
-- request -> response: **109 ms**
-- response -> child id request: **641 ms**
-- child id request -> response: **63 ms**
-- full attach: **813 ms**
+- Request → Response: **109 ms**
+- Response → Child ID Request: **641 ms**
+- Child ID Request → Response: **63 ms**
+- Full Attach: **813 ms**
 - pcap parent request: `19:31:35.709` (frame 185)
 - pcap parent response: `19:31:35.818` (frame 186)
 - pcap child id request: `19:31:36.459` (frame 189)
