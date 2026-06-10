@@ -25,10 +25,10 @@ Files analyzed: **56**
 
 #### Attach sequence 1
 
-- parent request: `11:52:00.305`
-- parent response: `11:52:00.719`
-- child id request: `11:52:01.014`
-- child id response: `11:52:01.093`
+- log parent request: `11:52:00.305`
+- log parent response: `11:52:00.719`
+- log child id request: `11:52:01.014`
+- log child id response: `11:52:01.093`
 - parent ipv6: `fe80:0:0:0:747d:521b:8f1b:a668`
 - parent extaddr: `767d521b8f1ba668`
 - parent rloc16: `0x5400`
@@ -44,10 +44,10 @@ Files analyzed: **56**
 
 #### Attach sequence 2
 
-- parent request: `11:56:01.449`
-- parent response: `11:56:01.515`
-- child id request: `None`
-- child id response: `11:56:02.241`
+- log parent request: `11:56:01.449`
+- log parent response: `11:56:01.515`
+- log child id request: `None`
+- log child id response: `11:56:02.241`
 - parent ipv6: `fe80:0:0:0:1084:af33:ed0:3bb3`
 - parent extaddr: `1284af330ed03bb3`
 - parent rloc16: `0xac00`
@@ -72,10 +72,10 @@ Files analyzed: **56**
 
 #### Attach sequence 1
 
-- parent request: `12:13:15.402`
-- parent response: `12:13:15.780`
-- child id request: `12:13:16.177`
-- child id response: `12:13:16.256`
+- log parent request: `12:13:15.402`
+- log parent response: `12:13:15.780`
+- log child id request: `12:13:16.177`
+- log child id response: `12:13:16.256`
 - parent ipv6: `fe80:0:0:0:d890:3c04:ae6:8c9c`
 - parent extaddr: `da903c040ae68c9c`
 - parent rloc16: `0xe000`
@@ -91,10 +91,10 @@ Files analyzed: **56**
 
 #### Attach sequence 2
 
-- parent request: `12:17:16.501`
-- parent response: `12:17:16.590`
-- child id request: `None`
-- child id response: `12:17:17.290`
+- log parent request: `12:17:16.501`
+- log parent response: `12:17:16.590`
+- log child id request: `None`
+- log child id response: `12:17:17.290`
 - parent ipv6: `fe80:0:0:0:940c:7957:1efb:5f08`
 - parent extaddr: `960c79571efb5f08`
 - parent rloc16: `0x3c00`
@@ -119,10 +119,10 @@ Files analyzed: **56**
 
 #### Attach sequence 1
 
-- parent request: `12:20:56.078`
-- parent response: `None`
-- child id request: `None`
-- child id response: `12:20:56.818`
+- log parent request: `12:20:56.078`
+- log parent response: `None`
+- log child id request: `None`
+- log child id response: `12:20:56.818`
 - parent ipv6: `fe80:0:0:0:18b1:863b:65df:33ed`
 - parent extaddr: `1ab1863b65df33ed`
 - parent rloc16: `0x7c00`
@@ -138,10 +138,10 @@ Files analyzed: **56**
 
 #### Attach sequence 2
 
-- parent request: `12:24:56.698`
-- parent response: `12:24:56.993`
-- child id request: `None`
-- child id response: `12:24:57.488`
+- log parent request: `12:24:56.698`
+- log parent response: `12:24:56.993`
+- log child id request: `None`
+- log child id response: `12:24:57.488`
 - parent ipv6: `fe80:0:0:0:c482:d39f:131:b69`
 - parent extaddr: `c682d39f01310b69`
 - parent rloc16: `0x4c00`
@@ -166,10 +166,10 @@ Files analyzed: **56**
 
 #### Attach sequence 1
 
-- parent request: `12:28:35.458`
-- parent response: `12:28:35.876`
-- child id request: `12:28:36.165`
-- child id response: `12:28:36.244`
+- log parent request: `12:28:35.458`
+- log parent response: `12:28:35.876`
+- log child id request: `12:28:36.165`
+- log child id response: `12:28:36.244`
 - parent ipv6: `fe80:0:0:0:e41c:ac85:7cc8:2d78`
 - parent extaddr: `e61cac857cc82d78`
 - parent rloc16: `0x4800`
@@ -185,10 +185,10 @@ Files analyzed: **56**
 
 #### Attach sequence 2
 
-- parent request: `12:32:35.978`
-- parent response: `12:32:36.292`
-- child id request: `None`
-- child id response: `12:32:36.768`
+- log parent request: `12:32:35.978`
+- log parent response: `12:32:36.292`
+- log child id request: `None`
+- log child id response: `12:32:36.768`
 - parent ipv6: `fe80:0:0:0:3808:e1d3:5997:2937`
 - parent extaddr: `3a08e1d359972937`
 - parent rloc16: `0xf800`
@@ -213,10 +213,10 @@ Files analyzed: **56**
 
 #### Attach sequence 1
 
-- parent request: `12:36:16.211`
-- parent response: `12:36:16.298`
-- child id request: `None`
-- child id response: `12:36:17.002`
+- log parent request: `12:36:16.211`
+- log parent response: `12:36:16.298`
+- log child id request: `None`
+- log child id response: `12:36:17.002`
 - parent ipv6: `fe80:0:0:0:a405:ee96:2ad7:a308`
 - parent extaddr: `a605ee962ad7a308`
 - parent rloc16: `0x7800`
@@ -232,10 +232,10 @@ Files analyzed: **56**
 
 #### Attach sequence 2
 
-- parent request: `12:40:16.837`
-- parent response: `12:40:17.252`
-- child id request: `None`
-- child id response: `12:40:17.627`
+- log parent request: `12:40:16.837`
+- log parent response: `12:40:17.252`
+- log child id request: `None`
+- log child id response: `12:40:17.627`
 - parent ipv6: `fe80:0:0:0:b08a:c9bd:69f8:6000`
 - parent extaddr: `b28ac9bd69f86000`
 - parent rloc16: `0xc800`
@@ -260,10 +260,10 @@ Files analyzed: **56**
 
 #### Attach sequence 1
 
-- parent request: `22:43:54.868`
-- parent response: `22:43:55.028`
-- child id request: `22:43:55.577`
-- child id response: `22:43:55.656`
+- log parent request: `22:43:54.868`
+- log parent response: `22:43:55.028`
+- log child id request: `22:43:55.577`
+- log child id response: `22:43:55.656`
 - parent ipv6: `fe80:0:0:0:873:fdd6:33c7:705a`
 - parent extaddr: `0a73fdd633c7705a`
 - parent rloc16: `0x8000`
@@ -286,10 +286,10 @@ Files analyzed: **56**
 
 #### Attach sequence 1
 
-- parent request: `03:06:26.340`
-- parent response: `03:06:26.414`
-- child id request: `03:06:27.049`
-- child id response: `03:06:27.137`
+- log parent request: `03:06:26.340`
+- log parent response: `03:06:26.414`
+- log child id request: `03:06:27.049`
+- log child id response: `03:06:27.137`
 - parent ipv6: `fe80:0:0:0:8cb9:67a1:3ba7:20f1`
 - parent extaddr: `8eb967a13ba720f1`
 - parent rloc16: `0x2c00`
@@ -305,10 +305,10 @@ Files analyzed: **56**
 
 #### Attach sequence 2
 
-- parent request: `03:10:27.394`
-- parent response: `03:10:27.910`
-- child id request: `03:10:28.147`
-- child id response: `03:10:28.194`
+- log parent request: `03:10:27.394`
+- log parent response: `03:10:27.910`
+- log child id request: `03:10:28.147`
+- log child id response: `03:10:28.194`
 - parent ipv6: `fe80:0:0:0:834:495d:9654:8b07`
 - parent extaddr: `0a34495d96548b07`
 - parent rloc16: `0x1800`
@@ -333,10 +333,10 @@ Files analyzed: **56**
 
 #### Attach sequence 1
 
-- parent request: `03:11:51.928`
-- parent response: `03:11:52.199`
-- child id request: `03:11:52.747`
-- child id response: `03:11:52.792`
+- log parent request: `03:11:51.928`
+- log parent response: `03:11:52.199`
+- log child id request: `03:11:52.747`
+- log child id response: `03:11:52.792`
 - parent ipv6: `fe80:0:0:0:2882:4e65:b0eb:d0f5`
 - parent extaddr: `2a824e65b0ebd0f5`
 - parent rloc16: `0x3000`
@@ -352,10 +352,10 @@ Files analyzed: **56**
 
 #### Attach sequence 2
 
-- parent request: `03:15:52.639`
-- parent response: `03:15:53.090`
-- child id request: `03:15:53.394`
-- child id response: `03:15:53.440`
+- log parent request: `03:15:52.639`
+- log parent response: `03:15:53.090`
+- log child id request: `03:15:53.394`
+- log child id response: `03:15:53.440`
 - parent ipv6: `fe80:0:0:0:f07e:1861:e2c6:b2af`
 - parent extaddr: `f27e1861e2c6b2af`
 - parent rloc16: `0x0400`
@@ -380,10 +380,10 @@ Files analyzed: **56**
 
 #### Attach sequence 1
 
-- parent request: `03:17:18.454`
-- parent response: `03:17:18.517`
-- child id request: `03:17:19.163`
-- child id response: `03:17:19.256`
+- log parent request: `03:17:18.454`
+- log parent response: `03:17:18.517`
+- log child id request: `03:17:19.163`
+- log child id response: `03:17:19.256`
 - parent ipv6: `fe80:0:0:0:9c58:db36:93d2:5004`
 - parent extaddr: `9e58db3693d25004`
 - parent rloc16: `0xbc00`
@@ -399,10 +399,10 @@ Files analyzed: **56**
 
 #### Attach sequence 2
 
-- parent request: `03:21:19.361`
-- parent response: `03:21:19.601`
-- child id request: `03:21:20.114`
-- child id response: `03:21:20.160`
+- log parent request: `03:21:19.361`
+- log parent response: `03:21:19.601`
+- log child id request: `03:21:20.114`
+- log child id response: `03:21:20.160`
 - parent ipv6: `fe80:0:0:0:bc7a:28ea:7f98:e0bf`
 - parent extaddr: `be7a28ea7f98e0bf`
 - parent rloc16: `0x5400`
@@ -427,10 +427,10 @@ Files analyzed: **56**
 
 #### Attach sequence 1
 
-- parent request: `11:57:11.480`
-- parent response: `11:57:11.565`
-- child id request: `11:57:12.191`
-- child id response: `11:57:12.281`
+- log parent request: `11:57:11.480`
+- log parent response: `11:57:11.565`
+- log child id request: `11:57:12.191`
+- log child id response: `11:57:12.281`
 - parent ipv6: `fe80:0:0:0:505b:8c9e:b185:b733`
 - parent extaddr: `525b8c9eb185b733`
 - parent rloc16: `0x7c00`
@@ -446,10 +446,10 @@ Files analyzed: **56**
 
 #### Attach sequence 2
 
-- parent request: `12:01:12.210`
-- parent response: `12:01:12.344`
-- child id request: `12:01:12.967`
-- child id response: `12:01:13.012`
+- log parent request: `12:01:12.210`
+- log parent response: `12:01:12.344`
+- log child id request: `12:01:12.967`
+- log child id response: `12:01:13.012`
 - parent ipv6: `fe80:0:0:0:f8c6:ad78:b6c8:49df`
 - parent extaddr: `fac6ad78b6c849df`
 - parent rloc16: `0xe400`
@@ -474,10 +474,10 @@ Files analyzed: **56**
 
 #### Attach sequence 1
 
-- parent request: `12:02:37.327`
-- parent response: `12:02:37.712`
-- child id request: `12:02:38.033`
-- child id response: `12:02:38.121`
+- log parent request: `12:02:37.327`
+- log parent response: `12:02:37.712`
+- log child id request: `12:02:38.033`
+- log child id response: `12:02:38.121`
 - parent ipv6: `fe80:0:0:0:5456:a3af:182b:1c79`
 - parent extaddr: `5656a3af182b1c79`
 - parent rloc16: `0x6000`
@@ -493,10 +493,10 @@ Files analyzed: **56**
 
 #### Attach sequence 2
 
-- parent request: `12:06:37.801`
-- parent response: `12:06:38.162`
-- child id request: `12:06:38.554`
-- child id response: `12:06:38.601`
+- log parent request: `12:06:37.801`
+- log parent response: `12:06:38.162`
+- log child id request: `12:06:38.554`
+- log child id response: `12:06:38.601`
 - parent ipv6: `fe80:0:0:0:a0dc:3bd2:a94e:c426`
 - parent extaddr: `a2dc3bd2a94ec426`
 - parent rloc16: `0xc000`
@@ -521,10 +521,10 @@ Files analyzed: **56**
 
 #### Attach sequence 1
 
-- parent request: `12:08:02.917`
-- parent response: `12:08:03.311`
-- child id request: `12:08:03.628`
-- child id response: `12:08:03.716`
+- log parent request: `12:08:02.917`
+- log parent response: `12:08:03.311`
+- log child id request: `12:08:03.628`
+- log child id response: `12:08:03.716`
 - parent ipv6: `fe80:0:0:0:d4ab:f49f:dabc:f36e`
 - parent extaddr: `d6abf49fdabcf36e`
 - parent rloc16: `0x5800`
@@ -540,10 +540,10 @@ Files analyzed: **56**
 
 #### Attach sequence 2
 
-- parent request: `12:12:03.867`
-- parent response: `12:12:04.041`
-- child id request: `12:12:04.577`
-- child id response: `12:12:04.668`
+- log parent request: `12:12:03.867`
+- log parent response: `12:12:04.041`
+- log child id request: `12:12:04.577`
+- log child id response: `12:12:04.668`
 - parent ipv6: `fe80:0:0:0:64d8:15e4:5951:b241`
 - parent extaddr: `66d815e45951b241`
 - parent rloc16: `0x1000`
@@ -568,10 +568,10 @@ Files analyzed: **56**
 
 #### Attach sequence 1
 
-- parent request: `12:13:28.961`
-- parent response: `12:13:29.454`
-- child id request: `12:13:29.672`
-- child id response: `12:13:29.761`
+- log parent request: `12:13:28.961`
+- log parent response: `12:13:29.454`
+- log child id request: `12:13:29.672`
+- log child id response: `12:13:29.761`
 - parent ipv6: `fe80:0:0:0:c0c1:7f38:7b03:17ea`
 - parent extaddr: `c2c17f387b0317ea`
 - parent rloc16: `0xec00`
@@ -587,10 +587,10 @@ Files analyzed: **56**
 
 #### Attach sequence 2
 
-- parent request: `12:17:29.842`
-- parent response: `12:17:30.052`
-- child id request: `12:17:30.594`
-- child id response: `12:17:30.644`
+- log parent request: `12:17:29.842`
+- log parent response: `12:17:30.052`
+- log child id request: `12:17:30.594`
+- log child id response: `12:17:30.644`
 - parent ipv6: `fe80:0:0:0:9419:cb9d:5d34:bef1`
 - parent extaddr: `9619cb9d5d34bef1`
 - parent rloc16: `0xd800`
@@ -615,10 +615,10 @@ Files analyzed: **56**
 
 #### Attach sequence 1
 
-- parent request: `12:18:54.893`
-- parent response: `12:18:54.997`
-- child id request: `12:18:55.664`
-- child id response: `12:18:55.752`
+- log parent request: `12:18:54.893`
+- log parent response: `12:18:54.997`
+- log child id request: `12:18:55.664`
+- log child id response: `12:18:55.752`
 - parent ipv6: `fe80:0:0:0:8814:f888:a93e:90f7`
 - parent extaddr: `8a14f888a93e90f7`
 - parent rloc16: `0x8400`
@@ -634,10 +634,10 @@ Files analyzed: **56**
 
 #### Attach sequence 2
 
-- parent request: `12:22:55.464`
-- parent response: `12:22:55.947`
-- child id request: `12:22:56.173`
-- child id response: `12:22:56.263`
+- log parent request: `12:22:55.464`
+- log parent response: `12:22:55.947`
+- log child id request: `12:22:56.173`
+- log child id response: `12:22:56.263`
 - parent ipv6: `fe80:0:0:0:c098:1c64:5e5b:50e4`
 - parent extaddr: `c2981c645e5b50e4`
 - parent rloc16: `0xcc00`
@@ -662,10 +662,10 @@ Files analyzed: **56**
 
 #### Attach sequence 1
 
-- parent request: `12:54:18.794`
-- parent response: `12:54:18.942`
-- child id request: `12:54:19.563`
-- child id response: `12:54:19.655`
+- log parent request: `12:54:18.794`
+- log parent response: `12:54:18.942`
+- log child id request: `12:54:19.563`
+- log child id response: `12:54:19.655`
 - parent ipv6: `fe80:0:0:0:3cab:e1e0:d502:f486`
 - parent extaddr: `3eabe1e0d502f486`
 - parent rloc16: `0x2c00`
@@ -681,10 +681,10 @@ Files analyzed: **56**
 
 #### Attach sequence 2
 
-- parent request: `12:58:19.796`
-- parent response: `12:58:19.893`
-- child id request: `12:58:20.507`
-- child id response: `12:58:20.596`
+- log parent request: `12:58:19.796`
+- log parent response: `12:58:19.893`
+- log child id request: `12:58:20.507`
+- log child id response: `12:58:20.596`
 - parent ipv6: `fe80:0:0:0:461:315c:6f4f:9359`
 - parent extaddr: `0661315c6f4f9359`
 - parent rloc16: `0xa000`
@@ -709,10 +709,10 @@ Files analyzed: **56**
 
 #### Attach sequence 1
 
-- parent request: `12:59:44.450`
-- parent response: `12:59:44.828`
-- child id request: `12:59:45.270`
-- child id response: `12:59:45.315`
+- log parent request: `12:59:44.450`
+- log parent response: `12:59:44.828`
+- log child id request: `12:59:45.270`
+- log child id response: `12:59:45.315`
 - parent ipv6: `fe80:0:0:0:1cf5:e640:4a2d:c4c8`
 - parent extaddr: `1ef5e6404a2dc4c8`
 - parent rloc16: `0x5400`
@@ -728,10 +728,10 @@ Files analyzed: **56**
 
 #### Attach sequence 2
 
-- parent request: `13:03:45.439`
-- parent response: `13:03:45.755`
-- child id request: `13:03:46.191`
-- child id response: `13:03:46.238`
+- log parent request: `13:03:45.439`
+- log parent response: `13:03:45.755`
+- log child id request: `13:03:46.191`
+- log child id response: `13:03:46.238`
 - parent ipv6: `fe80:0:0:0:9054:859d:a06b:d501`
 - parent extaddr: `9254859da06bd501`
 - parent rloc16: `0x2c00`
@@ -756,10 +756,10 @@ Files analyzed: **56**
 
 #### Attach sequence 1
 
-- parent request: `13:05:10.506`
-- parent response: `13:05:10.765`
-- child id request: `13:05:11.217`
-- child id response: `13:05:11.308`
+- log parent request: `13:05:10.506`
+- log parent response: `13:05:10.765`
+- log child id request: `13:05:11.217`
+- log child id response: `13:05:11.308`
 - parent ipv6: `fe80:0:0:0:40a4:3dda:454b:87a8`
 - parent extaddr: `42a43dda454b87a8`
 - parent rloc16: `0xb000`
@@ -775,10 +775,10 @@ Files analyzed: **56**
 
 #### Attach sequence 2
 
-- parent request: `13:09:11.478`
-- parent response: `13:09:11.519`
-- child id request: `13:09:12.232`
-- child id response: `13:09:12.278`
+- log parent request: `13:09:11.478`
+- log parent response: `13:09:11.519`
+- log child id request: `13:09:12.232`
+- log child id response: `13:09:12.278`
 - parent ipv6: `fe80:0:0:0:b4d5:e443:74a9:e55b`
 - parent extaddr: `b6d5e44374a9e55b`
 - parent rloc16: `0x8c00`
@@ -803,10 +803,10 @@ Files analyzed: **56**
 
 #### Attach sequence 1
 
-- parent request: `13:10:36.255`
-- parent response: `13:10:36.531`
-- child id request: `13:10:36.960`
-- child id response: `13:10:37.048`
+- log parent request: `13:10:36.255`
+- log parent response: `13:10:36.531`
+- log child id request: `13:10:36.960`
+- log child id response: `13:10:37.048`
 - parent ipv6: `fe80:0:0:0:f46f:2b2c:2792:803d`
 - parent extaddr: `f66f2b2c2792803d`
 - parent rloc16: `0x0800`
@@ -822,10 +822,10 @@ Files analyzed: **56**
 
 #### Attach sequence 2
 
-- parent request: `13:14:36.708`
-- parent response: `13:14:36.962`
-- child id request: `13:14:37.461`
-- child id response: `13:14:37.509`
+- log parent request: `13:14:36.708`
+- log parent response: `13:14:36.962`
+- log child id request: `13:14:37.461`
+- log child id response: `13:14:37.509`
 - parent ipv6: `fe80:0:0:0:7422:de89:fde1:c284`
 - parent extaddr: `7622de89fde1c284`
 - parent rloc16: `0xc400`
@@ -850,10 +850,10 @@ Files analyzed: **56**
 
 #### Attach sequence 1
 
-- parent request: `13:16:02.516`
-- parent response: `13:16:02.966`
-- child id request: `13:16:03.227`
-- child id response: `13:16:03.315`
+- log parent request: `13:16:02.516`
+- log parent response: `13:16:02.966`
+- log child id request: `13:16:03.227`
+- log child id response: `13:16:03.315`
 - parent ipv6: `fe80:0:0:0:bcdb:8fc6:c5b0:f089`
 - parent extaddr: `bedb8fc6c5b0f089`
 - parent rloc16: `0xb400`
@@ -869,10 +869,10 @@ Files analyzed: **56**
 
 #### Attach sequence 2
 
-- parent request: `13:20:03.692`
-- parent response: `13:20:03.975`
-- child id request: `13:20:04.403`
-- child id response: `13:20:04.493`
+- log parent request: `13:20:03.692`
+- log parent response: `13:20:03.975`
+- log child id request: `13:20:04.403`
+- log child id response: `13:20:04.493`
 - parent ipv6: `fe80:0:0:0:285f:b093:ea71:6159`
 - parent extaddr: `2a5fb093ea716159`
 - parent rloc16: `0x7800`
@@ -897,10 +897,10 @@ Files analyzed: **56**
 
 #### Attach sequence 1
 
-- parent request: `13:21:27.808`
-- parent response: `13:21:28.271`
-- child id request: `13:21:28.518`
-- child id response: `13:21:28.610`
+- log parent request: `13:21:27.808`
+- log parent response: `13:21:28.271`
+- log child id request: `13:21:28.518`
+- log child id response: `13:21:28.610`
 - parent ipv6: `fe80:0:0:0:815:b558:c755:e35f`
 - parent extaddr: `0a15b558c755e35f`
 - parent rloc16: `0xa800`
@@ -916,10 +916,10 @@ Files analyzed: **56**
 
 #### Attach sequence 2
 
-- parent request: `13:25:28.442`
-- parent response: `13:25:28.728`
-- child id request: `13:25:29.150`
-- child id response: `13:25:29.241`
+- log parent request: `13:25:28.442`
+- log parent response: `13:25:28.728`
+- log child id request: `13:25:29.150`
+- log child id response: `13:25:29.241`
 - parent ipv6: `fe80:0:0:0:d44e:d714:51be:fc49`
 - parent extaddr: `d64ed71451befc49`
 - parent rloc16: `0xec00`
@@ -944,10 +944,10 @@ Files analyzed: **56**
 
 #### Attach sequence 1
 
-- parent request: `13:26:53.459`
-- parent response: `13:26:53.810`
-- child id request: `13:26:54.230`
-- child id response: `13:26:54.318`
+- log parent request: `13:26:53.459`
+- log parent response: `13:26:53.810`
+- log child id request: `13:26:54.230`
+- log child id response: `13:26:54.318`
 - parent ipv6: `fe80:0:0:0:2438:3cd0:33c8:44a6`
 - parent extaddr: `26383cd033c844a6`
 - parent rloc16: `0x7400`
@@ -963,10 +963,10 @@ Files analyzed: **56**
 
 #### Attach sequence 2
 
-- parent request: `13:30:54.630`
-- parent response: `13:30:54.724`
-- child id request: `13:30:55.384`
-- child id response: `13:30:55.430`
+- log parent request: `13:30:54.630`
+- log parent response: `13:30:54.724`
+- log child id request: `13:30:55.384`
+- log child id response: `13:30:55.430`
 - parent ipv6: `fe80:0:0:0:4d8:65ff:5f38:14a3`
 - parent extaddr: `06d865ff5f3814a3`
 - parent rloc16: `0x7800`
@@ -991,10 +991,10 @@ Files analyzed: **56**
 
 #### Attach sequence 1
 
-- parent request: `13:32:19.585`
-- parent response: `13:32:19.895`
-- child id request: `13:32:20.291`
-- child id response: `13:32:20.380`
+- log parent request: `13:32:19.585`
+- log parent response: `13:32:19.895`
+- log child id request: `13:32:20.291`
+- log child id response: `13:32:20.380`
 - parent ipv6: `fe80:0:0:0:7c4b:f0a6:b643:f032`
 - parent extaddr: `7e4bf0a6b643f032`
 - parent rloc16: `0xf800`
@@ -1010,10 +1010,10 @@ Files analyzed: **56**
 
 #### Attach sequence 2
 
-- parent request: `13:36:20.390`
-- parent response: `13:36:20.466`
-- child id request: `13:36:21.144`
-- child id response: `13:36:21.190`
+- log parent request: `13:36:20.390`
+- log parent response: `13:36:20.466`
+- log child id request: `13:36:21.144`
+- log child id response: `13:36:21.190`
 - parent ipv6: `fe80:0:0:0:9073:1531:9460:8f88`
 - parent extaddr: `9273153194608f88`
 - parent rloc16: `0xe800`
@@ -1038,10 +1038,10 @@ Files analyzed: **56**
 
 #### Attach sequence 1
 
-- parent request: `13:37:45.850`
-- parent response: `13:37:46.036`
-- child id request: `13:37:46.561`
-- child id response: `13:37:46.648`
+- log parent request: `13:37:45.850`
+- log parent response: `13:37:46.036`
+- log child id request: `13:37:46.561`
+- log child id response: `13:37:46.648`
 - parent ipv6: `fe80:0:0:0:b849:20f8:364c:4ef6`
 - parent extaddr: `ba4920f8364c4ef6`
 - parent rloc16: `0x7c00`
@@ -1057,10 +1057,10 @@ Files analyzed: **56**
 
 #### Attach sequence 2
 
-- parent request: `13:41:46.724`
-- parent response: `13:41:47.118`
-- child id request: `13:41:47.434`
-- child id response: `13:41:47.523`
+- log parent request: `13:41:46.724`
+- log parent response: `13:41:47.118`
+- log child id request: `13:41:47.434`
+- log child id response: `13:41:47.523`
 - parent ipv6: `fe80:0:0:0:f887:c11f:9e:40a5`
 - parent extaddr: `fa87c11f009e40a5`
 - parent rloc16: `0x8c00`
@@ -1085,10 +1085,10 @@ Files analyzed: **56**
 
 #### Attach sequence 1
 
-- parent request: `13:43:11.244`
-- parent response: `13:43:11.507`
-- child id request: `13:43:11.953`
-- child id response: `13:43:12.044`
+- log parent request: `13:43:11.244`
+- log parent response: `13:43:11.507`
+- log child id request: `13:43:11.953`
+- log child id response: `13:43:12.044`
 - parent ipv6: `fe80:0:0:0:6c17:7a32:c57:a3e9`
 - parent extaddr: `6e177a320c57a3e9`
 - parent rloc16: `0x0000`
@@ -1104,10 +1104,10 @@ Files analyzed: **56**
 
 #### Attach sequence 2
 
-- parent request: `13:47:12.033`
-- parent response: `13:47:12.292`
-- child id request: `13:47:12.740`
-- child id response: `13:47:12.831`
+- log parent request: `13:47:12.033`
+- log parent response: `13:47:12.292`
+- log child id request: `13:47:12.740`
+- log child id response: `13:47:12.831`
 - parent ipv6: `fe80:0:0:0:68b6:841b:226:999f`
 - parent extaddr: `6ab6841b0226999f`
 - parent rloc16: `0xa800`
@@ -1132,10 +1132,10 @@ Files analyzed: **56**
 
 #### Attach sequence 1
 
-- parent request: `13:48:37.326`
-- parent response: `13:48:37.779`
-- child id request: `13:48:38.036`
-- child id response: `13:48:38.124`
+- log parent request: `13:48:37.326`
+- log parent response: `13:48:37.779`
+- log child id request: `13:48:38.036`
+- log child id response: `13:48:38.124`
 - parent ipv6: `fe80:0:0:0:e483:65a2:e6e9:661d`
 - parent extaddr: `e68365a2e6e9661d`
 - parent rloc16: `0xc800`
@@ -1151,10 +1151,10 @@ Files analyzed: **56**
 
 #### Attach sequence 2
 
-- parent request: `13:52:38.145`
-- parent response: `13:52:38.608`
-- child id request: `13:52:38.900`
-- child id response: `13:52:38.946`
+- log parent request: `13:52:38.145`
+- log parent response: `13:52:38.608`
+- log child id request: `13:52:38.900`
+- log child id response: `13:52:38.946`
 - parent ipv6: `fe80:0:0:0:8c7f:6489:ef9e:70b5`
 - parent extaddr: `8e7f6489ef9e70b5`
 - parent rloc16: `0x7c00`
@@ -1179,10 +1179,10 @@ Files analyzed: **56**
 
 #### Attach sequence 1
 
-- parent request: `15:45:19.352`
-- parent response: `15:45:19.848`
-- child id request: `15:45:20.168`
-- child id response: `15:45:20.256`
+- log parent request: `15:45:19.352`
+- log parent response: `15:45:19.848`
+- log child id request: `15:45:20.168`
+- log child id response: `15:45:20.256`
 - parent ipv6: `fe80:0:0:0:cc9a:fdd0:fbb:a438`
 - parent extaddr: `ce9afdd00fbba438`
 - parent rloc16: `0x3800`
@@ -1198,10 +1198,10 @@ Files analyzed: **56**
 
 #### Attach sequence 2
 
-- parent request: `15:49:20.216`
-- parent response: `15:49:20.259`
-- child id request: `15:49:20.927`
-- child id response: `15:49:21.017`
+- log parent request: `15:49:20.216`
+- log parent response: `15:49:20.259`
+- log child id request: `15:49:20.927`
+- log child id response: `15:49:21.017`
 - parent ipv6: `fe80:0:0:0:f4b9:3c9e:6565:b643`
 - parent extaddr: `f6b93c9e6565b643`
 - parent rloc16: `0x3400`
@@ -1226,10 +1226,10 @@ Files analyzed: **56**
 
 #### Attach sequence 1
 
-- parent request: `15:50:45.759`
-- parent response: `15:50:46.086`
-- child id request: `15:50:46.518`
-- child id response: `15:50:46.558`
+- log parent request: `15:50:45.759`
+- log parent response: `15:50:46.086`
+- log child id request: `15:50:46.518`
+- log child id response: `15:50:46.558`
 - parent ipv6: `fe80:0:0:0:40bb:d61e:2b91:26ab`
 - parent extaddr: `42bbd61e2b9126ab`
 - parent rloc16: `0x6800`
@@ -1245,10 +1245,10 @@ Files analyzed: **56**
 
 #### Attach sequence 2
 
-- parent request: `15:54:46.854`
-- parent response: `15:54:46.939`
-- child id request: `15:54:47.608`
-- child id response: `15:54:47.655`
+- log parent request: `15:54:46.854`
+- log parent response: `15:54:46.939`
+- log child id request: `15:54:47.608`
+- log child id response: `15:54:47.655`
 - parent ipv6: `fe80:0:0:0:1cec:2697:c070:3356`
 - parent extaddr: `1eec2697c0703356`
 - parent rloc16: `0xc400`
@@ -1273,10 +1273,10 @@ Files analyzed: **56**
 
 #### Attach sequence 1
 
-- parent request: `16:42:02.554`
-- parent response: `16:42:02.947`
-- child id request: `16:42:03.264`
-- child id response: `16:42:03.354`
+- log parent request: `16:42:02.554`
+- log parent response: `16:42:02.947`
+- log child id request: `16:42:03.264`
+- log child id response: `16:42:03.354`
 - parent ipv6: `fe80:0:0:0:9889:b4ec:703c:ac1a`
 - parent extaddr: `9a89b4ec703cac1a`
 - parent rloc16: `0x8400`
@@ -1292,10 +1292,10 @@ Files analyzed: **56**
 
 #### Attach sequence 2
 
-- parent request: `16:46:03.264`
-- parent response: `16:46:03.448`
-- child id request: `16:46:03.975`
-- child id response: `16:46:04.063`
+- log parent request: `16:46:03.264`
+- log parent response: `16:46:03.448`
+- log child id request: `16:46:03.975`
+- log child id response: `16:46:04.063`
 - parent ipv6: `fe80:0:0:0:208f:10db:6773:1a6b`
 - parent extaddr: `228f10db67731a6b`
 - parent rloc16: `0x1800`
@@ -1320,10 +1320,10 @@ Files analyzed: **56**
 
 #### Attach sequence 1
 
-- parent request: `16:47:28.343`
-- parent response: `16:47:28.582`
-- child id request: `16:47:29.020`
-- child id response: `16:47:29.109`
+- log parent request: `16:47:28.343`
+- log parent response: `16:47:28.582`
+- log child id request: `16:47:29.020`
+- log child id response: `16:47:29.109`
 - parent ipv6: `fe80:0:0:0:64ee:d14:2673:e3f3`
 - parent extaddr: `66ee0d142673e3f3`
 - parent rloc16: `0xe400`
@@ -1339,10 +1339,10 @@ Files analyzed: **56**
 
 #### Attach sequence 2
 
-- parent request: `16:51:29.430`
-- parent response: `16:51:29.471`
-- child id request: `16:51:30.141`
-- child id response: `16:51:30.231`
+- log parent request: `16:51:29.430`
+- log parent response: `16:51:29.471`
+- log child id request: `16:51:30.141`
+- log child id response: `16:51:30.231`
 - parent ipv6: `fe80:0:0:0:a82c:25f5:18ba:18c6`
 - parent extaddr: `aa2c25f518ba18c6`
 - parent rloc16: `0x3c00`
@@ -1367,10 +1367,10 @@ Files analyzed: **56**
 
 #### Attach sequence 1
 
-- parent request: `16:52:54.746`
-- parent response: `16:52:54.787`
-- child id request: `16:52:55.454`
-- child id response: `16:52:55.544`
+- log parent request: `16:52:54.746`
+- log parent response: `16:52:54.787`
+- log child id request: `16:52:55.454`
+- log child id response: `16:52:55.544`
 - parent ipv6: `fe80:0:0:0:509c:cfb:5f5e:1c99`
 - parent extaddr: `529c0cfb5f5e1c99`
 - parent rloc16: `0xc400`
@@ -1386,10 +1386,10 @@ Files analyzed: **56**
 
 #### Attach sequence 2
 
-- parent request: `16:56:55.617`
-- parent response: `16:56:56.064`
-- child id request: `16:56:56.329`
-- child id response: `16:56:56.419`
+- log parent request: `16:56:55.617`
+- log parent response: `16:56:56.064`
+- log child id request: `16:56:56.329`
+- log child id response: `16:56:56.419`
 - parent ipv6: `fe80:0:0:0:a054:6762:9a24:7334`
 - parent extaddr: `a25467629a247334`
 - parent rloc16: `0xf800`
@@ -1414,10 +1414,10 @@ Files analyzed: **56**
 
 #### Attach sequence 1
 
-- parent request: `16:58:20.753`
-- parent response: `16:58:20.823`
-- child id request: `16:58:21.463`
-- child id response: `16:58:21.552`
+- log parent request: `16:58:20.753`
+- log parent response: `16:58:20.823`
+- log child id request: `16:58:21.463`
+- log child id response: `16:58:21.552`
 - parent ipv6: `fe80:0:0:0:b81e:c390:ad5a:f2a2`
 - parent extaddr: `ba1ec390ad5af2a2`
 - parent rloc16: `0x6800`
@@ -1433,10 +1433,10 @@ Files analyzed: **56**
 
 #### Attach sequence 2
 
-- parent request: `17:02:21.549`
-- parent response: `17:02:21.975`
-- child id request: `17:02:22.260`
-- child id response: `17:02:22.352`
+- log parent request: `17:02:21.549`
+- log parent response: `17:02:21.975`
+- log child id request: `17:02:22.260`
+- log child id response: `17:02:22.352`
 - parent ipv6: `fe80:0:0:0:b001:e899:d121:97`
 - parent extaddr: `b201e899d1210097`
 - parent rloc16: `0x5000`
@@ -1461,10 +1461,10 @@ Files analyzed: **56**
 
 #### Attach sequence 1
 
-- parent request: `17:03:46.223`
-- parent response: `17:03:46.629`
-- child id request: `17:03:47.044`
-- child id response: `17:03:47.091`
+- log parent request: `17:03:46.223`
+- log parent response: `17:03:46.629`
+- log child id request: `17:03:47.044`
+- log child id response: `17:03:47.091`
 - parent ipv6: `fe80:0:0:0:9059:1cd5:5c98:efdb`
 - parent extaddr: `92591cd55c98efdb`
 - parent rloc16: `0x2400`
@@ -1480,10 +1480,10 @@ Files analyzed: **56**
 
 #### Attach sequence 2
 
-- parent request: `17:07:46.802`
-- parent response: `17:07:46.896`
-- child id request: `17:07:47.556`
-- child id response: `17:07:47.602`
+- log parent request: `17:07:46.802`
+- log parent response: `17:07:46.896`
+- log child id request: `17:07:47.556`
+- log child id response: `17:07:47.602`
 - parent ipv6: `fe80:0:0:0:6cdb:b871:419d:75a0`
 - parent extaddr: `6edbb871419d75a0`
 - parent rloc16: `0xc800`
@@ -1508,10 +1508,10 @@ Files analyzed: **56**
 
 #### Attach sequence 1
 
-- parent request: `17:09:12.664`
-- parent response: `17:09:13.012`
-- child id request: `17:09:13.376`
-- child id response: `17:09:13.465`
+- log parent request: `17:09:12.664`
+- log parent response: `17:09:13.012`
+- log child id request: `17:09:13.376`
+- log child id response: `17:09:13.465`
 - parent ipv6: `fe80:0:0:0:7844:f219:b1f:6588`
 - parent extaddr: `7a44f2190b1f6588`
 - parent rloc16: `0x2000`
@@ -1527,10 +1527,10 @@ Files analyzed: **56**
 
 #### Attach sequence 2
 
-- parent request: `17:13:13.870`
-- parent response: `17:13:14.317`
-- child id request: `17:13:14.580`
-- child id response: `17:13:14.671`
+- log parent request: `17:13:13.870`
+- log parent response: `17:13:14.317`
+- log child id request: `17:13:14.580`
+- log child id response: `17:13:14.671`
 - parent ipv6: `fe80:0:0:0:8838:1fca:b61b:7f5a`
 - parent extaddr: `8a381fcab61b7f5a`
 - parent rloc16: `0x2400`
@@ -1555,10 +1555,10 @@ Files analyzed: **56**
 
 #### Attach sequence 1
 
-- parent request: `17:14:38.416`
-- parent response: `17:14:38.945`
-- child id request: `17:14:39.187`
-- child id response: `17:14:39.276`
+- log parent request: `17:14:38.416`
+- log parent response: `17:14:38.945`
+- log child id request: `17:14:39.187`
+- log child id response: `17:14:39.276`
 - parent ipv6: `fe80:0:0:0:f89c:7238:4e0e:11f4`
 - parent extaddr: `fa9c72384e0e11f4`
 - parent rloc16: `0x5400`
@@ -1574,10 +1574,10 @@ Files analyzed: **56**
 
 #### Attach sequence 2
 
-- parent request: `17:18:39.174`
-- parent response: `17:18:39.440`
-- child id request: `17:18:39.927`
-- child id response: `17:18:39.976`
+- log parent request: `17:18:39.174`
+- log parent response: `17:18:39.440`
+- log child id request: `17:18:39.927`
+- log child id response: `17:18:39.976`
 - parent ipv6: `fe80:0:0:0:a814:a148:361e:2560`
 - parent extaddr: `aa14a148361e2560`
 - parent rloc16: `0xf800`
@@ -1602,10 +1602,10 @@ Files analyzed: **56**
 
 #### Attach sequence 1
 
-- parent request: `17:20:04.831`
-- parent response: `17:20:05.352`
-- child id request: `17:20:05.602`
-- child id response: `17:20:05.691`
+- log parent request: `17:20:04.831`
+- log parent response: `17:20:05.352`
+- log child id request: `17:20:05.602`
+- log child id response: `17:20:05.691`
 - parent ipv6: `fe80:0:0:0:f08e:84c5:fba3:1dca`
 - parent extaddr: `f28e84c5fba31dca`
 - parent rloc16: `0xd800`
@@ -1621,10 +1621,10 @@ Files analyzed: **56**
 
 #### Attach sequence 2
 
-- parent request: `17:24:05.271`
-- parent response: `17:24:05.524`
-- child id request: `17:24:06.090`
-- child id response: `17:24:06.136`
+- log parent request: `17:24:05.271`
+- log parent response: `17:24:05.524`
+- log child id request: `17:24:06.090`
+- log child id response: `17:24:06.136`
 - parent ipv6: `fe80:0:0:0:8c81:8b4f:4e40:e66d`
 - parent extaddr: `8e818b4f4e40e66d`
 - parent rloc16: `0x7000`
@@ -1649,10 +1649,10 @@ Files analyzed: **56**
 
 #### Attach sequence 1
 
-- parent request: `17:25:31.231`
-- parent response: `17:25:31.613`
-- child id request: `17:25:31.939`
-- child id response: `17:25:32.027`
+- log parent request: `17:25:31.231`
+- log parent response: `17:25:31.613`
+- log child id request: `17:25:31.939`
+- log child id response: `17:25:32.027`
 - parent ipv6: `fe80:0:0:0:98de:4ee0:e9bc:68f`
 - parent extaddr: `9ade4ee0e9bc068f`
 - parent rloc16: `0xa000`
@@ -1668,10 +1668,10 @@ Files analyzed: **56**
 
 #### Attach sequence 2
 
-- parent request: `17:29:31.886`
-- parent response: `17:29:32.266`
-- child id request: `17:29:32.597`
-- child id response: `17:29:32.688`
+- log parent request: `17:29:31.886`
+- log parent response: `17:29:32.266`
+- log child id request: `17:29:32.597`
+- log child id response: `17:29:32.688`
 - parent ipv6: `fe80:0:0:0:9c5a:f9d2:1a36:b849`
 - parent extaddr: `9e5af9d21a36b849`
 - parent rloc16: `0x7000`
@@ -1696,10 +1696,10 @@ Files analyzed: **56**
 
 #### Attach sequence 1
 
-- parent request: `17:30:56.691`
-- parent response: `17:30:57.048`
-- child id request: `17:30:57.464`
-- child id response: `17:30:57.552`
+- log parent request: `17:30:56.691`
+- log parent response: `17:30:57.048`
+- log child id request: `17:30:57.464`
+- log child id response: `17:30:57.552`
 - parent ipv6: `fe80:0:0:0:dca2:6af3:80b:7617`
 - parent extaddr: `dea26af3080b7617`
 - parent rloc16: `0xac00`
@@ -1715,10 +1715,10 @@ Files analyzed: **56**
 
 #### Attach sequence 2
 
-- parent request: `17:34:57.892`
-- parent response: `17:34:58.015`
-- child id request: `17:34:58.603`
-- child id response: `17:34:58.693`
+- log parent request: `17:34:57.892`
+- log parent response: `17:34:58.015`
+- log child id request: `17:34:58.603`
+- log child id response: `17:34:58.693`
 - parent ipv6: `fe80:0:0:0:604a:f4c3:3f0a:2e54`
 - parent extaddr: `624af4c33f0a2e54`
 - parent rloc16: `0x0800`
@@ -1743,10 +1743,10 @@ Files analyzed: **56**
 
 #### Attach sequence 1
 
-- parent request: `17:36:22.834`
-- parent response: `17:36:23.187`
-- child id request: `17:36:23.653`
-- child id response: `17:36:23.699`
+- log parent request: `17:36:22.834`
+- log parent response: `17:36:23.187`
+- log child id request: `17:36:23.653`
+- log child id response: `17:36:23.699`
 - parent ipv6: `fe80:0:0:0:c79:d4ce:9ea7:8fad`
 - parent extaddr: `0e79d4ce9ea78fad`
 - parent rloc16: `0x5c00`
@@ -1762,10 +1762,10 @@ Files analyzed: **56**
 
 #### Attach sequence 2
 
-- parent request: `17:40:23.902`
-- parent response: `17:40:24.391`
-- child id request: `17:40:24.657`
-- child id response: `17:40:24.704`
+- log parent request: `17:40:23.902`
+- log parent response: `17:40:24.391`
+- log child id request: `17:40:24.657`
+- log child id response: `17:40:24.704`
 - parent ipv6: `fe80:0:0:0:e8cf:2cfc:6384:9ba3`
 - parent extaddr: `eacf2cfc63849ba3`
 - parent rloc16: `0x3c00`
@@ -1790,10 +1790,10 @@ Files analyzed: **56**
 
 #### Attach sequence 1
 
-- parent request: `17:41:49.678`
-- parent response: `17:41:49.942`
-- child id request: `17:41:50.387`
-- child id response: `17:41:50.476`
+- log parent request: `17:41:49.678`
+- log parent response: `17:41:49.942`
+- log child id request: `17:41:50.387`
+- log child id response: `17:41:50.476`
 - parent ipv6: `fe80:0:0:0:487:62a9:ca92:7a4b`
 - parent extaddr: `068762a9ca927a4b`
 - parent rloc16: `0xec00`
@@ -1809,10 +1809,10 @@ Files analyzed: **56**
 
 #### Attach sequence 2
 
-- parent request: `17:45:50.321`
-- parent response: `17:45:50.518`
-- child id request: `17:45:51.075`
-- child id response: `17:45:51.122`
+- log parent request: `17:45:50.321`
+- log parent response: `17:45:50.518`
+- log child id request: `17:45:51.075`
+- log child id response: `17:45:51.122`
 - parent ipv6: `fe80:0:0:0:804:b1c7:eb14:3eff`
 - parent extaddr: `0a04b1c7eb143eff`
 - parent rloc16: `0x6400`
@@ -1837,10 +1837,10 @@ Files analyzed: **56**
 
 #### Attach sequence 1
 
-- parent request: `17:47:15.060`
-- parent response: `17:47:15.540`
-- child id request: `17:47:15.765`
-- child id response: `17:47:15.856`
+- log parent request: `17:47:15.060`
+- log parent response: `17:47:15.540`
+- log child id request: `17:47:15.765`
+- log child id response: `17:47:15.856`
 - parent ipv6: `fe80:0:0:0:7c1c:5eb:c482:4932`
 - parent extaddr: `7e1c05ebc4824932`
 - parent rloc16: `0x3400`
@@ -1856,10 +1856,10 @@ Files analyzed: **56**
 
 #### Attach sequence 2
 
-- parent request: `17:51:15.858`
-- parent response: `17:51:16.353`
-- child id request: `17:51:16.568`
-- child id response: `17:51:16.658`
+- log parent request: `17:51:15.858`
+- log parent response: `17:51:16.353`
+- log child id request: `17:51:16.568`
+- log child id response: `17:51:16.658`
 - parent ipv6: `fe80:0:0:0:18a2:6fa6:59ff:809`
 - parent extaddr: `1aa26fa659ff0809`
 - parent rloc16: `0xcc00`
@@ -1884,10 +1884,10 @@ Files analyzed: **56**
 
 #### Attach sequence 1
 
-- parent request: `17:52:41.115`
-- parent response: `17:52:41.364`
-- child id request: `17:52:41.828`
-- child id response: `17:52:41.917`
+- log parent request: `17:52:41.115`
+- log parent response: `17:52:41.364`
+- log child id request: `17:52:41.828`
+- log child id response: `17:52:41.917`
 - parent ipv6: `fe80:0:0:0:1017:4462:e650:2ea4`
 - parent extaddr: `12174462e6502ea4`
 - parent rloc16: `0xf800`
@@ -1903,10 +1903,10 @@ Files analyzed: **56**
 
 #### Attach sequence 2
 
-- parent request: `17:56:41.867`
-- parent response: `17:56:42.109`
-- child id request: `17:56:42.621`
-- child id response: `17:56:42.667`
+- log parent request: `17:56:41.867`
+- log parent response: `17:56:42.109`
+- log child id request: `17:56:42.621`
+- log child id response: `17:56:42.667`
 - parent ipv6: `fe80:0:0:0:acf9:b312:7d2f:dc13`
 - parent extaddr: `aef9b3127d2fdc13`
 - parent rloc16: `0x8800`
@@ -1931,10 +1931,10 @@ Files analyzed: **56**
 
 #### Attach sequence 1
 
-- parent request: `17:58:06.888`
-- parent response: `17:58:07.361`
-- child id request: `17:58:07.659`
-- child id response: `17:58:07.749`
+- log parent request: `17:58:06.888`
+- log parent response: `17:58:07.361`
+- log child id request: `17:58:07.659`
+- log child id response: `17:58:07.749`
 - parent ipv6: `fe80:0:0:0:5819:6f3e:a369:401b`
 - parent extaddr: `5a196f3ea369401b`
 - parent rloc16: `0x5400`
@@ -1950,10 +1950,10 @@ Files analyzed: **56**
 
 #### Attach sequence 2
 
-- parent request: `18:02:07.428`
-- parent response: `18:02:07.886`
-- child id request: `18:02:08.181`
-- child id response: `18:02:08.226`
+- log parent request: `18:02:07.428`
+- log parent response: `18:02:07.886`
+- log child id request: `18:02:08.181`
+- log child id response: `18:02:08.226`
 - parent ipv6: `fe80:0:0:0:dcae:ba8b:970:591a`
 - parent extaddr: `deaeba8b0970591a`
 - parent rloc16: `0x8400`
@@ -1978,10 +1978,10 @@ Files analyzed: **56**
 
 #### Attach sequence 1
 
-- parent request: `18:16:57.398`
-- parent response: `18:16:57.883`
-- child id request: `18:16:58.072`
-- child id response: `18:16:58.161`
+- log parent request: `18:16:57.398`
+- log parent response: `18:16:57.883`
+- log child id request: `18:16:58.072`
+- log child id response: `18:16:58.161`
 - parent ipv6: `fe80:0:0:0:d4b8:e6f9:7793:28df`
 - parent extaddr: `d6b8e6f9779328df`
 - parent rloc16: `0x5000`
@@ -1997,10 +1997,10 @@ Files analyzed: **56**
 
 #### Attach sequence 2
 
-- parent request: `18:20:58.530`
-- parent response: `18:20:59.034`
-- child id request: `18:20:59.241`
-- child id response: `18:20:59.331`
+- log parent request: `18:20:58.530`
+- log parent response: `18:20:59.034`
+- log child id request: `18:20:59.241`
+- log child id response: `18:20:59.331`
 - parent ipv6: `fe80:0:0:0:648c:4188:fc6a:817f`
 - parent extaddr: `668c4188fc6a817f`
 - parent rloc16: `0xc000`
@@ -2025,10 +2025,10 @@ Files analyzed: **56**
 
 #### Attach sequence 1
 
-- parent request: `18:22:22.901`
-- parent response: `18:22:23.008`
-- child id request: `18:22:23.612`
-- child id response: `18:22:23.701`
+- log parent request: `18:22:22.901`
+- log parent response: `18:22:23.008`
+- log child id request: `18:22:23.612`
+- log child id response: `18:22:23.701`
 - parent ipv6: `fe80:0:0:0:bc82:eb49:764c:260`
 - parent extaddr: `be82eb49764c0260`
 - parent rloc16: `0x0800`
@@ -2044,10 +2044,10 @@ Files analyzed: **56**
 
 #### Attach sequence 2
 
-- parent request: `18:26:23.535`
-- parent response: `18:26:23.956`
-- child id request: `18:26:24.288`
-- child id response: `18:26:24.335`
+- log parent request: `18:26:23.535`
+- log parent response: `18:26:23.956`
+- log child id request: `18:26:24.288`
+- log child id response: `18:26:24.335`
 - parent ipv6: `fe80:0:0:0:c47d:e7e:77ee:e771`
 - parent extaddr: `c67d0e7e77eee771`
 - parent rloc16: `0x2000`
@@ -2072,10 +2072,10 @@ Files analyzed: **56**
 
 #### Attach sequence 1
 
-- parent request: `18:27:48.707`
-- parent response: `18:27:49.099`
-- child id request: `18:27:49.527`
-- child id response: `18:27:49.571`
+- log parent request: `18:27:48.707`
+- log parent response: `18:27:49.099`
+- log child id request: `18:27:49.527`
+- log child id response: `18:27:49.571`
 - parent ipv6: `fe80:0:0:0:4874:a6f4:bdc8:2a9d`
 - parent extaddr: `4a74a6f4bdc82a9d`
 - parent rloc16: `0x9000`
@@ -2091,10 +2091,10 @@ Files analyzed: **56**
 
 #### Attach sequence 2
 
-- parent request: `18:31:49.771`
-- parent response: `18:31:49.884`
-- child id request: `18:31:50.526`
-- child id response: `18:31:50.571`
+- log parent request: `18:31:49.771`
+- log parent response: `18:31:49.884`
+- log child id request: `18:31:50.526`
+- log child id response: `18:31:50.571`
 - parent ipv6: `fe80:0:0:0:3cc3:4405:7420:7600`
 - parent extaddr: `3ec3440574207600`
 - parent rloc16: `0x4000`
@@ -2119,10 +2119,10 @@ Files analyzed: **56**
 
 #### Attach sequence 1
 
-- parent request: `18:33:14.858`
-- parent response: `18:33:15.216`
-- child id request: `18:33:15.568`
-- child id response: `18:33:15.659`
+- log parent request: `18:33:14.858`
+- log parent response: `18:33:15.216`
+- log child id request: `18:33:15.568`
+- log child id response: `18:33:15.659`
 - parent ipv6: `fe80:0:0:0:54c4:4f60:f9b4:f2e2`
 - parent extaddr: `56c44f60f9b4f2e2`
 - parent rloc16: `0x9400`
@@ -2138,10 +2138,10 @@ Files analyzed: **56**
 
 #### Attach sequence 2
 
-- parent request: `18:37:15.302`
-- parent response: `18:37:15.799`
-- child id request: `18:37:16.011`
-- child id response: `18:37:16.101`
+- log parent request: `18:37:15.302`
+- log parent response: `18:37:15.799`
+- log child id request: `18:37:16.011`
+- log child id response: `18:37:16.101`
 - parent ipv6: `fe80:0:0:0:9cbf:2e15:40d2:7836`
 - parent extaddr: `9ebf2e1540d27836`
 - parent rloc16: `0xe400`
@@ -2166,10 +2166,10 @@ Files analyzed: **56**
 
 #### Attach sequence 1
 
-- parent request: `18:38:41.242`
-- parent response: `18:38:41.419`
-- child id request: `18:38:42.015`
-- child id response: `18:38:42.105`
+- log parent request: `18:38:41.242`
+- log parent response: `18:38:41.419`
+- log child id request: `18:38:42.015`
+- log child id response: `18:38:42.105`
 - parent ipv6: `fe80:0:0:0:a4b1:9ed8:c699:74b9`
 - parent extaddr: `a6b19ed8c69974b9`
 - parent rloc16: `0x6c00`
@@ -2185,10 +2185,10 @@ Files analyzed: **56**
 
 #### Attach sequence 2
 
-- parent request: `18:42:42.299`
-- parent response: `18:42:42.536`
-- child id request: `18:42:43.055`
-- child id response: `18:42:43.102`
+- log parent request: `18:42:42.299`
+- log parent response: `18:42:42.536`
+- log child id request: `18:42:43.055`
+- log child id response: `18:42:43.102`
 - parent ipv6: `fe80:0:0:0:34f8:f6f1:ffb7:a69e`
 - parent extaddr: `36f8f6f1ffb7a69e`
 - parent rloc16: `0xc800`
@@ -2213,10 +2213,10 @@ Files analyzed: **56**
 
 #### Attach sequence 1
 
-- parent request: `18:44:07.377`
-- parent response: `18:44:07.630`
-- child id request: `18:44:08.086`
-- child id response: `18:44:08.173`
+- log parent request: `18:44:07.377`
+- log parent response: `18:44:07.630`
+- log child id request: `18:44:08.086`
+- log child id response: `18:44:08.173`
 - parent ipv6: `fe80:0:0:0:c8ef:3dc5:7b99:5dc7`
 - parent extaddr: `caef3dc57b995dc7`
 - parent rloc16: `0xb400`
@@ -2232,10 +2232,10 @@ Files analyzed: **56**
 
 #### Attach sequence 2
 
-- parent request: `18:48:08.026`
-- parent response: `18:48:08.241`
-- child id request: `18:48:08.780`
-- child id response: `18:48:08.827`
+- log parent request: `18:48:08.026`
+- log parent response: `18:48:08.241`
+- log child id request: `18:48:08.780`
+- log child id response: `18:48:08.827`
 - parent ipv6: `fe80:0:0:0:307a:988e:d11d:1736`
 - parent extaddr: `327a988ed11d1736`
 - parent rloc16: `0x8c00`
@@ -2260,10 +2260,10 @@ Files analyzed: **56**
 
 #### Attach sequence 1
 
-- parent request: `18:49:33.427`
-- parent response: `18:49:33.571`
-- child id request: `18:49:34.138`
-- child id response: `18:49:34.229`
+- log parent request: `18:49:33.427`
+- log parent response: `18:49:33.571`
+- log child id request: `18:49:34.138`
+- log child id response: `18:49:34.229`
 - parent ipv6: `fe80:0:0:0:6038:a085:9c7c:dc15`
 - parent extaddr: `6238a0859c7cdc15`
 - parent rloc16: `0x8000`
@@ -2279,10 +2279,10 @@ Files analyzed: **56**
 
 #### Attach sequence 2
 
-- parent request: `18:53:34.539`
-- parent response: `18:53:34.684`
-- child id request: `18:53:35.252`
-- child id response: `18:53:35.342`
+- log parent request: `18:53:34.539`
+- log parent response: `18:53:34.684`
+- log child id request: `18:53:35.252`
+- log child id response: `18:53:35.342`
 - parent ipv6: `fe80:0:0:0:705b:e06:6b7f:1c58`
 - parent extaddr: `725b0e066b7f1c58`
 - parent rloc16: `0x5400`
@@ -2307,10 +2307,10 @@ Files analyzed: **56**
 
 #### Attach sequence 1
 
-- parent request: `18:54:58.860`
-- parent response: `18:54:59.114`
-- child id request: `18:54:59.679`
-- child id response: `18:54:59.724`
+- log parent request: `18:54:58.860`
+- log parent response: `18:54:59.114`
+- log child id request: `18:54:59.679`
+- log child id response: `18:54:59.724`
 - parent ipv6: `fe80:0:0:0:340a:2aff:5fa5:66c3`
 - parent extaddr: `360a2aff5fa566c3`
 - parent rloc16: `0xe400`
@@ -2326,10 +2326,10 @@ Files analyzed: **56**
 
 #### Attach sequence 2
 
-- parent request: `18:58:59.782`
-- parent response: `18:59:00.183`
-- child id request: `18:59:00.536`
-- child id response: `18:59:00.584`
+- log parent request: `18:58:59.782`
+- log parent response: `18:59:00.183`
+- log child id request: `18:59:00.536`
+- log child id response: `18:59:00.584`
 - parent ipv6: `fe80:0:0:0:8cca:a291:6e28:34f1`
 - parent extaddr: `8ecaa2916e2834f1`
 - parent rloc16: `0xec00`
@@ -2354,10 +2354,10 @@ Files analyzed: **56**
 
 #### Attach sequence 1
 
-- parent request: `19:00:24.830`
-- parent response: `19:00:25.349`
-- child id request: `19:00:25.601`
-- child id response: `19:00:25.691`
+- log parent request: `19:00:24.830`
+- log parent response: `19:00:25.349`
+- log child id request: `19:00:25.601`
+- log child id response: `19:00:25.691`
 - parent ipv6: `fe80:0:0:0:544e:dfb5:edfb:b91c`
 - parent extaddr: `564edfb5edfbb91c`
 - parent rloc16: `0x3400`
@@ -2373,10 +2373,10 @@ Files analyzed: **56**
 
 #### Attach sequence 2
 
-- parent request: `19:04:26.002`
-- parent response: `19:04:26.069`
-- child id request: `19:04:26.713`
-- child id response: `19:04:26.804`
+- log parent request: `19:04:26.002`
+- log parent response: `19:04:26.069`
+- log child id request: `19:04:26.713`
+- log child id response: `19:04:26.804`
 - parent ipv6: `fe80:0:0:0:988b:d866:5c55:a047`
 - parent extaddr: `9a8bd8665c55a047`
 - parent rloc16: `0x3c00`
@@ -2401,10 +2401,10 @@ Files analyzed: **56**
 
 #### Attach sequence 1
 
-- parent request: `19:05:51.233`
-- parent response: `19:05:51.611`
-- child id request: `19:05:52.006`
-- child id response: `19:05:52.094`
+- log parent request: `19:05:51.233`
+- log parent response: `19:05:51.611`
+- log child id request: `19:05:52.006`
+- log child id response: `19:05:52.094`
 - parent ipv6: `fe80:0:0:0:b826:cef0:9f2d:31ea`
 - parent extaddr: `ba26cef09f2d31ea`
 - parent rloc16: `0xd000`
@@ -2420,10 +2420,10 @@ Files analyzed: **56**
 
 #### Attach sequence 2
 
-- parent request: `19:09:52.392`
-- parent response: `19:09:52.634`
-- child id request: `19:09:53.146`
-- child id response: `19:09:53.194`
+- log parent request: `19:09:52.392`
+- log parent response: `19:09:52.634`
+- log child id request: `19:09:53.146`
+- log child id response: `19:09:53.194`
 - parent ipv6: `fe80:0:0:0:20ef:d258:792a:15c6`
 - parent extaddr: `22efd258792a15c6`
 - parent rloc16: `0x6c00`
@@ -2448,10 +2448,10 @@ Files analyzed: **56**
 
 #### Attach sequence 1
 
-- parent request: `19:11:17.434`
-- parent response: `19:11:17.966`
-- child id request: `19:11:18.145`
-- child id response: `19:11:18.236`
+- log parent request: `19:11:17.434`
+- log parent response: `19:11:17.966`
+- log child id request: `19:11:18.145`
+- log child id response: `19:11:18.236`
 - parent ipv6: `fe80:0:0:0:9c56:efd:3d1d:5843`
 - parent extaddr: `9e560efd3d1d5843`
 - parent rloc16: `0x2c00`
@@ -2467,10 +2467,10 @@ Files analyzed: **56**
 
 #### Attach sequence 2
 
-- parent request: `19:15:18.336`
-- parent response: `19:15:18.425`
-- child id request: `19:15:19.089`
-- child id response: `19:15:19.135`
+- log parent request: `19:15:18.336`
+- log parent response: `19:15:18.425`
+- log child id request: `19:15:19.089`
+- log child id response: `19:15:19.135`
 - parent ipv6: `fe80:0:0:0:d4a5:d0da:25a3:8b06`
 - parent extaddr: `d6a5d0da25a38b06`
 - parent rloc16: `0xb400`
@@ -2495,10 +2495,10 @@ Files analyzed: **56**
 
 #### Attach sequence 1
 
-- parent request: `19:16:43.404`
-- parent response: `19:16:43.811`
-- child id request: `19:16:44.114`
-- child id response: `19:16:44.203`
+- log parent request: `19:16:43.404`
+- log parent response: `19:16:43.811`
+- log child id request: `19:16:44.114`
+- log child id response: `19:16:44.203`
 - parent ipv6: `fe80:0:0:0:501e:57ae:1dc7:a59b`
 - parent extaddr: `521e57ae1dc7a59b`
 - parent rloc16: `0x6c00`
@@ -2514,10 +2514,10 @@ Files analyzed: **56**
 
 #### Attach sequence 2
 
-- parent request: `19:20:43.863`
-- parent response: `19:20:43.943`
-- child id request: `19:20:44.574`
-- child id response: `19:20:44.668`
+- log parent request: `19:20:43.863`
+- log parent response: `19:20:43.943`
+- log child id request: `19:20:44.574`
+- log child id response: `19:20:44.668`
 - parent ipv6: `fe80:0:0:0:2424:57ad:92a7:78e3`
 - parent extaddr: `262457ad92a778e3`
 - parent rloc16: `0x5400`
@@ -2542,10 +2542,10 @@ Files analyzed: **56**
 
 #### Attach sequence 1
 
-- parent request: `19:22:09.452`
-- parent response: `19:22:09.642`
-- child id request: `19:22:10.160`
-- child id response: `19:22:10.250`
+- log parent request: `19:22:09.452`
+- log parent response: `19:22:09.642`
+- log child id request: `19:22:10.160`
+- log child id response: `19:22:10.250`
 - parent ipv6: `fe80:0:0:0:ca4:8bd4:772:3233`
 - parent extaddr: `0ea48bd407723233`
 - parent rloc16: `0x4000`
@@ -2561,10 +2561,10 @@ Files analyzed: **56**
 
 #### Attach sequence 2
 
-- parent request: `19:26:10.246`
-- parent response: `19:26:10.485`
-- child id request: `19:26:11.000`
-- child id response: `19:26:11.046`
+- log parent request: `19:26:10.246`
+- log parent response: `19:26:10.485`
+- log child id request: `19:26:11.000`
+- log child id response: `19:26:11.046`
 - parent ipv6: `fe80:0:0:0:401e:a1ed:7b76:fe0f`
 - parent extaddr: `421ea1ed7b76fe0f`
 - parent rloc16: `0xd000`
@@ -2589,10 +2589,10 @@ Files analyzed: **56**
 
 #### Attach sequence 1
 
-- parent request: `19:27:34.999`
-- parent response: `19:27:35.322`
-- child id request: `19:27:35.772`
-- child id response: `19:27:35.864`
+- log parent request: `19:27:34.999`
+- log parent response: `19:27:35.322`
+- log child id request: `19:27:35.772`
+- log child id response: `19:27:35.864`
 - parent ipv6: `fe80:0:0:0:d826:2d78:7714:6ba1`
 - parent extaddr: `da262d7877146ba1`
 - parent rloc16: `0x3800`
@@ -2608,10 +2608,10 @@ Files analyzed: **56**
 
 #### Attach sequence 2
 
-- parent request: `19:31:35.728`
-- parent response: `19:31:35.834`
-- child id request: `19:31:36.439`
-- child id response: `19:31:36.528`
+- log parent request: `19:31:35.728`
+- log parent response: `19:31:35.834`
+- log child id request: `19:31:36.439`
+- log child id response: `19:31:36.528`
 - parent ipv6: `fe80:0:0:0:1819:7094:2fc8:8d1`
 - parent extaddr: `1a1970942fc808d1`
 - parent rloc16: `0x4c00`

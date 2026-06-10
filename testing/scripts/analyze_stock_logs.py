@@ -10,6 +10,12 @@ Scans all child `*.log` files in the testing logs directory tree and reports:
 - The chosen parent IPv6, ext address, and RLOC16
 - Failed MAC frame TX attempt counts
 
+Timing policy:
+- Timing values are derived from pcap only.
+- Log timestamps are retained only as reference metadata for matched events.
+- If the pcap does not contain a complete matched attach sequence, timing values
+  are reported as unavailable rather than falling back to log timestamps.
+
 Results are grouped by the log family name ending in `_child`, for example:
 - `stock_child_20260529-134804.log` -> `stock_child`
 - `experiment_a_child_20260601-101500.log` -> `experiment_a_child`
@@ -73,6 +79,8 @@ class AttachSequence:
     pcap_event_times: dict[str, str | None] = field(default_factory=dict)
 
     def to_summary(self) -> dict[str, Any]:
+        # Timing values must come from pcap only. Log timestamps are preserved
+        # separately as reference metadata and must never be used for timing.
         pcap_start = parse_formatted_ms(self.pcap_event_times.get("send_parent_request"))
         pcap_parent_resp = parse_formatted_ms(self.pcap_event_times.get("receive_parent_response"))
         pcap_child_req = parse_formatted_ms(self.pcap_event_times.get("send_child_id_request"))
@@ -497,7 +505,9 @@ def default_logs_dir(script_path: Path) -> Path:
 
 
 def parse_args(argv: list[str]) -> argparse.Namespace:
-    parser = argparse.ArgumentParser(description="Analyze stock child logs for attach timing and failed TX attempts.")
+    parser = argparse.ArgumentParser(
+        description="Analyze stock child logs for attach timing and failed TX attempts. Timing values are pcap-only."
+    )
     parser.add_argument("--logs-dir", type=Path, default=default_logs_dir(Path(__file__)), help="Directory containing *.log files.")
     parser.add_argument(
         "--run-dir",
@@ -639,10 +649,10 @@ def render_text_report(results: list[dict[str, Any]]) -> str:
             else:
                 for index, seq in enumerate(sequences, start=1):
                     out.append(f"    Attach sequence {index}:")
-                    out.append(f"      parent request: {seq['send_parent_request']}")
-                    out.append(f"      parent response: {seq['receive_parent_response']}")
-                    out.append(f"      child id request: {seq['send_child_id_request']}")
-                    out.append(f"      child id response: {seq['receive_child_id_response']}")
+                    out.append(f"      log parent request: {seq['send_parent_request']}")
+                    out.append(f"      log parent response: {seq['receive_parent_response']}")
+                    out.append(f"      log child id request: {seq['send_child_id_request']}")
+                    out.append(f"      log child id response: {seq['receive_child_id_response']}")
                     out.append(f"      parent ipv6: {seq['parent_ipv6']}")
                     out.append(f"      parent extaddr: {seq['parent_extaddr']}")
                     out.append(f"      parent rloc16: {seq['parent_rloc16']}")
@@ -711,10 +721,10 @@ def render_markdown_report(results: list[dict[str, Any]]) -> str:
                 for index, seq in enumerate(sequences, start=1):
                     out.append(f"#### Attach sequence {index}")
                     out.append("")
-                    out.append(f"- parent request: `{seq['send_parent_request']}`")
-                    out.append(f"- parent response: `{seq['receive_parent_response']}`")
-                    out.append(f"- child id request: `{seq['send_child_id_request']}`")
-                    out.append(f"- child id response: `{seq['receive_child_id_response']}`")
+                    out.append(f"- log parent request: `{seq['send_parent_request']}`")
+                    out.append(f"- log parent response: `{seq['receive_parent_response']}`")
+                    out.append(f"- log child id request: `{seq['send_child_id_request']}`")
+                    out.append(f"- log child id response: `{seq['receive_child_id_response']}`")
                     out.append(f"- parent ipv6: `{seq['parent_ipv6']}`")
                     out.append(f"- parent extaddr: `{seq['parent_extaddr']}`")
                     out.append(f"- parent rloc16: `{seq['parent_rloc16']}`")
