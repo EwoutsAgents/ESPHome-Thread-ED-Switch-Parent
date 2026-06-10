@@ -682,6 +682,8 @@ def render_markdown_report(results: list[dict[str, Any]]) -> str:
         summary = group_summary(grouped[group_name])
         out.append(f"## {group_name}")
         out.append("")
+        out.append(f"Files analyzed: **{len(grouped[group_name])}**")
+        out.append("")
         out.append("### Summary")
         out.append("")
         out.append("| Attach | Metric | M (SD), ms | n |")

@@ -2,6 +2,8 @@
 
 ## stock_child
 
+Files analyzed: **56**
+
 ### Summary
 
 | Attach | Metric | M (SD), ms | n |
