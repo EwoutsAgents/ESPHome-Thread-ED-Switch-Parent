@@ -169,7 +169,13 @@ To write a Markdown report to disk:
 ```bash
 python3 scripts/analyze_stock_logs.py \
   --run-dir logs/mcast-no-early-attach/<timestamp> \
-  --write-markdown logs/mcast-no-early-attach/<timestamp>/analysis-report.md
+  --write-markdown
+```
+
+With a single `--run-dir`, `--write-markdown` defaults to:
+
+```text
+logs/<variant>/<timestamp>-<variant>-analysis-report.md
 ```
 
 Timing policy for all variants:

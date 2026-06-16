@@ -519,7 +519,13 @@ def parse_args(argv: list[str]) -> argparse.Namespace:
     )
     parser.add_argument("--json", action="store_true", help="Emit machine-readable JSON.")
     parser.add_argument("--markdown", action="store_true", help="Emit Markdown instead of plain text.")
-    parser.add_argument("--write-markdown", type=Path, help="Write the Markdown report to this path.")
+    parser.add_argument(
+        "--write-markdown",
+        nargs="?",
+        const=Path("__AUTO__"),
+        type=Path,
+        help="Write the Markdown report to this path. If no path is supplied with --run-dir, use the variant-root stock-style report filename.",
+    )
     return parser.parse_args(argv)
 
 
@@ -770,6 +776,13 @@ def collect_log_paths(logs_dir: Path, run_dirs: list[Path]) -> list[Path]:
     return sorted(Path(path) for path in glob.glob(str(logs_dir / "**" / "*_child_*.log"), recursive=True))
 
 
+def default_markdown_path_for_run_dir(run_dir: Path) -> Path:
+    run_dir = run_dir.resolve()
+    variant_dir = run_dir.parent
+    variant_name = variant_dir.name
+    return variant_dir / f"{run_dir.name}-{variant_name}-analysis-report.md"
+
+
 def main(argv: list[str]) -> int:
     args = parse_args(argv)
     logs_dir = args.logs_dir.resolve()
@@ -784,8 +797,13 @@ def main(argv: list[str]) -> int:
         output = render_text_report(results)
 
     if args.write_markdown:
-        args.write_markdown.parent.mkdir(parents=True, exist_ok=True)
-        args.write_markdown.write_text(output, encoding="utf-8")
+        write_path = args.write_markdown
+        if write_path == Path("__AUTO__"):
+            if len(args.run_dirs) != 1:
+                raise SystemExit("--write-markdown without a path requires exactly one --run-dir.")
+            write_path = default_markdown_path_for_run_dir(args.run_dirs[0])
+        write_path.parent.mkdir(parents=True, exist_ok=True)
+        write_path.write_text(output, encoding="utf-8")
     else:
         print(output, end="")
     return 0
