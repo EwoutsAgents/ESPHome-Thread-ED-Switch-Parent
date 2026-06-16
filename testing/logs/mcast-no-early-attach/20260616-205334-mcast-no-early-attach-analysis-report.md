@@ -12,10 +12,10 @@ Files analyzed: **5**
 | 1 | Response → Child ID Request | 397.40 (128.38) | 5 |
 | 1 | Child ID Request → Response | 63.80 (0.84) | 5 |
 | 1 | Full Attach | 806.00 (15.68) | 5 |
-| 2 | Request → Response | n/a | 0 |
-| 2 | Response → Child ID Request | n/a | 0 |
-| 2 | Child ID Request → Response | n/a | 0 |
-| 2 | Full Attach | n/a | 0 |
+| 2 | Request → Response | 102.00 (11.31) | 2 |
+| 2 | Response → Child ID Request | 3228.50 (443.36) | 2 |
+| 2 | Child ID Request → Response | 62.00 (1.41) | 2 |
+| 2 | Full Attach | 3392.50 (456.08) | 2 |
 
 | Metric | M (SD) | n |
 | --- | ---: | ---: |
@@ -71,17 +71,21 @@ Files analyzed: **5**
 #### Attach sequence 2
 
 - log parent request: `20:20:57.458`
-- log parent response: `20:20:57.887`
+- log parent response: `20:20:57.551`
 - log child id request: `20:21:00.426`
 - log child id response: `20:21:00.521`
-- parent ipv6: `fe80:0:0:0:88c9:465a:6b6b:a9da`
-- parent extaddr: `8ac9465a6b6ba9da`
-- parent rloc16: `0xc800`
-- timing source: **unavailable**
-- Request → Response: **None ms**
-- Response → Child ID Request: **None ms**
-- Child ID Request → Response: **None ms**
-- Full Attach: **None ms**
+- parent ipv6: `fe80:0:0:0:308f:a8df:3c9c:278b`
+- parent extaddr: `328fa8df3c9c278b`
+- parent rloc16: `0x0000`
+- timing source: **pcap**
+- Request → Response: **94 ms**
+- Response → Child ID Request: **2915 ms**
+- Child ID Request → Response: **61 ms**
+- Full Attach: **3070 ms**
+- pcap parent request: `20:20:57.439` (frame 46)
+- pcap parent response: `20:20:57.533` (frame 47)
+- pcap child id request: `20:21:00.448` (frame 51)
+- pcap child id response: `20:21:00.509` (frame 53)
 
 #### Failed TX summary
 
@@ -138,12 +142,12 @@ Files analyzed: **5**
 #### Attach sequence 2
 
 - log parent request: `20:32:48.271`
-- log parent response: `20:32:48.715`
+- log parent response: `20:32:48.592`
 - log child id request: `None`
 - log child id response: `None`
-- parent ipv6: `fe80:0:0:0:18d9:bb8c:41cc:b7c0`
-- parent extaddr: `1ad9bb8c41ccb7c0`
-- parent rloc16: `0x7c00`
+- parent ipv6: `fe80:0:0:0:9cba:6e35:baf:8b77`
+- parent extaddr: `9eba6e350baf8b77`
+- parent rloc16: `0x8c00`
 - timing source: **unavailable**
 - Request → Response: **None ms**
 - Response → Child ID Request: **None ms**
@@ -179,17 +183,21 @@ Files analyzed: **5**
 #### Attach sequence 2
 
 - log parent request: `20:38:39.059`
-- log parent response: `20:38:39.485`
+- log parent response: `20:38:39.167`
 - log child id request: `20:38:42.664`
 - log child id response: `20:38:42.763`
-- parent ipv6: `fe80:0:0:0:60d5:a9d2:177:c930`
-- parent extaddr: `62d5a9d20177c930`
-- parent rloc16: `0xdc00`
-- timing source: **unavailable**
-- Request → Response: **None ms**
-- Response → Child ID Request: **None ms**
-- Child ID Request → Response: **None ms**
-- Full Attach: **None ms**
+- parent ipv6: `fe80:0:0:0:f4af:1995:5423:f0d7`
+- parent extaddr: `f6af19955423f0d7`
+- parent rloc16: `0x0400`
+- timing source: **pcap**
+- Request → Response: **110 ms**
+- Response → Child ID Request: **3542 ms**
+- Child ID Request → Response: **63 ms**
+- Full Attach: **3715 ms**
+- pcap parent request: `20:38:39.036` (frame 50)
+- pcap parent response: `20:38:39.146` (frame 51)
+- pcap child id request: `20:38:42.688` (frame 56)
+- pcap child id response: `20:38:42.751` (frame 58)
 
 #### Failed TX summary
 
