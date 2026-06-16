@@ -306,6 +306,18 @@ void ThreadPreferredParentComponent::clear_target() {
 void ThreadPreferredParentComponent::loop() {
   const uint32_t now = millis();
 
+  if (this->branch_replay_active_ && static_cast<int32_t>(now - this->branch_replay_next_ms_) >= 0) {
+    ESP_LOGI(TAG, "%s", this->branch_replay_message_.c_str());
+    if (this->branch_replay_remaining_ > 0) {
+      this->branch_replay_remaining_--;
+    }
+    if (this->branch_replay_remaining_ == 0) {
+      this->branch_replay_active_ = false;
+    } else {
+      this->branch_replay_next_ms_ = now + this->branch_replay_interval_ms_;
+    }
+  }
+
   // Most iterations are intentionally cheap. The component becomes active only
   // while a requested parent switch is in progress.
   if (!this->active_) {
@@ -812,6 +824,9 @@ otError ThreadPreferredParentComponent::start_parent_discovery_(otInstance *inst
 
     if (thread_preferred_parent_ot_start_parent_discovery_unicast != nullptr &&
         !this->extaddr_matches_(selected, otExtAddress{})) {
+      if (thread_preferred_parent_ot_set_discovery_target_extaddr != nullptr) {
+        (void) thread_preferred_parent_ot_set_discovery_target_extaddr(instance, &selected);
+      }
       ESP_LOGI(TAG, "Starting non-disruptive unicast Parent Request discovery to ExtAddr %s for %s",
                this->extaddr_to_string_(selected).c_str(), this->target_to_string_().c_str());
       return this->start_parent_discovery_unicast_(instance, selected);
@@ -819,6 +834,22 @@ otError ThreadPreferredParentComponent::start_parent_discovery_(otInstance *inst
 
     if (thread_preferred_parent_ot_start_parent_discovery_unicast == nullptr) {
       ESP_LOGW(TAG, "Unicast Parent Request discovery hook missing; falling back to multicast discovery");
+    }
+  }
+
+  if (thread_preferred_parent_ot_set_discovery_target_extaddr != nullptr) {
+    otExtAddress selected{};
+    bool have_selected = false;
+
+    if (this->target_type_ == TargetType::EXTADDR) {
+      selected = this->target_extaddr_;
+      have_selected = !this->extaddr_matches_(selected, otExtAddress{});
+    } else if (this->target_type_ == TargetType::RLOC16) {
+      have_selected = this->resolve_rloc16_to_extaddr_(instance, this->target_rloc16_, &selected);
+    }
+
+    if (have_selected) {
+      (void) thread_preferred_parent_ot_set_discovery_target_extaddr(instance, &selected);
     }
   }
 
@@ -872,7 +903,31 @@ otError ThreadPreferredParentComponent::start_selected_parent_attach_(otInstance
     return OT_ERROR_NOT_FOUND;
   }
 
+  if (this->target_observed_this_attempt_ && thread_preferred_parent_ot_continue_selected_parent_attach != nullptr) {
+    this->schedule_branch_replay_(
+        "Selected-parent handoff branch: trying direct discovery continuation to " +
+        this->extaddr_to_string_(selected));
+    ESP_LOGI(TAG, "T3 selected-parent discovery continuation; target=%s", this->extaddr_to_string_(selected).c_str());
+    ESP_LOGI(TAG, "Continuing discovery directly into Child ID Request for ExtAddr %s",
+             this->extaddr_to_string_(selected).c_str());
+    otError error = thread_preferred_parent_ot_continue_selected_parent_attach(instance, &selected);
+    ESP_LOGI(TAG, "Selected-parent discovery continuation returned %s", ot_error_to_string_(error));
+    if (error == OT_ERROR_NONE) {
+      this->schedule_branch_replay_(
+          "Selected-parent handoff branch: direct discovery continuation accepted for " +
+          this->extaddr_to_string_(selected));
+      return OT_ERROR_NONE;
+    }
+    this->schedule_branch_replay_(
+        "Selected-parent handoff branch: direct discovery continuation failed with " +
+        std::string(ot_error_to_string_(error)) + "; falling back to selected-parent attach");
+    ESP_LOGW(TAG, "Direct discovery continuation did not start Child ID Request; falling back to selected-parent attach");
+  }
+
   if (this->selected_parent_hook_available_()) {
+    this->schedule_branch_replay_(
+        "Selected-parent handoff branch: using fallback selected-parent attach with Parent Request to " +
+        this->extaddr_to_string_(selected));
     // Prefer the custom selected-parent bridge because it directly constrains
     // the attach attempt to the observed or configured target ExtAddr.
     ESP_LOGI(TAG, "T3 selected-parent attach start; target=%s", this->extaddr_to_string_(selected).c_str());
@@ -925,6 +980,16 @@ otError ThreadPreferredParentComponent::start_selected_parent_attach_(otInstance
   }
 
   return OT_ERROR_NOT_IMPLEMENTED;
+}
+
+void ThreadPreferredParentComponent::schedule_branch_replay_(const std::string &message,
+                                                             uint8_t repeats,
+                                                             uint32_t interval_ms) {
+  this->branch_replay_message_ = message;
+  this->branch_replay_interval_ms_ = interval_ms;
+  this->branch_replay_remaining_ = repeats;
+  this->branch_replay_next_ms_ = millis();
+  this->branch_replay_active_ = repeats > 0 && !message.empty();
 }
 
 /**

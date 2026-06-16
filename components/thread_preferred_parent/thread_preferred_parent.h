@@ -59,6 +59,30 @@ otError thread_preferred_parent_ot_start_parent_discovery_unicast(
 ) __attribute__((weak));
 
 /**
+ * Continue a discovery-observed selected-parent attach without a new Parent Request.
+ *
+ * @param aInstance Active OpenThread instance.
+ * @param aPreferredExtAddress Extended address of the preferred parent target.
+ * @return OpenThread status describing whether Child ID startup succeeded.
+ */
+otError thread_preferred_parent_ot_continue_selected_parent_attach(
+    otInstance *aInstance,
+    const otExtAddress *aPreferredExtAddress
+) __attribute__((weak));
+
+/**
+ * Tell OpenThread which preferred parent response should be snapshotted during discovery.
+ *
+ * @param aInstance Active OpenThread instance.
+ * @param aPreferredExtAddress Extended address of the preferred parent target.
+ * @return OpenThread status describing whether the hint was accepted.
+ */
+otError thread_preferred_parent_ot_set_discovery_target_extaddr(
+    otInstance *aInstance,
+    const otExtAddress *aPreferredExtAddress
+) __attribute__((weak));
+
+/**
  * Request a targeted selected-parent attach through the preferred hook symbol.
  *
  * @param aInstance Active OpenThread instance.
@@ -576,6 +600,15 @@ class ThreadPreferredParentComponent : public Component {
   otError start_selected_parent_attach_(otInstance *instance);
 
   /**
+   * Replay an important branch decision across several loop iterations.
+   *
+   * @param message Message to emit at INFO level.
+   * @param repeats Number of times to emit the message.
+   * @param interval_ms Delay between repeated emissions.
+   */
+  void schedule_branch_replay_(const std::string &message, uint8_t repeats = 8, uint32_t interval_ms = 500);
+
+  /**
    * Clear any preferred-parent hints stored inside the OpenThread instance.
    *
    * @param instance Active OpenThread instance.
@@ -674,6 +707,11 @@ class ThreadPreferredParentComponent : public Component {
   bool best_target_rssi_valid_{false};
   int8_t best_target_rssi_{-128};
   uint16_t best_target_rloc16_{0xFFFE};
+  bool branch_replay_active_{false};
+  uint32_t branch_replay_next_ms_{0};
+  uint32_t branch_replay_interval_ms_{500};
+  uint8_t branch_replay_remaining_{0};
+  std::string branch_replay_message_{};
   uint8_t parent_response_buffer_head_{0};
   BufferedParentResponse parent_response_buffer_[PARENT_RESPONSE_BUFFER_SIZE]{};
   Status status_{Status::IDLE};

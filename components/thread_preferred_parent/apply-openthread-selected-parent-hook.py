@@ -154,6 +154,35 @@ def replace_regex(
 def patch_mle_hpp(root: Path, *, dry_run: bool = False) -> str:
     """Declare the selected-parent attach entry point in mle.hpp."""
     path = root / "thread/mle.hpp"
+    text = normalize_newlines(path.read_text())
+    if "ContinueSelectedParentAttachFromDiscovery(const Mac::ExtAddress &aExtAddress)" in text:
+        return "already"
+
+    continue_only = """    /**
+     * Continues a discovery-observed attach directly with Child ID Request.
+     *
+     * This is an ESPHome Thread preferred-parent extension. It reuses the
+     * Parent Response already cached during a non-disruptive discovery window
+     * instead of restarting with another Parent Request.
+     *
+     * @param[in] aExtAddress Extended address of the selected parent candidate.
+     *
+     * @retval kErrorNone Successfully started Child ID Request.
+     * @retval kErrorInvalidState Discovery is not active or no valid candidate is cached.
+     * @retval kErrorNotFound Cached candidate does not match `aExtAddress`.
+     */
+    Error ContinueSelectedParentAttachFromDiscovery(const Mac::ExtAddress &aExtAddress); // THREAD_PREFERRED_PARENT_DISCOVERY_CONTINUE_HOOK
+"""
+
+    if "AttachToSelectedParent(const Mac::ExtAddress &aExtAddress)" in text:
+        return replace_literal(
+            path,
+            "    Error AttachToSelectedParent(const Mac::ExtAddress &aExtAddress);\n",
+            "    Error AttachToSelectedParent(const Mac::ExtAddress &aExtAddress);\n\n" + continue_only,
+            already="ContinueSelectedParentAttachFromDiscovery(const Mac::ExtAddress &aExtAddress)",
+            dry_run=dry_run,
+        )
+
     declaration = """    /**
      * Starts targeted attach flow to a selected parent by extended address.
      *
@@ -167,12 +196,63 @@ def patch_mle_hpp(root: Path, *, dry_run: bool = False) -> str:
      * @retval kErrorBusy An attach process is already in progress.
      */
     Error AttachToSelectedParent(const Mac::ExtAddress &aExtAddress); // THREAD_PREFERRED_PARENT_SELECTED_PARENT_HOOK
+
+    /**
+     * Continues a discovery-observed attach directly with Child ID Request.
+     *
+     * This is an ESPHome Thread preferred-parent extension. It reuses the
+     * Parent Response already cached during a non-disruptive discovery window
+     * instead of restarting with another Parent Request.
+     *
+     * @param[in] aExtAddress Extended address of the selected parent candidate.
+     *
+     * @retval kErrorNone Successfully started Child ID Request.
+     * @retval kErrorInvalidState Discovery is not active or no valid candidate is cached.
+     * @retval kErrorNotFound Cached candidate does not match `aExtAddress`.
+     */
+    Error ContinueSelectedParentAttachFromDiscovery(const Mac::ExtAddress &aExtAddress); // THREAD_PREFERRED_PARENT_DISCOVERY_CONTINUE_HOOK
 """
     return replace_literal(
         path,
         "    Error SearchForBetterParent(void);\n",
         "    Error SearchForBetterParent(void);\n\n" + declaration,
-        already="AttachToSelectedParent(const Mac::ExtAddress &aExtAddress)",
+        already="ContinueSelectedParentAttachFromDiscovery(const Mac::ExtAddress &aExtAddress)",
+        dry_run=dry_run,
+    )
+
+
+def patch_mle_hpp_attacher_continue(root: Path, *, dry_run: bool = False) -> str:
+    """Declare the attacher continuation helper in mle.hpp."""
+    path = root / "thread/mle.hpp"
+    declaration = "        Error ContinueSelectedParentAttach(const Mac::ExtAddress &aExtAddress); // THREAD_PREFERRED_PARENT_DISCOVERY_CONTINUE_HOOK\n"
+    return replace_literal(
+        path,
+        "        void             Attach(AttachMode aMode);\n",
+        "        void             Attach(AttachMode aMode);\n" + declaration,
+        already="ContinueSelectedParentAttach(const Mac::ExtAddress &aExtAddress)",
+        dry_run=dry_run,
+    )
+
+
+def patch_mle_hpp_attacher_snapshot_fields(root: Path, *, dry_run: bool = False) -> str:
+    """Store a discovery-snapshotted target candidate in mle.hpp."""
+    path = root / "thread/mle.hpp"
+    text = normalize_newlines(path.read_text())
+    if "THREAD_PREFERRED_PARENT_DISCOVERY_TARGET_SNAPSHOT_HOOK" in text:
+        return "already"
+
+    old = "        TxChallenge             mParentRequestChallenge;\n        ParentCandidate         mParentCandidate;\n        AttachTimer             mTimer;\n"
+    new = """        TxChallenge             mParentRequestChallenge;
+        ParentCandidate         mParentCandidate;
+        ParentCandidate         mPreferredDiscoveryParentCandidate; // THREAD_PREFERRED_PARENT_DISCOVERY_TARGET_SNAPSHOT_HOOK
+        bool                    mHasPreferredDiscoveryParentCandidate : 1; // THREAD_PREFERRED_PARENT_DISCOVERY_TARGET_SNAPSHOT_HOOK
+        AttachTimer             mTimer;
+"""
+    return replace_literal(
+        path,
+        old,
+        new,
+        already="THREAD_PREFERRED_PARENT_DISCOVERY_TARGET_SNAPSHOT_HOOK",
         dry_run=dry_run,
     )
 
@@ -196,6 +276,18 @@ exit:
     return error;
 }
 
+Error Mle::ContinueSelectedParentAttachFromDiscovery(const Mac::ExtAddress &aExtAddress)
+{
+    // THREAD_PREFERRED_PARENT_DISCOVERY_CONTINUE_HOOK
+    Error error = kErrorNone;
+
+    VerifyOrExit(IsChild(), error = kErrorInvalidState);
+    SuccessOrExit(error = mAttacher.ContinueSelectedParentAttach(aExtAddress));
+
+exit:
+    return error;
+}
+
 """
 
     pattern = (
@@ -208,6 +300,109 @@ exit:
         lambda m: m.group(1).rstrip() + "\n\n" + method,
         already="Mle::AttachToSelectedParent",
         label="Mle::SearchForBetterParent insertion point",
+        dry_run=dry_run,
+    )
+
+
+def patch_continue_selected_parent_method(root: Path, *, dry_run: bool = False) -> str:
+    """Add Mle::ContinueSelectedParentAttachFromDiscovery() to mle.cpp."""
+    path = root / "thread/mle.cpp"
+    text = normalize_newlines(path.read_text())
+    if "Mle::ContinueSelectedParentAttachFromDiscovery" in text:
+        return "already"
+
+    method = """
+Error Mle::ContinueSelectedParentAttachFromDiscovery(const Mac::ExtAddress &aExtAddress)
+{
+    // THREAD_PREFERRED_PARENT_DISCOVERY_CONTINUE_HOOK
+    Error error = kErrorNone;
+
+    VerifyOrExit(IsChild(), error = kErrorInvalidState);
+    SuccessOrExit(error = mAttacher.ContinueSelectedParentAttach(aExtAddress));
+
+exit:
+    return error;
+}
+
+"""
+    pattern = r"(Error\s+Mle::AttachToSelectedParent\s*\(\s*const\s+Mac::ExtAddress\s*&\s*aExtAddress\s*\)\s*\{.*?\n\}\s*\n)"
+    return replace_regex(
+        path,
+        pattern,
+        lambda m: m.group(1).rstrip() + "\n\n" + method,
+        already="Mle::ContinueSelectedParentAttachFromDiscovery",
+        label="Mle::AttachToSelectedParent insertion point",
+        dry_run=dry_run,
+    )
+
+
+def patch_attacher_continue_selected_parent_method(root: Path, *, dry_run: bool = False) -> str:
+    """Continue a discovery-observed selected-parent attach with Child ID Request."""
+    path = root / "thread/mle.cpp"
+    text = normalize_newlines(path.read_text())
+    if "Mle::Attacher::ContinueSelectedParentAttach" in text:
+        return "already"
+
+    method = """
+Error Mle::Attacher::ContinueSelectedParentAttach(const Mac::ExtAddress &aExtAddress)
+{
+    // THREAD_PREFERRED_PARENT_DISCOVERY_CONTINUE_HOOK
+    Error error = kErrorNone;
+
+    LogNote("SelectedParent continue start cached=%d mode=%d state=%d discovery=%d candState=%d cand=0x%04x target=%s",
+            mHasPreferredDiscoveryParentCandidate, mMode, mState, thread_preferred_parent_ot_parent_discovery_active,
+            mParentCandidate.IsStateParentResponse(), mParentCandidate.GetRloc16(), aExtAddress.ToString().AsCString());
+
+    if (mHasPreferredDiscoveryParentCandidate)
+    {
+        LogNote("SelectedParent continue using cached candidate extaddr=%s rloc16=0x%04x",
+                mPreferredDiscoveryParentCandidate.GetExtAddress().ToString().AsCString(),
+                mPreferredDiscoveryParentCandidate.GetRloc16());
+        VerifyOrExit(mPreferredDiscoveryParentCandidate.GetExtAddress() == aExtAddress, error = kErrorNotFound);
+        mParentCandidate = mPreferredDiscoveryParentCandidate;
+    }
+    else
+    {
+        LogNote("SelectedParent continue no cached candidate live extaddr=%s rloc16=0x%04x",
+                mParentCandidate.GetExtAddress().ToString().AsCString(), mParentCandidate.GetRloc16());
+        VerifyOrExit(thread_preferred_parent_ot_parent_discovery_active, error = kErrorInvalidState);
+        VerifyOrExit(mMode == kBetterParent, error = kErrorInvalidState);
+        VerifyOrExit(mState == kStateParentRequest, error = kErrorInvalidState);
+        VerifyOrExit(mParentCandidate.IsStateParentResponse(), error = kErrorInvalidState);
+        VerifyOrExit(mParentCandidate.GetExtAddress() == aExtAddress, error = kErrorNotFound);
+    }
+
+    thread_preferred_parent_ot_parent_discovery_active = false;
+    thread_preferred_parent_ot_parent_discovery_unicast = false;
+    mHasPreferredDiscoveryParentCandidate = false;
+    mMode = kSelectedParent;
+
+    SetState(kStateIdle);
+    SuccessOrExit(error = SendChildIdRequest());
+    LogNote("SelectedParent ChildIdRequest continued-from-discovery cand=0x%04x timeout=%lu",
+            mParentCandidate.GetRloc16(), ToUlong(kChildIdResponseTimeout));
+    SetState(kStateChildIdRequest);
+    mTimer.Start(kChildIdResponseTimeout);
+
+exit:
+    if (error != kErrorNone)
+    {
+        LogWarn("SelectedParent continue failed err=%s cached=%d mode=%d state=%d discovery=%d candState=%d cand=0x%04x target=%s",
+                ErrorToString(error), mHasPreferredDiscoveryParentCandidate, mMode, mState,
+                thread_preferred_parent_ot_parent_discovery_active, mParentCandidate.IsStateParentResponse(),
+                mParentCandidate.GetRloc16(), aExtAddress.ToString().AsCString());
+    }
+    return error;
+}
+
+"""
+    pattern = r"(void\s+Mle::Attacher::Attach\s*\(\s*AttachMode\s+aMode\s*\)\s*\{.*?\n\}\s*\n\s*)"
+    return replace_regex(
+        path,
+        pattern,
+        lambda m: m.group(1).rstrip() + "\n\n" + method,
+        already="Mle::Attacher::ContinueSelectedParentAttach",
+        label="Mle::Attacher::Attach insertion point",
         dry_run=dry_run,
     )
 
@@ -497,6 +692,22 @@ extern "C" void thread_preferred_parent_ot_notify_parent_response(const otThread
 extern "C" bool thread_preferred_parent_ot_parent_discovery_active = false;
 extern "C" bool thread_preferred_parent_ot_parent_discovery_unicast = false;
 extern "C" otExtAddress thread_preferred_parent_ot_parent_discovery_extaddr = {};
+extern "C" bool thread_preferred_parent_ot_parent_discovery_target_valid = false;
+extern "C" otExtAddress thread_preferred_parent_ot_parent_discovery_target_extaddr = {};
+
+extern "C" otError thread_preferred_parent_ot_set_discovery_target_extaddr(otInstance *aInstance,
+                                                                             const otExtAddress *aPreferredExtAddress)
+{
+    // THREAD_PREFERRED_PARENT_DISCOVERY_TARGET_HINT_HOOK
+    if ((aInstance == nullptr) || (aPreferredExtAddress == nullptr))
+    {
+        return OT_ERROR_INVALID_ARGS;
+    }
+
+    thread_preferred_parent_ot_parent_discovery_target_extaddr = *aPreferredExtAddress;
+    thread_preferred_parent_ot_parent_discovery_target_valid = true;
+    return OT_ERROR_NONE;
+}
 
 extern "C" otError thread_preferred_parent_ot_start_parent_discovery(otInstance *aInstance)
 {
@@ -538,6 +749,19 @@ extern "C" otError thread_preferred_parent_ot_start_parent_discovery_unicast(otI
     return error;
 }
 
+extern "C" otError thread_preferred_parent_ot_continue_selected_parent_attach(otInstance *aInstance,
+                                                                               const otExtAddress *aPreferredExtAddress)
+{
+    // THREAD_PREFERRED_PARENT_DISCOVERY_CONTINUE_HOOK
+    if ((aInstance == nullptr) || (aPreferredExtAddress == nullptr))
+    {
+        return OT_ERROR_INVALID_ARGS;
+    }
+
+    return AsCoreType(aInstance).Get<Mle::Mle>().ContinueSelectedParentAttachFromDiscovery(
+        AsCoreType(aPreferredExtAddress));
+}
+
 extern "C" bool thread_preferred_parent_ot_request_selected_parent_attach(otInstance *aInstance,
                                                                              const otExtAddress *aPreferredExtAddress)
 {
@@ -548,14 +772,6 @@ extern "C" bool thread_preferred_parent_ot_request_selected_parent_attach(otInst
     }
 
     return AsCoreType(aInstance).Get<Mle::Mle>().AttachToSelectedParent(AsCoreType(aPreferredExtAddress)) == kErrorNone;
-}
-
-extern "C" bool biparental_ot_request_selected_parent_attach(otInstance *aInstance,
-                                                              const otExtAddress *aPreferredExtAddress)
-{
-    // THREAD_PREFERRED_PARENT_SELECTED_PARENT_HOOK
-    // Compatibility alias for ESPHome-biparental-ED diagnostics/tools.
-    return thread_preferred_parent_ot_request_selected_parent_attach(aInstance, aPreferredExtAddress);
 }
 
 """
@@ -585,7 +801,8 @@ def patch_thread_api_parent_response_reporting(root: Path, *, dry_run: bool = Fa
     """
     path = root / "api/thread_api.cpp"
     text = normalize_newlines(path.read_text())
-    if "THREAD_PREFERRED_PARENT_PARENT_RESPONSE_REPORTING_HOOK" in text:
+    if ("THREAD_PREFERRED_PARENT_PARENT_RESPONSE_REPORTING_HOOK" in text or
+            "thread_preferred_parent_ot_register_parent_response_callback" in text):
         return "already"
 
     addition = """
@@ -640,6 +857,10 @@ def patch_thread_api_discovery_bridge(root: Path, *, dry_run: bool = False) -> s
     """
     path = root / "api/thread_api.cpp"
     text = normalize_newlines(path.read_text())
+    if ("thread_preferred_parent_ot_start_parent_discovery(" in text and
+            "thread_preferred_parent_ot_start_parent_discovery_unicast(" in text and
+            "thread_preferred_parent_ot_parent_discovery_unicast" in text):
+        return "already"
 
     fresh_addition = """
 extern \"C\" bool thread_preferred_parent_ot_parent_discovery_active = false;
@@ -752,6 +973,78 @@ extern \"C\" otError thread_preferred_parent_ot_start_parent_discovery_unicast(o
         label="thread_api.cpp discovery-only/unicast bridge",
         dry_run=dry_run,
     )
+
+
+def patch_thread_api_continue_bridge(root: Path, *, dry_run: bool = False) -> str:
+    """Expose the discovery-continuation bridge from thread_api.cpp."""
+    path = root / "api/thread_api.cpp"
+    text = normalize_newlines(path.read_text())
+    if "thread_preferred_parent_ot_continue_selected_parent_attach" in text:
+        return "already"
+
+    addition = """
+extern "C" otError thread_preferred_parent_ot_continue_selected_parent_attach(otInstance *aInstance,
+                                                                               const otExtAddress *aPreferredExtAddress)
+{
+    // THREAD_PREFERRED_PARENT_DISCOVERY_CONTINUE_HOOK
+    if ((aInstance == nullptr) || (aPreferredExtAddress == nullptr))
+    {
+        return OT_ERROR_INVALID_ARGS;
+    }
+
+    return AsCoreType(aInstance).Get<Mle::Mle>().ContinueSelectedParentAttachFromDiscovery(
+        AsCoreType(aPreferredExtAddress));
+}
+
+"""
+    pattern = r"(extern\s+\"C\"\s+bool\s+thread_preferred_parent_ot_request_selected_parent_attach\s*\()"
+    return replace_regex(
+        path,
+        pattern,
+        lambda m: addition + m.group(1),
+        already="THREAD_PREFERRED_PARENT_DISCOVERY_CONTINUE_HOOK",
+        label="thread_api.cpp discovery continuation bridge",
+        dry_run=dry_run,
+    )
+
+
+def patch_thread_api_target_hint_bridge(root: Path, *, dry_run: bool = False) -> str:
+    """Expose the discovery-target hint bridge from thread_api.cpp."""
+    path = root / "api/thread_api.cpp"
+    text = normalize_newlines(path.read_text())
+    if "thread_preferred_parent_ot_set_discovery_target_extaddr" in text:
+        return "already"
+
+    addition = """
+extern "C" bool thread_preferred_parent_ot_parent_discovery_target_valid = false;
+extern "C" otExtAddress thread_preferred_parent_ot_parent_discovery_target_extaddr = {};
+
+extern "C" otError thread_preferred_parent_ot_set_discovery_target_extaddr(otInstance *aInstance,
+                                                                             const otExtAddress *aPreferredExtAddress)
+{
+    // THREAD_PREFERRED_PARENT_DISCOVERY_TARGET_HINT_HOOK
+    if ((aInstance == nullptr) || (aPreferredExtAddress == nullptr))
+    {
+        return OT_ERROR_INVALID_ARGS;
+    }
+
+    thread_preferred_parent_ot_parent_discovery_target_extaddr = *aPreferredExtAddress;
+    thread_preferred_parent_ot_parent_discovery_target_valid = true;
+    return OT_ERROR_NONE;
+}
+
+"""
+    pattern = r"(extern\s+\"C\"\s+otError\s+thread_preferred_parent_ot_start_parent_discovery\s*\()"
+    return replace_regex(
+        path,
+        pattern,
+        lambda m: addition + m.group(1),
+        already="THREAD_PREFERRED_PARENT_DISCOVERY_TARGET_HINT_HOOK",
+        label="thread_api.cpp discovery target hint bridge",
+        dry_run=dry_run,
+    )
+
+
 def patch_mle_parent_response_reporting_declaration(root: Path, *, dry_run: bool = False) -> str:
     """Patch mle parent response reporting declaration in the OpenThread sources.
 
@@ -772,12 +1065,14 @@ def patch_mle_parent_response_reporting_declaration(root: Path, *, dry_run: bool
         'extern "C" bool thread_preferred_parent_ot_parent_discovery_active;',
         'extern "C" bool thread_preferred_parent_ot_parent_discovery_unicast;',
         'extern "C" otExtAddress thread_preferred_parent_ot_parent_discovery_extaddr;',
+        'extern "C" bool thread_preferred_parent_ot_parent_discovery_target_valid;',
+        'extern "C" otExtAddress thread_preferred_parent_ot_parent_discovery_target_extaddr;',
     ]
     if all(item in prefix for item in required):
         return "already"
 
     include_old = '#include "utils/static_counter.hpp"\n'
-    include_new = '#include "utils/static_counter.hpp"\n\n#include <openthread/thread.h>\n\nextern "C" void thread_preferred_parent_ot_notify_parent_response(const otThreadParentResponseInfo *aInfo);\nextern "C" bool thread_preferred_parent_ot_parent_discovery_active;\nextern "C" bool thread_preferred_parent_ot_parent_discovery_unicast;\nextern "C" otExtAddress thread_preferred_parent_ot_parent_discovery_extaddr;\n// THREAD_PREFERRED_PARENT_PARENT_RESPONSE_REPORTING_HOOK\n// THREAD_PREFERRED_PARENT_DISCOVERY_ONLY_HOOK\n// THREAD_PREFERRED_PARENT_DISCOVERY_UNICAST_HOOK\n'
+    include_new = '#include "utils/static_counter.hpp"\n\n#include <openthread/thread.h>\n\nextern "C" void thread_preferred_parent_ot_notify_parent_response(const otThreadParentResponseInfo *aInfo);\nextern "C" bool thread_preferred_parent_ot_parent_discovery_active;\nextern "C" bool thread_preferred_parent_ot_parent_discovery_unicast;\nextern "C" otExtAddress thread_preferred_parent_ot_parent_discovery_extaddr;\nextern "C" bool thread_preferred_parent_ot_parent_discovery_target_valid;\nextern "C" otExtAddress thread_preferred_parent_ot_parent_discovery_target_extaddr;\n// THREAD_PREFERRED_PARENT_PARENT_RESPONSE_REPORTING_HOOK\n// THREAD_PREFERRED_PARENT_DISCOVERY_ONLY_HOOK\n// THREAD_PREFERRED_PARENT_DISCOVERY_UNICAST_HOOK\n// THREAD_PREFERRED_PARENT_DISCOVERY_TARGET_HINT_HOOK\n'
 
     if required[0] in prefix:
         insertion = "\n".join(item for item in required[1:] if item not in prefix)
@@ -844,11 +1139,11 @@ def patch_mle_discovery_cancel(root: Path, *, dry_run: bool = False) -> str:
     path = root / "thread/mle.cpp"
     text = normalize_newlines(path.read_text())
     if "THREAD_PREFERRED_PARENT_DISCOVERY_ONLY_CANCEL" in text:
-        if "thread_preferred_parent_ot_parent_discovery_unicast = false" in text:
+        if "mHasPreferredDiscoveryParentCandidate = false;" in text:
             return "already"
         new = text.replace(
-            'thread_preferred_parent_ot_parent_discovery_active = false;\n        SetState(kStateIdle);',
-            'thread_preferred_parent_ot_parent_discovery_active = false;\n        thread_preferred_parent_ot_parent_discovery_unicast = false;\n        SetState(kStateIdle);',
+            'thread_preferred_parent_ot_parent_discovery_active = false;\n        thread_preferred_parent_ot_parent_discovery_unicast = false;\n        SetState(kStateIdle);\n        mHasPreferredDiscoveryParentCandidate = false;',
+            'thread_preferred_parent_ot_parent_discovery_active = false;\n        thread_preferred_parent_ot_parent_discovery_unicast = false;\n        if (!mHasPreferredDiscoveryParentCandidate)\n        {\n            mParentCandidate.Clear();\n        }\n        SetState(kStateIdle);',
             1,
         )
         return write_if_changed(path, text, new, dry_run=dry_run)
@@ -871,8 +1166,11 @@ def patch_mle_discovery_cancel(root: Path, *, dry_run: bool = False) -> str:
         LogNote(\"ThreadPreferredParent discovery window complete\");
         thread_preferred_parent_ot_parent_discovery_active = false;
         thread_preferred_parent_ot_parent_discovery_unicast = false;
+        if (!mHasPreferredDiscoveryParentCandidate)
+        {
+            mParentCandidate.Clear();
+        }
         SetState(kStateIdle);
-        mParentCandidate.Clear();
         ExitNow();
     }
 """
@@ -1281,6 +1579,97 @@ def patch_parent_response_reject_log(root: Path, *, dry_run: bool = False) -> st
     return replace_regex(path, pattern, repl, already="SelectedParent ParentResponse reject", label="selected-parent ParentResponse reject log", dry_run=dry_run)
 
 
+def patch_parent_response_target_snapshot(root: Path, *, dry_run: bool = False) -> str:
+    """Snapshot the requested target Parent Response during discovery."""
+    path = root / "thread/mle.cpp"
+    text = normalize_newlines(path.read_text())
+    if "THREAD_PREFERRED_PARENT_DISCOVERY_TARGET_SNAPSHOT_HOOK" in text:
+        return "already"
+
+    pattern = (
+        r"(mParentCandidate\.mLinkMargin\s*=\s*twoWayLinkMargin;\s*\n)"
+        r"(\s*if\s*\(\s*mMode\s*==\s*kSelectedParent\s*\)\s*\n\s*\{)"
+    )
+    replacement = (
+        r"\1"
+        "    if (thread_preferred_parent_ot_parent_discovery_active &&\n"
+        "        thread_preferred_parent_ot_parent_discovery_target_valid &&\n"
+        "        (extAddress == AsCoreType(&thread_preferred_parent_ot_parent_discovery_target_extaddr)))\n"
+        "    {\n"
+        "        // THREAD_PREFERRED_PARENT_DISCOVERY_TARGET_SNAPSHOT_HOOK\n"
+        "        mPreferredDiscoveryParentCandidate = mParentCandidate;\n"
+        "        mHasPreferredDiscoveryParentCandidate = true;\n"
+        "        LogNote(\"SelectedParent discovery snapshot extaddr=%s rloc16=0x%04x\",\n"
+        "                mPreferredDiscoveryParentCandidate.GetExtAddress().ToString().AsCString(),\n"
+        "                mPreferredDiscoveryParentCandidate.GetRloc16());\n"
+        "    }\n"
+        r"\2"
+    )
+    return replace_regex(
+        path,
+        pattern,
+        replacement,
+        already="THREAD_PREFERRED_PARENT_DISCOVERY_TARGET_SNAPSHOT_HOOK",
+        label="selected-parent discovery target snapshot",
+        dry_run=dry_run,
+    )
+
+
+def patch_parent_request_child_timeout(root: Path, *, dry_run: bool = False) -> str:
+    """Keep a discovery-created child entry alive through the 8 s probe window."""
+    path = root / "thread/mle_ftd.cpp"
+    old = "        child->SetTimeout(Time::MsecToSec(kChildIdRequestTimeout));\n"
+    new = """        child->SetTimeout(Time::MsecToSec(kChildIdRequestTimeout + 10000)); // THREAD_PREFERRED_PARENT_DISCOVERY_CONTINUE_HOOK\n"""
+    return replace_literal(
+        path,
+        old,
+        new,
+        already="kChildIdRequestTimeout + 10000",
+        dry_run=dry_run,
+    )
+
+
+def patch_attacher_snapshot_init(root: Path, *, dry_run: bool = False) -> str:
+    """Initialize the saved discovery target candidate."""
+    path = root / "thread/mle.cpp"
+    text = normalize_newlines(path.read_text())
+    if "mPreferredDiscoveryParentCandidate.Init(aInstance);" in text:
+        return "already"
+
+    old = "    mParentCandidate.Init(aInstance);\n    mParentCandidate.Clear();\n"
+    new = """    mParentCandidate.Init(aInstance);
+    mParentCandidate.Clear();
+    mPreferredDiscoveryParentCandidate.Init(aInstance);
+    mPreferredDiscoveryParentCandidate.Clear();
+    mHasPreferredDiscoveryParentCandidate = false;
+"""
+    return replace_literal(
+        path,
+        old,
+        new,
+        already="mPreferredDiscoveryParentCandidate.Init(aInstance);",
+        dry_run=dry_run,
+    )
+
+
+def patch_attacher_snapshot_clear_on_attach(root: Path, *, dry_run: bool = False) -> str:
+    """Clear the saved discovery target candidate at the start of each attach cycle."""
+    path = root / "thread/mle.cpp"
+    text = normalize_newlines(path.read_text())
+    if "mHasPreferredDiscoveryParentCandidate = false;\n    mParentCandidate.Clear();" in text:
+        return "already"
+
+    old = "    mParentCandidate.Clear();\n    SetState(kStateStart);\n"
+    new = "    mHasPreferredDiscoveryParentCandidate = false;\n    mParentCandidate.Clear();\n    SetState(kStateStart);\n"
+    return replace_literal(
+        path,
+        old,
+        new,
+        already="mHasPreferredDiscoveryParentCandidate = false;\n    mParentCandidate.Clear();",
+        dry_run=dry_run,
+    )
+
+
 
 def patch_attach_method_preseed_candidate(root: Path, *, dry_run: bool = False) -> str:
     """Pre-seed the selected parent candidate before Attach(kSelectedParent).
@@ -1477,7 +1866,13 @@ def apply_patches(root: Path, *, dry_run: bool = False) -> int:
 
     patches = [
         ("mle.hpp declaration", root / "thread/mle.hpp", patch_mle_hpp, True),
+        ("mle.hpp attacher continuation declaration", root / "thread/mle.hpp", patch_mle_hpp_attacher_continue, True),
+        ("mle.hpp attacher discovery snapshot fields", root / "thread/mle.hpp", patch_mle_hpp_attacher_snapshot_fields, True),
         ("mle.cpp AttachToSelectedParent", root / "thread/mle.cpp", patch_attach_method, True),
+        ("mle.cpp Mle discovery continuation", root / "thread/mle.cpp", patch_continue_selected_parent_method, True),
+        ("mle.cpp attacher discovery continuation", root / "thread/mle.cpp", patch_attacher_continue_selected_parent_method, True),
+        ("mle.cpp attacher discovery snapshot init", root / "thread/mle.cpp", patch_attacher_snapshot_init, True),
+        ("mle.cpp attacher discovery snapshot clear", root / "thread/mle.cpp", patch_attacher_snapshot_clear_on_attach, True),
         ("mle.cpp remove old force-detach selected-parent block", root / "thread/mle.cpp", patch_remove_force_detach_before_attach, True),
         ("mle.cpp selected-parent candidate preseed", root / "thread/mle.cpp", patch_attach_method_preseed_candidate, True),
         ("mle.cpp selected-router destination", root / "thread/mle.cpp", patch_selected_parent_destination, True),
@@ -1485,6 +1880,8 @@ def apply_patches(root: Path, *, dry_run: bool = False) -> int:
         ("mle.cpp selected-parent force Child ID Request", root / "thread/mle.cpp", patch_selected_parent_child_id_request_bypass, False),
         ("thread_api.cpp bridge", root / "api/thread_api.cpp", patch_thread_api, True),
         ("thread_api.cpp parent-response reporting bridge", root / "api/thread_api.cpp", patch_thread_api_parent_response_reporting, True),
+        ("thread_api.cpp discovery continuation bridge", root / "api/thread_api.cpp", patch_thread_api_continue_bridge, True),
+        ("thread_api.cpp discovery target hint bridge", root / "api/thread_api.cpp", patch_thread_api_target_hint_bridge, True),
         ("mle.cpp parent-response reporting declaration", root / "thread/mle.cpp", patch_mle_parent_response_reporting_declaration, True),
         ("thread_api.cpp discovery-only bridge", root / "api/thread_api.cpp", patch_thread_api_discovery_bridge, True),
         ("mle.cpp discovery-only declaration", root / "thread/mle.cpp", patch_mle_discovery_declaration, True),
@@ -1492,6 +1889,8 @@ def apply_patches(root: Path, *, dry_run: bool = False) -> int:
         ("mle.cpp discovery-only cancel", root / "thread/mle.cpp", patch_mle_discovery_cancel, True),
         ("mle.cpp parent-response reporting call", root / "thread/mle.cpp", patch_mle_parent_response_reporting_call, True),
         ("mle.cpp parent-response reporting IsAttached fix", root / "thread/mle.cpp", patch_mle_parent_response_reporting_is_attached_fix, True),
+        ("mle.cpp preferred discovery target snapshot", root / "thread/mle.cpp", patch_parent_response_target_snapshot, True),
+        ("mle_ftd.cpp provisional child timeout for discovery continuation", root / "thread/mle_ftd.cpp", patch_parent_request_child_timeout, True),
         ("mle.cpp selected-parent non-target Parent Response filter", root / "thread/mle.cpp", patch_selected_parent_parent_response_filter, True),
         ("diag ParentResponse challenge", root / "thread/mle.cpp", patch_parent_response_challenge_log, False),
         ("diag ParentResponse rx", root / "thread/mle.cpp", patch_parent_response_rx_log, False),
