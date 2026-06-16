@@ -159,6 +159,9 @@ The JSON manifest records every command and wait event, including the remote sni
 The post-run analyzer is no longer stock-specific despite the filename:
 
 ```bash
+python3 scripts/analyze_stock_logs.py --logs-dir logs/stock --markdown
+python3 scripts/analyze_stock_logs.py --logs-dir logs/ucast-no-early-attach --markdown
+python3 scripts/analyze_stock_logs.py --logs-dir logs/mcast-no-early-attach --markdown
 python3 scripts/analyze_stock_logs.py --run-dir logs/stock/<timestamp> --markdown
 python3 scripts/analyze_stock_logs.py --run-dir logs/ucast-no-early-attach/<timestamp> --markdown
 python3 scripts/analyze_stock_logs.py --run-dir logs/mcast-no-early-attach/<timestamp> --markdown
@@ -168,14 +171,24 @@ To write a Markdown report to disk:
 
 ```bash
 python3 scripts/analyze_stock_logs.py \
+  --logs-dir logs/mcast-no-early-attach \
+  --write-markdown
+
+python3 scripts/analyze_stock_logs.py \
   --run-dir logs/mcast-no-early-attach/<timestamp> \
   --write-markdown
 ```
 
-With a single `--run-dir`, `--write-markdown` defaults to:
+With `--logs-dir logs/<variant>`, `--write-markdown` defaults to a stock-style variant-wide report:
 
 ```text
-logs/<variant>/<timestamp>-<variant>-analysis-report.md
+logs/<variant>/<generated-at>-<variant>-analysis-report.md
+```
+
+With a single `--run-dir`, `--write-markdown` defaults to a scoped single-run report at the same variant root:
+
+```text
+logs/<variant>/<run-timestamp>-<variant>-analysis-report.md
 ```
 
 Timing policy for all variants:

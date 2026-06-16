@@ -783,6 +783,13 @@ def default_markdown_path_for_run_dir(run_dir: Path) -> Path:
     return variant_dir / f"{run_dir.name}-{variant_name}-analysis-report.md"
 
 
+def default_markdown_path_for_logs_dir(logs_dir: Path) -> Path:
+    logs_dir = logs_dir.resolve()
+    variant_name = logs_dir.name
+    timestamp = datetime.now().strftime("%Y%m%d-%H%M%S")
+    return logs_dir / f"{timestamp}-{variant_name}-analysis-report.md"
+
+
 def main(argv: list[str]) -> int:
     args = parse_args(argv)
     logs_dir = args.logs_dir.resolve()
@@ -799,9 +806,12 @@ def main(argv: list[str]) -> int:
     if args.write_markdown:
         write_path = args.write_markdown
         if write_path == Path("__AUTO__"):
-            if len(args.run_dirs) != 1:
-                raise SystemExit("--write-markdown without a path requires exactly one --run-dir.")
-            write_path = default_markdown_path_for_run_dir(args.run_dirs[0])
+            if args.run_dirs:
+                if len(args.run_dirs) != 1:
+                    raise SystemExit("--write-markdown without a path supports exactly one --run-dir.")
+                write_path = default_markdown_path_for_run_dir(args.run_dirs[0])
+            else:
+                write_path = default_markdown_path_for_logs_dir(logs_dir)
         write_path.parent.mkdir(parents=True, exist_ok=True)
         write_path.write_text(output, encoding="utf-8")
     else:
