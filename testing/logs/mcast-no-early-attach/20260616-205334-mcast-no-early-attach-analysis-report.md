@@ -12,10 +12,10 @@ Files analyzed: **5**
 | 1 | Response → Child ID Request | 397.40 (128.38) | 5 |
 | 1 | Child ID Request → Response | 63.80 (0.84) | 5 |
 | 1 | Full Attach | 806.00 (15.68) | 5 |
-| 2 | Request → Response | 102.00 (11.31) | 2 |
-| 2 | Response → Child ID Request | 3228.50 (443.36) | 2 |
-| 2 | Child ID Request → Response | 62.00 (1.41) | 2 |
-| 2 | Full Attach | 3392.50 (456.08) | 2 |
+| 2 | Request → Response | 157.33 (96.17) | 3 |
+| 2 | Response → Child ID Request | 4356.33 (1978.46) | 3 |
+| 2 | Child ID Request → Response | 62.00 (1.00) | 3 |
+| 2 | Full Attach | 4575.67 (2074.53) | 3 |
 
 | Metric | M (SD) | n |
 | --- | ---: | ---: |
@@ -41,6 +41,25 @@ Files analyzed: **5**
 - pcap parent response: `20:13:02.569` (frame 10)
 - pcap child id request: `20:13:02.867` (frame 13)
 - pcap child id response: `20:13:02.931` (frame 15)
+
+#### Attach sequence 2
+
+- log parent request: `None`
+- log parent response: `None`
+- log child id request: `20:14:53.537`
+- log child id response: `20:14:53.632`
+- parent ipv6: `fe80:0:0:0:344d:1580:c284:3aff`
+- parent extaddr: `364d1580c2843aff`
+- parent rloc16: `0x5000`
+- timing source: **pcap**
+- Request → Response: **268 ms**
+- Response → Child ID Request: **6612 ms**
+- Child ID Request → Response: **62 ms**
+- Full Attach: **6942 ms**
+- pcap parent request: `20:14:46.680` (frame 41)
+- pcap parent response: `20:14:46.948` (frame 43)
+- pcap child id request: `20:14:53.560` (frame 49)
+- pcap child id response: `20:14:53.622` (frame 51)
 
 #### Failed TX summary
 

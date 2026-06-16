@@ -65,7 +65,7 @@ class MeshEvent:
 
 @dataclass
 class AttachSequence:
-    send_parent_request_ms: int
+    send_parent_request_ms: int | None
     receive_parent_response_ms: int | None = None
     send_child_id_request_ms: int | None = None
     receive_child_id_response_ms: int | None = None
@@ -154,6 +154,15 @@ def resolve_parent_extaddr(
     mesh_events: list[MeshEvent],
     parent_info_events: list[tuple[int, int, str]],
 ) -> str | None:
+    lower_bound_ms = (
+        seq.send_parent_request_ms
+        if seq.send_parent_request_ms is not None
+        else seq.receive_parent_response_ms
+        if seq.receive_parent_response_ms is not None
+        else seq.send_child_id_request_ms
+        if seq.send_child_id_request_ms is not None
+        else 0
+    )
     if seq.receive_child_id_response_ms is not None:
         for ts, line_no, extaddr in parent_info_events:
             if ts >= seq.receive_child_id_response_ms and ts - seq.receive_child_id_response_ms <= 2000:
@@ -164,7 +173,7 @@ def resolve_parent_extaddr(
             event
             for event in mesh_events
             if event.ip == seq.parent_ipv6
-            and event.timestamp_ms >= seq.send_parent_request_ms - 100
+            and event.timestamp_ms >= lower_bound_ms - 100
             and (
                 seq.receive_child_id_response_ms is None
                 or event.timestamp_ms <= seq.receive_child_id_response_ms + 1000
@@ -199,12 +208,14 @@ def local_ms_from_epoch(epoch_value: str) -> int:
 
 def manifest_for_log(log_path: Path) -> dict[str, Any] | None:
     logs_dir = log_path.parent
+    resolved_log_path = str(log_path.resolve())
     for manifest_path in sorted(logs_dir.glob("*_test_manifest_*.json"), reverse=True):
         try:
             manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
         except (OSError, json.JSONDecodeError):
             continue
-        if manifest.get("child_log") == str(log_path):
+        manifest_child_log = manifest.get("child_log")
+        if manifest_child_log and str(Path(manifest_child_log).resolve()) == resolved_log_path:
             manifest["_manifest_path"] = str(manifest_path)
             return manifest
     return None
@@ -294,76 +305,111 @@ def decode_pcap_attach_rows(manifest: dict[str, Any], pcap_path: str, network_ke
     return rows
 
 
-def find_pcap_sequence_rows(seq: AttachSequence, rows: list[dict[str, Any]]) -> dict[str, dict[str, Any]] | None:
+def extract_pcap_sequence_rows(rows: list[dict[str, Any]]) -> list[dict[str, dict[str, Any]]]:
+    sequences: list[dict[str, dict[str, Any]]] = []
+    for req in rows:
+        if req["cmd"] != 9:
+            continue
+        child_extaddr = req["src64"]
+        resp = next(
+            (
+                row
+                for row in rows
+                if row["cmd"] == 10
+                and row["dst64"] == child_extaddr
+                and row["local_ms"] >= req["local_ms"]
+                and row["local_ms"] - req["local_ms"] <= 5000
+            ),
+            None,
+        )
+        if resp is None:
+            continue
+        parent_extaddr = resp["src64"]
+        child_req = next(
+            (
+                row
+                for row in rows
+                if row["cmd"] == 11
+                and row["src64"] == child_extaddr
+                and row["dst64"] == parent_extaddr
+                and row["local_ms"] >= resp["local_ms"]
+                and row["local_ms"] - resp["local_ms"] <= 15000
+            ),
+            None,
+        )
+        if child_req is None:
+            continue
+        child_resp = next(
+            (
+                row
+                for row in rows
+                if row["cmd"] == 12
+                and row["src64"] == parent_extaddr
+                and row["dst64"] == child_extaddr
+                and row["local_ms"] >= child_req["local_ms"]
+                and row["local_ms"] - child_req["local_ms"] <= 5000
+            ),
+            None,
+        )
+        if child_resp is None:
+            continue
+        sequence = {
+            "send_parent_request": req,
+            "receive_parent_response": resp,
+            "send_child_id_request": child_req,
+            "receive_child_id_response": child_resp,
+        }
+        if sequence not in sequences:
+            sequences.append(sequence)
+    return sequences
+
+
+def find_pcap_sequence_rows(
+    seq: AttachSequence,
+    rows: list[dict[str, Any]],
+    used_indexes: set[int],
+) -> dict[str, dict[str, Any]] | None:
     child_extaddr = normalize_extaddr(seq.child_extaddr)
     parent_extaddr = normalize_extaddr(seq.parent_extaddr)
-    if not child_extaddr or not parent_extaddr:
+    sequences = extract_pcap_sequence_rows(rows)
+    candidates: list[tuple[int, int, dict[str, dict[str, Any]]]] = []
+    for index, matched in enumerate(sequences):
+        if index in used_indexes:
+            continue
+        req = matched["send_parent_request"]
+        resp = matched["receive_parent_response"]
+        child_req = matched["send_child_id_request"]
+        child_resp = matched["receive_child_id_response"]
+        if child_extaddr and req["src64"] != child_extaddr:
+            continue
+        if parent_extaddr and resp["src64"] != parent_extaddr:
+            continue
+        score = 0
+        if seq.send_child_id_request_ms is not None:
+            score += abs(child_req["local_ms"] - seq.send_child_id_request_ms)
+        elif seq.receive_child_id_response_ms is not None:
+            score += abs(child_resp["local_ms"] - seq.receive_child_id_response_ms)
+        elif seq.receive_parent_response_ms is not None:
+            score += abs(resp["local_ms"] - seq.receive_parent_response_ms)
+        elif seq.send_parent_request_ms is not None:
+            score += abs(req["local_ms"] - seq.send_parent_request_ms)
+        else:
+            score += 10_000_000
+        candidates.append((score, index, matched))
+    if not candidates:
         return None
-
-    req = next(
-        (
-            row
-            for row in rows
-            if row["cmd"] == 9
-            and row["src64"] == child_extaddr
-            and abs(row["local_ms"] - seq.send_parent_request_ms) <= 5000
-        ),
-        None,
-    )
-    if req is None:
+    candidates.sort(key=lambda item: item[0])
+    score, index, matched = candidates[0]
+    if seq.send_child_id_request_ms is not None and score > 1000:
         return None
-
-    resp = next(
-        (
-            row
-            for row in rows
-            if row["cmd"] == 10
-            and row["src64"] == parent_extaddr
-            and row["dst64"] == child_extaddr
-            and row["local_ms"] >= req["local_ms"]
-            and row["local_ms"] - req["local_ms"] <= 5000
-        ),
-        None,
-    )
-    if resp is None:
+    if seq.receive_child_id_response_ms is not None and score > 1000:
         return None
-
-    child_req = next(
-        (
-            row
-            for row in rows
-            if row["cmd"] == 11
-            and row["src64"] == child_extaddr
-            and row["dst64"] == parent_extaddr
-            and row["local_ms"] >= resp["local_ms"]
-            and row["local_ms"] - resp["local_ms"] <= 5000
-        ),
-        None,
-    )
-    if child_req is None:
+    if seq.receive_parent_response_ms is not None and score > 5000:
         return None
-
-    child_resp = next(
-        (
-            row
-            for row in rows
-            if row["cmd"] == 12
-            and row["src64"] == parent_extaddr
-            and row["dst64"] == child_extaddr
-            and row["local_ms"] >= child_req["local_ms"]
-            and row["local_ms"] - child_req["local_ms"] <= 5000
-        ),
-        None,
-    )
-    if child_resp is None:
+    if seq.send_parent_request_ms is not None and score > 5000:
         return None
-
-    return {
-        "send_parent_request": req,
-        "receive_parent_response": resp,
-        "send_child_id_request": child_req,
-        "receive_child_id_response": child_resp,
-    }
+    used_indexes.add(index)
+    return matched
 
 
 def enrich_sequences_with_pcap(log_path: Path, sequences: list[AttachSequence]) -> None:
@@ -385,8 +431,9 @@ def enrich_sequences_with_pcap(log_path: Path, sequences: list[AttachSequence]) 
     except (subprocess.CalledProcessError, OSError):
         return
 
+    used_indexes: set[int] = set()
     for seq in sequences:
-        matched = find_pcap_sequence_rows(seq, rows)
+        matched = find_pcap_sequence_rows(seq, rows, used_indexes)
         if not matched:
             continue
         seq.timing_source = "pcap"
@@ -463,6 +510,16 @@ def analyze_log(path: Path) -> dict[str, Any]:
             current = AttachSequence(send_parent_request_ms=timestamp_ms, line_no=line_no, child_extaddr=child_extaddr)
             continue
 
+        if match := CHILD_ID_REQ_RE.search(line):
+            if current is None:
+                current = AttachSequence(send_parent_request_ms=None, line_no=line_no, child_extaddr=child_extaddr)
+            current.send_child_id_request_ms = timestamp_ms
+            # Child ID Request identifies the parent that the attach actually
+            # continues with, so it should override any earlier competing
+            # Parent Response metadata seen during discovery.
+            current.parent_ipv6 = match.group(1)
+            continue
+
         if current is None:
             continue
 
@@ -473,14 +530,6 @@ def analyze_log(path: Path) -> dict[str, Any]:
                 current.parent_ipv6 = match.group(1)
             if current.parent_rloc16 is None:
                 current.parent_rloc16 = match.group(2)
-            continue
-
-        if match := CHILD_ID_REQ_RE.search(line):
-            current.send_child_id_request_ms = timestamp_ms
-            # Child ID Request identifies the parent that the attach actually
-            # continues with, so it should override any earlier competing
-            # Parent Response metadata seen during discovery.
-            current.parent_ipv6 = match.group(1)
             continue
 
         if match := CHILD_ID_RESP_RE.search(line):
