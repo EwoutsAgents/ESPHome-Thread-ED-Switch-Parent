@@ -204,6 +204,12 @@ With `VERY_VERBOSE`, the component logs live Parent Response rows, including tar
 
 During the selected-parent attach phase, the ESPHome API may briefly disconnect if the node is connected over Thread. Use USB serial logs for uninterrupted diagnostics.
 
+## Testing
+
+Automated stock, unicast no-early-attach, and multicast no-early-attach test procedures live under [testing/README.md](testing/README.md).
+
+The current automated `ucast` and `mcast` test runners read router 2's observed IEEE 802.15.4 extended address from the `stock_router_2.yaml` logs and use that value automatically when instructing the child to switch parent. The fixed wait after flashing router 2 is currently `90s` in the test harness.
+
 ## OpenThread patching
 
 The component automatically registers `apply-openthread-selected-parent-hook.py` as a PlatformIO pre-build script. You do not need to add a manual `platformio_options.extra_scripts` entry.
@@ -222,4 +228,3 @@ The patch adds OpenThread hooks used to:
 - The selected parent must be visible during discovery before the attach phase is started.
 - If the OpenThread patch does not apply cleanly against the ESP-IDF/OpenThread version in your build, selected-parent switching will not work.
 - Keep a serial console attached while developing or debugging, especially if the device's ESPHome API connection depends on Thread connectivity.
-

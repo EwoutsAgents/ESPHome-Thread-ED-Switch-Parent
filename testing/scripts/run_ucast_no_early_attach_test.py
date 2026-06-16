@@ -49,6 +49,11 @@ VARIANT_PRESETS = {
 
 COMPILE_ORDER = ["empty", "router1", "child", "router2"]
 PCAP_PATH_RE = re.compile(r"Saving (?:test )?capture to (\S+\.pcapng)")
+ROUTER2_RADIO_EXTADDR_RE = re.compile(r"RadioExtAddress:\s*([0-9a-f]{16})", re.IGNORECASE)
+ROUTER2_NETWORKINFO_RE = re.compile(
+    r"Saved NetworkInfo \{[^}]*extaddr:([0-9a-f]{16}), role:(?:router|leader)\b",
+    re.IGNORECASE,
+)
 
 
 @dataclass
@@ -56,7 +61,7 @@ class Timing:
     sniffer_lead_in_seconds: int = 5
     after_router1_seconds: int = 5
     after_child_seconds: int = 10
-    after_router2_seconds: int = 10
+    after_router2_seconds: int = 90
     after_router1_removed_seconds: int = 180
 
 
@@ -262,7 +267,7 @@ def load_settings(args: argparse.Namespace) -> Settings:
         sniffer_lead_in_seconds=int(timing_raw.get("sniffer_lead_in_seconds", 5)),
         after_router1_seconds=int(timing_raw.get("after_router1_seconds", 5)),
         after_child_seconds=int(timing_raw.get("after_child_seconds", 10)),
-        after_router2_seconds=int(timing_raw.get("after_router2_seconds", 10)),
+        after_router2_seconds=int(timing_raw.get("after_router2_seconds", 90)),
         after_router1_removed_seconds=int(timing_raw.get("after_router1_removed_seconds", 180)),
     )
 
@@ -286,14 +291,6 @@ def load_settings(args: argparse.Namespace) -> Settings:
     if sniffer_enabled and not sniffer_command:
         raise SystemExit("[sniffer].enabled is true, but [sniffer].command is empty.")
     switch_raw = raw.get("switch", {})
-    target_parent_extaddr = str(switch_raw.get("target_parent_extaddr", "")).strip().lower()
-    if not target_parent_extaddr:
-        raise SystemExit("Missing [switch].target_parent_extaddr in TOML config.")
-    compact = target_parent_extaddr.replace(":", "").replace("-", "").replace(" ", "")
-    if compact.startswith("0x"):
-        compact = compact[2:]
-    if len(compact) != 16 or any(ch not in "0123456789abcdef" for ch in compact):
-        raise SystemExit("[switch].target_parent_extaddr must be a valid 16-hex-digit IEEE 802.15.4 ExtAddr.")
 
     return Settings(
         config_file=config_file,
@@ -321,7 +318,6 @@ def load_settings(args: argparse.Namespace) -> Settings:
             stop_timeout_seconds=int(sniffer_raw.get("stop_timeout_seconds", 10)),
         ),
         switch=SwitchSettings(
-            target_parent_extaddr=compact,
             settle_seconds=int(switch_raw.get("settle_seconds", 2)),
         ),
         variant=variant_raw,
@@ -731,6 +727,43 @@ def stop_child_log(process: subprocess.Popen[str] | None, *, dry_run: bool) -> N
         process.wait(timeout=10)
 
 
+def router2_extaddr_from_log(path: Path | None) -> str | None:
+    if path is None or not path.exists():
+        return None
+    text = path.read_text(encoding="utf-8", errors="ignore")
+    matches = ROUTER2_RADIO_EXTADDR_RE.findall(text)
+    if matches:
+        return matches[-1].lower()
+    matches = ROUTER2_NETWORKINFO_RE.findall(text)
+    if matches:
+        return matches[-1].lower()
+    return None
+
+
+def verify_router2_target_parent_extaddr(
+    settings: Settings,
+    *,
+    router2_log_path: Path | None,
+    dry_run: bool,
+    manifest: list[dict[str, Any]],
+) -> None:
+    observed = router2_extaddr_from_log(router2_log_path)
+    entry = {
+        "time_utc": now_utc_iso(),
+        "event": "observe_router2_target_parent_extaddr",
+        "observed_router2_extaddr": observed,
+        "router2_log": str(router2_log_path) if router2_log_path else None,
+        "dry_run": dry_run,
+    }
+    manifest.append(entry)
+
+    if observed is None:
+        raise SystemExit("Could not determine router2 ExtAddr from router2 log before sending switch command.")
+
+    settings.switch.target_parent_extaddr = observed
+    log(f"Observed router2 ExtAddr from router2 log: {observed}")
+
+
 def send_child_switch_command(
     settings: Settings,
     *,
@@ -762,7 +795,7 @@ def send_child_switch_command(
         )
 
 
-def record_configured_target_parent_extaddr(
+def record_observed_target_parent_extaddr(
     settings: Settings,
     *,
     dry_run: bool,
@@ -770,12 +803,12 @@ def record_configured_target_parent_extaddr(
 ) -> None:
     entry = {
         "time_utc": now_utc_iso(),
-        "event": "use_configured_target_parent_extaddr",
+        "event": "use_observed_target_parent_extaddr",
         "target_parent_extaddr": settings.switch.target_parent_extaddr,
         "dry_run": dry_run,
     }
     manifest.append(entry)
-    log(f"Using configured target parent ExtAddr: {settings.switch.target_parent_extaddr}")
+    log(f"Using observed router2 ExtAddr as target parent: {settings.switch.target_parent_extaddr}")
 
 
 def run_timed_sequence(
@@ -827,7 +860,13 @@ def run_timed_sequence(
         if settings.capture_router2_log:
             router2_logger, router2_log_path = start_router2_log(settings, dry_run=dry_run, manifest=manifest)
         sleep_step(settings.timing.after_router2_seconds, "router 2 has joined; wait before requesting child switch", dry_run=dry_run, manifest=manifest)
-        record_configured_target_parent_extaddr(settings, dry_run=dry_run, manifest=manifest)
+        verify_router2_target_parent_extaddr(
+            settings,
+            router2_log_path=router2_log_path,
+            dry_run=dry_run,
+            manifest=manifest,
+        )
+        record_observed_target_parent_extaddr(settings, dry_run=dry_run, manifest=manifest)
         stop_child_log(child_logger, dry_run=dry_run)
         child_logger = None
         send_child_switch_command(settings, dry_run=dry_run, manifest=manifest)
