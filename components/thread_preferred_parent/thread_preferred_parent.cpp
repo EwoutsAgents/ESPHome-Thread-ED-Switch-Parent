@@ -920,21 +920,21 @@ otError ThreadPreferredParentComponent::start_selected_parent_attach_(otInstance
     }
     this->schedule_branch_replay_(
         "Selected-parent handoff branch: direct discovery continuation failed with " +
-        std::string(ot_error_to_string_(error)) + "; falling back to selected-parent attach");
-    ESP_LOGW(TAG, "Direct discovery continuation did not start Child ID Request; falling back to selected-parent attach");
+        std::string(ot_error_to_string_(error)) + "; returning to discovery retry");
+    ESP_LOGW(TAG, "Direct discovery continuation did not start Child ID Request; returning to discovery retry");
+    return error;
+  }
+
+  if (this->target_observed_this_attempt_) {
+    ESP_LOGW(TAG, "Direct discovery continuation hook is unavailable; refusing legacy selected-parent fallback");
+    return OT_ERROR_NOT_IMPLEMENTED;
   }
 
   if (this->selected_parent_hook_available_()) {
     this->schedule_branch_replay_(
-        "Selected-parent handoff branch: using fallback selected-parent attach with Parent Request to " +
-        this->extaddr_to_string_(selected));
-    // Prefer the custom selected-parent bridge because it directly constrains
-    // the attach attempt to the observed or configured target ExtAddr.
-    ESP_LOGI(TAG, "T3 selected-parent attach start; target=%s", this->extaddr_to_string_(selected).c_str());
-    ESP_LOGI(TAG, "Starting selected-parent attach to ExtAddr %s", this->extaddr_to_string_(selected).c_str());
-    const bool accepted = this->request_selected_parent_attach_(instance, selected);
-    ESP_LOGI(TAG, "Selected-parent attach hook returned %s", YESNO(accepted));
-    return accepted ? OT_ERROR_NONE : OT_ERROR_FAILED;
+        "Selected-parent handoff branch: legacy selected-parent attach path bypassed");
+    ESP_LOGW(TAG, "Legacy selected-parent attach path is disabled in favor of discovery continuation retries");
+    return OT_ERROR_NOT_IMPLEMENTED;
   }
 
   if (this->require_selected_parent_hook_) {
