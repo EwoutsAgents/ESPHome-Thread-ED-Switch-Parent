@@ -75,3 +75,28 @@ Implemented automation:
 # Other testing
 
 TBA
+
+# Log analysis
+
+Use `scripts/analyze_stock_logs.py` for post-run child-log analysis across `stock`, `ucast-no-early-attach`, and `mcast-no-early-attach` runs. Despite the filename, it is now variant-agnostic and discovers the matching `*_test_manifest_*.json` file from each run directory.
+
+Timing policy:
+- Reported attach timings are derived from sniffer pcap data only for all three variants.
+- Child-log timestamps are retained as reference metadata in the report, but are not used as fallback timing values.
+- If a run does not have a usable manifest, pcap, network key, or complete matched attach sequence in the pcap, the timing fields remain unavailable.
+
+Examples:
+
+```bash
+python3 scripts/analyze_stock_logs.py --run-dir logs/stock/<timestamp> --markdown
+python3 scripts/analyze_stock_logs.py --run-dir logs/ucast-no-early-attach/<timestamp> --markdown
+python3 scripts/analyze_stock_logs.py --run-dir logs/mcast-no-early-attach/<timestamp> --markdown
+```
+
+To write the Markdown report to disk:
+
+```bash
+python3 scripts/analyze_stock_logs.py \
+  --run-dir logs/mcast-no-early-attach/<timestamp> \
+  --write-markdown logs/mcast-no-early-attach/<timestamp>/analysis-report.md
+```

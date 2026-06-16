@@ -210,6 +210,8 @@ Automated stock, unicast no-early-attach, and multicast no-early-attach test pro
 
 The current automated `ucast` and `mcast` test runners read router 2's observed IEEE 802.15.4 extended address from the `stock_router_2.yaml` logs and use that value automatically when instructing the child to switch parent. The fixed wait after flashing router 2 is currently `90s` in the test harness.
 
+Post-run child-log analysis is also available for all three variants. The current analyzer emits attach timings from sniffer pcap data only; log timestamps are kept as reference metadata and are not used as fallback timing values.
+
 ## OpenThread patching
 
 The component automatically registers `apply-openthread-selected-parent-hook.py` as a PlatformIO pre-build script. You do not need to add a manual `platformio_options.extra_scripts` entry.

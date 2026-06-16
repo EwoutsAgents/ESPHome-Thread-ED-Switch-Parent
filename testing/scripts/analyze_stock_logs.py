@@ -199,7 +199,7 @@ def local_ms_from_epoch(epoch_value: str) -> int:
 
 def manifest_for_log(log_path: Path) -> dict[str, Any] | None:
     logs_dir = log_path.parent
-    for manifest_path in sorted(logs_dir.glob("stock_test_manifest_*.json"), reverse=True):
+    for manifest_path in sorted(logs_dir.glob("*_test_manifest_*.json"), reverse=True):
         try:
             manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
         except (OSError, json.JSONDecodeError):
@@ -501,12 +501,12 @@ def analyze_log(path: Path) -> dict[str, Any]:
 
 
 def default_logs_dir(script_path: Path) -> Path:
-    return script_path.resolve().parent.parent / "logs" / "stock"
+    return script_path.resolve().parent.parent / "logs"
 
 
 def parse_args(argv: list[str]) -> argparse.Namespace:
     parser = argparse.ArgumentParser(
-        description="Analyze stock child logs for attach timing and failed TX attempts. Timing values are pcap-only."
+        description="Analyze child logs for attach timing and failed TX attempts across stock, ucast, or mcast runs. Timing values are pcap-only."
     )
     parser.add_argument("--logs-dir", type=Path, default=default_logs_dir(Path(__file__)), help="Directory containing *.log files.")
     parser.add_argument(

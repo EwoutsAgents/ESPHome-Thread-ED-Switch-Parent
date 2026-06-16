@@ -15,6 +15,9 @@ It does not call `esphome run` during the timed sequence. This avoids compile-ti
 
 - `scripts/run_stock_test.py` — main automation runner.
 - `run_stock_test.sh` — convenience wrapper that prefers the repository-local Python venv.
+- `scripts/analyze_stock_logs.py` — post-run child-log analyzer for `stock`, `ucast-no-early-attach`, and `mcast-no-early-attach`.
+  - Reported attach timings are derived from sniffer pcap data only.
+  - Child-log timestamps are preserved as reference metadata and are not used as fallback timing values.
 - `stock_test_devices.example.toml` — copy this to `stock_test_devices.toml` and edit serial ports.
   - Optional extra device entries such as `unused` are erased and flashed with `empty.yaml` before the timed sequence starts.
   - Optional `[sniffer]` settings can start/stop an IEEE 802.15.4 capture command during the timed sequence, then pull the resulting `.pcapng` into `logs/stock/`.
@@ -150,3 +153,27 @@ Each run writes into its own timestamped folder:
 When `--runs N` is used, each repeated timed run gets its own folder with a `-runNN` suffix, for example `logs/stock/20260609-030000-run03/`.
 
 The JSON manifest records every command and wait event, including the remote sniffer pcap path and the pulled local pcap path, which makes it easier to audit whether a result included compilation in the timed section.
+
+## Log analysis
+
+The post-run analyzer is no longer stock-specific despite the filename:
+
+```bash
+python3 scripts/analyze_stock_logs.py --run-dir logs/stock/<timestamp> --markdown
+python3 scripts/analyze_stock_logs.py --run-dir logs/ucast-no-early-attach/<timestamp> --markdown
+python3 scripts/analyze_stock_logs.py --run-dir logs/mcast-no-early-attach/<timestamp> --markdown
+```
+
+To write a Markdown report to disk:
+
+```bash
+python3 scripts/analyze_stock_logs.py \
+  --run-dir logs/mcast-no-early-attach/<timestamp> \
+  --write-markdown logs/mcast-no-early-attach/<timestamp>/analysis-report.md
+```
+
+Timing policy for all variants:
+
+- Reported attach timings come from matched pcap events only.
+- Log timestamps are shown for reference but never substituted for missing pcap timings.
+- If the analyzer cannot match a complete attach sequence in pcap, the timing fields remain unavailable.
