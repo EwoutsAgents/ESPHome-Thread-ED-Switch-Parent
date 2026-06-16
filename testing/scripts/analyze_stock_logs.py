@@ -467,20 +467,26 @@ def analyze_log(path: Path) -> dict[str, Any]:
             continue
 
         if match := PARENT_RESP_RE.search(line):
-            current.receive_parent_response_ms = timestamp_ms
-            current.parent_ipv6 = match.group(1)
-            current.parent_rloc16 = match.group(2)
+            if current.receive_parent_response_ms is None:
+                current.receive_parent_response_ms = timestamp_ms
+            if current.parent_ipv6 is None:
+                current.parent_ipv6 = match.group(1)
+            if current.parent_rloc16 is None:
+                current.parent_rloc16 = match.group(2)
             continue
 
         if match := CHILD_ID_REQ_RE.search(line):
             current.send_child_id_request_ms = timestamp_ms
-            current.parent_ipv6 = current.parent_ipv6 or match.group(1)
+            # Child ID Request identifies the parent that the attach actually
+            # continues with, so it should override any earlier competing
+            # Parent Response metadata seen during discovery.
+            current.parent_ipv6 = match.group(1)
             continue
 
         if match := CHILD_ID_RESP_RE.search(line):
             current.receive_child_id_response_ms = timestamp_ms
-            current.parent_ipv6 = current.parent_ipv6 or match.group(1)
-            current.parent_rloc16 = current.parent_rloc16 or match.group(2)
+            current.parent_ipv6 = match.group(1)
+            current.parent_rloc16 = match.group(2)
             current.parent_extaddr = resolve_parent_extaddr(current, mesh_events=mesh_events, parent_info_events=parent_info_events)
             sequences.append(current)
             current = None
