@@ -311,56 +311,52 @@ def extract_pcap_sequence_rows(rows: list[dict[str, Any]]) -> list[dict[str, dic
         if req["cmd"] != 9:
             continue
         child_extaddr = req["src64"]
-        resp = next(
-            (
-                row
-                for row in rows
-                if row["cmd"] == 10
-                and row["dst64"] == child_extaddr
-                and row["local_ms"] >= req["local_ms"]
-                and row["local_ms"] - req["local_ms"] <= 5000
-            ),
-            None,
-        )
-        if resp is None:
-            continue
-        parent_extaddr = resp["src64"]
-        child_req = next(
-            (
-                row
-                for row in rows
-                if row["cmd"] == 11
-                and row["src64"] == child_extaddr
-                and row["dst64"] == parent_extaddr
-                and row["local_ms"] >= resp["local_ms"]
-                and row["local_ms"] - resp["local_ms"] <= 15000
-            ),
-            None,
-        )
-        if child_req is None:
-            continue
-        child_resp = next(
-            (
-                row
-                for row in rows
-                if row["cmd"] == 12
-                and row["src64"] == parent_extaddr
-                and row["dst64"] == child_extaddr
-                and row["local_ms"] >= child_req["local_ms"]
-                and row["local_ms"] - child_req["local_ms"] <= 5000
-            ),
-            None,
-        )
-        if child_resp is None:
-            continue
-        sequence = {
-            "send_parent_request": req,
-            "receive_parent_response": resp,
-            "send_child_id_request": child_req,
-            "receive_child_id_response": child_resp,
-        }
-        if sequence not in sequences:
-            sequences.append(sequence)
+        responses = [
+            row
+            for row in rows
+            if row["cmd"] == 10
+            and row["dst64"] == child_extaddr
+            and row["local_ms"] >= req["local_ms"]
+            and row["local_ms"] - req["local_ms"] <= 5000
+        ]
+        for resp in responses:
+            parent_extaddr = resp["src64"]
+            child_req = next(
+                (
+                    row
+                    for row in rows
+                    if row["cmd"] == 11
+                    and row["src64"] == child_extaddr
+                    and row["dst64"] == parent_extaddr
+                    and row["local_ms"] >= resp["local_ms"]
+                    and row["local_ms"] - resp["local_ms"] <= 15000
+                ),
+                None,
+            )
+            if child_req is None:
+                continue
+            child_resp = next(
+                (
+                    row
+                    for row in rows
+                    if row["cmd"] == 12
+                    and row["src64"] == parent_extaddr
+                    and row["dst64"] == child_extaddr
+                    and row["local_ms"] >= child_req["local_ms"]
+                    and row["local_ms"] - child_req["local_ms"] <= 5000
+                ),
+                None,
+            )
+            if child_resp is None:
+                continue
+            sequence = {
+                "send_parent_request": req,
+                "receive_parent_response": resp,
+                "send_child_id_request": child_req,
+                "receive_child_id_response": child_resp,
+            }
+            if sequence not in sequences:
+                sequences.append(sequence)
     return sequences
 
 
