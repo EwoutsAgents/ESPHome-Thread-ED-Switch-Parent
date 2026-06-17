@@ -19,8 +19,8 @@ The component uses a two-phase flow:
 - Perform non-disruptive preflight discovery before attempting a selected-parent attach.
 - Send Parent Request as multicast *or* unicast.
   - OpenThread exclusively uses multicast for Parent Requests, whereas this external component also permits unicast Parent Requests. This approach reduces the number of potential Parent Responses.
-- Start selected-parent attach shortly after the target responds with `early_attach_on_target: true`. 
-  - This feature is still a work in progress, but preliminary tests have been stable when using `early_attach_delay: 500ms`.
+- Start selected-parent attach shortly after the target responds using a short `target_response_grace`.
+  - This avoids waiting for the full discovery window after the target is already known.
 - Retry discovery when the target parent is not visible.
 - Expose runtime controls through ESPHome lambdas, buttons, and text entities.
 - Log Parent Response diagnostics for debugging Thread parent selection.
@@ -101,10 +101,9 @@ thread_preferred_parent:
   # instead of the all-routers multicast address.
   parent_request_unicast: false
 
-  # Optional: start selected-parent attach shortly after the target responds,
-  # instead of waiting for the full retry_interval discovery window.
-  early_attach_on_target: true
-  early_attach_delay: 500ms
+  # Optional: after the target Parent Response is seen, wait a short grace
+  # period and then continue into selected-parent attach.
+  target_response_grace: 500ms
 
   require_selected_parent_hook: true
   log_parent_responses: true
@@ -148,11 +147,10 @@ text:
 | `parent_extaddr` | Optional | Target parent IEEE 802.15.4 extended address. This is the recommended way to identify a parent router because the extended address is stable across Thread topology changes. Configure either `parent_extaddr` or `parent_rloc`, not both. |
 | `parent_rloc` | Optional | Target parent RLOC16, for example `0x5800`. This can be convenient while debugging because RLOC16 values appear in OpenThread diagnostics, but they can change when the Thread topology changes. Prefer `parent_extaddr` for repeated tests or long-lived configurations. Configure either `parent_rloc` or `parent_extaddr`, not both. |
 | `max_attempts` | `5` | Maximum number of discovery cycles before the component gives up. Each attempt starts with a Parent Request discovery phase. If the target is observed, the component proceeds to selected-parent attach; if attach times out, the component returns to discovery and consumes another attempt. |
-| `retry_interval` | `8s` | Length of the discovery/preflight window and the delay before retrying discovery. During this window, the component listens for Parent Responses and checks whether the configured target parent is visible. If `early_attach_on_target` is disabled, the component waits for this full interval before starting attach. |
+| `retry_interval` | `8s` | Maximum length of the discovery/preflight window and the delay before retrying discovery. During this window, the component listens for Parent Responses and checks whether the configured target parent is visible. If the target is never observed, the component waits for this full interval before deciding the attempt failed. |
 | `selected_attach_timeout` | `16s` | Maximum time to wait after starting selected-parent attach for the device to become attached to the requested parent. If the current parent does not match the target before this timeout expires, the attach attempt is treated as timed out and the component returns to discovery, subject to `max_attempts`. |
 | `parent_request_unicast` | `false` | When `false`, the preflight Parent Request is sent using normal multicast discovery. When `true`, the component tries to send the Parent Request directly to the target extended address. This is most useful together with `parent_extaddr`; when only an RLOC16 is configured, the component must first resolve it to an extended address. |
-| `early_attach_on_target` | `true` | When enabled, the component starts selected-parent attach shortly after the target parent is first observed during discovery. This avoids waiting for the entire `retry_interval` when the desired parent has already responded. When disabled, attach starts only after the discovery window completes. |
-| `early_attach_delay` | `250ms` | Delay between observing the target Parent Response and starting selected-parent attach when `early_attach_on_target` is enabled. This acts as a debounce period and gives additional Parent Responses time to arrive before the discovery-to-attach handoff. Higher values, such as `500ms`, may be useful while testing. |
+| `target_response_grace` | `250ms` | Delay between observing the target Parent Response and starting selected-parent attach. This gives the discovery path a short settle period before the discovery-to-attach handoff. Higher values, such as `500ms`, may be useful while testing. |
 | `require_selected_parent_hook` | `true` | Require the patched OpenThread selected-parent attach hook to be available. Keeping this enabled makes failures explicit if the patch was not applied or is incompatible with the ESP-IDF/OpenThread version. If disabled, the component may try fallback OpenThread APIs where available, but behaviour is less controlled. |
 | `log_parent_responses` | `true` | Enable buffered Parent Response diagnostics. With `logger.level: INFO` or `DEBUG`, the component reports lifecycle events, summaries, and relevant buffered responses on success or failure. With `logger.level: VERY_VERBOSE`, it also logs live Parent Response rows as they arrive. |
 

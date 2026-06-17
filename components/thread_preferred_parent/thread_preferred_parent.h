@@ -294,18 +294,13 @@ class ThreadPreferredParentComponent : public Component {
   void set_parent_request_unicast(bool enabled) { this->parent_request_unicast_ = enabled; }
 
   /**
-   * Enable or disable early attach once the target is observed.
+   * Set the grace period used after the target Parent Response is observed.
    *
-   * @param enabled `true` to arm the early-attach path.
+   * @param target_response_grace_ms Grace delay in milliseconds.
    */
-  void set_early_attach_on_target(bool enabled) { this->early_attach_on_target_ = enabled; }
-
-  /**
-   * Set the debounce delay used before early attach begins.
-   *
-   * @param early_attach_delay_ms Early-attach delay in milliseconds.
-   */
-  void set_early_attach_delay(uint32_t early_attach_delay_ms) { this->early_attach_delay_ms_ = early_attach_delay_ms; }
+  void set_target_response_grace(uint32_t target_response_grace_ms) {
+    this->target_response_grace_ms_ = target_response_grace_ms;
+  }
 
   /**
    * Start a preferred-parent switch using the currently configured target.
@@ -697,9 +692,8 @@ class ThreadPreferredParentComponent : public Component {
   uint32_t current_attempt_start_ms_{0};
   uint32_t attach_start_ms_{0};
   uint32_t discovery_target_observed_ms_{0};
-  bool early_attach_on_target_{true};
-  bool early_attach_pending_{false};
-  uint32_t early_attach_delay_ms_{250};
+  bool target_response_grace_pending_{false};
+  uint32_t target_response_grace_ms_{250};
   uint32_t discovery_close_drain_ms_{250};
   bool probe_active_{false};
   bool probe_completed_{false};
