@@ -360,10 +360,20 @@ void ThreadPreferredParentComponent::loop() {
       }
 
       if (this->phase_deadline_ms_ != 0) {
+        if (!this->target_observed_this_attempt_ && !this->early_attach_pending_ && !this->discovery_close_drain_pending_) {
+          this->discovery_close_drain_pending_ = true;
+          this->phase_deadline_ms_ = now + this->discovery_close_drain_ms_;
+          ESP_LOGI(TAG,
+                   "Discovery window elapsed without target; draining queued Parent Responses for %u ms before closure",
+                   this->discovery_close_drain_ms_);
+          return;
+        }
+
         // The current discovery window has ended; decide whether to attach or
         // schedule another discovery pass.
         const uint32_t discovery_elapsed_ms = now - this->current_attempt_start_ms_;
         const bool early_attach_deadline = this->early_attach_pending_ && this->target_observed_this_attempt_;
+        this->discovery_close_drain_pending_ = false;
         this->log_discovery_summary_(early_attach_deadline ? "early target debounce complete" : "discovery window complete");
 
         if (this->probe_active_) {
@@ -414,6 +424,7 @@ void ThreadPreferredParentComponent::loop() {
             this->attach_start_ms_ = millis();
             this->phase_deadline_ms_ = now + this->selected_attach_timeout_ms_;
             this->early_attach_pending_ = false;
+            this->discovery_close_drain_pending_ = false;
             this->set_status_(Status::ATTACHING);
             return;
           }
@@ -432,6 +443,7 @@ void ThreadPreferredParentComponent::loop() {
 
         this->phase_deadline_ms_ = 0;
         this->early_attach_pending_ = false;
+        this->discovery_close_drain_pending_ = false;
       }
 
       // No suitable target was acted on during the last window, so either try
@@ -448,6 +460,7 @@ void ThreadPreferredParentComponent::loop() {
                  this->attempts_, this->target_to_string_().c_str());
         this->active_ = false;
         this->phase_ = SwitchPhase::IDLE;
+        this->discovery_close_drain_pending_ = false;
         this->clear_preferred_parent_in_ot_(instance);
         this->set_status_(Status::FAILED);
         return;
@@ -456,6 +469,7 @@ void ThreadPreferredParentComponent::loop() {
       // Begin another non-disruptive Parent Request sweep.
       this->attempts_++;
       this->target_observed_this_attempt_ = false;
+      this->discovery_close_drain_pending_ = false;
       std::memset(&this->observed_target_extaddr_, 0, sizeof(this->observed_target_extaddr_));
       this->reset_parent_response_tracking_();
 

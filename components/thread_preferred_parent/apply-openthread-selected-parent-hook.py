@@ -1272,12 +1272,14 @@ def patch_mle_parent_response_reporting_is_attached_fix(root: Path, *, dry_run: 
 
 
 def patch_selected_parent_parent_response_filter(root: Path, *, dry_run: bool = False) -> str:
-    """During selected-parent attach, ignore Parent Responses from all non-target parents.
+    """Ignore non-target Parent Responses once a specific target is requested.
 
-    The preflight discovery phase intentionally accepts/logs multicast Parent
-    Responses. Once the component starts selected-parent attach, however, the
-    attacher must not allow OpenThread's normal parent-selection heuristic to
-    choose a different candidate.
+    The preflight discovery phase still logs multicast Parent Responses through
+    the ESPHome callback, but OpenThread should not let non-target responses
+    perturb its internal candidate state when a target hint is active. This
+    keeps the current connection non-disruptive while making the later
+    continuation/selected-parent handoff depend on the requested target instead
+    of the generic "best parent" winner.
     """
     path = root / "thread/mle.cpp"
     text = normalize_newlines(path.read_text())
@@ -1285,6 +1287,20 @@ def patch_selected_parent_parent_response_filter(root: Path, *, dry_run: bool = 
         return "already"
 
     filter_block = """
+    if (thread_preferred_parent_ot_parent_discovery_active &&
+        thread_preferred_parent_ot_parent_discovery_target_valid &&
+        !(extAddress == AsCoreType(&thread_preferred_parent_ot_parent_discovery_target_extaddr)))
+    {
+        // THREAD_PREFERRED_PARENT_SELECTED_PARENT_RESPONSE_FILTER
+        // During targeted discovery, keep OpenThread's internal candidate state
+        // from drifting toward non-target responders. ESPHome still sees/logs
+        // every response through the callback above, so this remains
+        // non-disruptive to the current connection while constraining the
+        // discovery state to the requested target only.
+        LogNote("SelectedParent discovery ignored non-target src=0x%04x", sourceAddress);
+        ExitNow(error = kErrorDrop);
+    }
+
     if ((mMode == kSelectedParent) && !(extAddress == mParentCandidate.GetExtAddress()))
     {
         // THREAD_PREFERRED_PARENT_SELECTED_PARENT_RESPONSE_FILTER
@@ -1317,6 +1333,86 @@ def patch_selected_parent_parent_response_filter(root: Path, *, dry_run: bool = 
         label="selected-parent non-target Parent Response filter before authoritative class",
         dry_run=dry_run,
     )
+
+
+def patch_selected_parent_target_bypass_better_parent_gate(root: Path, *, dry_run: bool = False) -> str:
+    """Skip OpenThread's better-parent comparison for the explicit target.
+
+    The selected-parent flow is not asking OpenThread to pick a better parent.
+    It is asking whether one specific target answered during discovery. If a
+    different responder is already sitting in `mParentCandidate`, the generic
+    better-parent gate can reject the target before the candidate is fully
+    populated. For the explicit target only, bypass that gate and let the later
+    snapshot capture the fully parsed candidate.
+    """
+    path = root / "thread/mle.cpp"
+    text = normalize_newlines(path.read_text())
+    marker = "THREAD_PREFERRED_PARENT_TARGET_BYPASS_BETTER_PARENT_GATE"
+    if marker in text:
+        return "already"
+
+    old = """    if (mParentCandidate.IsStateParentResponse() && (mParentCandidate.GetExtAddress() != extAddress))
+    {
+        // If already have a candidate parent, only seek a better parent
+
+        int compare = 0;
+
+#if OPENTHREAD_FTD
+        if (Get<Mle>().IsFullThreadDevice())
+        {
+            compare = ComparePartitions(connectivityTlv.IsSingleton(), leaderData, mParentCandidate.mIsSingleton,
+                                        mParentCandidate.mLeaderData);
+        }
+
+        // Only consider partitions that are the same or better
+        VerifyOrExit(compare >= 0);
+#endif
+
+        // Only consider better parents if the partitions are the same
+        if (compare == 0)
+        {
+            VerifyOrExit(IsBetterParent(sourceAddress, twoWayLinkMargin, connectivityTlv, version, cslAccuracy));
+        }
+    }
+"""
+    new = """    if (mParentCandidate.IsStateParentResponse() && (mParentCandidate.GetExtAddress() != extAddress))
+    {
+        // If already have a candidate parent, only seek a better parent
+        // unless this Parent Response is the explicit discovery target.
+        bool bypassBetterParentGate = thread_preferred_parent_ot_parent_discovery_active &&
+                                      thread_preferred_parent_ot_parent_discovery_target_valid &&
+                                      (extAddress == AsCoreType(&thread_preferred_parent_ot_parent_discovery_target_extaddr));
+
+        if (!bypassBetterParentGate)
+        {
+            int compare = 0;
+
+#if OPENTHREAD_FTD
+            if (Get<Mle>().IsFullThreadDevice())
+            {
+                compare = ComparePartitions(connectivityTlv.IsSingleton(), leaderData, mParentCandidate.mIsSingleton,
+                                            mParentCandidate.mLeaderData);
+            }
+
+            // Only consider partitions that are the same or better
+            VerifyOrExit(compare >= 0);
+#endif
+
+            // Only consider better parents if the partitions are the same
+            if (compare == 0)
+            {
+                VerifyOrExit(IsBetterParent(sourceAddress, twoWayLinkMargin, connectivityTlv, version, cslAccuracy));
+            }
+        }
+        else if (mMode == kBetterParent)
+        {
+            // THREAD_PREFERRED_PARENT_TARGET_BYPASS_BETTER_PARENT_GATE
+            LogNote("SelectedParent ParentResponse bypassed better-parent gate src=0x%04x cand=0x%04x",
+                    sourceAddress, mParentCandidate.GetRloc16());
+        }
+    }
+"""
+    return replace_literal(path, old, new, already=marker, dry_run=dry_run)
 
 def patch_parent_response_challenge_log(root: Path, *, dry_run: bool = False) -> str:
     """Patch parent response challenge log in the OpenThread sources.
@@ -1889,6 +1985,7 @@ def apply_patches(root: Path, *, dry_run: bool = False) -> int:
         ("mle.cpp discovery-only cancel", root / "thread/mle.cpp", patch_mle_discovery_cancel, True),
         ("mle.cpp parent-response reporting call", root / "thread/mle.cpp", patch_mle_parent_response_reporting_call, True),
         ("mle.cpp parent-response reporting IsAttached fix", root / "thread/mle.cpp", patch_mle_parent_response_reporting_is_attached_fix, True),
+        ("mle.cpp selected-parent bypass better-parent gate", root / "thread/mle.cpp", patch_selected_parent_target_bypass_better_parent_gate, True),
         ("mle.cpp preferred discovery target snapshot", root / "thread/mle.cpp", patch_parent_response_target_snapshot, True),
         ("mle_ftd.cpp provisional child timeout for discovery continuation", root / "thread/mle_ftd.cpp", patch_parent_request_child_timeout, True),
         ("mle.cpp selected-parent non-target Parent Response filter", root / "thread/mle.cpp", patch_selected_parent_parent_response_filter, True),

@@ -685,6 +685,7 @@ class ThreadPreferredParentComponent : public Component {
   uint32_t retry_interval_ms_{8000};
   uint32_t selected_attach_timeout_ms_{16000};
   uint32_t phase_deadline_ms_{0};
+  bool discovery_close_drain_pending_{false};
   bool active_{false};
   bool require_selected_parent_hook_{true};
   bool log_parent_responses_{true};
@@ -699,6 +700,7 @@ class ThreadPreferredParentComponent : public Component {
   bool early_attach_on_target_{true};
   bool early_attach_pending_{false};
   uint32_t early_attach_delay_ms_{250};
+  uint32_t discovery_close_drain_ms_{250};
   bool probe_active_{false};
   bool probe_completed_{false};
   uint32_t probe_parent_response_count_{0};
