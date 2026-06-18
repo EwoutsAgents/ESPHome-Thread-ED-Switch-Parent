@@ -34,6 +34,15 @@ void ThreadPreferredParentComponent::setup() {
   } else {
     ESP_LOGW(TAG, "OpenThread Parent Response reporting hook is not available; patch script may not be applied yet");
   }
+
+  if (thread_preferred_parent_ot_register_parent_req_started_callback != nullptr) {
+    thread_preferred_parent_ot_register_parent_req_started_callback(
+        &ThreadPreferredParentComponent::parent_req_started_callback_, this);
+    this->parent_req_started_callback_registered_ = true;
+    ESP_LOGI(TAG, "OpenThread ParentReq-start hook registered");
+  } else {
+    ESP_LOGW(TAG, "OpenThread ParentReq-start hook is not available; discovery timeout will arm at API start");
+  }
 }
 
 /**
@@ -242,6 +251,7 @@ void ThreadPreferredParentComponent::reset_parent_response_tracking_() {
   this->parent_response_target_count_ = 0;
   this->parent_response_buffer_head_ = 0;
   this->current_attempt_start_ms_ = millis();
+  this->parent_req_started_this_attempt_ = false;
   this->best_target_rssi_valid_ = false;
   this->best_target_rssi_ = -128;
   this->best_target_rloc16_ = 0xFFFE;
@@ -476,7 +486,7 @@ void ThreadPreferredParentComponent::loop() {
                this->target_to_string_().c_str());
       otError discovery_error = this->start_parent_discovery_(instance);
       if (discovery_error == OT_ERROR_NONE) {
-        this->phase_deadline_ms_ = now + this->retry_interval_ms_;
+        this->phase_deadline_ms_ = this->parent_req_started_callback_registered_ ? 0 : now + this->retry_interval_ms_;
         this->set_status_(Status::DISCOVERING);
         return;
       }
@@ -545,6 +555,24 @@ void ThreadPreferredParentComponent::parent_response_callback_(const otThreadPar
     return;
   }
   static_cast<ThreadPreferredParentComponent *>(context)->handle_parent_response_(info);
+}
+
+void ThreadPreferredParentComponent::parent_req_started_callback_(void *context) {
+  if (context == nullptr) {
+    return;
+  }
+
+  auto *self = static_cast<ThreadPreferredParentComponent *>(context);
+  if (!self->active_ || self->phase_ != SwitchPhase::DISCOVERING || self->target_response_grace_pending_ ||
+      self->parent_req_started_this_attempt_) {
+    return;
+  }
+
+  const uint32_t now = millis();
+  self->parent_req_started_this_attempt_ = true;
+  self->current_attempt_start_ms_ = now;
+  self->phase_deadline_ms_ = now + self->retry_interval_ms_;
+  ESP_LOGI(TAG, "OpenThread entered ParentReq; discovery deadline armed for %u ms", self->retry_interval_ms_);
 }
 
 /**

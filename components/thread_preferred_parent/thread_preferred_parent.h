@@ -28,6 +28,15 @@ typedef void (*thread_preferred_parent_parent_response_callback_t)(
 );
 
 /**
+ * Function pointer type used to receive ParentReq-start callbacks.
+ *
+ * @param aContext Opaque callback context provided at registration time.
+ */
+typedef void (*thread_preferred_parent_parent_req_started_callback_t)(
+    void *aContext
+);
+
+/**
  * Register a callback for Parent Response notifications emitted by the patch.
  *
  * @param aCallback Callback invoked for each parsed Parent Response.
@@ -35,6 +44,17 @@ typedef void (*thread_preferred_parent_parent_response_callback_t)(
  */
 void thread_preferred_parent_ot_register_parent_response_callback(
     thread_preferred_parent_parent_response_callback_t aCallback,
+    void *aContext
+) __attribute__((weak));
+
+/**
+ * Register a callback that fires when OpenThread actually enters ParentReq.
+ *
+ * @param aCallback Callback invoked when ParentReq starts on-air discovery.
+ * @param aContext Opaque context forwarded back to `aCallback`.
+ */
+void thread_preferred_parent_ot_register_parent_req_started_callback(
+    thread_preferred_parent_parent_req_started_callback_t aCallback,
     void *aContext
 ) __attribute__((weak));
 
@@ -461,6 +481,7 @@ class ThreadPreferredParentComponent : public Component {
    * @param context Opaque pointer to the owning component instance.
    */
   static void parent_response_callback_(const otThreadParentResponseInfo *info, void *context);
+  static void parent_req_started_callback_(void *context);
 
   /**
    * Check whether the current OpenThread parent matches the requested target.
@@ -686,10 +707,12 @@ class ThreadPreferredParentComponent : public Component {
   bool log_parent_responses_{true};
   bool parent_request_unicast_{false};
   bool parent_response_callback_registered_{false};
+  bool parent_req_started_callback_registered_{false};
   uint32_t parent_response_count_{0};
   uint32_t parent_response_last_dumped_count_{0};
   uint32_t parent_response_target_count_{0};
   uint32_t current_attempt_start_ms_{0};
+  bool parent_req_started_this_attempt_{false};
   uint32_t attach_start_ms_{0};
   uint32_t discovery_target_observed_ms_{0};
   bool target_response_grace_pending_{false};

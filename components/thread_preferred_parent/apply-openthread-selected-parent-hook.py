@@ -604,6 +604,45 @@ def patch_selected_parent_destination(root: Path, *, dry_run: bool = False) -> s
     new_text = text[:open_brace] + new_body + text[close_brace:]
     return write_if_changed(path, text, new_text, dry_run=dry_run)
 
+
+def patch_parent_request_started_notify(root: Path, *, dry_run: bool = False) -> str:
+    """Notify the component when OpenThread actually enters ParentReq send.
+
+    Args:
+        root: OpenThread src/core root directory.
+        dry_run: Whether to report changes without writing files.
+
+    Returns:
+        Patch state string such as "already", "missing", or "patched".
+    """
+    path = root / "thread/mle.cpp"
+    text = normalize_newlines(path.read_text())
+
+    if "thread_preferred_parent_ot_notify_parent_req_started();" in text:
+        return "already"
+
+    span = find_function_span(
+        text,
+        r"void\s+Mle::Attacher::SendParentRequest\s*\(\s*ParentRequestType\s+aType\s*\)",
+    )
+    if span is None:
+        print("[thread_preferred_parent][detail] no SendParentRequest function span found for ParentReq-start notify")
+        return "missing"
+
+    _sig_start, open_brace, close_brace, _body_end = span
+    body = text[open_brace:close_brace]
+    pattern = r"(SuccessOrExit\s*\(\s*error\s*=\s*message->SendTo\s*\(\s*destination\s*\)\s*\)\s*;\s*)"
+    replacement = """thread_preferred_parent_ot_notify_parent_req_started();
+    SuccessOrExit(error = message->SendTo(destination));
+"""
+    new_body, count = re.subn(pattern, replacement, body, count=1)
+    if count == 0:
+        print("[thread_preferred_parent][detail] no final SendTo call found for ParentReq-start notify")
+        return "missing"
+
+    new_text = text[:open_brace] + new_body + text[close_brace:]
+    return write_if_changed(path, text, new_text, dry_run=dry_run)
+
 def patch_accept_selected_parent_without_current_parent_response(root: Path, *, dry_run: bool = False) -> str:
     """Patch accept selected parent without current parent response in the OpenThread sources.
 
@@ -667,9 +706,12 @@ def patch_thread_api(root: Path, *, dry_run: bool = False) -> str:
     path = root / "api/thread_api.cpp"
     bridge = """
 using thread_preferred_parent_parent_response_callback_t = void (*)(const otThreadParentResponseInfo *aInfo, void *aContext);
+using thread_preferred_parent_parent_req_started_callback_t = void (*)(void *aContext);
 
 static thread_preferred_parent_parent_response_callback_t sThreadPreferredParentParentResponseCallback = nullptr;
 static void *sThreadPreferredParentParentResponseCallbackContext = nullptr;
+static thread_preferred_parent_parent_req_started_callback_t sThreadPreferredParentParentReqStartedCallback = nullptr;
+static void *sThreadPreferredParentParentReqStartedCallbackContext = nullptr;
 
 extern "C" void thread_preferred_parent_ot_register_parent_response_callback(
     thread_preferred_parent_parent_response_callback_t aCallback,
@@ -680,12 +722,30 @@ extern "C" void thread_preferred_parent_ot_register_parent_response_callback(
     sThreadPreferredParentParentResponseCallbackContext = aContext;
 }
 
+extern "C" void thread_preferred_parent_ot_register_parent_req_started_callback(
+    thread_preferred_parent_parent_req_started_callback_t aCallback,
+    void *aContext)
+{
+    // THREAD_PREFERRED_PARENT_PARENT_REQ_STARTED_HOOK
+    sThreadPreferredParentParentReqStartedCallback = aCallback;
+    sThreadPreferredParentParentReqStartedCallbackContext = aContext;
+}
+
 extern "C" void thread_preferred_parent_ot_notify_parent_response(const otThreadParentResponseInfo *aInfo)
 {
     // THREAD_PREFERRED_PARENT_PARENT_RESPONSE_REPORTING_HOOK
     if ((sThreadPreferredParentParentResponseCallback != nullptr) && (aInfo != nullptr))
     {
         sThreadPreferredParentParentResponseCallback(aInfo, sThreadPreferredParentParentResponseCallbackContext);
+    }
+}
+
+extern "C" void thread_preferred_parent_ot_notify_parent_req_started(void)
+{
+    // THREAD_PREFERRED_PARENT_PARENT_REQ_STARTED_HOOK
+    if (sThreadPreferredParentParentReqStartedCallback != nullptr)
+    {
+        sThreadPreferredParentParentReqStartedCallback(sThreadPreferredParentParentReqStartedCallbackContext);
     }
 }
 
@@ -807,9 +867,12 @@ def patch_thread_api_parent_response_reporting(root: Path, *, dry_run: bool = Fa
 
     addition = """
 using thread_preferred_parent_parent_response_callback_t = void (*)(const otThreadParentResponseInfo *aInfo, void *aContext);
+using thread_preferred_parent_parent_req_started_callback_t = void (*)(void *aContext);
 
 static thread_preferred_parent_parent_response_callback_t sThreadPreferredParentParentResponseCallback = nullptr;
 static void *sThreadPreferredParentParentResponseCallbackContext = nullptr;
+static thread_preferred_parent_parent_req_started_callback_t sThreadPreferredParentParentReqStartedCallback = nullptr;
+static void *sThreadPreferredParentParentReqStartedCallbackContext = nullptr;
 
 extern "C" void thread_preferred_parent_ot_register_parent_response_callback(
     thread_preferred_parent_parent_response_callback_t aCallback,
@@ -820,12 +883,30 @@ extern "C" void thread_preferred_parent_ot_register_parent_response_callback(
     sThreadPreferredParentParentResponseCallbackContext = aContext;
 }
 
+extern "C" void thread_preferred_parent_ot_register_parent_req_started_callback(
+    thread_preferred_parent_parent_req_started_callback_t aCallback,
+    void *aContext)
+{
+    // THREAD_PREFERRED_PARENT_PARENT_REQ_STARTED_HOOK
+    sThreadPreferredParentParentReqStartedCallback = aCallback;
+    sThreadPreferredParentParentReqStartedCallbackContext = aContext;
+}
+
 extern "C" void thread_preferred_parent_ot_notify_parent_response(const otThreadParentResponseInfo *aInfo)
 {
     // THREAD_PREFERRED_PARENT_PARENT_RESPONSE_REPORTING_HOOK
     if ((sThreadPreferredParentParentResponseCallback != nullptr) && (aInfo != nullptr))
     {
         sThreadPreferredParentParentResponseCallback(aInfo, sThreadPreferredParentParentResponseCallbackContext);
+    }
+}
+
+extern "C" void thread_preferred_parent_ot_notify_parent_req_started(void)
+{
+    // THREAD_PREFERRED_PARENT_PARENT_REQ_STARTED_HOOK
+    if (sThreadPreferredParentParentReqStartedCallback != nullptr)
+    {
+        sThreadPreferredParentParentReqStartedCallback(sThreadPreferredParentParentReqStartedCallbackContext);
     }
 }
 
@@ -841,6 +922,60 @@ extern "C" void thread_preferred_parent_ot_notify_parent_response(const otThread
         lambda m: addition + m.group(1),
         already="THREAD_PREFERRED_PARENT_PARENT_RESPONSE_REPORTING_HOOK",
         label="thread_api.cpp parent-response reporting bridge",
+        dry_run=dry_run,
+    )
+
+
+def patch_thread_api_parent_req_started_bridge(root: Path, *, dry_run: bool = False) -> str:
+    """Add the ParentReq-start callback bridge to thread_api.cpp.
+
+    Args:
+        root: OpenThread src/core root directory.
+        dry_run: Whether to report changes without writing files.
+
+    Returns:
+        Patch state string such as "already", "missing", or "patched".
+    """
+    path = root / "api/thread_api.cpp"
+    text = normalize_newlines(path.read_text())
+    if "thread_preferred_parent_ot_notify_parent_req_started" in text:
+        return "already"
+
+    pattern = (
+        r"(using\s+thread_preferred_parent_parent_response_callback_t\s*=.*?"
+        r"extern\s+\"C\"\s+void\s+thread_preferred_parent_ot_notify_parent_response\s*\([^)]*\)\s*\{.*?\n\}\n)"
+    )
+    addition = """
+using thread_preferred_parent_parent_req_started_callback_t = void (*)(void *aContext);
+
+static thread_preferred_parent_parent_req_started_callback_t sThreadPreferredParentParentReqStartedCallback = nullptr;
+static void *sThreadPreferredParentParentReqStartedCallbackContext = nullptr;
+
+extern "C" void thread_preferred_parent_ot_register_parent_req_started_callback(
+    thread_preferred_parent_parent_req_started_callback_t aCallback,
+    void *aContext)
+{
+    // THREAD_PREFERRED_PARENT_PARENT_REQ_STARTED_HOOK
+    sThreadPreferredParentParentReqStartedCallback = aCallback;
+    sThreadPreferredParentParentReqStartedCallbackContext = aContext;
+}
+
+extern "C" void thread_preferred_parent_ot_notify_parent_req_started(void)
+{
+    // THREAD_PREFERRED_PARENT_PARENT_REQ_STARTED_HOOK
+    if (sThreadPreferredParentParentReqStartedCallback != nullptr)
+    {
+        sThreadPreferredParentParentReqStartedCallback(sThreadPreferredParentParentReqStartedCallbackContext);
+    }
+}
+
+"""
+    return replace_regex(
+        path,
+        pattern,
+        lambda m: m.group(1) + "\n" + addition,
+        already="thread_preferred_parent_ot_notify_parent_req_started",
+        label="thread_api.cpp ParentReq-start bridge",
         dry_run=dry_run,
     )
 
@@ -1062,6 +1197,7 @@ def patch_mle_parent_response_reporting_declaration(root: Path, *, dry_run: bool
 
     required = [
         'extern "C" void thread_preferred_parent_ot_notify_parent_response(const otThreadParentResponseInfo *aInfo);',
+        'extern "C" void thread_preferred_parent_ot_notify_parent_req_started(void);',
         'extern "C" bool thread_preferred_parent_ot_parent_discovery_active;',
         'extern "C" bool thread_preferred_parent_ot_parent_discovery_unicast;',
         'extern "C" otExtAddress thread_preferred_parent_ot_parent_discovery_extaddr;',
@@ -1072,7 +1208,7 @@ def patch_mle_parent_response_reporting_declaration(root: Path, *, dry_run: bool
         return "already"
 
     include_old = '#include "utils/static_counter.hpp"\n'
-    include_new = '#include "utils/static_counter.hpp"\n\n#include <openthread/thread.h>\n\nextern "C" void thread_preferred_parent_ot_notify_parent_response(const otThreadParentResponseInfo *aInfo);\nextern "C" bool thread_preferred_parent_ot_parent_discovery_active;\nextern "C" bool thread_preferred_parent_ot_parent_discovery_unicast;\nextern "C" otExtAddress thread_preferred_parent_ot_parent_discovery_extaddr;\nextern "C" bool thread_preferred_parent_ot_parent_discovery_target_valid;\nextern "C" otExtAddress thread_preferred_parent_ot_parent_discovery_target_extaddr;\n// THREAD_PREFERRED_PARENT_PARENT_RESPONSE_REPORTING_HOOK\n// THREAD_PREFERRED_PARENT_DISCOVERY_ONLY_HOOK\n// THREAD_PREFERRED_PARENT_DISCOVERY_UNICAST_HOOK\n// THREAD_PREFERRED_PARENT_DISCOVERY_TARGET_HINT_HOOK\n'
+    include_new = '#include "utils/static_counter.hpp"\n\n#include <openthread/thread.h>\n\nextern "C" void thread_preferred_parent_ot_notify_parent_response(const otThreadParentResponseInfo *aInfo);\nextern "C" void thread_preferred_parent_ot_notify_parent_req_started(void);\nextern "C" bool thread_preferred_parent_ot_parent_discovery_active;\nextern "C" bool thread_preferred_parent_ot_parent_discovery_unicast;\nextern "C" otExtAddress thread_preferred_parent_ot_parent_discovery_extaddr;\nextern "C" bool thread_preferred_parent_ot_parent_discovery_target_valid;\nextern "C" otExtAddress thread_preferred_parent_ot_parent_discovery_target_extaddr;\n// THREAD_PREFERRED_PARENT_PARENT_RESPONSE_REPORTING_HOOK\n// THREAD_PREFERRED_PARENT_PARENT_REQ_STARTED_HOOK\n// THREAD_PREFERRED_PARENT_DISCOVERY_ONLY_HOOK\n// THREAD_PREFERRED_PARENT_DISCOVERY_UNICAST_HOOK\n// THREAD_PREFERRED_PARENT_DISCOVERY_TARGET_HINT_HOOK\n'
 
     if required[0] in prefix:
         insertion = "\n".join(item for item in required[1:] if item not in prefix)
@@ -1972,10 +2108,12 @@ def apply_patches(root: Path, *, dry_run: bool = False) -> int:
         ("mle.cpp remove old force-detach selected-parent block", root / "thread/mle.cpp", patch_remove_force_detach_before_attach, True),
         ("mle.cpp selected-parent candidate preseed", root / "thread/mle.cpp", patch_attach_method_preseed_candidate, True),
         ("mle.cpp selected-router destination", root / "thread/mle.cpp", patch_selected_parent_destination, True),
+        ("mle.cpp ParentReq-start notify", root / "thread/mle.cpp", patch_parent_request_started_notify, True),
         ("mle.cpp selected-parent bypass", root / "thread/mle.cpp", patch_accept_selected_parent_without_current_parent_response, False),
         ("mle.cpp selected-parent force Child ID Request", root / "thread/mle.cpp", patch_selected_parent_child_id_request_bypass, False),
         ("thread_api.cpp bridge", root / "api/thread_api.cpp", patch_thread_api, True),
         ("thread_api.cpp parent-response reporting bridge", root / "api/thread_api.cpp", patch_thread_api_parent_response_reporting, True),
+        ("thread_api.cpp ParentReq-start bridge", root / "api/thread_api.cpp", patch_thread_api_parent_req_started_bridge, True),
         ("thread_api.cpp discovery continuation bridge", root / "api/thread_api.cpp", patch_thread_api_continue_bridge, True),
         ("thread_api.cpp discovery target hint bridge", root / "api/thread_api.cpp", patch_thread_api_target_hint_bridge, True),
         ("mle.cpp parent-response reporting declaration", root / "thread/mle.cpp", patch_mle_parent_response_reporting_declaration, True),
