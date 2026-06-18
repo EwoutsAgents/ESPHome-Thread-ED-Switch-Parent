@@ -643,6 +643,33 @@ def patch_parent_request_started_notify(root: Path, *, dry_run: bool = False) ->
     new_text = text[:open_brace] + new_body + text[close_brace:]
     return write_if_changed(path, text, new_text, dry_run=dry_run)
 
+
+def patch_attacher_state_notify(root: Path, *, dry_run: bool = False) -> str:
+    """Notify the component whenever `Mle::Attacher::SetState()` changes state."""
+    path = root / "thread/mle.cpp"
+    text = normalize_newlines(path.read_text())
+
+    if "thread_preferred_parent_ot_notify_attacher_state(static_cast<uint8_t>(mState));" in text:
+      return "already"
+
+    pattern = (
+        r"(void\s+Mle::Attacher::SetState\s*\(\s*State\s+aState\s*\)\s*\{"
+        r".*?LogInfo\(\"AttachState %s -> %s\", StateToString\(mState\), StateToString\(aState\)\);\s*"
+        r"mState\s*=\s*aState\s*;\s*)"
+    )
+    replacement = (
+        r"\1"
+        'thread_preferred_parent_ot_notify_attacher_state(static_cast<uint8_t>(mState));\n    '
+    )
+    return replace_regex(
+        path,
+        pattern,
+        replacement,
+        already="thread_preferred_parent_ot_notify_attacher_state(static_cast<uint8_t>(mState));",
+        label="mle.cpp Attacher::SetState attacher-state notify",
+        dry_run=dry_run,
+    )
+
 def patch_accept_selected_parent_without_current_parent_response(root: Path, *, dry_run: bool = False) -> str:
     """Patch accept selected parent without current parent response in the OpenThread sources.
 
@@ -707,11 +734,17 @@ def patch_thread_api(root: Path, *, dry_run: bool = False) -> str:
     bridge = """
 using thread_preferred_parent_parent_response_callback_t = void (*)(const otThreadParentResponseInfo *aInfo, void *aContext);
 using thread_preferred_parent_parent_req_started_callback_t = void (*)(void *aContext);
+using thread_preferred_parent_attacher_state_callback_t = void (*)(uint8_t aState, void *aContext);
+using thread_preferred_parent_attacher_state_callback_t = void (*)(uint8_t aState, void *aContext);
 
 static thread_preferred_parent_parent_response_callback_t sThreadPreferredParentParentResponseCallback = nullptr;
 static void *sThreadPreferredParentParentResponseCallbackContext = nullptr;
 static thread_preferred_parent_parent_req_started_callback_t sThreadPreferredParentParentReqStartedCallback = nullptr;
 static void *sThreadPreferredParentParentReqStartedCallbackContext = nullptr;
+static thread_preferred_parent_attacher_state_callback_t sThreadPreferredParentAttacherStateCallback = nullptr;
+static void *sThreadPreferredParentAttacherStateCallbackContext = nullptr;
+static thread_preferred_parent_attacher_state_callback_t sThreadPreferredParentAttacherStateCallback = nullptr;
+static void *sThreadPreferredParentAttacherStateCallbackContext = nullptr;
 
 extern "C" void thread_preferred_parent_ot_register_parent_response_callback(
     thread_preferred_parent_parent_response_callback_t aCallback,
@@ -731,6 +764,24 @@ extern "C" void thread_preferred_parent_ot_register_parent_req_started_callback(
     sThreadPreferredParentParentReqStartedCallbackContext = aContext;
 }
 
+extern "C" void thread_preferred_parent_ot_register_attacher_state_callback(
+    thread_preferred_parent_attacher_state_callback_t aCallback,
+    void *aContext)
+{
+    // THREAD_PREFERRED_PARENT_ATTACHER_STATE_HOOK
+    sThreadPreferredParentAttacherStateCallback = aCallback;
+    sThreadPreferredParentAttacherStateCallbackContext = aContext;
+}
+
+extern "C" void thread_preferred_parent_ot_register_attacher_state_callback(
+    thread_preferred_parent_attacher_state_callback_t aCallback,
+    void *aContext)
+{
+    // THREAD_PREFERRED_PARENT_ATTACHER_STATE_HOOK
+    sThreadPreferredParentAttacherStateCallback = aCallback;
+    sThreadPreferredParentAttacherStateCallbackContext = aContext;
+}
+
 extern "C" void thread_preferred_parent_ot_notify_parent_response(const otThreadParentResponseInfo *aInfo)
 {
     // THREAD_PREFERRED_PARENT_PARENT_RESPONSE_REPORTING_HOOK
@@ -746,6 +797,15 @@ extern "C" void thread_preferred_parent_ot_notify_parent_req_started(void)
     if (sThreadPreferredParentParentReqStartedCallback != nullptr)
     {
         sThreadPreferredParentParentReqStartedCallback(sThreadPreferredParentParentReqStartedCallbackContext);
+    }
+}
+
+extern "C" void thread_preferred_parent_ot_notify_attacher_state(uint8_t aState)
+{
+    // THREAD_PREFERRED_PARENT_ATTACHER_STATE_HOOK
+    if (sThreadPreferredParentAttacherStateCallback != nullptr)
+    {
+        sThreadPreferredParentAttacherStateCallback(aState, sThreadPreferredParentAttacherStateCallbackContext);
     }
 }
 
@@ -910,6 +970,15 @@ extern "C" void thread_preferred_parent_ot_notify_parent_req_started(void)
     }
 }
 
+extern "C" void thread_preferred_parent_ot_notify_attacher_state(uint8_t aState)
+{
+    // THREAD_PREFERRED_PARENT_ATTACHER_STATE_HOOK
+    if (sThreadPreferredParentAttacherStateCallback != nullptr)
+    {
+        sThreadPreferredParentAttacherStateCallback(aState, sThreadPreferredParentAttacherStateCallbackContext);
+    }
+}
+
 """
 
     # If an earlier v4 patch already inserted the selected-parent bridge, place
@@ -976,6 +1045,51 @@ extern "C" void thread_preferred_parent_ot_notify_parent_req_started(void)
         lambda m: m.group(1) + "\n" + addition,
         already="thread_preferred_parent_ot_notify_parent_req_started",
         label="thread_api.cpp ParentReq-start bridge",
+        dry_run=dry_run,
+    )
+
+
+def patch_thread_api_attacher_state_bridge(root: Path, *, dry_run: bool = False) -> str:
+    """Add the attacher-state callback bridge to thread_api.cpp."""
+    path = root / "api/thread_api.cpp"
+    text = normalize_newlines(path.read_text())
+    if "thread_preferred_parent_ot_notify_attacher_state" in text:
+        return "already"
+
+    pattern = (
+        r"(extern\s+\"C\"\s+void\s+thread_preferred_parent_ot_notify_parent_req_started\s*\([^)]*\)\s*\{.*?\n\}\n)"
+    )
+    addition = """
+using thread_preferred_parent_attacher_state_callback_t = void (*)(uint8_t aState, void *aContext);
+
+static thread_preferred_parent_attacher_state_callback_t sThreadPreferredParentAttacherStateCallback = nullptr;
+static void *sThreadPreferredParentAttacherStateCallbackContext = nullptr;
+
+extern "C" void thread_preferred_parent_ot_register_attacher_state_callback(
+    thread_preferred_parent_attacher_state_callback_t aCallback,
+    void *aContext)
+{
+    // THREAD_PREFERRED_PARENT_ATTACHER_STATE_HOOK
+    sThreadPreferredParentAttacherStateCallback = aCallback;
+    sThreadPreferredParentAttacherStateCallbackContext = aContext;
+}
+
+extern "C" void thread_preferred_parent_ot_notify_attacher_state(uint8_t aState)
+{
+    // THREAD_PREFERRED_PARENT_ATTACHER_STATE_HOOK
+    if (sThreadPreferredParentAttacherStateCallback != nullptr)
+    {
+        sThreadPreferredParentAttacherStateCallback(aState, sThreadPreferredParentAttacherStateCallbackContext);
+    }
+}
+
+"""
+    return replace_regex(
+        path,
+        pattern,
+        lambda m: m.group(1) + "\n" + addition,
+        already="thread_preferred_parent_ot_notify_attacher_state",
+        label="thread_api.cpp attacher-state bridge",
         dry_run=dry_run,
     )
 
@@ -1198,6 +1312,7 @@ def patch_mle_parent_response_reporting_declaration(root: Path, *, dry_run: bool
     required = [
         'extern "C" void thread_preferred_parent_ot_notify_parent_response(const otThreadParentResponseInfo *aInfo);',
         'extern "C" void thread_preferred_parent_ot_notify_parent_req_started(void);',
+        'extern "C" void thread_preferred_parent_ot_notify_attacher_state(uint8_t aState);',
         'extern "C" bool thread_preferred_parent_ot_parent_discovery_active;',
         'extern "C" bool thread_preferred_parent_ot_parent_discovery_unicast;',
         'extern "C" otExtAddress thread_preferred_parent_ot_parent_discovery_extaddr;',
@@ -1208,7 +1323,7 @@ def patch_mle_parent_response_reporting_declaration(root: Path, *, dry_run: bool
         return "already"
 
     include_old = '#include "utils/static_counter.hpp"\n'
-    include_new = '#include "utils/static_counter.hpp"\n\n#include <openthread/thread.h>\n\nextern "C" void thread_preferred_parent_ot_notify_parent_response(const otThreadParentResponseInfo *aInfo);\nextern "C" void thread_preferred_parent_ot_notify_parent_req_started(void);\nextern "C" bool thread_preferred_parent_ot_parent_discovery_active;\nextern "C" bool thread_preferred_parent_ot_parent_discovery_unicast;\nextern "C" otExtAddress thread_preferred_parent_ot_parent_discovery_extaddr;\nextern "C" bool thread_preferred_parent_ot_parent_discovery_target_valid;\nextern "C" otExtAddress thread_preferred_parent_ot_parent_discovery_target_extaddr;\n// THREAD_PREFERRED_PARENT_PARENT_RESPONSE_REPORTING_HOOK\n// THREAD_PREFERRED_PARENT_PARENT_REQ_STARTED_HOOK\n// THREAD_PREFERRED_PARENT_DISCOVERY_ONLY_HOOK\n// THREAD_PREFERRED_PARENT_DISCOVERY_UNICAST_HOOK\n// THREAD_PREFERRED_PARENT_DISCOVERY_TARGET_HINT_HOOK\n'
+    include_new = '#include "utils/static_counter.hpp"\n\n#include <openthread/thread.h>\n\nextern "C" void thread_preferred_parent_ot_notify_parent_response(const otThreadParentResponseInfo *aInfo);\nextern "C" void thread_preferred_parent_ot_notify_parent_req_started(void);\nextern "C" void thread_preferred_parent_ot_notify_attacher_state(uint8_t aState);\nextern "C" bool thread_preferred_parent_ot_parent_discovery_active;\nextern "C" bool thread_preferred_parent_ot_parent_discovery_unicast;\nextern "C" otExtAddress thread_preferred_parent_ot_parent_discovery_extaddr;\nextern "C" bool thread_preferred_parent_ot_parent_discovery_target_valid;\nextern "C" otExtAddress thread_preferred_parent_ot_parent_discovery_target_extaddr;\n// THREAD_PREFERRED_PARENT_PARENT_RESPONSE_REPORTING_HOOK\n// THREAD_PREFERRED_PARENT_PARENT_REQ_STARTED_HOOK\n// THREAD_PREFERRED_PARENT_ATTACHER_STATE_HOOK\n// THREAD_PREFERRED_PARENT_DISCOVERY_ONLY_HOOK\n// THREAD_PREFERRED_PARENT_DISCOVERY_UNICAST_HOOK\n// THREAD_PREFERRED_PARENT_DISCOVERY_TARGET_HINT_HOOK\n'
 
     if required[0] in prefix:
         insertion = "\n".join(item for item in required[1:] if item not in prefix)
@@ -2109,11 +2224,13 @@ def apply_patches(root: Path, *, dry_run: bool = False) -> int:
         ("mle.cpp selected-parent candidate preseed", root / "thread/mle.cpp", patch_attach_method_preseed_candidate, True),
         ("mle.cpp selected-router destination", root / "thread/mle.cpp", patch_selected_parent_destination, True),
         ("mle.cpp ParentReq-start notify", root / "thread/mle.cpp", patch_parent_request_started_notify, True),
+        ("mle.cpp attacher-state notify", root / "thread/mle.cpp", patch_attacher_state_notify, True),
         ("mle.cpp selected-parent bypass", root / "thread/mle.cpp", patch_accept_selected_parent_without_current_parent_response, False),
         ("mle.cpp selected-parent force Child ID Request", root / "thread/mle.cpp", patch_selected_parent_child_id_request_bypass, False),
         ("thread_api.cpp bridge", root / "api/thread_api.cpp", patch_thread_api, True),
         ("thread_api.cpp parent-response reporting bridge", root / "api/thread_api.cpp", patch_thread_api_parent_response_reporting, True),
         ("thread_api.cpp ParentReq-start bridge", root / "api/thread_api.cpp", patch_thread_api_parent_req_started_bridge, True),
+        ("thread_api.cpp attacher-state bridge", root / "api/thread_api.cpp", patch_thread_api_attacher_state_bridge, True),
         ("thread_api.cpp discovery continuation bridge", root / "api/thread_api.cpp", patch_thread_api_continue_bridge, True),
         ("thread_api.cpp discovery target hint bridge", root / "api/thread_api.cpp", patch_thread_api_target_hint_bridge, True),
         ("mle.cpp parent-response reporting declaration", root / "thread/mle.cpp", patch_mle_parent_response_reporting_declaration, True),
