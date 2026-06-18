@@ -2137,7 +2137,7 @@ def patch_selected_parent_child_id_request_bypass(root: Path, *, dry_run: bool =
 """
 
     pattern = (
-        r"(\n\s*if\s*\(\s*HasAcceptableParentCandidate\s*\(\s*\)\s*&&\s*"
+        r"(\n\s*if\s*\(\s*(?:HasAcceptableParentCandidate\s*\(\s*\)|hasCandidate)\s*&&\s*"
         r"\(\s*SendChildIdRequest\s*\(\s*\)\s*==\s*kErrorNone\s*\)\s*\)\s*\{)"
     )
     return replace_regex(

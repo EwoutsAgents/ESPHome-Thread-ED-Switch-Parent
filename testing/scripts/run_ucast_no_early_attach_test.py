@@ -99,6 +99,16 @@ class Settings:
     capture_router2_log: bool = True
 
 
+def allocate_run_logs_dir(logs_dir: Path) -> Path:
+    base = logs_dir / dt.datetime.now().strftime("%Y%m%d-%H%M%S")
+    candidate = base
+    counter = 2
+    while candidate.exists():
+        candidate = logs_dir / f"{base.name}-run{counter:02d}"
+        counter += 1
+    return candidate
+
+
 def now_utc_iso() -> str:
     return dt.datetime.now(dt.timezone.utc).isoformat(timespec="seconds")
 
@@ -244,7 +254,7 @@ def load_settings(args: argparse.Namespace) -> Settings:
     configs_dir = resolve_relative(config_dir, raw.get("paths", {}).get("configs_dir"), "configs")
     logs_default = f"logs/{variant_preset['logs_subdir']}"
     logs_dir = resolve_relative(config_dir, raw.get("paths", {}).get("logs_dir"), logs_default)
-    run_logs_dir = logs_dir / dt.datetime.now().strftime("%Y%m%d-%H%M%S")
+    run_logs_dir = allocate_run_logs_dir(logs_dir)
 
     devices = dict(raw.get("devices", {}))
     required = {"router1", "child", "router2"}
@@ -758,6 +768,11 @@ def verify_router2_target_parent_extaddr(
     manifest.append(entry)
 
     if observed is None:
+        if dry_run:
+            observed = "0000000000000000"
+            settings.switch.target_parent_extaddr = observed
+            log(f"Dry-run: using placeholder router2 ExtAddr: {observed}")
+            return
         raise SystemExit("Could not determine router2 ExtAddr from router2 log before sending switch command.")
 
     settings.switch.target_parent_extaddr = observed
@@ -952,65 +967,76 @@ def parse_args(argv: list[str]) -> argparse.Namespace:
     parser.add_argument("--clean-before-compile", action="store_true", help="Run `esphome clean` before each compile.")
     parser.add_argument("--allow-same-port", action="store_true", help="Permit multiple roles to use the same serial port.")
     parser.add_argument("--capture-router2-log", action="store_true", help="Capture router2 logs after router2 is flashed.")
+    parser.add_argument("--runs", type=int, default=1, help="Number of timed test runs to execute sequentially.")
     return parser.parse_args(argv)
 
 
 def main(argv: list[str]) -> int:
     args = parse_args(argv)
+    if args.runs < 1:
+        raise SystemExit("--runs must be at least 1.")
     if args.config is None:
         args.config = str(VARIANT_PRESETS[args.variant]["default_config"])
     settings = load_settings(args)
     if args.capture_router2_log:
         settings.capture_router2_log = True
-    manifest: list[dict[str, Any]] = []
 
     log(f"Using ESPHome: {settings.esphome_bin}")
     log(f"Using esptool: {settings.esptool_bin}")
     log(f"Using configs: {settings.configs_dir}")
     log(f"Using logs base: {settings.logs_dir}")
-    log(f"Using run logs dir: {settings.run_logs_dir}")
+    log(f"Requested runs: {args.runs}")
 
-    child_log: Path | None = None
-    router1_log: Path | None = None
-    router2_log: Path | None = None
-    sniffer_log: Path | None = None
-    sniffer_remote_pcap: str | None = None
-    sniffer_local_pcap: Path | None = None
-    try:
-        if settings.precompile:
-            precompile_all(settings, dry_run=args.dry_run, manifest=manifest)
-        else:
-            log("WARNING: precompile phase skipped. Uploads may fail if the most recent firmware builds do not exist.")
+    compile_manifest: list[dict[str, Any]] = []
+    if settings.precompile:
+        precompile_all(settings, dry_run=args.dry_run, manifest=compile_manifest)
+    else:
+        log("WARNING: precompile phase skipped. Uploads may fail if the most recent firmware builds do not exist.")
 
-        if args.precompile_only:
-            log("Precompile-only requested; not starting timed test sequence.")
-        else:
+    if args.precompile_only:
+        log("Precompile-only requested; not starting timed test sequence.")
+        return 0
+
+    for run_index in range(1, args.runs + 1):
+        settings.run_logs_dir = allocate_run_logs_dir(settings.logs_dir)
+        log(f"Starting run {run_index}/{args.runs}")
+        log(f"Using run logs dir: {settings.run_logs_dir}")
+
+        manifest: list[dict[str, Any]] = []
+        child_log: Path | None = None
+        router1_log: Path | None = None
+        router2_log: Path | None = None
+        sniffer_log: Path | None = None
+        sniffer_remote_pcap: str | None = None
+        sniffer_local_pcap: Path | None = None
+        try:
             child_log, router1_log, router2_log, sniffer_log, sniffer_remote_pcap, sniffer_local_pcap = run_timed_sequence(
                 settings, dry_run=args.dry_run, manifest=manifest
             )
-    finally:
-        manifest_path = write_manifest(
-            settings,
-            manifest,
-            dry_run=args.dry_run,
-            child_log=child_log,
-            router1_log=router1_log,
-            router2_log=router2_log,
-            sniffer_log=sniffer_log,
-            sniffer_remote_pcap=sniffer_remote_pcap,
-            sniffer_local_pcap=sniffer_local_pcap,
-        )
-        log(f"Wrote manifest: {manifest_path}")
-        if child_log:
-            log(f"Child log: {child_log}")
-        if router1_log:
-            log(f"Router1 log: {router1_log}")
-        if router2_log:
-            log(f"Router2 log: {router2_log}")
-        if sniffer_log:
-            log(f"Sniffer log: {sniffer_log}")
-        if sniffer_local_pcap:
-            log(f"Sniffer pcap: {sniffer_local_pcap}")
+        finally:
+            manifest_path = write_manifest(
+                settings,
+                manifest,
+                dry_run=args.dry_run,
+                child_log=child_log,
+                router1_log=router1_log,
+                router2_log=router2_log,
+                sniffer_log=sniffer_log,
+                sniffer_remote_pcap=sniffer_remote_pcap,
+                sniffer_local_pcap=sniffer_local_pcap,
+            )
+            log(f"Wrote manifest: {manifest_path}")
+            if child_log:
+                log(f"Child log: {child_log}")
+            if router1_log:
+                log(f"Router1 log: {router1_log}")
+            if router2_log:
+                log(f"Router2 log: {router2_log}")
+            if sniffer_log:
+                log(f"Sniffer log: {sniffer_log}")
+            if sniffer_local_pcap:
+                log(f"Sniffer pcap: {sniffer_local_pcap}")
+        log(f"Completed run {run_index}/{args.runs}")
 
     return 0
 

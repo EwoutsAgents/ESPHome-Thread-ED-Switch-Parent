@@ -29,8 +29,8 @@ void ThreadPreferredParentComponent::setup() {
   // Response seen during discovery so we can decide when to trigger the
   // selected-parent attach and later explain what happened in the logs.
   if (thread_preferred_parent_ot_register_parent_response_callback != nullptr) {
-    thread_preferred_parent_ot_register_parent_response_callback(
-        &ThreadPreferredParentComponent::parent_response_callback_, this);
+    thread_preferred_parent_ot_register_parent_response_callback(&ThreadPreferredParentComponent::parent_response_callback_,
+                                                                 this);
     this->parent_response_callback_registered_ = true;
     ESP_LOGI(TAG, "OpenThread Parent Response reporting hook registered");
   } else {
@@ -39,7 +39,13 @@ void ThreadPreferredParentComponent::setup() {
 
   if (thread_preferred_parent_ot_register_attacher_state_callback != nullptr) {
     thread_preferred_parent_ot_register_attacher_state_callback(
-        &ThreadPreferredParentComponent::attacher_state_callback_, this);
+        [](uint8_t state, void *context) {
+          if (context == nullptr) {
+            return;
+          }
+          static_cast<ThreadPreferredParentComponent *>(context)->handle_attacher_state_(state);
+        },
+        this);
     this->attacher_state_callback_registered_ = true;
     ESP_LOGI(TAG, "OpenThread attacher-state hook registered");
   } else {
@@ -48,7 +54,24 @@ void ThreadPreferredParentComponent::setup() {
 
   if (thread_preferred_parent_ot_register_parent_req_started_callback != nullptr) {
     thread_preferred_parent_ot_register_parent_req_started_callback(
-        &ThreadPreferredParentComponent::parent_req_started_callback_, this);
+        [](void *context) {
+          if (context == nullptr) {
+            return;
+          }
+
+          auto *self = static_cast<ThreadPreferredParentComponent *>(context);
+          if (!self->active_ || self->phase_ != SwitchPhase::DISCOVERING || self->target_response_grace_pending_ ||
+              self->parent_req_started_this_attempt_) {
+            return;
+          }
+
+          const uint32_t now = millis();
+          self->parent_req_started_this_attempt_ = true;
+          self->current_attempt_start_ms_ = now;
+          self->phase_deadline_ms_ = now + self->retry_interval_ms_;
+          ESP_LOGI(TAG, "OpenThread entered ParentReq; discovery deadline armed for %u ms", self->retry_interval_ms_);
+        },
+        this);
     this->parent_req_started_callback_registered_ = true;
     ESP_LOGI(TAG, "OpenThread ParentReq-start hook registered");
   } else {
@@ -599,9 +622,13 @@ void ThreadPreferredParentComponent::loop() {
  * @param context Opaque pointer to the owning component instance.
  */
 void ThreadPreferredParentComponent::parent_response_callback_(const otThreadParentResponseInfo *info, void *context) {
+  ESP_LOGI(TAG, "Parent Response bridge invoked: info=%p context=%p rloc16=0x%04x",
+           reinterpret_cast<const void *>(info), context, (info != nullptr) ? info->mRloc16 : 0xffff);
+
   // The C callback exported by the patch forwards back into the owning C++
   // component instance. A null context means registration never completed.
   if (context == nullptr) {
+    ESP_LOGW(TAG, "Parent Response bridge dropping callback: null context");
     return;
   }
   static_cast<ThreadPreferredParentComponent *>(context)->handle_parent_response_(info);
@@ -685,7 +712,12 @@ bool ThreadPreferredParentComponent::parent_response_matches_target_(const otThr
  * @param info Parsed Parent Response information from OpenThread.
  */
 void ThreadPreferredParentComponent::handle_parent_response_(const otThreadParentResponseInfo *info) {
+  ESP_LOGI(TAG, "handle_parent_response_ entry: info=%p active=%s phase=%s grace_pending=%s count=%lu",
+           reinterpret_cast<const void *>(info), YESNO(this->active_), this->phase_to_string_(this->phase_),
+           YESNO(this->target_response_grace_pending_), static_cast<unsigned long>(this->parent_response_count_));
+
   if (info == nullptr) {
+    ESP_LOGW(TAG, "handle_parent_response_ returning early: null info");
     return;
   }
 

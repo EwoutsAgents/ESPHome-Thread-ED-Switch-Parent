@@ -408,6 +408,27 @@ def find_pcap_sequence_rows(
     return matched
 
 
+def attach_sequence_from_pcap_match(matched: dict[str, dict[str, Any]]) -> AttachSequence:
+    req = matched["send_parent_request"]
+    resp = matched["receive_parent_response"]
+    child_req = matched["send_child_id_request"]
+    child_resp = matched["receive_child_id_response"]
+    sequence = AttachSequence(
+        send_parent_request_ms=None,
+        receive_parent_response_ms=None,
+        send_child_id_request_ms=None,
+        receive_child_id_response_ms=None,
+        parent_extaddr=resp["src64"],
+        child_extaddr=req["src64"],
+        timing_source="pcap",
+        pcap_frame_numbers={key: value["frame_number"] for key, value in matched.items()},
+        pcap_event_times={key: format_ms(value["local_ms"]) for key, value in matched.items()},
+    )
+    if child_req["dst64"] == resp["src64"]:
+        sequence.parent_extaddr = child_req["dst64"]
+    return sequence
+
+
 def enrich_sequences_with_pcap(log_path: Path, sequences: list[AttachSequence]) -> None:
     manifest = manifest_for_log(log_path)
     if manifest is None:
@@ -427,6 +448,7 @@ def enrich_sequences_with_pcap(log_path: Path, sequences: list[AttachSequence]) 
     except (subprocess.CalledProcessError, OSError):
         return
 
+    pcap_sequences = extract_pcap_sequence_rows(rows)
     used_indexes: set[int] = set()
     for seq in sequences:
         matched = find_pcap_sequence_rows(seq, rows, used_indexes)
@@ -435,6 +457,11 @@ def enrich_sequences_with_pcap(log_path: Path, sequences: list[AttachSequence]) 
         seq.timing_source = "pcap"
         seq.pcap_frame_numbers = {key: value["frame_number"] for key, value in matched.items()}
         seq.pcap_event_times = {key: format_ms(value["local_ms"]) for key, value in matched.items()}
+
+    for index, matched in enumerate(pcap_sequences):
+        if index in used_indexes:
+            continue
+        sequences.append(attach_sequence_from_pcap_match(matched))
 
 
 def analyze_log(path: Path) -> dict[str, Any]:
@@ -542,6 +569,16 @@ def analyze_log(path: Path) -> dict[str, Any]:
         sequences.append(current)
 
     enrich_sequences_with_pcap(path, sequences)
+    sequences.sort(
+        key=lambda seq: (
+            parse_formatted_ms(seq.pcap_event_times.get("send_parent_request"))
+            if seq.pcap_event_times.get("send_parent_request") is not None
+            else seq.send_parent_request_ms
+            if seq.send_parent_request_ms is not None
+            else 10**12,
+            seq.line_no,
+        )
+    )
 
     return {
         "group": log_group_name(path),
@@ -599,6 +636,10 @@ def format_avg_stdev(mean: float | None, stdev: float | None, *, suffix: str = "
         return "n/a"
     tail = f" {suffix}" if suffix else ""
     return f"{format_stat(mean)} ± {format_stat(stdev)}{tail}"
+
+
+def format_optional(value: Any) -> str:
+    return "n/a" if value is None else str(value)
 
 
 TIMING_LABELS = {
@@ -706,13 +747,13 @@ def render_text_report(results: list[dict[str, Any]]) -> str:
             else:
                 for index, seq in enumerate(sequences, start=1):
                     out.append(f"    Attach sequence {index}:")
-                    out.append(f"      log parent request: {seq['send_parent_request']}")
-                    out.append(f"      log parent response: {seq['receive_parent_response']}")
-                    out.append(f"      log child id request: {seq['send_child_id_request']}")
-                    out.append(f"      log child id response: {seq['receive_child_id_response']}")
-                    out.append(f"      parent ipv6: {seq['parent_ipv6']}")
-                    out.append(f"      parent extaddr: {seq['parent_extaddr']}")
-                    out.append(f"      parent rloc16: {seq['parent_rloc16']}")
+                    out.append(f"      log parent request: {format_optional(seq['send_parent_request'])}")
+                    out.append(f"      log parent response: {format_optional(seq['receive_parent_response'])}")
+                    out.append(f"      log child id request: {format_optional(seq['send_child_id_request'])}")
+                    out.append(f"      log child id response: {format_optional(seq['receive_child_id_response'])}")
+                    out.append(f"      parent ipv6: {format_optional(seq['parent_ipv6'])}")
+                    out.append(f"      parent extaddr: {format_optional(seq['parent_extaddr'])}")
+                    out.append(f"      parent rloc16: {format_optional(seq['parent_rloc16'])}")
                     out.append(f"      timing source: {seq['timing_source']}")
                     out.append(f"      {TIMING_LABELS['parent_request_to_response']}: {seq['timing_ms']['parent_request_to_response']} ms")
                     out.append(f"      {TIMING_LABELS['parent_response_to_child_id_request']}: {seq['timing_ms']['parent_response_to_child_id_request']} ms")
@@ -778,13 +819,13 @@ def render_markdown_report(results: list[dict[str, Any]]) -> str:
                 for index, seq in enumerate(sequences, start=1):
                     out.append(f"#### Attach sequence {index}")
                     out.append("")
-                    out.append(f"- log parent request: `{seq['send_parent_request']}`")
-                    out.append(f"- log parent response: `{seq['receive_parent_response']}`")
-                    out.append(f"- log child id request: `{seq['send_child_id_request']}`")
-                    out.append(f"- log child id response: `{seq['receive_child_id_response']}`")
-                    out.append(f"- parent ipv6: `{seq['parent_ipv6']}`")
-                    out.append(f"- parent extaddr: `{seq['parent_extaddr']}`")
-                    out.append(f"- parent rloc16: `{seq['parent_rloc16']}`")
+                    out.append(f"- log parent request: `{format_optional(seq['send_parent_request'])}`")
+                    out.append(f"- log parent response: `{format_optional(seq['receive_parent_response'])}`")
+                    out.append(f"- log child id request: `{format_optional(seq['send_child_id_request'])}`")
+                    out.append(f"- log child id response: `{format_optional(seq['receive_child_id_response'])}`")
+                    out.append(f"- parent ipv6: `{format_optional(seq['parent_ipv6'])}`")
+                    out.append(f"- parent extaddr: `{format_optional(seq['parent_extaddr'])}`")
+                    out.append(f"- parent rloc16: `{format_optional(seq['parent_rloc16'])}`")
                     out.append(f"- timing source: **{seq['timing_source']}**")
                     out.append(f"- {TIMING_LABELS['parent_request_to_response']}: **{seq['timing_ms']['parent_request_to_response']} ms**")
                     out.append(f"- {TIMING_LABELS['parent_response_to_child_id_request']}: **{seq['timing_ms']['parent_response_to_child_id_request']} ms**")
