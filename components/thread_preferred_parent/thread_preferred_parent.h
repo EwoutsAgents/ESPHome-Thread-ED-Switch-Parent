@@ -746,7 +746,7 @@ class ThreadPreferredParentComponent : public Component {
   // begins, especially when the network is busy. Smaller gates proved too
   // eager and marked the preferred-parent attempt failed before the later
   // Parent Responses arrived.
-  uint32_t parent_req_launch_timeout_ms_{5000};
+  uint32_t parent_req_launch_timeout_ms_{15000};
   uint32_t attach_start_ms_{0};
   uint32_t discovery_target_observed_ms_{0};
   bool target_response_grace_pending_{false};
