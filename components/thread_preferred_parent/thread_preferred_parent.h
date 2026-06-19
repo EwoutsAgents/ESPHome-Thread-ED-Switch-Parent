@@ -742,11 +742,11 @@ class ThreadPreferredParentComponent : public Component {
   bool parent_req_started_this_attempt_{false};
   bool parent_req_launch_timed_out_this_attempt_{false};
   uint32_t parent_req_launch_deadline_ms_{0};
-  // The attacher can sit in Start noticeably longer than 1s before ParentReq
-  // begins, especially when the network is busy. A 1s gate proved too eager
-  // and caused the preferred-parent attempt to be marked failed before the
-  // subsequent Parent Responses arrived.
-  uint32_t parent_req_launch_timeout_ms_{3000};
+  // The attacher can sit in Start for multiple seconds before ParentReq
+  // begins, especially when the network is busy. Smaller gates proved too
+  // eager and marked the preferred-parent attempt failed before the later
+  // Parent Responses arrived.
+  uint32_t parent_req_launch_timeout_ms_{5000};
   uint32_t attach_start_ms_{0};
   uint32_t discovery_target_observed_ms_{0};
   bool target_response_grace_pending_{false};
