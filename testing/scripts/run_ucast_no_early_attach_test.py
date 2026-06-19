@@ -47,7 +47,19 @@ VARIANT_PRESETS = {
     },
 }
 
-COMPILE_ORDER = ["empty", "router1", "child", "router2"]
+CONFIG_NAMES = {
+    "empty": "empty.yaml",
+    "router1": "stock_router_1.yaml",
+    "router2": "stock_router_2.yaml",
+    "router3": "stock_router_3.yaml",
+    "router4": "stock_router_4.yaml",
+}
+CORE_COMPILE_ORDER = ["empty", "router1", "child", "router2"]
+MAX_ADDITIONAL_ROUTER_NUMBER = max(
+    int(name.removeprefix("router"))
+    for name in CONFIG_NAMES
+    if name.startswith("router") and name not in {"router1", "router2"}
+)
 PCAP_PATH_RE = re.compile(r"Saving (?:test )?capture to (\S+\.pcapng)")
 ROUTER2_RADIO_EXTADDR_RE = re.compile(r"RadioExtAddress:\s*([0-9a-f]{16})", re.IGNORECASE)
 ROUTER2_NETWORKINFO_RE = re.compile(
@@ -62,6 +74,7 @@ class Timing:
     after_router1_seconds: int = 5
     after_child_seconds: int = 10
     after_router2_seconds: int = 90
+    after_router1_removal_settle_seconds: int = 5
     after_router1_removed_seconds: int = 180
 
 
@@ -97,6 +110,7 @@ class Settings:
     variant: str = "ucast"
     name_prefix: str = "ucast_no_early_attach"
     capture_router2_log: bool = True
+    n_routers: int = 3
 
 
 def allocate_run_logs_dir(logs_dir: Path) -> Path:
@@ -278,6 +292,7 @@ def load_settings(args: argparse.Namespace) -> Settings:
         after_router1_seconds=int(timing_raw.get("after_router1_seconds", 5)),
         after_child_seconds=int(timing_raw.get("after_child_seconds", 10)),
         after_router2_seconds=int(timing_raw.get("after_router2_seconds", 90)),
+        after_router1_removal_settle_seconds=int(timing_raw.get("after_router1_removal_settle_seconds", 5)),
         after_router1_removed_seconds=int(timing_raw.get("after_router1_removed_seconds", 180)),
     )
 
@@ -301,6 +316,13 @@ def load_settings(args: argparse.Namespace) -> Settings:
     if sniffer_enabled and not sniffer_command:
         raise SystemExit("[sniffer].enabled is true, but [sniffer].command is empty.")
     switch_raw = raw.get("switch", {})
+    router_count_raw = raw.get("variant", {}).get("n_routers", 3)
+    n_routers = int(router_count_raw)
+    if n_routers < 3 or f"router{n_routers}" not in CONFIG_NAMES:
+        raise SystemExit(
+            f"[variant].n_routers must reference an available stock_router_<n>.yaml variation. "
+            f"Supported values are 3..{MAX_ADDITIONAL_ROUTER_NUMBER}."
+        )
 
     return Settings(
         config_file=config_file,
@@ -333,15 +355,18 @@ def load_settings(args: argparse.Namespace) -> Settings:
         variant=variant_raw,
         name_prefix=str(variant_preset["name_prefix"]),
         capture_router2_log=bool(raw.get("diagnostics", {}).get("capture_router2_log", True)),
+        n_routers=n_routers,
     )
 
 
 def config_path(settings: Settings, name: str) -> Path:
     config_names = {
-        "empty": "empty.yaml",
-        "router1": "stock_router_1.yaml",
+        "empty": CONFIG_NAMES["empty"],
+        "router1": CONFIG_NAMES["router1"],
         "child": str(VARIANT_PRESETS[settings.variant]["child_config"]),
-        "router2": "stock_router_2.yaml",
+        "router2": CONFIG_NAMES["router2"],
+        "router3": CONFIG_NAMES["router3"],
+        "router4": CONFIG_NAMES["router4"],
     }
     path = settings.configs_dir / config_names[name]
     if not path.exists():
@@ -377,7 +402,7 @@ def erase_flash(settings: Settings, role: str, *, dry_run: bool, manifest: list[
 
 def precompile_all(settings: Settings, *, dry_run: bool, manifest: list[dict[str, Any]]) -> None:
     log("Precompiling firmware before timed test sequence.")
-    for name in COMPILE_ORDER:
+    for name in [*CORE_COMPILE_ORDER, *additional_router_firmware_names(settings)]:
         yaml_path = config_path(settings, name)
         if settings.clean_before_compile:
             run_command(esphome_base(settings) + ["clean", str(yaml_path)], dry_run=dry_run, manifest=manifest)
@@ -403,6 +428,44 @@ def sleep_step(seconds: int, reason: str, *, dry_run: bool, manifest: list[dict[
 
 def extra_empty_roles(settings: Settings) -> list[str]:
     return sorted(role for role in settings.devices if role not in {"router1", "child", "router2"})
+
+
+def additional_router_firmware_names(settings: Settings) -> list[str]:
+    return [f"router{number}" for number in range(3, settings.n_routers + 1)]
+
+
+def additional_router_device_roles(settings: Settings) -> list[str]:
+    extras = extra_empty_roles(settings)
+    selected_roles: list[str] = []
+    remaining_roles = list(extras)
+    for firmware_name in additional_router_firmware_names(settings):
+        if firmware_name in remaining_roles:
+            selected_roles.append(firmware_name)
+            remaining_roles.remove(firmware_name)
+        elif remaining_roles:
+            selected_roles.append(remaining_roles.pop(0))
+    return selected_roles
+
+
+def additional_router_assignments(settings: Settings) -> list[dict[str, str]]:
+    roles = additional_router_device_roles(settings)
+    firmwares = additional_router_firmware_names(settings)
+    return [
+        {"device_role": role, "firmware_name": firmware_name}
+        for role, firmware_name in zip(roles, firmwares, strict=False)
+    ]
+
+
+def require_additional_router_assignments(settings: Settings) -> list[dict[str, str]]:
+    assignments = additional_router_assignments(settings)
+    required_count = len(additional_router_firmware_names(settings))
+    if len(assignments) < required_count:
+        raise SystemExit(
+            "No-early-attach testing requires enough extra ESP32-C6 boards in [devices] for the requested router variation. "
+            f"Need {required_count} extra role(s) for router3..router{settings.n_routers}. "
+            "Add extra roles such as `unused1`, `unused2`, `router3`, or `router4`."
+        )
+    return assignments
 
 
 def start_sniffer_capture(
@@ -847,6 +910,7 @@ def run_timed_sequence(
         for role in ["router1", "child", "router2", *extra_empty_roles(settings)]:
             erase_flash(settings, role, dry_run=dry_run, manifest=manifest)
             upload(settings, role, "empty", dry_run=dry_run, manifest=manifest)
+        additional_router_plan = require_additional_router_assignments(settings)
 
         sniffer_process, sniffer_log_path = start_sniffer_capture(settings, dry_run=dry_run, manifest=manifest)
         if settings.sniffer.enabled:
@@ -874,7 +938,29 @@ def run_timed_sequence(
         upload(settings, "router2", "router2", dry_run=dry_run, manifest=manifest)
         if settings.capture_router2_log:
             router2_logger, router2_log_path = start_router2_log(settings, dry_run=dry_run, manifest=manifest)
-        sleep_step(settings.timing.after_router2_seconds, "router 2 has joined; wait before requesting child switch", dry_run=dry_run, manifest=manifest)
+
+        manifest.append(
+            {
+                "time_utc": now_utc_iso(),
+                "event": "flash_additional_routers",
+                "assignments": additional_router_plan,
+                "dry_run": dry_run,
+            }
+        )
+        for assignment in additional_router_plan:
+            upload(
+                settings,
+                assignment["device_role"],
+                assignment["firmware_name"],
+                dry_run=dry_run,
+                manifest=manifest,
+            )
+        sleep_step(
+            settings.timing.after_router2_seconds,
+            "router 2 and the additional routers have joined; wait before removing router 1",
+            dry_run=dry_run,
+            manifest=manifest,
+        )
         verify_router2_target_parent_extaddr(
             settings,
             router2_log_path=router2_log_path,
@@ -882,6 +968,15 @@ def run_timed_sequence(
             manifest=manifest,
         )
         record_observed_target_parent_extaddr(settings, dry_run=dry_run, manifest=manifest)
+        stop_router1_log(router1_logger, dry_run=dry_run)
+        router1_logger = None
+        upload(settings, "router1", "empty", dry_run=dry_run, manifest=manifest)
+        sleep_step(
+            settings.timing.after_router1_removal_settle_seconds,
+            "router 1 removed; wait before requesting child switch",
+            dry_run=dry_run,
+            manifest=manifest,
+        )
         send_child_switch_command(settings, dry_run=dry_run, manifest=manifest)
         sleep_step(
             settings.timing.after_router1_removed_seconds,
@@ -935,6 +1030,8 @@ def write_manifest(
         "devices": settings.devices,
         "timing": settings.timing.__dict__,
         "switch": settings.switch.__dict__,
+        "n_routers": settings.n_routers,
+        "additional_router_assignments": additional_router_assignments(settings),
         "child_log": str(child_log) if child_log else None,
         "router1_log": str(router1_log) if router1_log else None,
         "router2_log": str(router2_log) if router2_log else None,

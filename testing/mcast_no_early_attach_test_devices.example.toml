@@ -5,9 +5,14 @@
 router1 = "/dev/ttyACM0"
 child = "/dev/ttyACM1"
 router2 = "/dev/ttyACM2"
-# Optional extra ESP32-C6 boards that should also be erased and flashed with
-# empty.yaml before the timed sequence begins.
-# unused = "/dev/ttyACM3"
+# Extra ESP32-C6 boards are erased and flashed with empty.yaml before the
+# timed sequence starts. They are then used in order for router3, router4, ...
+# when n_routers requests them.
+# unused1 = "/dev/ttyACM3"
+# unused2 = "/dev/ttyACM4"
+
+[variant]
+n_routers = 3
 
 [paths]
 # These are relative to this TOML file unless absolute.
@@ -36,6 +41,7 @@ sniffer_lead_in_seconds = 5
 after_router1_seconds = 5
 after_child_seconds = 10
 after_router2_seconds = 90
+after_router1_removal_settle_seconds = 5
 after_router1_removed_seconds = 180  # post-switch recording window
 
 [switch]
