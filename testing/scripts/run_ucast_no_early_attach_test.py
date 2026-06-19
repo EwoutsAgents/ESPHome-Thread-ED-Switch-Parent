@@ -882,10 +882,7 @@ def run_timed_sequence(
             manifest=manifest,
         )
         record_observed_target_parent_extaddr(settings, dry_run=dry_run, manifest=manifest)
-        stop_child_log(child_logger, dry_run=dry_run)
-        child_logger = None
         send_child_switch_command(settings, dry_run=dry_run, manifest=manifest)
-        child_logger, child_log_path = start_child_log(settings, dry_run=dry_run, manifest=manifest)
         sleep_step(
             settings.timing.after_router1_removed_seconds,
             "switch requested; keep recording child",

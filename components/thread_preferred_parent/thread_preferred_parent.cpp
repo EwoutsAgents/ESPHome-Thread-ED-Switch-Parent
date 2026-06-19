@@ -476,6 +476,11 @@ void ThreadPreferredParentComponent::loop() {
                    static_cast<unsigned long>(discovery_elapsed_ms),
                    static_cast<unsigned long>(this->parent_response_count_),
                    static_cast<unsigned long>(this->parent_response_target_count_));
+          ESP_LOGI(TAG,
+                   "Discovery-to-attach state: observed_target=%s best_target_rloc16=0x%04x best_target_rssi=%d best_target_rssi_valid=%s grace_pending=%s",
+                   this->extaddr_to_string_(this->observed_target_extaddr_).c_str(), this->best_target_rloc16_,
+                   this->best_target_rssi_, YESNO(this->best_target_rssi_valid_),
+                   YESNO(this->target_response_grace_pending_));
           ESP_LOGI(TAG, "Preferred parent %s was observed; starting selected-parent attach", this->target_to_string_().c_str());
           otError attach_error = this->start_selected_parent_attach_(instance);
           if (attach_error == OT_ERROR_NONE) {
@@ -755,6 +760,11 @@ void ThreadPreferredParentComponent::handle_parent_response_(const otThreadParen
                  "Target Parent Response observed after %lu ms during discovery; selected-parent attach scheduled after %u ms grace",
                  static_cast<unsigned long>(observed_ms), this->target_response_grace_ms_);
       }
+    } else if (this->active_ && this->phase_ == SwitchPhase::DISCOVERING) {
+      ESP_LOGI(TAG,
+               "Additional target Parent Response observed: matches=%lu best_target_rloc16=0x%04x best_target_rssi=%d",
+               static_cast<unsigned long>(this->parent_response_target_count_), this->best_target_rloc16_,
+               this->best_target_rssi_);
     }
   }
 
@@ -1034,18 +1044,30 @@ otError ThreadPreferredParentComponent::start_parent_discovery_unicast_(otInstan
  */
 otError ThreadPreferredParentComponent::start_selected_parent_attach_(otInstance *instance) {
   otExtAddress selected{};
+  const char *selection_source = "unset";
 
   if (this->target_observed_this_attempt_) {
     // Prefer the address observed in the live Parent Response because it is
     // guaranteed to match what discovery just saw on the network.
     selected = this->observed_target_extaddr_;
+    selection_source = "observed-target-response";
   } else if (this->target_type_ == TargetType::EXTADDR) {
     // If no live observation was captured, fall back to the configured target.
     selected = this->target_extaddr_;
+    selection_source = "configured-extaddr";
   } else if (!this->resolve_rloc16_to_extaddr_(instance, this->target_rloc16_, &selected)) {
     ESP_LOGW(TAG, "RLOC16 0x%04x is not resolved to an ExtAddr", this->target_rloc16_);
     return OT_ERROR_NOT_FOUND;
+  } else {
+    selection_source = "resolved-rloc16";
   }
+
+  ESP_LOGI(TAG,
+           "Selected-parent attach candidate: source=%s selected=%s configured_target=%s target_observed=%s buffered=%lu target_matches=%lu best_target_rloc16=0x%04x best_target_rssi=%d valid_rssi=%s",
+           selection_source, this->extaddr_to_string_(selected).c_str(), this->target_to_string_().c_str(),
+           YESNO(this->target_observed_this_attempt_), static_cast<unsigned long>(this->parent_response_count_),
+           static_cast<unsigned long>(this->parent_response_target_count_), this->best_target_rloc16_,
+           this->best_target_rssi_, YESNO(this->best_target_rssi_valid_));
 
   if (this->target_observed_this_attempt_ && thread_preferred_parent_ot_continue_selected_parent_attach != nullptr) {
     this->schedule_branch_replay_(
@@ -1056,6 +1078,13 @@ otError ThreadPreferredParentComponent::start_selected_parent_attach_(otInstance
              this->extaddr_to_string_(selected).c_str());
     otError error = thread_preferred_parent_ot_continue_selected_parent_attach(instance, &selected);
     ESP_LOGI(TAG, "Selected-parent discovery continuation returned %s", ot_error_to_string_(error));
+    if (error != OT_ERROR_NONE) {
+      ESP_LOGW(TAG,
+               "Selected-parent continuation rejected: target=%s source=%s target_matches=%lu best_target_rloc16=0x%04x best_target_rssi=%d",
+               this->extaddr_to_string_(selected).c_str(), selection_source,
+               static_cast<unsigned long>(this->parent_response_target_count_), this->best_target_rloc16_,
+               this->best_target_rssi_);
+    }
     if (error == OT_ERROR_NONE) {
       this->schedule_branch_replay_(
           "Selected-parent handoff branch: direct discovery continuation accepted for " +
