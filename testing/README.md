@@ -1,6 +1,6 @@
 # Stock testing methods
 
-The method for testing stock performance is as follows. Each variation follows the same setup until `stock_router_2` is flashed. After that point, the protocol differs only in the firmware flashed to the additional router. All variations include one extra router after `stock_router_2`. The current maximum is four routers.
+The method for testing stock performance is as follows. Each variation follows the same setup until `stock_router_2` is flashed. After that point, the protocol differs only in how many extra routers are added after `stock_router_2`. The extra routers are flashed in order, starting at `stock_router_3.yaml`. The current maximum is four routers total.
 
 1. Erase firmware and non-volatile storage on all connected ESP32-C6 boards, including unused boards, using `esptool.py --chip esp32c6 --port <port> erase_flash`.
 2. Put all ESP32-C6 boards, including unused ones, in a predictable state by flashing `empty.yaml` to them.
@@ -11,8 +11,8 @@ The method for testing stock performance is as follows. Each variation follows t
 7. Flash the second ESP32-C6 with `stock_child.yaml`.
 8. Wait 10 seconds.
 9. Flash the third ESP32-C6 with `stock_router_2.yaml`.
-10. Depending on the variation of the run, flash the next ESP32-C6 as an additional router using `stock_router_<n>.yaml`, where `<n>` is the additional router number for that variation. The value of `<n>` starts at `3` and currently has a maximum value of `4`.
-11. Wait 90 seconds so `stock_router_2` and the additional router have time to become router-capable before removing `stock_router_1`.
+10. Depending on the variation of the run, flash one or more additional ESP32-C6 boards as routers using `stock_router_<n>.yaml`, where `<n>` starts at `3` and increases sequentially until the requested maximum router number is reached.
+11. Wait 90 seconds so `stock_router_2` and all additional routers have time to become router-capable before removing `stock_router_1`.
 12. Flash the first ESP32-C6 with `empty.yaml`.
 13. Wait 180 seconds.
 14. Stop the `IEEE 802.15.4` sniffer recording.
