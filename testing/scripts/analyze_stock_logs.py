@@ -459,14 +459,18 @@ def pcap_sequences_from_tshark(
 
 def extract_pcap_sequence_rows(rows: list[dict[str, Any]]) -> list[dict[str, PcapEvent]]:
     sequences: list[dict[str, PcapEvent]] = []
+    rows = sorted(rows, key=lambda row: (row["local_ms"], row["frame_number"]))
+    used_frame_numbers: set[int] = set()
+
     for req in rows:
-        if req["cmd"] != 9:
+        if req["cmd"] != 9 or req["frame_number"] in used_frame_numbers:
             continue
         child_extaddr = req["src64"]
         responses = [
             row
             for row in rows
             if row["cmd"] == 10
+            and row["frame_number"] not in used_frame_numbers
             and row["dst64"] == child_extaddr
             and row["local_ms"] >= req["local_ms"]
             and row["local_ms"] - req["local_ms"] <= 5000
@@ -478,6 +482,7 @@ def extract_pcap_sequence_rows(rows: list[dict[str, Any]]) -> list[dict[str, Pca
                     row
                     for row in rows
                     if row["cmd"] == 11
+                    and row["frame_number"] not in used_frame_numbers
                     and row["src64"] == child_extaddr
                     and row["dst64"] == parent_extaddr
                     and row["local_ms"] >= resp["local_ms"]
@@ -492,6 +497,7 @@ def extract_pcap_sequence_rows(rows: list[dict[str, Any]]) -> list[dict[str, Pca
                     row
                     for row in rows
                     if row["cmd"] == 12
+                    and row["frame_number"] not in used_frame_numbers
                     and row["src64"] == parent_extaddr
                     and row["dst64"] == child_extaddr
                     and row["local_ms"] >= child_req["local_ms"]
@@ -507,8 +513,16 @@ def extract_pcap_sequence_rows(rows: list[dict[str, Any]]) -> list[dict[str, Pca
                 "send_child_id_request": pcap_event_from_row(child_req),
                 "receive_child_id_response": pcap_event_from_row(child_resp),
             }
-            if sequence not in sequences:
-                sequences.append(sequence)
+            sequences.append(sequence)
+            used_frame_numbers.update(
+                {
+                    req["frame_number"],
+                    resp["frame_number"],
+                    child_req["frame_number"],
+                    child_resp["frame_number"],
+                }
+            )
+            break
     return sequences
 
 
