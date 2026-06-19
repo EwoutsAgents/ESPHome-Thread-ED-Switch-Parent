@@ -49,7 +49,7 @@ unused2 = "/dev/ttyACM4"
 # This is the highest stock router number included in the run.
 # 3 means router1 + child + router2 + router3.
 # 4 means router1 + child + router2 + router3 + router4.
-additional_router_number = 3
+n_routers = 3
 ```
 
 Optional sniffer integration:
@@ -132,7 +132,7 @@ esphome compile configs/stock_router_1.yaml
 esphome compile configs/stock_child.yaml
 esphome compile configs/stock_router_2.yaml
 esphome compile configs/stock_router_3.yaml
-esphome compile configs/stock_router_4.yaml   # when [variant].additional_router_number = 4
+esphome compile configs/stock_router_4.yaml   # when [variant].n_routers = 4
 ```
 
 Timed phase:
@@ -146,7 +146,7 @@ Timed phase:
 7. Wait 10 seconds.
 8. `upload stock_router_2.yaml` to router 2.
 9. `upload stock_router_3.yaml` to the first extra configured ESP32-C6 role.
-10. If `[variant].additional_router_number = 4`, `upload stock_router_4.yaml` to the next extra configured ESP32-C6 role.
+10. If `[variant].n_routers = 4`, `upload stock_router_4.yaml` to the next extra configured ESP32-C6 role.
 11. Wait 90 seconds.
 12. `upload empty.yaml` to router 1.
 13. Wait 180 seconds while child logging continues.

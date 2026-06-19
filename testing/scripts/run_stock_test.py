@@ -503,10 +503,11 @@ def load_settings(args: argparse.Namespace) -> Settings:
         raise SystemExit("[sniffer].enabled is true, but [sniffer].command is empty.")
 
     variant_raw = raw.get("variant", {})
-    max_router_number = int(variant_raw.get("additional_router_number", 3))
+    router_count_raw = variant_raw.get("n_routers", variant_raw.get("additional_router_number", 3))
+    max_router_number = int(router_count_raw)
     if max_router_number < 3 or f"router{max_router_number}" not in CONFIG_NAMES:
         raise SystemExit(
-            f"[variant].additional_router_number must reference an available stock_router_<n>.yaml variation. "
+            f"[variant].n_routers must reference an available stock_router_<n>.yaml variation. "
             f"Supported values are 3..{MAX_ADDITIONAL_ROUTER_NUMBER}."
         )
 
