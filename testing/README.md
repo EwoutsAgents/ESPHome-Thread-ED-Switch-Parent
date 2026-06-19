@@ -1,24 +1,23 @@
-In this directory the parent switching performance is tested against the stock openthread switching behaviour.
-
 # Stock testing methods
-The methods for testing stock performance is as follows:
 
-1. Erase firmware and non-volatile storage using `esptool.py --chip esp32c6 --port <port> erase_flash` for all connected ESP32-C6 boards, even the unused ESP32-C6.
+The method for testing stock performance is as follows. Each variation follows the same setup until `stock_router_2` is flashed. After that point, the protocol differs only in the firmware flashed to the additional router. All variations include one extra router after `stock_router_2`. The current maximum is four routers.
+
+1. Erase firmware and non-volatile storage on all connected ESP32-C6 boards, including unused boards, using `esptool.py --chip esp32c6 --port <port> erase_flash`.
 2. Put all ESP32-C6 boards, including unused ones, in a predictable state by flashing `empty.yaml` to them.
-3. Start `IEEE 802.15.4` sniffer recording.
+3. Start the `IEEE 802.15.4` sniffer recording.
 4. Wait 5 seconds.
 5. Flash the first ESP32-C6 with `stock_router_1.yaml`.
 6. Wait 5 seconds.
 7. Flash the second ESP32-C6 with `stock_child.yaml`.
 8. Wait 10 seconds.
 9. Flash the third ESP32-C6 with `stock_router_2.yaml`.
-10. Wait 90 seconds so `stock_router_2` has time to become router-capable before removing `stock_router_1`.
-11. Flash the first ESP32-C6 with `empty.yaml`.
-12. Wait 180 seconds.
-13. Stop the `IEEE 802.15.4` sniffer recording.
-14. Copy the resulting sniffer `.pcapng` into the current run folder under `testing/logs/stock/<timestamp>/`.
+10. Depending on the variation of the run, flash the next ESP32-C6 as an additional router using `stock_router_<n>.yaml`, where `<n>` is the additional router number for that variation. The value of `<n>` starts at `3` and currently has a maximum value of `4`.
+11. Wait 90 seconds so `stock_router_2` and the additional router have time to become router-capable before removing `stock_router_1`.
+12. Flash the first ESP32-C6 with `empty.yaml`.
+13. Wait 180 seconds.
+14. Stop the `IEEE 802.15.4` sniffer recording.
+15. Copy the resulting sniffer `.pcapng` into the current run folder under `testing/logs/stock/<timestamp>/`.
 
-Make sure that any reruns of the above use the same ESP32C6 for each yaml.
 
 
 # Unicast no-early-attach testing 

@@ -42,7 +42,11 @@ Assign each physical ESP32-C6 to a stable role:
 router1 = "/dev/ttyACM0"
 child = "/dev/ttyACM1"
 router2 = "/dev/ttyACM2"
-unused = "/dev/ttyACM3"
+unused1 = "/dev/ttyACM3"
+unused2 = "/dev/ttyACM4"
+
+[variant]
+additional_router_number = 3
 ```
 
 Optional sniffer integration:
@@ -99,7 +103,7 @@ Print the exact compile, upload, log, and wait sequence without touching hardwar
 
 ## Precompile only
 
-Compile all four firmware images and exit before flashing anything:
+Compile the core firmware plus the selected additional-router variation and exit before flashing anything:
 
 ```bash
 ./run_stock_test.sh --config stock_test_devices.toml --precompile-only
@@ -124,11 +128,12 @@ esphome compile configs/empty.yaml
 esphome compile configs/stock_router_1.yaml
 esphome compile configs/stock_child.yaml
 esphome compile configs/stock_router_2.yaml
+esphome compile configs/stock_router_<n>.yaml
 ```
 
 Timed phase:
 
-1. `erase_flash`, then `upload empty.yaml`, for router 1, child, router 2, and any extra configured ESP32-C6 roles such as `unused`.
+1. `erase_flash`, then `upload empty.yaml`, for router 1, child, router 2, and any extra configured ESP32-C6 roles such as `unused1`.
 2. Start the optional sniffer capture command.
 3. Wait `sniffer_lead_in_seconds` so the sniffer is already recording before any test node starts.
 4. `upload stock_router_1.yaml` to router 1.
@@ -136,12 +141,13 @@ Timed phase:
 6. `upload stock_child.yaml` to child and start `esphome logs` for the child.
 7. Wait 10 seconds.
 8. `upload stock_router_2.yaml` to router 2.
-9. Wait 90 seconds.
-10. `upload empty.yaml` to router 1.
-11. Wait 180 seconds while child logging continues.
-12. Stop the optional sniffer capture command.
-13. Copy the resulting sniffer `.pcapng` into `logs/stock/`.
-14. Stop child logging.
+9. `upload stock_router_<n>.yaml` to the first extra configured ESP32-C6 role, where `<n>` comes from `[variant].additional_router_number`.
+10. Wait 90 seconds.
+11. `upload empty.yaml` to router 1.
+12. Wait 180 seconds while child logging continues.
+13. Stop the optional sniffer capture command.
+14. Copy the resulting sniffer `.pcapng` into `logs/stock/`.
+15. Stop child logging.
 
 Each run writes into its own timestamped folder:
 

@@ -39,9 +39,15 @@ CONFIG_NAMES = {
     "router1": "stock_router_1.yaml",
     "child": "stock_child.yaml",
     "router2": "stock_router_2.yaml",
+    "router3": "stock_router_3.yaml",
+    "router4": "stock_router_4.yaml",
 }
-
-COMPILE_ORDER = ["empty", "router1", "child", "router2"]
+CORE_COMPILE_ORDER = ["empty", "router1", "child", "router2"]
+MAX_ADDITIONAL_ROUTER_NUMBER = max(
+    int(name.removeprefix("router"))
+    for name in CONFIG_NAMES
+    if name.startswith("router") and name not in {"router1", "router2"}
+)
 PCAP_PATH_RE = re.compile(r"Saving (?:test )?capture to (\S+\.pcapng)")
 TAIL_SNAPSHOT_LINES = 120
 
@@ -82,6 +88,7 @@ class Settings:
     timing: Timing = field(default_factory=Timing)
     sniffer: SnifferSettings = field(default_factory=SnifferSettings)
     capture_router2_log: bool = True
+    additional_router_number: int = 3
 
 
 def now_utc_iso() -> str:
@@ -184,6 +191,8 @@ class RunTracker:
             "clean_before_compile": self.settings.clean_before_compile,
             "devices": self.settings.devices,
             "timing": self.settings.timing.__dict__,
+            "additional_router_number": self.settings.additional_router_number,
+            "additional_router_device_role": additional_router_device_role(self.settings),
             "child_log": str(self.child_log) if self.child_log else None,
             "router1_log": str(self.router1_log) if self.router1_log else None,
             "router2_log": str(self.router2_log) if self.router2_log else None,
@@ -493,6 +502,14 @@ def load_settings(args: argparse.Namespace) -> Settings:
     if sniffer_enabled and not sniffer_command:
         raise SystemExit("[sniffer].enabled is true, but [sniffer].command is empty.")
 
+    variant_raw = raw.get("variant", {})
+    additional_router_number = int(variant_raw.get("additional_router_number", 3))
+    if additional_router_number < 3 or f"router{additional_router_number}" not in CONFIG_NAMES:
+        raise SystemExit(
+            f"[variant].additional_router_number must reference an available stock_router_<n>.yaml variation. "
+            f"Supported values are 3..{MAX_ADDITIONAL_ROUTER_NUMBER}."
+        )
+
     return Settings(
         config_file=config_file,
         testing_dir=testing_dir,
@@ -519,6 +536,7 @@ def load_settings(args: argparse.Namespace) -> Settings:
             stop_timeout_seconds=int(sniffer_raw.get("stop_timeout_seconds", 10)),
         ),
         capture_router2_log=bool(raw.get("diagnostics", {}).get("capture_router2_log", True)),
+        additional_router_number=additional_router_number,
     )
 
 
@@ -603,7 +621,8 @@ def precompile_all(
     tracker: RunTracker | None = None,
 ) -> None:
     log("Precompiling firmware before timed test sequence.")
-    for name in COMPILE_ORDER:
+    compile_order = [*CORE_COMPILE_ORDER, additional_router_firmware_name(settings)]
+    for name in compile_order:
         yaml_path = config_path(settings, name)
         if settings.clean_before_compile:
             run_command(
@@ -656,6 +675,30 @@ def sleep_step(
 
 def extra_empty_roles(settings: Settings) -> list[str]:
     return sorted(role for role in settings.devices if role not in {"router1", "child", "router2"})
+
+
+def additional_router_firmware_name(settings: Settings) -> str:
+    return f"router{settings.additional_router_number}"
+
+
+def additional_router_device_role(settings: Settings) -> str | None:
+    extras = extra_empty_roles(settings)
+    if not extras:
+        return None
+    preferred_role = additional_router_firmware_name(settings)
+    if preferred_role in extras:
+        return preferred_role
+    return extras[0]
+
+
+def require_additional_router_device_role(settings: Settings) -> str:
+    selected_role = additional_router_device_role(settings)
+    if selected_role is None:
+        raise SystemExit(
+            "Stock testing now requires one extra ESP32-C6 in [devices] for the additional router variation. "
+            "Add an extra role such as `unused1`, `router3`, or `router4`."
+        )
+    return selected_role
 
 
 def start_sniffer_capture(
@@ -1066,6 +1109,7 @@ def run_timed_sequence(
         for role in ["router1", "child", "router2", *extra_empty_roles(settings)]:
             erase_flash(settings, role, dry_run=dry_run, manifest=manifest, tracker=tracker)
             upload(settings, role, "empty", dry_run=dry_run, manifest=manifest, tracker=tracker)
+        additional_router_role = require_additional_router_device_role(settings)
 
         tracker.set_step("start_sniffer")
         sniffer_process, sniffer_log_path = start_sniffer_capture(settings, dry_run=dry_run, manifest=manifest, tracker=tracker)
@@ -1109,9 +1153,19 @@ def run_timed_sequence(
             router2_logger, router2_log_path = start_router2_log(
                 settings, dry_run=dry_run, manifest=manifest, tracker=tracker
             )
+
+        tracker.set_step("flash_additional_router")
+        upload(
+            settings,
+            additional_router_role,
+            additional_router_firmware_name(settings),
+            dry_run=dry_run,
+            manifest=manifest,
+            tracker=tracker,
+        )
         sleep_step(
             settings.timing.after_router2_seconds,
-            "router 2 has joined; wait before removing router 1",
+            "router 2 and the additional router have joined; wait before removing router 1",
             dry_run=dry_run,
             manifest=manifest,
             tracker=tracker,
@@ -1190,6 +1244,8 @@ def write_manifest(
         "clean_before_compile": settings.clean_before_compile,
         "devices": settings.devices,
         "timing": settings.timing.__dict__,
+        "additional_router_number": settings.additional_router_number,
+        "additional_router_device_role": additional_router_device_role(settings),
         "child_log": str(child_log) if child_log else None,
         "router1_log": str(router1_log) if router1_log else None,
         "router2_log": str(router2_log) if router2_log else None,
