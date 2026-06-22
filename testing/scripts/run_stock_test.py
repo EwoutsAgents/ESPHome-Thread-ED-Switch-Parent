@@ -505,10 +505,10 @@ def load_settings(args: argparse.Namespace) -> Settings:
     variant_raw = raw.get("variant", {})
     router_count_raw = variant_raw.get("n_routers", variant_raw.get("additional_router_number", 3))
     max_router_number = int(router_count_raw)
-    if max_router_number < 3 or f"router{max_router_number}" not in CONFIG_NAMES:
+    if max_router_number < 2 or f"router{max_router_number}" not in CONFIG_NAMES:
         raise SystemExit(
             f"[variant].n_routers must reference an available stock_router_<n>.yaml variation. "
-            f"Supported values are 3..{MAX_ADDITIONAL_ROUTER_NUMBER}."
+            f"Supported values are 2..{MAX_ADDITIONAL_ROUTER_NUMBER}."
         )
 
     return Settings(
