@@ -1,21 +1,25 @@
 #!/usr/bin/env python3
-"""Analyze Thread child attach timing from pcaps only.
+"""Analyze Thread child attach timing from pcap-derived CSVs only.
 
 Strict rules:
 - timing metrics come only from pcap event timestamps
 - child-log timestamps are only correlation hints and report metadata
+- pcap decoding is delegated to testing/scripts/pcap_to_csv.py
 - a counted attach must be a complete pcap sequence:
   Parent Request -> Parent Response -> Child ID Request -> Child ID Response
+- Parent Request -> Parent Response and Parent Response -> Child ID Request are matched by MLE Challenge/Response TLVs
+- Child ID Request -> Child ID Response is matched by reversed parent/child endpoints, ordering, and timeout
 - partial discovery attempts stay visible in the report but are not counted
 """
 
 from __future__ import annotations
 
 import argparse
+import csv
 import glob
 import json
+import os
 import re
-import shutil
 import statistics
 import subprocess
 import sys
@@ -44,7 +48,7 @@ SWITCH_TARGET_RE = re.compile(
 TX_FAILED_RE = re.compile(
     r"Frame tx attempt (\d+)/(\d+) failed, error:([^,]+), .*?seqnum:(\d+)(?:, .*?dst:([0-9a-f]+))?"
 )
-NETWORK_KEY_RE = re.compile(r"network_key:\s*0x([0-9a-fA-F]{32})")
+NETWORK_KEY_RE = re.compile(r"network_key:\s*(?:0x)?([0-9a-fA-F]{32})")
 SAVE_PCAP_RE = re.compile(r"Saving (?:test )?capture to (\S+\.pcapng)")
 
 TIMING_LABELS = {
@@ -60,6 +64,9 @@ PCAP_EVENT_KEYS = (
     "receive_child_id_response",
 )
 DAY_MS = 24 * 60 * 60 * 1000
+PARENT_RESPONSE_TIMEOUT_MS = 5000
+CHILD_ID_REQUEST_TIMEOUT_MS = 15000
+CHILD_ID_RESPONSE_TIMEOUT_MS = 5000
 
 
 @dataclass
@@ -78,6 +85,10 @@ class PcapEvent:
     local_ms: int
     src64: str | None
     dst64: str | None
+    ipv6_src: str | None = None
+    ipv6_dst: str | None = None
+    challenge: str | None = None
+    response: str | None = None
 
 
 @dataclass
@@ -149,6 +160,35 @@ def compact_extaddr(extaddr: str | None) -> str | None:
         return None
     compact = extaddr.replace(":", "").strip().lower()
     return compact or None
+
+
+def normalize_hex_value(value: str | None) -> str | None:
+    if value is None:
+        return None
+    compact = value.replace(":", "").replace(" ", "").strip().lower()
+    return compact or None
+
+
+def split_values(value: str | None) -> list[str]:
+    if not value:
+        return []
+    values: list[str] = []
+    for part in str(value).split("|"):
+        normalized = normalize_hex_value(part)
+        if normalized:
+            values.append(normalized)
+    return values
+
+
+def first_value(value: str | None) -> str | None:
+    values = split_values(value)
+    return values[0] if values else None
+
+
+def values_intersect(left: str | None, right: str | None) -> bool:
+    left_values = set(split_values(left))
+    right_values = set(split_values(right))
+    return bool(left_values and right_values and left_values.intersection(right_values))
 
 
 def parse_timestamp_ms(line: str) -> int | None:
@@ -378,6 +418,10 @@ def pcap_path_for_log(manifest: dict[str, Any], log_path: Path) -> Path | None:
 
 
 def network_key_for_child_log(manifest: dict[str, Any], log_path: Path) -> str | None:
+    if env_key := os.environ.get("THREAD_NETWORK_KEY"):
+        if match := re.fullmatch(r"(?:0x)?([0-9a-fA-F]{32})", env_key.strip()):
+            return match.group(1).lower()
+
     config_candidates: list[Path] = []
     config_file = manifest.get("config_file")
     if isinstance(config_file, str):
@@ -400,113 +444,168 @@ def network_key_for_child_log(manifest: dict[str, Any], log_path: Path) -> str |
     return None
 
 
-def pcap_sequences_from_tshark(
-    pcap_path: Path,
-    network_key: str,
-    *,
-    offset_ms: int,
-) -> list[dict[str, PcapEvent]]:
-    if shutil.which("tshark") is None:
-        raise FileNotFoundError("tshark not found")
-    args = [
-        "tshark",
-        "-r",
-        str(pcap_path),
-        "-o",
-        f'uat:ieee802154_keys:"{network_key}","1","Thread hash"',
-        "-o",
-        "thread.thr_seq_ctr:00000000",
-        "-o",
-        "wpan.802154_fcs_ok:FALSE",
-        "-o",
-        "wpan.802154_sec_suite:AES-128 Encryption, 32-bit Integrity Protection",
-        "-T",
-        "fields",
-        "-Y",
-        "mle.cmd == 9 || mle.cmd == 10 || mle.cmd == 11 || mle.cmd == 12",
-        "-e",
-        "frame.number",
-        "-e",
-        "frame.time_epoch",
-        "-e",
-        "mle.cmd",
-        "-e",
-        "wpan.src64",
-        "-e",
-        "wpan.dst64",
+def pcap_to_csv_script_path() -> Path:
+    return Path(__file__).resolve().with_name("pcap_to_csv.py")
+
+
+def derived_attach_csv_name(pcap: Path) -> str:
+    stem = pcap.stem
+    if "_sniffer_" in stem:
+        prefix, stamp = stem.split("_sniffer_", 1)
+        return f"{prefix}_attach_mle_{stamp}.csv"
+    return f"{stem}-attach_mle.csv"
+
+
+def candidate_attach_csv_paths(pcap_path: Path) -> list[Path]:
+    run_dir = pcap_path.parent
+    candidates = [
+        run_dir / derived_attach_csv_name(pcap_path),
+        run_dir / "attach_mle.csv",
+        run_dir / f"{pcap_path.stem}_attach_mle.csv",
+        run_dir / f"{pcap_path.stem}-attach_mle.csv",
     ]
-    proc = subprocess.run(args, capture_output=True, text=True, check=True)
+    candidates.extend(sorted(run_dir.glob("*attach_mle*.csv"), key=lambda p: p.stat().st_mtime if p.exists() else 0, reverse=True))
+    unique: list[Path] = []
+    seen: set[Path] = set()
+    for candidate in candidates:
+        if candidate in seen:
+            continue
+        seen.add(candidate)
+        unique.append(candidate)
+    return unique
+
+
+def attach_csv_path_for_pcap(pcap_path: Path) -> Path | None:
+    for candidate in candidate_attach_csv_paths(pcap_path):
+        if candidate.exists():
+            return candidate
+    return None
+
+
+def generate_attach_csv(pcap_path: Path, network_key: str) -> Path:
+    script = pcap_to_csv_script_path()
+    if not script.exists():
+        raise FileNotFoundError(f"{script} not found")
+
+    args = [sys.executable, str(script), str(pcap_path), "--network-key", network_key, "--overwrite"]
+    proc = subprocess.run(args, capture_output=True, text=True, check=False)
+    if proc.returncode != 0:
+        raise subprocess.CalledProcessError(proc.returncode, args, output=proc.stdout, stderr=proc.stderr)
+
+    csv_path = attach_csv_path_for_pcap(pcap_path)
+    if csv_path is None:
+        raise FileNotFoundError(f"pcap_to_csv.py completed but no attach_mle CSV was found next to {pcap_path}")
+    return csv_path
+
+
+def load_attach_csv_rows(csv_path: Path, *, offset_ms: int) -> list[dict[str, Any]]:
     rows: list[dict[str, Any]] = []
-    for line in proc.stdout.splitlines():
-        parts = line.split("\t")
-        if len(parts) < 5:
-            continue
-        frame_no, epoch, cmd, src64, dst64 = parts[:5]
-        if not frame_no or not epoch or not cmd:
-            continue
-        rows.append(
-            {
-                "frame_number": int(frame_no),
-                "epoch": float(epoch),
-                "cmd": int(cmd),
-                "src64": compact_extaddr(src64),
-                "dst64": compact_extaddr(dst64),
-                "local_ms": epoch_to_local_ms(float(epoch), offset_ms),
-            }
-        )
-    return extract_pcap_sequence_rows(rows)
+    with csv_path.open(newline="", encoding="utf-8") as f:
+        for row in csv.DictReader(f):
+            frame_no = row.get("frame.number") or ""
+            epoch = row.get("frame.time_epoch") or ""
+            cmd = row.get("mle.cmd") or ""
+            if not frame_no or not epoch or not cmd:
+                continue
+            try:
+                frame_number = int(frame_no)
+                epoch_float = float(epoch)
+                cmd_int = int(str(cmd).split("|")[0])
+            except ValueError:
+                continue
+            rows.append(
+                {
+                    "frame_number": frame_number,
+                    "epoch": epoch_float,
+                    "cmd": cmd_int,
+                    "src64": compact_extaddr(row.get("wpan.src64")),
+                    "dst64": compact_extaddr(row.get("wpan.dst64")),
+                    "ipv6_src": row.get("ipv6.src") or None,
+                    "ipv6_dst": row.get("ipv6.dst") or None,
+                    "challenge": row.get("mle.tlv.challenge") or row.get("mle.challenge") or None,
+                    "response": row.get("mle.tlv.response") or row.get("mle.response") or None,
+                    "local_ms": epoch_to_local_ms(epoch_float, offset_ms),
+                }
+            )
+    return sorted(rows, key=lambda row: (row["epoch"], row["frame_number"]))
 
 
-def extract_pcap_sequence_rows(rows: list[dict[str, Any]]) -> list[dict[str, PcapEvent]]:
+def pcap_sequences_from_csv_rows(rows: list[dict[str, Any]]) -> list[dict[str, PcapEvent]]:
     sequences: list[dict[str, PcapEvent]] = []
-    rows = sorted(rows, key=lambda row: (row["local_ms"], row["frame_number"]))
     used_frame_numbers: set[int] = set()
 
     for req in rows:
         if req["cmd"] != 9 or req["frame_number"] in used_frame_numbers:
             continue
+        if not split_values(req.get("challenge")):
+            continue
+
         child_extaddr = req["src64"]
-        responses = [
+        response_candidates = [
             row
             for row in rows
             if row["cmd"] == 10
             and row["frame_number"] not in used_frame_numbers
-            and row["dst64"] == child_extaddr
-            and row["local_ms"] >= req["local_ms"]
-            and row["local_ms"] - req["local_ms"] <= 5000
+            and row["frame_number"] > req["frame_number"]
+            and (not child_extaddr or row["dst64"] == child_extaddr)
+            and values_intersect(row.get("response"), req.get("challenge"))
+            and delta_ms(req["local_ms"], row["local_ms"]) is not None
+            and 0 <= delta_ms(req["local_ms"], row["local_ms"]) <= PARENT_RESPONSE_TIMEOUT_MS
         ]
-        for resp in responses:
+        if not response_candidates:
+            continue
+        response_candidates.sort(key=lambda row: (row["epoch"], row["frame_number"]))
+
+        for resp in response_candidates:
             parent_extaddr = resp["src64"]
+            if not split_values(resp.get("challenge")):
+                continue
+
             child_req = next(
                 (
                     row
                     for row in rows
                     if row["cmd"] == 11
                     and row["frame_number"] not in used_frame_numbers
-                    and row["src64"] == child_extaddr
-                    and row["dst64"] == parent_extaddr
-                    and row["local_ms"] >= resp["local_ms"]
-                    and row["local_ms"] - resp["local_ms"] <= 15000
+                    and row["frame_number"] > resp["frame_number"]
+                    and (not child_extaddr or row["src64"] == child_extaddr)
+                    and (not parent_extaddr or row["dst64"] == parent_extaddr)
+                    and values_intersect(row.get("response"), resp.get("challenge"))
+                    and delta_ms(resp["local_ms"], row["local_ms"]) is not None
+                    and 0 <= delta_ms(resp["local_ms"], row["local_ms"]) <= CHILD_ID_REQUEST_TIMEOUT_MS
                 ),
                 None,
             )
             if child_req is None:
                 continue
+
+            next_parent_request = next(
+                (
+                    row
+                    for row in rows
+                    if row["cmd"] == 9
+                    and row["frame_number"] > child_req["frame_number"]
+                    and (not child_extaddr or row["src64"] == child_extaddr)
+                ),
+                None,
+            )
             child_resp = next(
                 (
                     row
                     for row in rows
                     if row["cmd"] == 12
                     and row["frame_number"] not in used_frame_numbers
-                    and row["src64"] == parent_extaddr
-                    and row["dst64"] == child_extaddr
-                    and row["local_ms"] >= child_req["local_ms"]
-                    and row["local_ms"] - child_req["local_ms"] <= 5000
+                    and row["frame_number"] > child_req["frame_number"]
+                    and (next_parent_request is None or row["frame_number"] < next_parent_request["frame_number"])
+                    and child_id_response_matches(row, child_req, child_extaddr, parent_extaddr)
+                    and delta_ms(child_req["local_ms"], row["local_ms"]) is not None
+                    and 0 <= delta_ms(child_req["local_ms"], row["local_ms"]) <= CHILD_ID_RESPONSE_TIMEOUT_MS
                 ),
                 None,
             )
             if child_resp is None:
                 continue
+
             sequence = {
                 "send_parent_request": pcap_event_from_row(req),
                 "receive_parent_response": pcap_event_from_row(resp),
@@ -515,15 +614,27 @@ def extract_pcap_sequence_rows(rows: list[dict[str, Any]]) -> list[dict[str, Pca
             }
             sequences.append(sequence)
             used_frame_numbers.update(
-                {
-                    req["frame_number"],
-                    resp["frame_number"],
-                    child_req["frame_number"],
-                    child_resp["frame_number"],
-                }
+                {req["frame_number"], resp["frame_number"], child_req["frame_number"], child_resp["frame_number"]}
             )
             break
+
     return sequences
+
+
+def child_id_response_matches(
+    row: dict[str, Any],
+    child_req: dict[str, Any],
+    child_extaddr: str | None,
+    parent_extaddr: str | None,
+) -> bool:
+    if parent_extaddr and child_extaddr and row.get("src64") == parent_extaddr and row.get("dst64") == child_extaddr:
+        return True
+    return bool(
+        row.get("ipv6_src")
+        and row.get("ipv6_dst")
+        and row.get("ipv6_src") == child_req.get("ipv6_dst")
+        and row.get("ipv6_dst") == child_req.get("ipv6_src")
+    )
 
 
 def pcap_event_from_row(row: dict[str, Any]) -> PcapEvent:
@@ -533,6 +644,10 @@ def pcap_event_from_row(row: dict[str, Any]) -> PcapEvent:
         local_ms=row["local_ms"],
         src64=compact_extaddr(row.get("src64")),
         dst64=compact_extaddr(row.get("dst64")),
+        ipv6_src=row.get("ipv6_src"),
+        ipv6_dst=row.get("ipv6_dst"),
+        challenge=first_value(row.get("challenge")),
+        response=first_value(row.get("response")),
     )
 
 
@@ -554,21 +669,27 @@ def pcap_sequences_for_log(
         return [], "none", warnings
 
     try:
-        sequences = pcap_sequences_from_tshark(pcap_path, network_key, offset_ms=offset_ms)
-    except FileNotFoundError:
-        warnings.append("tshark is not available; no pcap-derived timings were produced.")
+        attach_csv = generate_attach_csv(pcap_path, network_key)
+        rows = load_attach_csv_rows(attach_csv, offset_ms=offset_ms)
+        sequences = pcap_sequences_from_csv_rows(rows)
+    except FileNotFoundError as exc:
+        warnings.append(f"{exc}; no pcap-derived timings were produced.")
         return [], "none", warnings
     except subprocess.CalledProcessError as exc:
-        warnings.append(f"tshark failed while decoding the pcap (exit {exc.returncode}); no pcap-derived timings were produced.")
+        stderr = (exc.stderr or "").strip()
+        detail = f": {stderr}" if stderr else ""
+        warnings.append(f"pcap_to_csv.py failed while decoding the pcap (exit {exc.returncode}){detail}; no pcap-derived timings were produced.")
         return [], "none", warnings
     except OSError as exc:
-        warnings.append(f"Could not read the pcap: {exc}.")
+        warnings.append(f"Could not read the pcap-derived CSV: {exc}.")
         return [], "none", warnings
 
     if not sequences:
-        warnings.append("No complete Parent Request -> Parent Response -> Child ID Request -> Child ID Response sequences were found in the pcap.")
-        return [], "pcap", warnings
-    return sequences, "pcap", warnings
+        warnings.append(
+            "No complete TLV-matched Parent Request -> Parent Response -> Child ID Request -> Child ID Response sequences were found in the pcap CSV."
+        )
+        return [], "pcap-csv-tlv", warnings
+    return sequences, "pcap-csv-tlv", warnings
 
 
 def pcap_sequence_child_extaddr(matched: dict[str, PcapEvent]) -> str | None:
