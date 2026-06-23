@@ -15,7 +15,7 @@ It does not call `esphome run` during the timed sequence. This avoids compile-ti
 
 - `scripts/run_stock_test.py` — main automation runner.
 - `run_stock_test.sh` — convenience wrapper that prefers the repository-local Python venv.
-- `scripts/analyze_stock_logs.py` — post-run child-log analyzer for `stock`, `ucast-no-early-attach`, and `mcast-no-early-attach`.
+- `scripts/analyze_stock_logs.py` — post-run child-log analyzer for `stock`, `ucast`, and `mcast`.
   - Reported attach timings are derived from sniffer pcap data only.
   - Child-log timestamps are preserved as reference metadata and are not used as fallback timing values.
 - `stock_test_devices.example.toml` — copy this to `stock_test_devices.toml` and edit serial ports.
@@ -171,22 +171,22 @@ The post-run analyzer is no longer stock-specific despite the filename:
 
 ```bash
 python3 scripts/analyze_stock_logs.py --logs-dir logs/stock --markdown
-python3 scripts/analyze_stock_logs.py --logs-dir logs/ucast-no-early-attach --markdown
-python3 scripts/analyze_stock_logs.py --logs-dir logs/mcast-no-early-attach --markdown
+python3 scripts/analyze_stock_logs.py --logs-dir logs/ucast --markdown
+python3 scripts/analyze_stock_logs.py --logs-dir logs/mcast --markdown
 python3 scripts/analyze_stock_logs.py --run-dir logs/stock/<timestamp> --markdown
-python3 scripts/analyze_stock_logs.py --run-dir logs/ucast-no-early-attach/<timestamp> --markdown
-python3 scripts/analyze_stock_logs.py --run-dir logs/mcast-no-early-attach/<timestamp> --markdown
+python3 scripts/analyze_stock_logs.py --run-dir logs/ucast/<timestamp> --markdown
+python3 scripts/analyze_stock_logs.py --run-dir logs/mcast/<timestamp> --markdown
 ```
 
 To write a Markdown report to disk:
 
 ```bash
 python3 scripts/analyze_stock_logs.py \
-  --logs-dir logs/mcast-no-early-attach \
+  --logs-dir logs/mcast \
   --write-markdown
 
 python3 scripts/analyze_stock_logs.py \
-  --run-dir logs/mcast-no-early-attach/<timestamp> \
+  --run-dir logs/mcast/<timestamp> \
   --write-markdown
 ```
 

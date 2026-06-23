@@ -18,16 +18,16 @@ The method for testing stock performance is as follows. Each variation follows t
 14. Stop the `IEEE 802.15.4` sniffer recording.
 15. Copy the resulting sniffer `.pcapng` into the current run folder under `testing/logs/stock/<timestamp>/`.
 
-# Ucast/mcast No-early-attach testing
+# Ucast/mcast testing
 
-The method for no-early-attach performance testing is as follows. This protocol applies to both the unicast and multicast variants. Each variation follows the same setup until `stock_router_2` is flashed. After that point, the protocol differs only in how many extra routers are added after `stock_router_2`. The extra routers are flashed in order, starting at `stock_router_3.yaml`. The current maximum is four routers total.
+The method for parent-switch performance testing is as follows. This protocol applies to both the unicast and multicast variants. Each variation follows the same setup until `stock_router_2` is flashed. After that point, the protocol differs only in how many extra routers are added after `stock_router_2`. The extra routers are flashed in order, starting at `stock_router_3.yaml`. The current maximum is four routers total.
 
 Use the following child firmware and log directory for each variant:
 
-| Variant   | Child firmware                     | Log directory                                     |
-| --------- | ---------------------------------- | ------------------------------------------------- |
-| Unicast   | `ucast_child_no_early_attach.yaml` | `testing/logs/ucast-no-early-attach/<timestamp>/` |
-| Multicast | `mcast_child_no_early_attach.yaml` | `testing/logs/mcast-no-early-attach/<timestamp>/` |
+| Variant   | Child firmware      | Log directory                         |
+| --------- | ------------------- | ------------------------------------- |
+| Unicast   | `ucast_child.yaml`  | `testing/logs/ucast/<timestamp>/`     |
+| Multicast | `mcast_child.yaml`  | `testing/logs/mcast/<timestamp>/`     |
 
 1. Erase firmware and non-volatile storage on all connected ESP32-C6 boards, including unused boards, using `esptool.py --chip esp32c6 --port <port> erase_flash`.
 2. Put all ESP32-C6 boards, including unused ones, in a predictable state by flashing `empty.yaml` to them.
@@ -50,22 +50,22 @@ Use the following child firmware and log directory for each variant:
 
 Configuration note:
 
-* `mcast_child_no_early_attach.yaml` is based on the unicast variant but explicitly sets `parent_request_unicast: false` and `early_attach_on_target: false`.
+* `mcast_child.yaml` is based on the unicast variant but explicitly sets `parent_request_unicast: false`.
 
 Implemented automation:
 
-* For the unicast variant, copy `ucast_no_early_attach_test_devices.example.toml` to `ucast_no_early_attach_test_devices.toml` and fill in the serial ports.
-* For the multicast variant, copy `mcast_no_early_attach_test_devices.example.toml` to `mcast_no_early_attach_test_devices.toml` and fill in the serial ports.
+* For the unicast variant, copy `ucast_test_devices.example.toml` to `ucast_test_devices.toml` and fill in the serial ports.
+* For the multicast variant, copy `mcast_test_devices.example.toml` to `mcast_test_devices.toml` and fill in the serial ports.
 * Configure the requested maximum router number for the run. Extra routers are flashed in order, starting at `stock_router_3.yaml`.
 * The runner reads router2's observed ExtAddr from `stock_router_2.yaml` logs, removes `stock_router_1`, and then sends that ExtAddr to the child automatically.
-* Run `./run_ucast_no_early_attach_test.sh --config ucast_no_early_attach_test_devices.toml` for the unicast variant.
-* Run `./run_mcast_no_early_attach_test.sh --config mcast_no_early_attach_test_devices.toml` for the multicast variant.
-* Or use `make ucast-no-early-attach-test` or `make mcast-no-early-attach-test`.
+* Run `./run_ucast_test.sh --config ucast_test_devices.toml` for the unicast variant.
+* Run `./run_mcast_test.sh --config mcast_test_devices.toml` for the multicast variant.
+* Or use `make ucast-test` or `make mcast-test`.
 
 
 # Log analysis
 
-Use `scripts/analyze_stock_logs.py` for post-run child-log analysis across `stock`, `ucast-no-early-attach`, and `mcast-no-early-attach` runs. Despite the filename, it is now variant-agnostic and discovers the matching `*_test_manifest_*.json` file from each run directory.
+Use `scripts/analyze_stock_logs.py` for post-run child-log analysis across `stock`, `ucast`, and `mcast` runs. Despite the filename, it is now variant-agnostic and discovers the matching `*_test_manifest_*.json` file from each run directory.
 
 Timing policy:
 - Reported attach timings are derived from sniffer pcap data only for all three variants.
@@ -76,22 +76,22 @@ Examples:
 
 ```bash
 python3 scripts/analyze_stock_logs.py --logs-dir logs/stock --markdown
-python3 scripts/analyze_stock_logs.py --logs-dir logs/ucast-no-early-attach --markdown
-python3 scripts/analyze_stock_logs.py --logs-dir logs/mcast-no-early-attach --markdown
+python3 scripts/analyze_stock_logs.py --logs-dir logs/ucast --markdown
+python3 scripts/analyze_stock_logs.py --logs-dir logs/mcast --markdown
 python3 scripts/analyze_stock_logs.py --run-dir logs/stock/<timestamp> --markdown
-python3 scripts/analyze_stock_logs.py --run-dir logs/ucast-no-early-attach/<timestamp> --markdown
-python3 scripts/analyze_stock_logs.py --run-dir logs/mcast-no-early-attach/<timestamp> --markdown
+python3 scripts/analyze_stock_logs.py --run-dir logs/ucast/<timestamp> --markdown
+python3 scripts/analyze_stock_logs.py --run-dir logs/mcast/<timestamp> --markdown
 ```
 
 To write the Markdown report to disk:
 
 ```bash
 python3 scripts/analyze_stock_logs.py \
-  --logs-dir logs/mcast-no-early-attach \
+  --logs-dir logs/mcast \
   --write-markdown
 
 python3 scripts/analyze_stock_logs.py \
-  --run-dir logs/mcast-no-early-attach/<timestamp> \
+  --run-dir logs/mcast/<timestamp> \
   --write-markdown
 ```
 
@@ -106,4 +106,3 @@ With a single `--run-dir`, `--write-markdown` defaults to a scoped single-run re
 ```text
 logs/<variant>/<run-timestamp>-<variant>-analysis-report.md
 ```
-

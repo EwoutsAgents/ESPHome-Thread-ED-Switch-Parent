@@ -1,0 +1,401 @@
+{
+  "created_utc": "2026-06-19T18:54:51+00:00",
+  "dry_run": false,
+  "config_file": "/home/ewout/.openclaw/workspace-softwaredeveloper/ESPHome-Thread-ED-Switch-Parent/testing/mcast_test_devices.toml",
+  "testing_dir": "/home/ewout/.openclaw/workspace-softwaredeveloper/ESPHome-Thread-ED-Switch-Parent/testing",
+  "configs_dir": "/home/ewout/.openclaw/workspace-softwaredeveloper/ESPHome-Thread-ED-Switch-Parent/testing/configs",
+  "logs_dir": "/home/ewout/.openclaw/workspace-softwaredeveloper/ESPHome-Thread-ED-Switch-Parent/testing/logs/mcast",
+  "run_logs_dir": "/home/ewout/.openclaw/workspace-softwaredeveloper/ESPHome-Thread-ED-Switch-Parent/testing/logs/mcast/20260619-204859",
+  "esphome_bin": "/home/ewout/.openclaw/workspace-softwaredeveloper/ESPHome-Thread-ED-Switch-Parent/.venv/bin/esphome",
+  "esptool_bin": "/home/ewout/.openclaw/workspace-softwaredeveloper/ESPHome-Thread-ED-Switch-Parent/.venv/bin/esptool.py",
+  "precompile": true,
+  "clean_before_compile": false,
+  "devices": {
+    "router1": "/dev/serial/by-id/usb-Espressif_USB_JTAG_serial_debug_unit_58:8C:81:5D:B0:C4-if00",
+    "child": "/dev/serial/by-id/usb-Espressif_USB_JTAG_serial_debug_unit_58:8C:81:5D:B0:E0-if00",
+    "router2": "/dev/serial/by-id/usb-Espressif_USB_JTAG_serial_debug_unit_58:8C:81:5D:B1:54-if00",
+    "unused1": "/dev/serial/by-id/usb-Espressif_USB_JTAG_serial_debug_unit_58:8C:81:5F:D8:C4-if00",
+    "unused2": "/dev/serial/by-id/usb-Espressif_USB_JTAG_serial_debug_unit_58:8C:81:5F:D9:28-if00"
+  },
+  "timing": {
+    "sniffer_lead_in_seconds": 5,
+    "after_router1_seconds": 5,
+    "after_child_seconds": 10,
+    "after_router2_seconds": 98,
+    "after_router1_removal_settle_seconds": 5,
+    "after_router1_removed_seconds": 180
+  },
+  "switch": {
+    "target_parent_extaddr": "429cf68b7d9386ea",
+    "settle_seconds": 2
+  },
+  "n_routers": 4,
+  "additional_router_assignments": [
+    {
+      "device_role": "unused1",
+      "firmware_name": "router3"
+    },
+    {
+      "device_role": "unused2",
+      "firmware_name": "router4"
+    }
+  ],
+  "child_log": "/home/ewout/.openclaw/workspace-softwaredeveloper/ESPHome-Thread-ED-Switch-Parent/testing/logs/mcast/20260619-204859/mcast_child_20260619-204859.log",
+  "router1_log": "/home/ewout/.openclaw/workspace-softwaredeveloper/ESPHome-Thread-ED-Switch-Parent/testing/logs/mcast/20260619-204859/mcast_router1_20260619-204859.log",
+  "router2_log": "/home/ewout/.openclaw/workspace-softwaredeveloper/ESPHome-Thread-ED-Switch-Parent/testing/logs/mcast/20260619-204859/mcast_router2_20260619-204859.log",
+  "sniffer": {
+    "enabled": true,
+    "command": [
+      "ssh",
+      "rpi-802154-sniffer",
+      "~/bin/nrf802154-sniff"
+    ],
+    "stop_timeout_seconds": 10,
+    "log": "/home/ewout/.openclaw/workspace-softwaredeveloper/ESPHome-Thread-ED-Switch-Parent/testing/logs/mcast/20260619-204859/mcast_sniffer_20260619-204859.log",
+    "remote_pcap": "/home/ewout/captures/802154/802154-20260619-204920.pcapng",
+    "local_pcap": "/home/ewout/.openclaw/workspace-softwaredeveloper/ESPHome-Thread-ED-Switch-Parent/testing/logs/mcast/20260619-204859/802154-20260619-204920.pcapng"
+  },
+  "events": [
+    {
+      "time_utc": "2026-06-19T18:48:59+00:00",
+      "cmd": [
+        "/home/ewout/.openclaw/workspace-softwaredeveloper/ESPHome-Thread-ED-Switch-Parent/.venv/bin/esptool.py",
+        "--chip",
+        "esp32c6",
+        "--port",
+        "/dev/serial/by-id/usb-Espressif_USB_JTAG_serial_debug_unit_58:8C:81:5D:B0:C4-if00",
+        "erase_flash"
+      ],
+      "cwd": "/home/ewout/.openclaw/workspace-softwaredeveloper/ESPHome-Thread-ED-Switch-Parent/testing",
+      "dry_run": false
+    },
+    {
+      "time_utc": "2026-06-19T18:49:02+00:00",
+      "cmd": [
+        "/home/ewout/.openclaw/workspace-softwaredeveloper/ESPHome-Thread-ED-Switch-Parent/.venv/bin/esphome",
+        "upload",
+        "/home/ewout/.openclaw/workspace-softwaredeveloper/ESPHome-Thread-ED-Switch-Parent/testing/configs/empty.yaml",
+        "--device",
+        "/dev/serial/by-id/usb-Espressif_USB_JTAG_serial_debug_unit_58:8C:81:5D:B0:C4-if00"
+      ],
+      "cwd": "/home/ewout/.openclaw/workspace-softwaredeveloper/ESPHome-Thread-ED-Switch-Parent/testing",
+      "dry_run": false
+    },
+    {
+      "time_utc": "2026-06-19T18:49:04+00:00",
+      "cmd": [
+        "/home/ewout/.openclaw/workspace-softwaredeveloper/ESPHome-Thread-ED-Switch-Parent/.venv/bin/esptool.py",
+        "--chip",
+        "esp32c6",
+        "--port",
+        "/dev/serial/by-id/usb-Espressif_USB_JTAG_serial_debug_unit_58:8C:81:5D:B0:E0-if00",
+        "erase_flash"
+      ],
+      "cwd": "/home/ewout/.openclaw/workspace-softwaredeveloper/ESPHome-Thread-ED-Switch-Parent/testing",
+      "dry_run": false
+    },
+    {
+      "time_utc": "2026-06-19T18:49:06+00:00",
+      "cmd": [
+        "/home/ewout/.openclaw/workspace-softwaredeveloper/ESPHome-Thread-ED-Switch-Parent/.venv/bin/esphome",
+        "upload",
+        "/home/ewout/.openclaw/workspace-softwaredeveloper/ESPHome-Thread-ED-Switch-Parent/testing/configs/empty.yaml",
+        "--device",
+        "/dev/serial/by-id/usb-Espressif_USB_JTAG_serial_debug_unit_58:8C:81:5D:B0:E0-if00"
+      ],
+      "cwd": "/home/ewout/.openclaw/workspace-softwaredeveloper/ESPHome-Thread-ED-Switch-Parent/testing",
+      "dry_run": false
+    },
+    {
+      "time_utc": "2026-06-19T18:49:07+00:00",
+      "cmd": [
+        "/home/ewout/.openclaw/workspace-softwaredeveloper/ESPHome-Thread-ED-Switch-Parent/.venv/bin/esptool.py",
+        "--chip",
+        "esp32c6",
+        "--port",
+        "/dev/serial/by-id/usb-Espressif_USB_JTAG_serial_debug_unit_58:8C:81:5D:B1:54-if00",
+        "erase_flash"
+      ],
+      "cwd": "/home/ewout/.openclaw/workspace-softwaredeveloper/ESPHome-Thread-ED-Switch-Parent/testing",
+      "dry_run": false
+    },
+    {
+      "time_utc": "2026-06-19T18:49:09+00:00",
+      "cmd": [
+        "/home/ewout/.openclaw/workspace-softwaredeveloper/ESPHome-Thread-ED-Switch-Parent/.venv/bin/esphome",
+        "upload",
+        "/home/ewout/.openclaw/workspace-softwaredeveloper/ESPHome-Thread-ED-Switch-Parent/testing/configs/empty.yaml",
+        "--device",
+        "/dev/serial/by-id/usb-Espressif_USB_JTAG_serial_debug_unit_58:8C:81:5D:B1:54-if00"
+      ],
+      "cwd": "/home/ewout/.openclaw/workspace-softwaredeveloper/ESPHome-Thread-ED-Switch-Parent/testing",
+      "dry_run": false
+    },
+    {
+      "time_utc": "2026-06-19T18:49:11+00:00",
+      "cmd": [
+        "/home/ewout/.openclaw/workspace-softwaredeveloper/ESPHome-Thread-ED-Switch-Parent/.venv/bin/esptool.py",
+        "--chip",
+        "esp32c6",
+        "--port",
+        "/dev/serial/by-id/usb-Espressif_USB_JTAG_serial_debug_unit_58:8C:81:5F:D8:C4-if00",
+        "erase_flash"
+      ],
+      "cwd": "/home/ewout/.openclaw/workspace-softwaredeveloper/ESPHome-Thread-ED-Switch-Parent/testing",
+      "dry_run": false
+    },
+    {
+      "time_utc": "2026-06-19T18:49:14+00:00",
+      "cmd": [
+        "/home/ewout/.openclaw/workspace-softwaredeveloper/ESPHome-Thread-ED-Switch-Parent/.venv/bin/esphome",
+        "upload",
+        "/home/ewout/.openclaw/workspace-softwaredeveloper/ESPHome-Thread-ED-Switch-Parent/testing/configs/empty.yaml",
+        "--device",
+        "/dev/serial/by-id/usb-Espressif_USB_JTAG_serial_debug_unit_58:8C:81:5F:D8:C4-if00"
+      ],
+      "cwd": "/home/ewout/.openclaw/workspace-softwaredeveloper/ESPHome-Thread-ED-Switch-Parent/testing",
+      "dry_run": false
+    },
+    {
+      "time_utc": "2026-06-19T18:49:15+00:00",
+      "cmd": [
+        "/home/ewout/.openclaw/workspace-softwaredeveloper/ESPHome-Thread-ED-Switch-Parent/.venv/bin/esptool.py",
+        "--chip",
+        "esp32c6",
+        "--port",
+        "/dev/serial/by-id/usb-Espressif_USB_JTAG_serial_debug_unit_58:8C:81:5F:D9:28-if00",
+        "erase_flash"
+      ],
+      "cwd": "/home/ewout/.openclaw/workspace-softwaredeveloper/ESPHome-Thread-ED-Switch-Parent/testing",
+      "dry_run": false
+    },
+    {
+      "time_utc": "2026-06-19T18:49:17+00:00",
+      "cmd": [
+        "/home/ewout/.openclaw/workspace-softwaredeveloper/ESPHome-Thread-ED-Switch-Parent/.venv/bin/esphome",
+        "upload",
+        "/home/ewout/.openclaw/workspace-softwaredeveloper/ESPHome-Thread-ED-Switch-Parent/testing/configs/empty.yaml",
+        "--device",
+        "/dev/serial/by-id/usb-Espressif_USB_JTAG_serial_debug_unit_58:8C:81:5F:D9:28-if00"
+      ],
+      "cwd": "/home/ewout/.openclaw/workspace-softwaredeveloper/ESPHome-Thread-ED-Switch-Parent/testing",
+      "dry_run": false
+    },
+    {
+      "time_utc": "2026-06-19T18:49:19+00:00",
+      "cmd": [
+        "ssh",
+        "rpi-802154-sniffer",
+        "~/bin/nrf802154-sniff"
+      ],
+      "sniffer_log_path": "/home/ewout/.openclaw/workspace-softwaredeveloper/ESPHome-Thread-ED-Switch-Parent/testing/logs/mcast/20260619-204859/mcast_sniffer_20260619-204859.log",
+      "dry_run": false
+    },
+    {
+      "time_utc": "2026-06-19T18:49:19+00:00",
+      "cmd": [
+        "ssh",
+        "rpi-802154-sniffer",
+        "pkill -f 'nrf802154_sniffer.py|tshark.*802.15.4' >/dev/null 2>&1 || true; sleep 1"
+      ],
+      "purpose": "sniffer-pre-clean",
+      "dry_run": false
+    },
+    {
+      "time_utc": "2026-06-19T18:49:21+00:00",
+      "sleep_seconds": 5,
+      "reason": "sniffer started; wait before flashing router 1",
+      "dry_run": false
+    },
+    {
+      "time_utc": "2026-06-19T18:49:26+00:00",
+      "cmd": [
+        "/home/ewout/.openclaw/workspace-softwaredeveloper/ESPHome-Thread-ED-Switch-Parent/.venv/bin/esphome",
+        "upload",
+        "/home/ewout/.openclaw/workspace-softwaredeveloper/ESPHome-Thread-ED-Switch-Parent/testing/configs/stock_router_1.yaml",
+        "--device",
+        "/dev/serial/by-id/usb-Espressif_USB_JTAG_serial_debug_unit_58:8C:81:5D:B0:C4-if00"
+      ],
+      "cwd": "/home/ewout/.openclaw/workspace-softwaredeveloper/ESPHome-Thread-ED-Switch-Parent/testing",
+      "dry_run": false
+    },
+    {
+      "time_utc": "2026-06-19T18:49:31+00:00",
+      "cmd": [
+        "/home/ewout/.openclaw/workspace-softwaredeveloper/ESPHome-Thread-ED-Switch-Parent/.venv/bin/esphome",
+        "logs",
+        "/home/ewout/.openclaw/workspace-softwaredeveloper/ESPHome-Thread-ED-Switch-Parent/testing/configs/stock_router_1.yaml",
+        "--device",
+        "/dev/serial/by-id/usb-Espressif_USB_JTAG_serial_debug_unit_58:8C:81:5D:B0:C4-if00"
+      ],
+      "log_path": "/home/ewout/.openclaw/workspace-softwaredeveloper/ESPHome-Thread-ED-Switch-Parent/testing/logs/mcast/20260619-204859/mcast_router1_20260619-204859.log",
+      "dry_run": false
+    },
+    {
+      "time_utc": "2026-06-19T18:49:31+00:00",
+      "sleep_seconds": 5,
+      "reason": "router 1 has been flashed; wait before adding child",
+      "dry_run": false
+    },
+    {
+      "time_utc": "2026-06-19T18:49:36+00:00",
+      "cmd": [
+        "/home/ewout/.openclaw/workspace-softwaredeveloper/ESPHome-Thread-ED-Switch-Parent/.venv/bin/esphome",
+        "upload",
+        "/home/ewout/.openclaw/workspace-softwaredeveloper/ESPHome-Thread-ED-Switch-Parent/testing/configs/mcast_child.yaml",
+        "--device",
+        "/dev/serial/by-id/usb-Espressif_USB_JTAG_serial_debug_unit_58:8C:81:5D:B0:E0-if00"
+      ],
+      "cwd": "/home/ewout/.openclaw/workspace-softwaredeveloper/ESPHome-Thread-ED-Switch-Parent/testing",
+      "dry_run": false
+    },
+    {
+      "time_utc": "2026-06-19T18:49:40+00:00",
+      "cmd": [
+        "/home/ewout/.openclaw/workspace-softwaredeveloper/ESPHome-Thread-ED-Switch-Parent/.venv/bin/esphome",
+        "logs",
+        "/home/ewout/.openclaw/workspace-softwaredeveloper/ESPHome-Thread-ED-Switch-Parent/testing/configs/mcast_child.yaml",
+        "--device",
+        "/dev/serial/by-id/usb-Espressif_USB_JTAG_serial_debug_unit_58:8C:81:5D:B0:E0-if00"
+      ],
+      "log_path": "/home/ewout/.openclaw/workspace-softwaredeveloper/ESPHome-Thread-ED-Switch-Parent/testing/logs/mcast/20260619-204859/mcast_child_20260619-204859.log",
+      "dry_run": false
+    },
+    {
+      "time_utc": "2026-06-19T18:49:40+00:00",
+      "sleep_seconds": 10,
+      "reason": "child flashed/logging; wait before adding router 2",
+      "dry_run": false
+    },
+    {
+      "time_utc": "2026-06-19T18:49:50+00:00",
+      "cmd": [
+        "/home/ewout/.openclaw/workspace-softwaredeveloper/ESPHome-Thread-ED-Switch-Parent/.venv/bin/esphome",
+        "upload",
+        "/home/ewout/.openclaw/workspace-softwaredeveloper/ESPHome-Thread-ED-Switch-Parent/testing/configs/stock_router_2.yaml",
+        "--device",
+        "/dev/serial/by-id/usb-Espressif_USB_JTAG_serial_debug_unit_58:8C:81:5D:B1:54-if00"
+      ],
+      "cwd": "/home/ewout/.openclaw/workspace-softwaredeveloper/ESPHome-Thread-ED-Switch-Parent/testing",
+      "dry_run": false
+    },
+    {
+      "time_utc": "2026-06-19T18:49:55+00:00",
+      "cmd": [
+        "/home/ewout/.openclaw/workspace-softwaredeveloper/ESPHome-Thread-ED-Switch-Parent/.venv/bin/esphome",
+        "logs",
+        "/home/ewout/.openclaw/workspace-softwaredeveloper/ESPHome-Thread-ED-Switch-Parent/testing/configs/stock_router_2.yaml",
+        "--device",
+        "/dev/serial/by-id/usb-Espressif_USB_JTAG_serial_debug_unit_58:8C:81:5D:B1:54-if00"
+      ],
+      "log_path": "/home/ewout/.openclaw/workspace-softwaredeveloper/ESPHome-Thread-ED-Switch-Parent/testing/logs/mcast/20260619-204859/mcast_router2_20260619-204859.log",
+      "dry_run": false
+    },
+    {
+      "time_utc": "2026-06-19T18:49:55+00:00",
+      "event": "flash_additional_routers",
+      "assignments": [
+        {
+          "device_role": "unused1",
+          "firmware_name": "router3"
+        },
+        {
+          "device_role": "unused2",
+          "firmware_name": "router4"
+        }
+      ],
+      "dry_run": false
+    },
+    {
+      "time_utc": "2026-06-19T18:49:55+00:00",
+      "cmd": [
+        "/home/ewout/.openclaw/workspace-softwaredeveloper/ESPHome-Thread-ED-Switch-Parent/.venv/bin/esphome",
+        "upload",
+        "/home/ewout/.openclaw/workspace-softwaredeveloper/ESPHome-Thread-ED-Switch-Parent/testing/configs/stock_router_3.yaml",
+        "--device",
+        "/dev/serial/by-id/usb-Espressif_USB_JTAG_serial_debug_unit_58:8C:81:5F:D8:C4-if00"
+      ],
+      "cwd": "/home/ewout/.openclaw/workspace-softwaredeveloper/ESPHome-Thread-ED-Switch-Parent/testing",
+      "dry_run": false
+    },
+    {
+      "time_utc": "2026-06-19T18:49:59+00:00",
+      "cmd": [
+        "/home/ewout/.openclaw/workspace-softwaredeveloper/ESPHome-Thread-ED-Switch-Parent/.venv/bin/esphome",
+        "upload",
+        "/home/ewout/.openclaw/workspace-softwaredeveloper/ESPHome-Thread-ED-Switch-Parent/testing/configs/stock_router_4.yaml",
+        "--device",
+        "/dev/serial/by-id/usb-Espressif_USB_JTAG_serial_debug_unit_58:8C:81:5F:D9:28-if00"
+      ],
+      "cwd": "/home/ewout/.openclaw/workspace-softwaredeveloper/ESPHome-Thread-ED-Switch-Parent/testing",
+      "dry_run": false
+    },
+    {
+      "time_utc": "2026-06-19T18:50:03+00:00",
+      "sleep_seconds": 98,
+      "reason": "router 2 and the additional routers have joined; wait before removing router 1",
+      "dry_run": false
+    },
+    {
+      "time_utc": "2026-06-19T18:51:41+00:00",
+      "event": "observe_router2_target_parent_extaddr",
+      "observed_router2_extaddr": "429cf68b7d9386ea",
+      "router2_log": "/home/ewout/.openclaw/workspace-softwaredeveloper/ESPHome-Thread-ED-Switch-Parent/testing/logs/mcast/20260619-204859/mcast_router2_20260619-204859.log",
+      "dry_run": false
+    },
+    {
+      "time_utc": "2026-06-19T18:51:41+00:00",
+      "event": "use_observed_target_parent_extaddr",
+      "target_parent_extaddr": "429cf68b7d9386ea",
+      "dry_run": false
+    },
+    {
+      "time_utc": "2026-06-19T18:51:41+00:00",
+      "cmd": [
+        "/home/ewout/.openclaw/workspace-softwaredeveloper/ESPHome-Thread-ED-Switch-Parent/.venv/bin/esphome",
+        "upload",
+        "/home/ewout/.openclaw/workspace-softwaredeveloper/ESPHome-Thread-ED-Switch-Parent/testing/configs/empty.yaml",
+        "--device",
+        "/dev/serial/by-id/usb-Espressif_USB_JTAG_serial_debug_unit_58:8C:81:5D:B0:C4-if00"
+      ],
+      "cwd": "/home/ewout/.openclaw/workspace-softwaredeveloper/ESPHome-Thread-ED-Switch-Parent/testing",
+      "dry_run": false
+    },
+    {
+      "time_utc": "2026-06-19T18:51:44+00:00",
+      "sleep_seconds": 5,
+      "reason": "router 1 removed; wait before requesting child switch",
+      "dry_run": false
+    },
+    {
+      "time_utc": "2026-06-19T18:51:49+00:00",
+      "event": "send_child_switch_command",
+      "port": "/dev/serial/by-id/usb-Espressif_USB_JTAG_serial_debug_unit_58:8C:81:5D:B0:E0-if00",
+      "command": "extaddr 429cf68b7d9386ea",
+      "dry_run": false
+    },
+    {
+      "time_utc": "2026-06-19T18:51:49+00:00",
+      "sleep_seconds": 2,
+      "reason": "allow child USB CLI to process switch command",
+      "dry_run": false
+    },
+    {
+      "time_utc": "2026-06-19T18:51:51+00:00",
+      "sleep_seconds": 180,
+      "reason": "switch requested; keep recording child",
+      "dry_run": false
+    },
+    {
+      "time_utc": "2026-06-19T18:54:51+00:00",
+      "cmd": [
+        "scp",
+        "rpi-802154-sniffer:/home/ewout/captures/802154/802154-20260619-204920.pcapng",
+        "/home/ewout/.openclaw/workspace-softwaredeveloper/ESPHome-Thread-ED-Switch-Parent/testing/logs/mcast/20260619-204859/802154-20260619-204920.pcapng"
+      ],
+      "remote_pcap_path": "/home/ewout/captures/802154/802154-20260619-204920.pcapng",
+      "local_pcap_path": "/home/ewout/.openclaw/workspace-softwaredeveloper/ESPHome-Thread-ED-Switch-Parent/testing/logs/mcast/20260619-204859/802154-20260619-204920.pcapng",
+      "dry_run": false
+    }
+  ]
+}

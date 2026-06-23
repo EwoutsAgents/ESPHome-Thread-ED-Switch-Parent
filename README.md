@@ -204,7 +204,7 @@ During the selected-parent attach phase, the ESPHome API may briefly disconnect 
 
 ## Testing
 
-Automated stock, unicast no-early-attach, and multicast no-early-attach test procedures live under [testing/README.md](testing/README.md).
+Automated stock, unicast and multicast test procedures live under [testing/README.md](testing/README.md).
 
 The current automated `ucast` and `mcast` test runners read router 2's observed IEEE 802.15.4 extended address from the `stock_router_2.yaml` logs and use that value automatically when instructing the child to switch parent. The fixed wait after flashing router 2 is currently `90s` in the test harness.
 

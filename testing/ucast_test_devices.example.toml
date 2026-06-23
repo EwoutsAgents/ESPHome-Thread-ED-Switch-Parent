@@ -1,0 +1,58 @@
+# Copy this file to ucast_test_devices.toml and edit the serial ports.
+# Keep the same physical ESP32-C6 assigned to each role across reruns.
+
+[devices]
+router1 = "/dev/ttyACM0"
+child = "/dev/ttyACM1"
+router2 = "/dev/ttyACM2"
+# Extra ESP32-C6 boards are erased and flashed with empty.yaml before the
+# timed sequence starts. They are then used in order for router3, router4, ...
+# when n_routers requests them.
+# unused1 = "/dev/ttyACM3"
+# unused2 = "/dev/ttyACM4"
+
+[variant]
+n_routers = 3
+
+[paths]
+# These are relative to this TOML file unless absolute.
+configs_dir = "configs"
+logs_dir = "logs/ucast"
+
+[esphome]
+# Optional. If omitted or missing, the runner auto-detects:
+#   ../.venv/bin/esphome
+#   ../venv/bin/esphome
+#   ./.venv/bin/esphome
+#   ./venv/bin/esphome
+#   PATH
+# bin = "../.venv/bin/esphome"
+
+# The default is the important measurement behavior:
+# compile all firmware first, then use upload-only commands during the timed test.
+precompile = true
+clean_before_compile = false
+
+# Optional serial upload speed. Leave commented to use ESPHome's default.
+# upload_speed = 460800
+
+[timing]
+sniffer_lead_in_seconds = 5
+after_router1_seconds = 5
+after_child_seconds = 10
+after_router2_seconds = 90
+after_router1_removal_settle_seconds = 5
+after_router1_removed_seconds = 180  # post-switch recording window
+
+[switch]
+# Optional delay after writing the child USB CLI command.
+settle_seconds = 2
+
+[sniffer]
+# Optional IEEE 802.15.4 sniffer capture command.
+# When enabled, the runner starts this before flashing router1, waits for the
+# sniffer lead-in above, stops it after the final 300-second wait, and copies
+# the resulting .pcapng into logs/ucast.
+enabled = false
+# command = ["ssh", "rpi-802154-sniffer", "~/bin/nrf802154-sniff"]
+stop_timeout_seconds = 10
