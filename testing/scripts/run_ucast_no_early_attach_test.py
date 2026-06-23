@@ -68,6 +68,9 @@ ROUTER2_NETWORKINFO_RE = re.compile(
 )
 
 
+_BATCH_LOG_PATH: Path | None = None
+
+
 @dataclass
 class Timing:
     sniffer_lead_in_seconds: int = 5
@@ -113,12 +116,26 @@ class Settings:
     n_routers: int = 3
 
 
-def allocate_run_logs_dir(logs_dir: Path) -> Path:
-    base = logs_dir / dt.datetime.now().strftime("%Y%m%d-%H%M%S")
+def allocate_run_logs_dir(logs_dir: Path, *, run_index: int | None = None) -> Path:
+    stamp = dt.datetime.now().strftime("%Y%m%d-%H%M%S")
+    if run_index is not None:
+        stamp = f"{stamp}-run{run_index:02d}"
+    base = logs_dir / stamp
     candidate = base
     counter = 2
     while candidate.exists():
         candidate = logs_dir / f"{base.name}-run{counter:02d}"
+        counter += 1
+    return candidate
+
+
+def allocate_batch_logs_dir(logs_root: Path, *, variant_name: str, router_count: int, total_runs: int) -> Path:
+    stamp = dt.datetime.now().strftime("%Y%m%d-%H%M%S")
+    base_name = f"{variant_name}-{router_count}router-{total_runs}runs-{stamp}"
+    candidate = logs_root / base_name
+    counter = 2
+    while candidate.exists():
+        candidate = logs_root / f"{base_name}-dup{counter:02d}"
         counter += 1
     return candidate
 
@@ -128,7 +145,17 @@ def now_utc_iso() -> str:
 
 
 def log(msg: str) -> None:
-    print(f"[{now_utc_iso()}] {msg}", flush=True)
+    formatted = f"[{now_utc_iso()}] {msg}"
+    print(formatted, flush=True)
+    if _BATCH_LOG_PATH is not None:
+        _BATCH_LOG_PATH.parent.mkdir(parents=True, exist_ok=True)
+        with _BATCH_LOG_PATH.open("a", encoding="utf-8", errors="replace") as fh:
+            fh.write(formatted + "\n")
+
+
+def set_batch_log(path: Path | None) -> None:
+    global _BATCH_LOG_PATH
+    _BATCH_LOG_PATH = path
 
 
 def quote_cmd(cmd: Iterable[str | os.PathLike[str]]) -> str:
@@ -323,6 +350,15 @@ def load_settings(args: argparse.Namespace) -> Settings:
             f"[variant].n_routers must reference an available stock_router_<n>.yaml variation. "
             f"Supported values are 3..{MAX_ADDITIONAL_ROUTER_NUMBER}."
         )
+
+    if args.runs > 1:
+        logs_dir = allocate_batch_logs_dir(
+            logs_dir.parent,
+            variant_name=variant_raw,
+            router_count=n_routers,
+            total_runs=args.runs,
+        )
+        run_logs_dir = allocate_run_logs_dir(logs_dir, run_index=1)
 
     return Settings(
         config_file=config_file,
@@ -1072,6 +1108,10 @@ def main(argv: list[str]) -> int:
     if args.config is None:
         args.config = str(VARIANT_PRESETS[args.variant]["default_config"])
     settings = load_settings(args)
+    if args.runs > 1:
+        set_batch_log(settings.logs_dir / f"{settings.logs_dir.name}.log")
+    else:
+        set_batch_log(None)
     if args.capture_router2_log:
         settings.capture_router2_log = True
 
@@ -1092,7 +1132,10 @@ def main(argv: list[str]) -> int:
         return 0
 
     for run_index in range(1, args.runs + 1):
-        settings.run_logs_dir = allocate_run_logs_dir(settings.logs_dir)
+        if args.runs > 1:
+            settings.run_logs_dir = allocate_run_logs_dir(settings.logs_dir, run_index=run_index)
+        else:
+            settings.run_logs_dir = allocate_run_logs_dir(settings.logs_dir)
         log(f"Starting run {run_index}/{args.runs}")
         log(f"Using run logs dir: {settings.run_logs_dir}")
 

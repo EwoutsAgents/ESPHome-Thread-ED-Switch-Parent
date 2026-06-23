@@ -53,6 +53,7 @@ TAIL_SNAPSHOT_LINES = 120
 
 
 _SUPERVISOR_LOG_PATH: Path | None = None
+_BATCH_LOG_PATH: Path | None = None
 _CURRENT_TRACKER: "RunTracker | None" = None
 
 
@@ -102,18 +103,39 @@ def build_run_logs_dir(logs_dir: Path, *, run_index: int | None = None) -> Path:
     return logs_dir / stamp
 
 
+def allocate_batch_logs_dir(logs_root: Path, *, variant_name: str, router_count: int, total_runs: int) -> Path:
+    stamp = dt.datetime.now().strftime("%Y%m%d-%H%M%S")
+    base_name = f"{variant_name}-{router_count}router-{total_runs}runs-{stamp}"
+    candidate = logs_root / base_name
+    counter = 2
+    while candidate.exists():
+        candidate = logs_root / f"{base_name}-dup{counter:02d}"
+        counter += 1
+    return candidate
+
+
 def log(msg: str) -> None:
     formatted = f"[{now_utc_iso()}] {msg}"
     print(formatted, flush=True)
-    if _SUPERVISOR_LOG_PATH is not None:
-        _SUPERVISOR_LOG_PATH.parent.mkdir(parents=True, exist_ok=True)
-        with _SUPERVISOR_LOG_PATH.open("a", encoding="utf-8", errors="replace") as fh:
+    targets: list[Path] = []
+    if _BATCH_LOG_PATH is not None:
+        targets.append(_BATCH_LOG_PATH)
+    if _SUPERVISOR_LOG_PATH is not None and _SUPERVISOR_LOG_PATH not in targets:
+        targets.append(_SUPERVISOR_LOG_PATH)
+    for path in targets:
+        path.parent.mkdir(parents=True, exist_ok=True)
+        with path.open("a", encoding="utf-8", errors="replace") as fh:
             fh.write(formatted + "\n")
 
 
 def set_supervisor_log(path: Path | None) -> None:
     global _SUPERVISOR_LOG_PATH
     _SUPERVISOR_LOG_PATH = path
+
+
+def set_batch_log(path: Path | None) -> None:
+    global _BATCH_LOG_PATH
+    _BATCH_LOG_PATH = path
 
 
 def process_exit_details(process: subprocess.Popen[str] | None) -> dict[str, Any] | None:
@@ -510,6 +532,15 @@ def load_settings(args: argparse.Namespace) -> Settings:
             f"[variant].n_routers must reference an available stock_router_<n>.yaml variation. "
             f"Supported values are 2..{MAX_ADDITIONAL_ROUTER_NUMBER}."
         )
+
+    if args.runs > 1:
+        logs_dir = allocate_batch_logs_dir(
+            logs_dir.parent,
+            variant_name="stock",
+            router_count=max_router_number,
+            total_runs=args.runs,
+        )
+        run_logs_dir = build_run_logs_dir(logs_dir)
 
     return Settings(
         config_file=config_file,
@@ -1316,6 +1347,10 @@ def main(argv: list[str]) -> int:
     if args.runs < 1:
         raise SystemExit("--runs must be at least 1.")
     settings = load_settings(args)
+    if args.runs > 1:
+        set_batch_log(settings.logs_dir / f"{settings.logs_dir.name}.log")
+    else:
+        set_batch_log(None)
     previous_handlers = install_signal_handlers()
 
     try:
