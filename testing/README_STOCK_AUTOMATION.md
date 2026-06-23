@@ -15,7 +15,7 @@ It does not call `esphome run` during the timed sequence. This avoids compile-ti
 
 - `scripts/run_stock_test.py` — main automation runner.
 - `run_stock_test.sh` — convenience wrapper that prefers the repository-local Python venv.
-- `scripts/analyze_stock_logs.py` — post-run child-log analyzer for `stock`, `ucast`, and `mcast`.
+- `scripts/analyze_test_logs.py` — post-run child-log analyzer for `stock`, `ucast`, and `mcast`.
   - Reported attach timings are derived from sniffer pcap data only.
   - Child-log timestamps are preserved as reference metadata and are not used as fallback timing values.
 - `stock_test_devices.example.toml` — copy this to `stock_test_devices.toml` and edit serial ports.
@@ -167,30 +167,30 @@ The JSON manifest records every command and wait event, including the remote sni
 
 ## Log analysis
 
-The post-run analyzer is no longer stock-specific despite the filename:
+The post-run analyzer is variant-agnostic:
 
 ```bash
-python3 scripts/analyze_stock_logs.py --logs-dir logs/stock --markdown
-python3 scripts/analyze_stock_logs.py --logs-dir logs/ucast --markdown
-python3 scripts/analyze_stock_logs.py --logs-dir logs/mcast --markdown
-python3 scripts/analyze_stock_logs.py --run-dir logs/stock/<timestamp> --markdown
-python3 scripts/analyze_stock_logs.py --run-dir logs/ucast/<timestamp> --markdown
-python3 scripts/analyze_stock_logs.py --run-dir logs/mcast/<timestamp> --markdown
+python3 scripts/analyze_test_logs.py --logs-dir logs/stock --markdown
+python3 scripts/analyze_test_logs.py --logs-dir logs/ucast --markdown
+python3 scripts/analyze_test_logs.py --logs-dir logs/mcast --markdown
+python3 scripts/analyze_test_logs.py --run-dir logs/stock/<timestamp> --markdown
+python3 scripts/analyze_test_logs.py --run-dir logs/ucast/<timestamp> --markdown
+python3 scripts/analyze_test_logs.py --run-dir logs/mcast/<timestamp> --markdown
 ```
 
 To write a Markdown report to disk:
 
 ```bash
-python3 scripts/analyze_stock_logs.py \
+python3 scripts/analyze_test_logs.py \
   --logs-dir logs/mcast \
   --write-markdown
 
-python3 scripts/analyze_stock_logs.py \
+python3 scripts/analyze_test_logs.py \
   --run-dir logs/mcast/<timestamp> \
   --write-markdown
 ```
 
-With `--logs-dir logs/<variant>`, `--write-markdown` defaults to a stock-style variant-wide report:
+With `--logs-dir logs/<variant>`, `--write-markdown` defaults to a variant-wide report:
 
 ```text
 logs/<variant>/<generated-at>-<variant>-analysis-report.md
