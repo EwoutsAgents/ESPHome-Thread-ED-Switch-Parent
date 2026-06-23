@@ -1,4 +1,4 @@
-# Copy of stock_test_devices.toml for 2-router stock batch runs.
+# Copy of stock_test_devices.toml for 3-router stock batch runs.
 
 [devices]
 router1 = "/dev/serial/by-id/usb-Espressif_USB_JTAG_serial_debug_unit_58:8C:81:5D:B0:C4-if00"
@@ -8,7 +8,7 @@ unused1 = "/dev/serial/by-id/usb-Espressif_USB_JTAG_serial_debug_unit_58:8C:81:5
 unused2 = "/dev/serial/by-id/usb-Espressif_USB_JTAG_serial_debug_unit_58:8C:81:5F:D9:28-if00"
 
 [variant]
-n_routers = 2
+n_routers = 3
 
 [paths]
 configs_dir = "configs"
@@ -20,10 +20,10 @@ clean_before_compile = false
 
 [timing]
 sniffer_lead_in_seconds = 5
-# after_router1_seconds = 5  # obsolete: routers are flashed before the child
-child_attach_seconds = 10
-router_settling_seconds = 98
-after_parent_removed_seconds = 180
+after_router1_seconds = 5
+after_child_seconds = 10
+after_router2_seconds = 98
+after_router1_removed_seconds = 180
 
 [sniffer]
 enabled = true

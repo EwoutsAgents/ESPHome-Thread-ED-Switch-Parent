@@ -60,9 +60,10 @@ _CURRENT_TRACKER: "RunTracker | None" = None
 @dataclass
 class Timing:
     sniffer_lead_in_seconds: int = 5
-    router_settling_seconds: int = 90
-    child_attach_seconds: int = 30
-    after_parent_removed_seconds: int = 180
+    after_router1_seconds: int = 5
+    after_child_seconds: int = 10
+    after_router2_seconds: int = 90
+    after_router1_removed_seconds: int = 180
 
 
 @dataclass
@@ -519,24 +520,10 @@ def load_settings(args: argparse.Namespace) -> Settings:
     timing_raw = raw.get("timing", {})
     timing = Timing(
         sniffer_lead_in_seconds=int(timing_raw.get("sniffer_lead_in_seconds", 5)),
-        router_settling_seconds=int(
-            timing_raw.get(
-                "router_settling_seconds",
-                timing_raw.get("after_router2_seconds", 90),
-            )
-        ),
-        child_attach_seconds=int(
-            timing_raw.get(
-                "child_attach_seconds",
-                timing_raw.get("after_child_seconds", 30),
-            )
-        ),
-        after_parent_removed_seconds=int(
-            timing_raw.get(
-                "after_parent_removed_seconds",
-                timing_raw.get("after_router1_removed_seconds", 180),
-            )
-        ),
+        after_router1_seconds=int(timing_raw.get("after_router1_seconds", 5)),
+        after_child_seconds=int(timing_raw.get("after_child_seconds", 10)),
+        after_router2_seconds=int(timing_raw.get("after_router2_seconds", 90)),
+        after_router1_removed_seconds=int(timing_raw.get("after_router1_removed_seconds", 180)),
     )
 
     precompile = bool(esphome_raw.get("precompile", True))
@@ -1183,162 +1170,6 @@ def stop_router2_log(process: subprocess.Popen[str] | None, *, dry_run: bool) ->
     )
 
 
-
-def router_execution_plan(settings: Settings) -> list[dict[str, str]]:
-    """Return routers that participate in the stock run."""
-    plan = [
-        {"logical_name": "router1", "config_name": "router1", "device_role": "router1"},
-        {"logical_name": "router2", "config_name": "router2", "device_role": "router2"},
-    ]
-    for assignment in additional_router_assignments(settings):
-        firmware_name = assignment["firmware_name"]
-        plan.append(
-            {
-                "logical_name": firmware_name,
-                "config_name": firmware_name,
-                "device_role": assignment["device_role"],
-            }
-        )
-    return plan
-
-
-def normalize_extaddr(value: str | None) -> str | None:
-    if not value:
-        return None
-    hexed = re.sub(r"[^0-9a-fA-F]", "", value).lower()
-    if len(hexed) != 16:
-        return None
-    return ":".join(hexed[i : i + 2] for i in range(0, 16, 2))
-
-
-def extaddr_key(value: str | None) -> str | None:
-    norm = normalize_extaddr(value)
-    return norm.replace(":", "") if norm else None
-
-
-def iid_to_extaddr(iid_hex: str) -> str | None:
-    """Convert an IPv6 link-local IID into a Thread EUI-64 extended address."""
-    iid = re.sub(r"[^0-9a-fA-F]", "", iid_hex).lower()
-    if len(iid) != 16:
-        return None
-    first = int(iid[:2], 16) ^ 0x02
-    ext = f"{first:02x}" + iid[2:]
-    return normalize_extaddr(ext)
-
-
-def ipv6_link_local_to_extaddr(addr: str) -> str | None:
-    if not addr.lower().startswith("fe80"):
-        return None
-    parts = addr.split("%", 1)[0].split(":")
-    if "" in parts:
-        empty_index = parts.index("")
-        missing = 8 - (len(parts) - 1)
-        parts = parts[:empty_index] + ["0"] * missing + parts[empty_index + 1 :]
-    if len(parts) < 8:
-        return None
-    iid_hex = "".join(part.zfill(4) for part in parts[-4:])
-    return iid_to_extaddr(iid_hex)
-
-
-def parse_radio_extaddr(log_path: Path) -> str | None:
-    if not log_path.exists():
-        return None
-    text = log_path.read_text(encoding="utf-8", errors="replace")
-    patterns = [
-        r"RadioExtAddress:\s*([0-9a-fA-F:]{16,23})",
-        r"Ext(?:ended)?\s*Address:\s*([0-9a-fA-F:]{16,23})",
-        r"ExtAddr:\s*([0-9a-fA-F:]{16,23})",
-    ]
-    for pattern in patterns:
-        matches = re.findall(pattern, text, flags=re.IGNORECASE)
-        for match in reversed(matches):
-            norm = normalize_extaddr(match)
-            if norm:
-                return norm
-    return None
-
-
-def parse_child_parent_extaddr(child_log: Path) -> tuple[str | None, str | None]:
-    """Return (parent_extaddr, source). Conservative: skip if unclear."""
-    if not child_log.exists():
-        return None, None
-    text = child_log.read_text(encoding="utf-8", errors="replace")
-
-    explicit_patterns = [
-        r"Saved ParentInfo.*?(?:ExtAddr|ExtAddress|Ext Address)[:= ]+([0-9a-fA-F:]{16,23})",
-        r"ParentInfo.*?(?:ExtAddr|ExtAddress|Ext Address)[:= ]+([0-9a-fA-F:]{16,23})",
-        r"parent.*?(?:ExtAddr|ExtAddress|Ext Address)[:= ]+([0-9a-fA-F:]{16,23})",
-    ]
-    for pattern in explicit_patterns:
-        matches = re.findall(pattern, text, flags=re.IGNORECASE | re.DOTALL)
-        for match in reversed(matches):
-            norm = normalize_extaddr(match)
-            if norm:
-                return norm, "child_log_explicit_parent_extaddr"
-
-    link_local_patterns = [
-        r"Saved ParentInfo.*?(fe80:[0-9a-fA-F:%]+)",
-        r"ParentInfo.*?(fe80:[0-9a-fA-F:%]+)",
-        r"parent.*?(fe80:[0-9a-fA-F:%]+)",
-        r"Send Child Update Request as child\s*\((fe80:[0-9a-fA-F:%]+)\)",
-    ]
-    for pattern in link_local_patterns:
-        matches = re.findall(pattern, text, flags=re.IGNORECASE)
-        for match in reversed(matches):
-            ext = ipv6_link_local_to_extaddr(match)
-            if ext:
-                return ext, "child_log_parent_link_local"
-    return None, None
-
-
-def map_router_extaddrs(device_logs: dict[str, Path]) -> dict[str, dict[str, str]]:
-    mapped: dict[str, dict[str, str]] = {}
-    for logical_name, log_path in device_logs.items():
-        if logical_name == "child" or not logical_name.startswith("router"):
-            continue
-        extaddr = parse_radio_extaddr(log_path)
-        key = extaddr_key(extaddr)
-        if not key or not extaddr:
-            continue
-        mapped[key] = {"extaddr": extaddr, "logical_name": logical_name}
-    return mapped
-
-
-def record_parent_removal_decision(
-    *,
-    tracker: RunTracker,
-    manifest: list[dict[str, Any]],
-    action: str,
-    reason: str,
-    details: dict[str, Any],
-) -> None:
-    event = {
-        "time_utc": now_utc_iso(),
-        "type": "parent_removal_decision",
-        "action": action,
-        "reason": reason,
-        **details,
-    }
-    manifest.append(event)
-    tracker.append_event(event)
-
-
-def mark_skipped_run(tracker: RunTracker, reason: str, *, details: dict[str, Any] | None = None) -> None:
-    with tracker.lock:
-        tracker.status = "skipped"
-        tracker.current_step = "skipped"
-        tracker.abort_reason = reason
-        tracker.events.append(
-            {
-                "time_utc": now_utc_iso(),
-                "type": "skip",
-                "reason": reason,
-                **(details or {}),
-            }
-        )
-    tracker.flush_manifest()
-
-
 def run_timed_sequence(
     settings: Settings,
     *,
@@ -1346,8 +1177,7 @@ def run_timed_sequence(
     manifest: list[dict[str, Any]],
     tracker: RunTracker,
 ) -> tuple[Path | None, Path | None, Path | None, Path | None, str | None, Path | None]:
-    log("Starting dynamic-parent stock upload/logging sequence. Upload-only commands are used from here onward.")
-
+    log("Starting timed upload/logging sequence. Upload-only commands are used from here onward.")
     child_log_path: Path | None = None
     router1_log_path: Path | None = None
     router2_log_path: Path | None = None
@@ -1357,58 +1187,36 @@ def run_timed_sequence(
     sniffer_log_path: Path | None = None
     sniffer_remote_pcap: str | None = None
     sniffer_local_pcap: Path | None = None
-
     try:
         tracker.set_step("reset_all_devices")
         for role in ["router1", "child", "router2", *extra_empty_roles(settings)]:
             erase_flash(settings, role, dry_run=dry_run, manifest=manifest, tracker=tracker)
             upload(settings, role, "empty", dry_run=dry_run, manifest=manifest, tracker=tracker)
-
-        require_additional_router_assignments(settings)
-        router_plan = router_execution_plan(settings)
+        additional_router_plan = require_additional_router_assignments(settings)
 
         tracker.set_step("start_sniffer")
-        sniffer_process, sniffer_log_path = start_sniffer_capture(
-            settings, dry_run=dry_run, manifest=manifest, tracker=tracker
-        )
+        sniffer_process, sniffer_log_path = start_sniffer_capture(settings, dry_run=dry_run, manifest=manifest, tracker=tracker)
         if settings.sniffer.enabled:
             sleep_step(
                 settings.timing.sniffer_lead_in_seconds,
-                "sniffer started; wait before flashing routers",
+                "sniffer started; wait before flashing router 1",
                 dry_run=dry_run,
                 manifest=manifest,
                 tracker=tracker,
             )
 
-        tracker.set_step("flash_routers", extra={"router_plan": router_plan})
-        for router in router_plan:
-            upload(
-                settings,
-                router["device_role"],
-                router["config_name"],
-                dry_run=dry_run,
-                manifest=manifest,
-                tracker=tracker,
+        tracker.set_step("flash_router1")
+        upload(settings, "router1", "router1", dry_run=dry_run, manifest=manifest, tracker=tracker)
+        if settings.capture_router2_log:
+            logger, log_path = start_router1_log(
+                settings, dry_run=dry_run, manifest=manifest, tracker=tracker
             )
-            logger, log_path = start_device_log(
-                settings,
-                logical_name=router["logical_name"],
-                config_name=router["config_name"],
-                device_role=router["device_role"],
-                dry_run=dry_run,
-                manifest=manifest,
-                tracker=tracker,
-            )
-            device_loggers[router["logical_name"]] = logger
-            device_log_paths[router["logical_name"]] = log_path
-            if router["logical_name"] == "router1":
-                router1_log_path = log_path
-            elif router["logical_name"] == "router2":
-                router2_log_path = log_path
-
+            device_loggers["router1"] = logger
+            device_log_paths["router1"] = log_path
+            router1_log_path = log_path
         sleep_step(
-            settings.timing.router_settling_seconds,
-            "all stock routers flashed/logging; fixed router-settling delay before flashing child",
+            settings.timing.after_router1_seconds,
+            "router 1 has been flashed; wait before adding child",
             dry_run=dry_run,
             manifest=manifest,
             tracker=tracker,
@@ -1420,114 +1228,70 @@ def run_timed_sequence(
         device_loggers["child"] = logger
         device_log_paths["child"] = log_path
         child_log_path = log_path
-
         sleep_step(
-            settings.timing.child_attach_seconds,
-            "child flashed/logging; wait for natural stock attach before detecting current parent",
+            settings.timing.after_child_seconds,
+            "child flashed/logging; wait before adding router 2",
             dry_run=dry_run,
             manifest=manifest,
             tracker=tracker,
         )
 
-        tracker.set_step("detect_child_parent")
-        parent_extaddr, parent_source = parse_child_parent_extaddr(child_log_path)
-        router_extaddrs = map_router_extaddrs(device_log_paths)
-        parent_key = extaddr_key(parent_extaddr)
-        parent_match = router_extaddrs.get(parent_key or "")
-
-        detection_details = {
-            "detected_parent_extaddr": parent_extaddr,
-            "detected_parent_source": parent_source,
-            "router_extaddrs": router_extaddrs,
-        }
-
-        if not parent_extaddr:
-            record_parent_removal_decision(
-                tracker=tracker,
-                manifest=manifest,
-                action="skipped",
-                reason="SKIP_NO_CHILD_PARENT",
-                details=detection_details,
+        tracker.set_step("flash_router2")
+        upload(settings, "router2", "router2", dry_run=dry_run, manifest=manifest, tracker=tracker)
+        if settings.capture_router2_log:
+            logger, log_path = start_router2_log(
+                settings, dry_run=dry_run, manifest=manifest, tracker=tracker
             )
-            mark_skipped_run(tracker, "SKIP_NO_CHILD_PARENT", details=detection_details)
-            tracker.set_step("stop_sniffer_after_skip")
-            stop_sniffer_capture(settings, sniffer_process, dry_run=dry_run)
-            sniffer_process = None
-            sniffer_remote_pcap, sniffer_local_pcap = pull_sniffer_pcap(
+            device_loggers["router2"] = logger
+            device_log_paths["router2"] = log_path
+            router2_log_path = log_path
+
+        tracker.set_step("flash_additional_routers", extra={"assignments": additional_router_plan})
+        for assignment in additional_router_plan:
+            upload(
                 settings,
-                sniffer_log_path=sniffer_log_path,
+                assignment["device_role"],
+                assignment["firmware_name"],
                 dry_run=dry_run,
                 manifest=manifest,
                 tracker=tracker,
             )
-            return child_log_path, router1_log_path, router2_log_path, sniffer_log_path, sniffer_remote_pcap, sniffer_local_pcap
-
-        if not parent_match:
-            record_parent_removal_decision(
-                tracker=tracker,
-                manifest=manifest,
-                action="skipped",
-                reason="SKIP_PARENT_NOT_MAPPED_TO_DEVICE",
-                details=detection_details,
-            )
-            mark_skipped_run(tracker, "SKIP_PARENT_NOT_MAPPED_TO_DEVICE", details=detection_details)
-            tracker.set_step("stop_sniffer_after_skip")
-            stop_sniffer_capture(settings, sniffer_process, dry_run=dry_run)
-            sniffer_process = None
-            sniffer_remote_pcap, sniffer_local_pcap = pull_sniffer_pcap(
-                settings,
-                sniffer_log_path=sniffer_log_path,
-                dry_run=dry_run,
-                manifest=manifest,
-                tracker=tracker,
-            )
-            return child_log_path, router1_log_path, router2_log_path, sniffer_log_path, sniffer_remote_pcap, sniffer_local_pcap
-
-        removed_parent_logical_name = parent_match["logical_name"]
-        parent_plan = next(
-            router for router in router_plan if router["logical_name"] == removed_parent_logical_name
-        )
-
-        removal_details = {
-            **detection_details,
-            "parent_logical_name": parent_plan["logical_name"],
-            "parent_config_name": parent_plan["config_name"],
-            "parent_device_role": parent_plan["device_role"],
-            "parent_device_port": settings.devices[parent_plan["device_role"]],
-        }
-        record_parent_removal_decision(
-            tracker=tracker,
+            if settings.capture_router2_log:
+                logger, log_path = start_device_log(
+                    settings,
+                    logical_name=assignment["firmware_name"],
+                    config_name=assignment["firmware_name"],
+                    device_role=assignment["device_role"],
+                    dry_run=dry_run,
+                    manifest=manifest,
+                    tracker=tracker,
+                )
+                device_loggers[assignment["firmware_name"]] = logger
+                device_log_paths[assignment["firmware_name"]] = log_path
+        sleep_step(
+            settings.timing.after_router2_seconds,
+            "router 2 and the additional routers have joined; wait before removing router 1",
+            dry_run=dry_run,
             manifest=manifest,
-            action="removed",
-            reason="REMOVED_CHILD_CURRENT_PARENT",
-            details=removal_details,
+            tracker=tracker,
         )
 
-        tracker.set_step("remove_child_parent", extra=removal_details)
+        tracker.set_step("remove_router1")
         stop_device_log(
-            device_loggers.get(removed_parent_logical_name),
-            logical_name=removed_parent_logical_name,
+            device_loggers.get("router1"),
+            logical_name="router1",
             dry_run=dry_run,
-            tracker_log_path=device_log_paths.get(removed_parent_logical_name),
+            tracker_log_path=device_log_paths.get("router1"),
         )
-        device_loggers[removed_parent_logical_name] = None
-        upload(
-            settings,
-            parent_plan["device_role"],
-            "empty",
-            dry_run=dry_run,
-            manifest=manifest,
-            tracker=tracker,
-        )
-
+        device_loggers["router1"] = None
+        upload(settings, "router1", "empty", dry_run=dry_run, manifest=manifest, tracker=tracker)
         sleep_step(
-            settings.timing.after_parent_removed_seconds,
-            "child's detected current parent removed; keep recording child and remaining routers",
+            settings.timing.after_router1_removed_seconds,
+            "router 1 removed; keep recording child",
             dry_run=dry_run,
             manifest=manifest,
             tracker=tracker,
         )
-
         tracker.set_step("stop_sniffer")
         stop_sniffer_capture(settings, sniffer_process, dry_run=dry_run)
         sniffer_process = None
@@ -1540,7 +1304,6 @@ def run_timed_sequence(
         )
         tracker.set_step("timed_sequence_complete")
         return child_log_path, router1_log_path, router2_log_path, sniffer_log_path, sniffer_remote_pcap, sniffer_local_pcap
-
     finally:
         tracker.set_logs(
             child_log=child_log_path,
@@ -1718,8 +1481,7 @@ def main(argv: list[str]) -> int:
             manifest: list[dict[str, Any]] = []
             try:
                 run_timed_sequence(settings, dry_run=args.dry_run, manifest=manifest, tracker=tracker)
-                if tracker.status not in {"skipped", "failed"}:
-                    tracker.mark_completed()
+                tracker.mark_completed()
             except BaseException as exc:
                 tracker.mark_aborted(f"run {run_number} aborted: {exc}", exc=exc)
                 raise
