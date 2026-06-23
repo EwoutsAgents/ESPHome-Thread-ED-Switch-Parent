@@ -34,7 +34,6 @@ Local device configuration files:
 * `stock_test_devices.toml`
 * `stock_test_devices_2routers.toml`
 * `stock_test_devices_3routers.toml`
-* `stock_test_devices_4routers.toml`
 * `ucast_test_devices.toml`
 * `mcast_test_devices.toml`
 
@@ -90,18 +89,11 @@ unused1 = "/dev/ttyACM3"
 unused2 = "/dev/ttyACM4"
 
 [variant]
-# Total number of stock router-capable devices included in the run.
-# This does not include the child.
-#
-# n_routers = 2 means:
-#   stock_router_1.yaml + stock_router_2.yaml + stock_child.yaml
-#
-# n_routers = 3 means:
-#   stock_router_1.yaml + stock_router_2.yaml + stock_router_3.yaml + stock_child.yaml
-#
-# n_routers = 4 means:
-#   stock_router_1.yaml + stock_router_2.yaml + stock_router_3.yaml + stock_router_4.yaml + stock_child.yaml
-n_routers = 4
+# Highest stock router number included in the run.
+# 2 means stock_router_1 + stock_router_2.
+# 3 means stock_router_1 + stock_router_2 + stock_router_3.
+# 4 means stock_router_1 + stock_router_2 + stock_router_3 + stock_router_4.
+n_routers = 3
 ```
 
 Example sniffer and timing configuration shape:
@@ -134,7 +126,6 @@ Alternative stock configurations can be used when present:
 ```bash
 ./run_stock_test.sh --config stock_test_devices_2routers.toml
 ./run_stock_test.sh --config stock_test_devices_3routers.toml
-./run_stock_test.sh --config stock_test_devices_4routers.toml
 ```
 
 ### Unicast preferred-parent
@@ -148,18 +139,6 @@ Alternative stock configurations can be used when present:
 ```bash
 ./run_mcast_test.sh --config mcast_test_devices.toml
 ```
-
-
-### Small max-router stock batch
-
-If five ESP32-C6 boards are available, use the 4-router stock configuration for the largest stock topology currently supported:
-
-```bash
-./run_stock_test.sh --config stock_test_devices_4routers.toml --dry-run
-./run_stock_test.sh --config stock_test_devices_4routers.toml --runs 2
-```
-
-`n_routers = 4` means four total router-capable Thread routers plus the child.
 
 ## Multiple runs
 

@@ -2,15 +2,15 @@
 
 The stock test is intended to measure natural OpenThread parent-switch behavior without using the preferred-parent switching mechanism. The test is fully automatic and opportunistic: rather than forcing a specific router to be the child’s initial parent, the runner observes which router the child naturally attaches to and only proceeds when the resulting topology is suitable for a clean reference measurement.
 
-Each variation follows the same setup until the requested router set has been flashed. Variations differ only in the total number of router-capable ESP32-C6 boards included in the run. The `n_routers` setting is the total router count and does not include the child. Routers are flashed in order using `stock_router_<n>.yaml`, where `<n>` starts at `1` and increases sequentially until the requested total router count is reached. The current maximum is four routers total.
+Each variation follows the same setup until the requested router set has been flashed. Variations differ only in how many router-capable ESP32-C6 boards are added. Routers are flashed in order using `stock_router_<n>.yaml`, where `<n>` starts at `1` and increases sequentially until the requested maximum router number is reached. The current maximum is four routers total.
 
-A run is considered suitable for measurement only if, after the fixed router-settling delay and the child's initial attach, the child’s current parent can be removed without also removing the network leader or a router that is required as a transit/nexthop between the remaining candidate parents. If those preconditions are not met, the run is skipped or classified separately instead of being treated as a valid stock parent-switch measurement.
+A run is considered suitable for measurement only if the child’s current parent can be removed without also removing the network leader or a router that is required as a transit/nexthop between the remaining candidate parents. If those preconditions are not met after the fixed settling delay, the run is skipped or classified separately instead of being treated as a valid stock parent-switch measurement.
 
 1. Erase firmware and non-volatile storage on all connected ESP32-C6 boards, including unused boards, using `esptool.py --chip esp32c6 --port <port> erase_flash`.
 2. Put all ESP32-C6 boards, including unused ones, in a predictable state by flashing `empty.yaml` to them.
 3. Start the `IEEE 802.15.4` sniffer recording.
 4. Wait 5 seconds.
-5. Flash the requested total number of router-capable ESP32-C6 boards using `stock_router_<n>.yaml`, where `<n>` starts at `1` and increases sequentially until the configured `n_routers` total is reached.
+5. Flash the requested router-capable ESP32-C6 boards using `stock_router_<n>.yaml`, where `<n>` starts at `1` and increases sequentially until the requested maximum router number is reached.
 6. Wait a fixed router-settling delay, currently 90 seconds, before flashing the child. This delay gives the router-capable devices time to form a stable Thread topology before the child performs its initial stock attach. The runner does not extend this delay dynamically; instead, it validates the observed topology after the delay and skips or classifies the run separately if the topology is unsuitable.
 7. Flash the child ESP32-C6 with `stock_child.yaml`.
 8. Wait for the child to attach naturally to one of the available routers.

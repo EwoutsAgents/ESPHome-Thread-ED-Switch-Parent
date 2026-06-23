@@ -5,24 +5,16 @@
 router1 = "/dev/ttyACM0"
 child = "/dev/ttyACM1"
 router2 = "/dev/ttyACM2"
-# Extra ESP32-C6 boards can be used as router3/router4 when n_routers is 3 or 4.
-# Any configured board that is not used by the selected total router count is
-# still erased and flashed with empty.yaml before the timed sequence starts.
+# Extra ESP32-C6 boards are erased and flashed with empty.yaml before the
+# timed sequence starts. One extra board is then selected as the additional
+# router after stock_router_2 is flashed. Any other extras remain on empty.yaml.
 # unused1 = "/dev/ttyACM3"
 # unused2 = "/dev/ttyACM4"
 
 [variant]
-# Total number of stock router-capable devices included in the run.
-# This does not include the child.
-#
-# n_routers = 2 means:
-#   stock_router_1.yaml + stock_router_2.yaml + stock_child.yaml
-#
-# n_routers = 3 means:
-#   stock_router_1.yaml + stock_router_2.yaml + stock_router_3.yaml + stock_child.yaml
-#
-# n_routers = 4 means:
-#   stock_router_1.yaml + stock_router_2.yaml + stock_router_3.yaml + stock_router_4.yaml + stock_child.yaml
+# Selects the highest stock router number included in the run.
+# 3 includes stock_router_3.yaml.
+# 4 includes stock_router_3.yaml and stock_router_4.yaml.
 n_routers = 3
 
 [paths]

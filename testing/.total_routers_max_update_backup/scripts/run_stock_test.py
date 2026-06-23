@@ -43,10 +43,10 @@ CONFIG_NAMES = {
     "router4": "stock_router_4.yaml",
 }
 CORE_COMPILE_ORDER = ["empty", "router1", "child", "router2"]
-MAX_ROUTER_COUNT = max(
+MAX_ADDITIONAL_ROUTER_NUMBER = max(
     int(name.removeprefix("router"))
     for name in CONFIG_NAMES
-    if name.startswith("router")
+    if name.startswith("router") and name not in {"router1", "router2"}
 )
 PCAP_PATH_RE = re.compile(r"Saving (?:test )?capture to (\S+\.pcapng)")
 TAIL_SNAPSHOT_LINES = 120
@@ -560,12 +560,12 @@ def load_settings(args: argparse.Namespace) -> Settings:
         raise SystemExit("[sniffer].enabled is true, but [sniffer].command is empty.")
 
     variant_raw = raw.get("variant", {})
-    router_count_raw = variant_raw.get("n_routers", 3)
+    router_count_raw = variant_raw.get("n_routers", variant_raw.get("additional_router_number", 3))
     max_router_number = int(router_count_raw)
     if max_router_number < 2 or f"router{max_router_number}" not in CONFIG_NAMES:
         raise SystemExit(
             f"[variant].n_routers must reference an available stock_router_<n>.yaml variation. "
-            f"Supported values are 2..{MAX_ROUTER_COUNT} total routers."
+            f"Supported values are 2..{MAX_ADDITIONAL_ROUTER_NUMBER}."
         )
 
     if args.runs > 1:
@@ -776,8 +776,8 @@ def require_additional_router_assignments(settings: Settings) -> list[dict[str, 
     required_count = len(additional_router_firmware_names(settings))
     if len(assignments) < required_count:
         raise SystemExit(
-            "Stock testing requires enough ESP32-C6 boards in [devices] for the requested total router count. "
-            f"n_routers={settings.max_router_number} requires {required_count} extra role(s) for router3..router{settings.max_router_number}. "
+            "Stock testing requires enough extra ESP32-C6 boards in [devices] for the requested router variation. "
+            f"Need {required_count} extra role(s) for router3..router{settings.max_router_number}. "
             "Add extra roles such as `unused1`, `unused2`, `router3`, or `router4`."
         )
     return assignments
