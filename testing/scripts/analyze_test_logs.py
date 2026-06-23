@@ -656,6 +656,8 @@ def pcap_sequences_for_log(
     log_path: Path,
     *,
     offset_ms: int,
+    reuse_pcap_csv: bool = False,
+    generate_pcap_csv: bool = True,
 ) -> tuple[list[dict[str, PcapEvent]], str, list[str]]:
     warnings: list[str] = []
     pcap_path = pcap_path_for_log(manifest, log_path)
@@ -663,13 +665,35 @@ def pcap_sequences_for_log(
         warnings.append("Could not locate a pcap for this run; no pcap-derived timings were produced.")
         return [], "none", warnings
 
-    network_key = network_key_for_child_log(manifest, log_path)
-    if not network_key:
-        warnings.append("Could not determine the Thread network key; no pcap-derived timings were produced.")
-        return [], "none", warnings
-
     try:
-        attach_csv = generate_attach_csv(pcap_path, network_key)
+        attach_csv = attach_csv_path_for_pcap(pcap_path)
+        source = "pcap-csv-tlv-existing"
+
+        if attach_csv is None:
+            if not generate_pcap_csv:
+                expected = ", ".join(str(path.name) for path in candidate_attach_csv_paths(pcap_path))
+                warnings.append(
+                    f"No existing attach-MLE CSV found next to {pcap_path.name}; expected one of: {expected}. "
+                    "CSV generation is disabled, so no pcap-derived timings were produced."
+                )
+                return [], "none", warnings
+
+            network_key = network_key_for_child_log(manifest, log_path)
+            if not network_key:
+                warnings.append("Could not determine the Thread network key; no pcap-derived timings were produced.")
+                return [], "none", warnings
+
+            attach_csv = generate_attach_csv(pcap_path, network_key)
+            source = "pcap-csv-tlv-generated"
+        elif not reuse_pcap_csv and generate_pcap_csv:
+            # Preserve the original behavior by regenerating unless explicitly told to reuse.
+            network_key = network_key_for_child_log(manifest, log_path)
+            if not network_key:
+                warnings.append("Could not determine the Thread network key; using the existing attach-MLE CSV instead of regenerating it.")
+            else:
+                attach_csv = generate_attach_csv(pcap_path, network_key)
+                source = "pcap-csv-tlv-generated"
+
         rows = load_attach_csv_rows(attach_csv, offset_ms=offset_ms)
         sequences = pcap_sequences_from_csv_rows(rows)
     except FileNotFoundError as exc:
@@ -688,8 +712,8 @@ def pcap_sequences_for_log(
         warnings.append(
             "No complete TLV-matched Parent Request -> Parent Response -> Child ID Request -> Child ID Response sequences were found in the pcap CSV."
         )
-        return [], "pcap-csv-tlv", warnings
-    return sequences, "pcap-csv-tlv", warnings
+        return [], source, warnings
+    return sequences, source, warnings
 
 
 def pcap_sequence_child_extaddr(matched: dict[str, PcapEvent]) -> str | None:
@@ -775,6 +799,8 @@ def enrich_sequences_with_pcap(
     sequences: list[AttachSequence],
     *,
     child_extaddr: str | None,
+    reuse_pcap_csv: bool = False,
+    generate_pcap_csv: bool = True,
 ) -> list[str]:
     warnings: list[str] = []
     manifest = manifest_for_log(log_path)
@@ -782,7 +808,13 @@ def enrich_sequences_with_pcap(
         return ["No matching manifest found; skipping pcap timing enrichment."]
 
     offset_ms = log_utc_offset_ms(log_path)
-    pcap_sequences, source, pcap_warnings = pcap_sequences_for_log(manifest, log_path, offset_ms=offset_ms)
+    pcap_sequences, source, pcap_warnings = pcap_sequences_for_log(
+        manifest,
+        log_path,
+        offset_ms=offset_ms,
+        reuse_pcap_csv=reuse_pcap_csv,
+        generate_pcap_csv=generate_pcap_csv,
+    )
     warnings.extend(pcap_warnings)
     if not pcap_sequences:
         return warnings
@@ -823,7 +855,12 @@ def sequence_sort_key(seq: AttachSequence) -> tuple[int, int]:
     return 10**12, seq.line_no
 
 
-def analyze_log(path: Path) -> dict[str, Any]:
+def analyze_log(
+    path: Path,
+    *,
+    reuse_pcap_csv: bool = False,
+    generate_pcap_csv: bool = True,
+) -> dict[str, Any]:
     lines = path.read_text(encoding="utf-8", errors="replace").splitlines()
 
     raw_sequences: list[AttachSequence] = []
@@ -922,7 +959,13 @@ def analyze_log(path: Path) -> dict[str, Any]:
         )
         raw_sequences.append(current)
 
-    warnings = enrich_sequences_with_pcap(path, raw_sequences, child_extaddr=child_extaddr)
+    warnings = enrich_sequences_with_pcap(
+        path,
+        raw_sequences,
+        child_extaddr=child_extaddr,
+        reuse_pcap_csv=reuse_pcap_csv,
+        generate_pcap_csv=generate_pcap_csv,
+    )
     raw_sequences.sort(key=sequence_sort_key)
 
     completed = [seq for seq in raw_sequences if seq.has_complete_pcap_attach()]
@@ -1087,6 +1130,16 @@ def parse_args(argv: list[str]) -> argparse.Namespace:
     parser.add_argument("--json", action="store_true", help="Emit machine-readable JSON.")
     parser.add_argument("--markdown", action="store_true", help="Emit Markdown instead of plain text.")
     parser.add_argument("--write-markdown", nargs="?", const=Path("__AUTO__"), type=Path, help="Write the Markdown report to this path.")
+    parser.add_argument(
+        "--reuse-pcap-csv",
+        action="store_true",
+        help="Reuse an existing attach-MLE CSV next to each PCAP when present; generate it only when missing.",
+    )
+    parser.add_argument(
+        "--no-generate-pcap-csv",
+        action="store_true",
+        help="Never call pcap_to_csv.py; require an existing attach-MLE CSV next to each PCAP.",
+    )
     return parser.parse_args(argv)
 
 
@@ -1117,7 +1170,17 @@ def main(argv: list[str]) -> int:
     args = parse_args(argv)
     logs_dir = args.logs_dir.resolve()
     log_paths = collect_log_paths(logs_dir, args.run_dirs)
-    results = [analyze_log(path) for path in log_paths]
+    if args.reuse_pcap_csv and args.no_generate_pcap_csv:
+        raise SystemExit("Use either --reuse-pcap-csv or --no-generate-pcap-csv, not both.")
+
+    results = [
+        analyze_log(
+            path,
+            reuse_pcap_csv=args.reuse_pcap_csv or args.no_generate_pcap_csv,
+            generate_pcap_csv=not args.no_generate_pcap_csv,
+        )
+        for path in log_paths
+    ]
 
     if args.json:
         output = json.dumps(results, indent=2)
