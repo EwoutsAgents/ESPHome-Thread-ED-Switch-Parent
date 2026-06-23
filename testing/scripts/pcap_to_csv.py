@@ -17,11 +17,14 @@ attach_mle.csv:
     - Child ID Request     mle.cmd == 11
     - Child ID Response    mle.cmd == 12
 
+This version also auto-adds MLE Challenge/Response TLV fields if your local tshark exposes them.
+It discovers them from `tshark -G fields`, so it does not depend on guessing exact Wireshark field names.
+
 Examples:
 
   export THREAD_NETWORK_KEY=<32_hex_thread_network_key>
 
-  # One run: writes next to the pcap.
+  # One run: writes next to the PCAP.
   python3 testing/scripts/pcap_to_csv.py \
     testing/logs/stock-2router-100runs-20260622-141453/20260622-142051-run02/802154-20260622-142110.pcapng
 
@@ -29,10 +32,10 @@ Examples:
   python3 testing/scripts/pcap_to_csv.py \
     testing/logs/stock-2router-100runs-20260622-141453
 
-  # Explicit key:
+  # Show which MLE TLV fields were auto-added.
   python3 testing/scripts/pcap_to_csv.py \
-    testing/logs/stock-2router-100runs-20260622-141453 \
-    --network-key dfd34f0f05cad978ec4e32b0413038ff
+    testing/logs/stock-2router-100runs-20260622-141453/20260622-142051-run02/802154-20260622-142110.pcapng \
+    --list-added-fields
 """
 
 from __future__ import annotations
@@ -45,6 +48,7 @@ import re
 import shutil
 import subprocess
 import sys
+from dataclasses import dataclass
 from pathlib import Path
 from typing import Iterable
 
@@ -57,7 +61,7 @@ ATTACH_MLE_COMMAND_NAMES = {
 }
 
 
-DEFAULT_FIELDS = [
+BASE_FIELDS = [
     # Generic packet metadata.
     "frame.number",
     "frame.time_epoch",
@@ -87,12 +91,32 @@ DEFAULT_FIELDS = [
     # Thread / MLE.
     "mle.cmd",
 
+    # Useful if exposed by your tshark build.
+    "mle.tlv.type",
+    "mle.tlv.length",
+
     # Other useful high-level protocols if present.
     "coap.code",
     "coap.mid",
     "icmpv6.type",
     "icmpv6.code",
 ]
+
+
+# Explicit candidates seen across Wireshark versions. Unsupported ones are ignored.
+EXPLICIT_MLE_TLV_CANDIDATES = [
+    "mle.tlv.challenge",
+    "mle.tlv.response",
+    "mle.challenge",
+    "mle.response",
+]
+
+
+@dataclass(frozen=True)
+class TSharkField:
+    abbrev: str
+    name: str
+    parent: str
 
 
 def run(cmd: list[str], *, check: bool = True) -> subprocess.CompletedProcess[str]:
@@ -116,14 +140,49 @@ def normalize_network_key(key: str) -> str:
     return key.lower()
 
 
-def parse_tshark_fields(tshark: str) -> set[str]:
+def parse_tshark_fields(tshark: str) -> dict[str, TSharkField]:
     proc = run([tshark, "-G", "fields"])
-    fields: set[str] = set()
+    fields: dict[str, TSharkField] = {}
+
     for line in proc.stdout.splitlines():
         parts = line.split("\t")
-        if len(parts) >= 3 and parts[0] == "F":
-            fields.add(parts[2])
+        # Field lines look like:
+        # F <name> <abbrev> <type> <parent> ...
+        if len(parts) >= 5 and parts[0] == "F":
+            name = parts[1]
+            abbrev = parts[2]
+            parent = parts[4]
+            fields[abbrev] = TSharkField(abbrev=abbrev, name=name, parent=parent)
+
     return fields
+
+
+def discover_mle_challenge_response_fields(field_map: dict[str, TSharkField]) -> list[str]:
+    """
+    Find MLE fields related to Challenge/Response TLVs.
+
+    We match both the abbreviation and display name because Wireshark field names can differ
+    across versions.
+    """
+    selected: list[str] = []
+
+    # Start with explicit candidates, preserving this order.
+    for candidate in EXPLICIT_MLE_TLV_CANDIDATES:
+        if candidate in field_map and candidate not in selected:
+            selected.append(candidate)
+
+    # Add discovered MLE fields whose abbrev/name mention challenge/response.
+    for abbrev, field in sorted(field_map.items()):
+        haystack = f"{abbrev} {field.name}".lower()
+        is_mle = abbrev.startswith("mle.") or field.parent == "mle"
+
+        if not is_mle:
+            continue
+
+        if ("challenge" in haystack or "response" in haystack) and abbrev not in selected:
+            selected.append(abbrev)
+
+    return selected
 
 
 def build_decode_prefs(network_key: str | None) -> list[str]:
@@ -185,6 +244,7 @@ def tshark_export(
     fields: Iterable[str],
     prefs: list[str],
     display_filter: str | None,
+    aggregator: str,
 ) -> list[dict[str, str]]:
     cmd = [tshark, "-r", str(pcap), *prefs]
 
@@ -196,7 +256,8 @@ def tshark_export(
         "-E", "header=y",
         "-E", "separator=,",
         "-E", "quote=d",
-        "-E", "occurrence=f",
+        "-E", "occurrence=a",
+        "-E", f"aggregator={aggregator}",
     ])
 
     for field in fields:
@@ -229,6 +290,8 @@ def add_context_columns(rows: list[dict[str, str]], pcap: Path) -> list[dict[str
         enriched.update(row)
 
         cmd = (row.get("mle.cmd") or "").strip()
+        # occurrence=a can join multiple commands with the aggregator, but for MLE command it should
+        # normally be one value.
         enriched["mle.command_name"] = ATTACH_MLE_COMMAND_NAMES.get(cmd, "")
 
         out.append(enriched)
@@ -260,7 +323,6 @@ def write_rows(path: Path, rows: list[dict[str, str]], fieldnames: list[str], ov
 
 def output_paths_for_pcap(pcap: Path, args: argparse.Namespace) -> tuple[Path, Path]:
     if args.out_dir:
-        # Optional central output mode, if you ever want it.
         safe_stem = pcap.with_suffix("").name
         all_path = args.out_dir / f"{pcap.parent.name}-{safe_stem}-{args.all_name}"
         attach_path = args.out_dir / f"{pcap.parent.name}-{safe_stem}-{args.attach_name}"
@@ -268,6 +330,24 @@ def output_paths_for_pcap(pcap: Path, args: argparse.Namespace) -> tuple[Path, P
 
     # Default: write alongside the PCAP.
     return pcap.parent / args.all_name, pcap.parent / args.attach_name
+
+
+def build_fields(field_map: dict[str, TSharkField], include_mle_challenge_response: bool) -> tuple[list[str], list[str]]:
+    supported = set(field_map.keys())
+
+    fields: list[str] = []
+    for field in BASE_FIELDS:
+        if field in supported and field not in fields:
+            fields.append(field)
+
+    added_mle_fields: list[str] = []
+    if include_mle_challenge_response:
+        added_mle_fields = discover_mle_challenge_response_fields(field_map)
+        for field in added_mle_fields:
+            if field in supported and field not in fields:
+                fields.append(field)
+
+    return fields, added_mle_fields
 
 
 def main() -> int:
@@ -289,23 +369,47 @@ def main() -> int:
     parser.add_argument("--out-dir", type=Path, help="Optional central output dir. Omit this to write alongside each PCAP.")
     parser.add_argument("--overwrite", action="store_true", help="Overwrite existing CSV files")
     parser.add_argument("--tshark", default="tshark", help="Path to tshark binary")
+    parser.add_argument(
+        "--no-mle-challenge-response",
+        action="store_true",
+        help="Do not auto-add MLE challenge/response TLV fields.",
+    )
+    parser.add_argument(
+        "--list-added-fields",
+        action="store_true",
+        help="Print auto-added MLE challenge/response fields and exit if no input PCAPs are needed.",
+    )
+    parser.add_argument(
+        "--aggregator",
+        default="|",
+        help="Separator used when tshark returns multiple values for one field. Default: |",
+    )
     args = parser.parse_args()
-
-    pcaps = discover_pcaps(args.inputs, args.glob, recursive=not args.no_recursive)
-    if not pcaps:
-        raise SystemExit("No PCAP/PCAPNG files found.")
 
     tshark_path = shutil.which(args.tshark) or args.tshark
 
     try:
-        supported_fields = parse_tshark_fields(tshark_path)
+        field_map = parse_tshark_fields(tshark_path)
     except Exception as e:
         raise SystemExit(f"Could not run tshark. Is Wireshark/tshark installed?\n{e}")
 
-    fields = [field for field in DEFAULT_FIELDS if field in supported_fields]
-    missing_fields = [field for field in DEFAULT_FIELDS if field not in supported_fields]
-    if missing_fields:
-        print(f"Warning: unsupported tshark fields omitted: {missing_fields}", file=sys.stderr)
+    fields, added_mle_fields = build_fields(
+        field_map=field_map,
+        include_mle_challenge_response=not args.no_mle_challenge_response,
+    )
+
+    unsupported_base_fields = [field for field in BASE_FIELDS if field not in field_map]
+    if unsupported_base_fields:
+        print(f"Warning: unsupported tshark fields omitted: {unsupported_base_fields}", file=sys.stderr)
+
+    if args.list_added_fields:
+        print("Auto-added MLE challenge/response fields:")
+        if added_mle_fields:
+            for field in added_mle_fields:
+                meta = field_map[field]
+                print(f"  {field}  # {meta.name}")
+        else:
+            print("  none")
 
     if "mle.cmd" not in fields:
         print(
@@ -313,6 +417,10 @@ def main() -> int:
             "attach_mle.csv will probably be empty.",
             file=sys.stderr,
         )
+
+    pcaps = discover_pcaps(args.inputs, args.glob, recursive=not args.no_recursive)
+    if not pcaps:
+        raise SystemExit("No PCAP/PCAPNG files found.")
 
     prefs = build_decode_prefs(args.network_key)
     frame_filter = frame_range_filter(args.frame_range)
@@ -327,11 +435,11 @@ def main() -> int:
 
         try:
             all_rows = add_context_columns(
-                tshark_export(tshark_path, pcap, fields, prefs, all_filter),
+                tshark_export(tshark_path, pcap, fields, prefs, all_filter, args.aggregator),
                 pcap,
             )
             attach_rows = add_context_columns(
-                tshark_export(tshark_path, pcap, fields, prefs, mle_filter),
+                tshark_export(tshark_path, pcap, fields, prefs, mle_filter, args.aggregator),
                 pcap,
             )
 
@@ -346,6 +454,11 @@ def main() -> int:
         print(f"[{i}/{len(pcaps)}] {pcap}")
         print(f"  wrote {all_path} ({len(all_rows)} rows)")
         print(f"  wrote {attach_path} ({len(attach_rows)} rows)")
+
+    if added_mle_fields:
+        print("\nIncluded MLE challenge/response fields:")
+        for field in added_mle_fields:
+            print(f"  {field}")
 
     if failures:
         print(f"\nCompleted with {failures} failed PCAP(s).", file=sys.stderr)
