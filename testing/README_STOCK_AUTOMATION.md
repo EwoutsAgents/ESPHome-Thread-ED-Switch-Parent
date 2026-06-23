@@ -23,7 +23,7 @@ It does not call `esphome run` during the timed sequence. This avoids compile-ti
   - Optional `[sniffer]` settings can start/stop an IEEE 802.15.4 capture command during the timed sequence, then pull the resulting `.pcapng` into `logs/stock/`.
 - `configs/*.yaml` — current stock configs from the `better_testing` branch.
   - `configs/stock_child.yaml` explicitly sets `CONFIG_OPENTHREAD_PARENT_SEARCH_MTD: n` so the stock-child test does not include ESP-IDF/OpenThread's default periodic MTD parent-search behaviour.
-- `logs/stock/` — base directory for generated run folders, stock child logs, `.pcapng` captures, and JSON manifests.
+- `logs/stock/` — base directory for generated run folders, stock child logs, `stock_sniffer_*.pcapng` captures, and JSON manifests.
 
 ## Setup
 
@@ -151,14 +151,14 @@ Timed phase:
 12. `upload empty.yaml` to router 1.
 13. Wait 180 seconds while child logging continues.
 14. Stop the optional sniffer capture command.
-15. Copy the resulting sniffer `.pcapng` into `logs/stock/`.
+15. Copy the resulting sniffer `.pcapng` into the run folder as `stock_sniffer_<timestamp>.pcapng`.
 16. Stop child logging.
 
 Each run writes into its own timestamped folder:
 
 - `logs/stock/<timestamp>/stock_child_<timestamp>.log`
 - `logs/stock/<timestamp>/stock_sniffer_<timestamp>.log` when `[sniffer].enabled = true`
-- `logs/stock/<timestamp>/<sniffer-capture-basename>.pcapng` when `[sniffer].enabled = true`
+- `logs/stock/<timestamp>/stock_sniffer_<timestamp>.pcapng` when `[sniffer].enabled = true`
 - `logs/stock/<timestamp>/stock_test_manifest_<timestamp>.json`
 
 When `--runs N` is used, each repeated timed run gets its own folder with a `-runNN` suffix, for example `logs/stock/20260609-030000-run03/`.

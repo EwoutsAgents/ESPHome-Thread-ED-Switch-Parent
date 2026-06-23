@@ -16,7 +16,7 @@ The method for testing stock performance is as follows. Each variation follows t
 12. Flash the first ESP32-C6 with `empty.yaml`.
 13. Wait 180 seconds.
 14. Stop the `IEEE 802.15.4` sniffer recording.
-15. Copy the resulting sniffer `.pcapng` into the current run folder under `testing/logs/stock/<timestamp>/`.
+15. Copy the resulting sniffer `.pcapng` into the current run folder under `testing/logs/stock/<timestamp>/` as `stock_sniffer_<timestamp>.pcapng`.
 
 # Ucast/mcast testing
 
@@ -46,7 +46,7 @@ Use the following child firmware and log directory for each variant:
 15. Instruct the child to change its parent to `stock-router-2` using the extended address observed from `stock_router_2.yaml` logs.
 16. Wait 180 seconds.
 17. Stop the `IEEE 802.15.4` sniffer recording.
-18. Copy the resulting sniffer `.pcapng` into the current run folder for the selected variant.
+18. Copy the resulting sniffer `.pcapng` into the current run folder for the selected variant as `<variant>_sniffer_<timestamp>.pcapng`.
 
 Configuration note:
 

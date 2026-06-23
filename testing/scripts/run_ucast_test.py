@@ -631,8 +631,8 @@ def pull_sniffer_pcap(
     if remote_pcap is None:
         return None, None
 
-    local_pcap = settings.logs_dir / Path(remote_pcap).name
-    local_pcap = settings.run_logs_dir / Path(remote_pcap).name
+    stamp = settings.run_logs_dir.name
+    local_pcap = settings.run_logs_dir / f"{settings.name_prefix}_sniffer_{stamp}.pcapng"
     host = sniffer_remote_host(settings)
     if host:
         cmd = ["scp", f"{host}:{remote_pcap}", str(local_pcap)]

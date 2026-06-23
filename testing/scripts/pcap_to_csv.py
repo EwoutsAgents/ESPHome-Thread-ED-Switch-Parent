@@ -26,7 +26,7 @@ Examples:
 
   # One run: writes next to the PCAP.
   python3 testing/scripts/pcap_to_csv.py \
-    testing/logs/stock-2router-100runs-20260622-141453/20260622-142051-run02/802154-20260622-142110.pcapng
+    testing/logs/stock-2router-100runs-20260622-141453/20260622-142051-run02/stock_sniffer_20260622-142051-run02.pcapng
 
   # Whole experiment: writes all_packets.csv and attach_mle.csv inside each run directory.
   python3 testing/scripts/pcap_to_csv.py \
@@ -34,7 +34,7 @@ Examples:
 
   # Show which MLE TLV fields were auto-added.
   python3 testing/scripts/pcap_to_csv.py \
-    testing/logs/stock-2router-100runs-20260622-141453/20260622-142051-run02/802154-20260622-142110.pcapng \
+    testing/logs/stock-2router-100runs-20260622-141453/20260622-142051-run02/stock_sniffer_20260622-142051-run02.pcapng \
     --list-added-fields
 """
 
