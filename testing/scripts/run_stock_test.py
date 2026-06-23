@@ -182,6 +182,7 @@ class RunTracker:
         self.child_log: Path | None = None
         self.router1_log: Path | None = None
         self.router2_log: Path | None = None
+        self.device_logs: dict[str, Path] = {}
         self.sniffer_log: Path | None = None
         self.sniffer_remote_pcap: str | None = None
         self.sniffer_local_pcap: Path | None = None
@@ -215,9 +216,11 @@ class RunTracker:
             "timing": self.settings.timing.__dict__,
             "max_router_number": self.settings.max_router_number,
             "additional_router_assignments": additional_router_assignments(self.settings),
+            "device_assignments": device_assignments(self.settings),
             "child_log": str(self.child_log) if self.child_log else None,
             "router1_log": str(self.router1_log) if self.router1_log else None,
             "router2_log": str(self.router2_log) if self.router2_log else None,
+            "device_logs": {name: str(path) for name, path in sorted(self.device_logs.items())},
             "supervisor_log": str(self.supervisor_log_path),
             "sniffer": {
                 "enabled": self.settings.sniffer.enabled,
@@ -264,12 +267,26 @@ class RunTracker:
         with self.lock:
             if child_log is not None:
                 self.child_log = child_log
+                self.device_logs["child"] = child_log
             if router1_log is not None:
                 self.router1_log = router1_log
+                self.device_logs["router1"] = router1_log
             if router2_log is not None:
                 self.router2_log = router2_log
+                self.device_logs["router2"] = router2_log
             if sniffer_log is not None:
                 self.sniffer_log = sniffer_log
+        self.flush_manifest()
+
+    def set_device_log(self, logical_name: str, log_path: Path) -> None:
+        with self.lock:
+            self.device_logs[logical_name] = log_path
+            if logical_name == "child":
+                self.child_log = log_path
+            elif logical_name == "router1":
+                self.router1_log = log_path
+            elif logical_name == "router2":
+                self.router2_log = log_path
         self.flush_manifest()
 
     def set_sniffer_pcap(self, remote_pcap: str | None, local_pcap: Path | None) -> None:
@@ -278,7 +295,15 @@ class RunTracker:
             self.sniffer_local_pcap = local_pcap
         self.flush_manifest()
 
-    def start_process(self, name: str, cmd: list[str], log_path: Path | None, process: subprocess.Popen[str] | None) -> None:
+    def start_process(
+        self,
+        name: str,
+        cmd: list[str],
+        log_path: Path | None,
+        process: subprocess.Popen[str] | None,
+        *,
+        metadata: dict[str, Any] | None = None,
+    ) -> None:
         record = {
             "cmd": cmd,
             "log_path": str(log_path) if log_path else None,
@@ -286,6 +311,8 @@ class RunTracker:
             "pid": process.pid if process is not None else None,
             "status": "running" if process is not None else "dry-run",
         }
+        if metadata:
+            record.update(metadata)
         with self.lock:
             self.processes[name] = record
             self.events.append({"time_utc": now_utc_iso(), "type": "process_started", "name": name, **record})
@@ -316,12 +343,7 @@ class RunTracker:
         self.flush_manifest()
 
     def capture_failure_tails(self) -> None:
-        targets = {
-            "child": self.child_log,
-            "router1": self.router1_log,
-            "router2": self.router2_log,
-            "sniffer": self.sniffer_log,
-        }
+        targets = {**self.device_logs, "sniffer": self.sniffer_log}
         for name, path in targets.items():
             if path is None:
                 continue
@@ -748,6 +770,50 @@ def require_additional_router_assignments(settings: Settings) -> list[dict[str, 
     return assignments
 
 
+def device_assignments(settings: Settings) -> list[dict[str, str]]:
+    assignments = [
+        {
+            "logical_name": "router1",
+            "config_name": "router1",
+            "device_role": "router1",
+            "device_port": settings.devices["router1"],
+        },
+        {
+            "logical_name": "child",
+            "config_name": "child",
+            "device_role": "child",
+            "device_port": settings.devices["child"],
+        },
+        {
+            "logical_name": "router2",
+            "config_name": "router2",
+            "device_role": "router2",
+            "device_port": settings.devices["router2"],
+        },
+    ]
+    for assignment in additional_router_assignments(settings):
+        device_role = assignment["device_role"]
+        firmware_name = assignment["firmware_name"]
+        assignments.append(
+            {
+                "logical_name": firmware_name,
+                "config_name": firmware_name,
+                "device_role": device_role,
+                "device_port": settings.devices[device_role],
+            }
+        )
+    return assignments
+
+
+def log_process_name(logical_name: str) -> str:
+    return f"{logical_name}_log"
+
+
+def log_file_path(settings: Settings, logical_name: str) -> Path:
+    stamp = settings.run_logs_dir.name
+    return settings.run_logs_dir / f"stock_{logical_name}_{stamp}.log"
+
+
 def start_sniffer_capture(
     settings: Settings,
     *,
@@ -816,7 +882,7 @@ def start_sniffer_capture(
         thread = threading.Thread(target=pump, name=f"sniffer-log-pump-{attempt}", daemon=True)
         thread.start()
         if tracker is not None:
-            tracker.start_process("sniffer", cmd, log_path, process)
+            tracker.start_process("sniffer", cmd, log_path, process, metadata={"process_kind": "sniffer"})
         return process, log_path
 
     process, _ = start_once(1)
@@ -923,14 +989,50 @@ def start_child_log(
     manifest: list[dict[str, Any]],
     tracker: RunTracker | None = None,
 ) -> tuple[subprocess.Popen[str] | None, Path]:
+    return start_device_log(
+        settings,
+        logical_name="child",
+        config_name="child",
+        device_role="child",
+        dry_run=dry_run,
+        manifest=manifest,
+        tracker=tracker,
+    )
+
+
+def start_device_log(
+    settings: Settings,
+    *,
+    logical_name: str,
+    config_name: str,
+    device_role: str,
+    dry_run: bool,
+    manifest: list[dict[str, Any]],
+    tracker: RunTracker | None = None,
+) -> tuple[subprocess.Popen[str] | None, Path]:
     settings.run_logs_dir.mkdir(parents=True, exist_ok=True)
-    stamp = settings.run_logs_dir.name
-    log_path = settings.run_logs_dir / f"stock_child_{stamp}.log"
-    cmd = esphome_base(settings) + ["logs", str(config_path(settings, "child")), "--device", settings.devices["child"]]
-    manifest.append({"time_utc": now_utc_iso(), "cmd": cmd, "log_path": str(log_path), "dry_run": dry_run})
+    log_path = log_file_path(settings, logical_name)
+    cmd = esphome_base(settings) + ["logs", str(config_path(settings, config_name)), "--device", settings.devices[device_role]]
+    manifest.append(
+        {
+            "time_utc": now_utc_iso(),
+            "cmd": cmd,
+            "log_path": str(log_path),
+            "logical_name": logical_name,
+            "config_name": config_name,
+            "device_role": device_role,
+            "device_port": settings.devices[device_role],
+            "dry_run": dry_run,
+        }
+    )
     if tracker is not None:
-        tracker.set_logs(child_log=log_path)
-    log(("DRY-RUN " if dry_run else "START ") + quote_cmd(cmd) + f" > {log_path}")
+        tracker.set_device_log(logical_name, log_path)
+    log(
+        ("DRY-RUN " if dry_run else "START ")
+        + quote_cmd(cmd)
+        + f" > {log_path}"
+        + f"  [logical={logical_name} device_role={device_role}]"
+    )
 
     if dry_run:
         return None, log_path
@@ -960,10 +1062,22 @@ def start_child_log(
             log_file.write(f"# Log reader stopped UTC: {now_utc_iso()}\n")
             log_file.close()
 
-    thread = threading.Thread(target=pump, name="child-log-pump", daemon=True)
+    thread = threading.Thread(target=pump, name=f"{logical_name}-log-pump", daemon=True)
     thread.start()
     if tracker is not None:
-        tracker.start_process("child_log", cmd, log_path, process)
+        tracker.start_process(
+            log_process_name(logical_name),
+            cmd,
+            log_path,
+            process,
+            metadata={
+                "process_kind": "device_log",
+                "logical_name": logical_name,
+                "config_name": config_name,
+                "device_role": device_role,
+                "device_port": settings.devices[device_role],
+            },
+        )
     return process, log_path
 
 
@@ -974,48 +1088,15 @@ def start_router1_log(
     manifest: list[dict[str, Any]],
     tracker: RunTracker | None = None,
 ) -> tuple[subprocess.Popen[str] | None, Path]:
-    settings.run_logs_dir.mkdir(parents=True, exist_ok=True)
-    stamp = settings.run_logs_dir.name
-    log_path = settings.run_logs_dir / f"stock_router1_{stamp}.log"
-    cmd = esphome_base(settings) + ["logs", str(config_path(settings, "router1")), "--device", settings.devices["router1"]]
-    manifest.append({"time_utc": now_utc_iso(), "cmd": cmd, "log_path": str(log_path), "dry_run": dry_run})
-    if tracker is not None:
-        tracker.set_logs(router1_log=log_path)
-    log(("DRY-RUN " if dry_run else "START ") + quote_cmd(cmd) + f" > {log_path}")
-
-    if dry_run:
-        return None, log_path
-
-    log_file = log_path.open("w", encoding="utf-8", errors="replace")
-    log_file.write(f"# Command: {quote_cmd(cmd)}\n")
-    log_file.write(f"# Started UTC: {now_utc_iso()}\n")
-    log_file.flush()
-
-    process = subprocess.Popen(
-        cmd,
-        stdout=subprocess.PIPE,
-        stderr=subprocess.STDOUT,
-        text=True,
-        encoding="utf-8",
-        errors="replace",
-        bufsize=1,
+    return start_device_log(
+        settings,
+        logical_name="router1",
+        config_name="router1",
+        device_role="router1",
+        dry_run=dry_run,
+        manifest=manifest,
+        tracker=tracker,
     )
-
-    def pump() -> None:
-        try:
-            assert process.stdout is not None
-            for line in process.stdout:
-                log_file.write(line)
-                log_file.flush()
-        finally:
-            log_file.write(f"# Log reader stopped UTC: {now_utc_iso()}\n")
-            log_file.close()
-
-    thread = threading.Thread(target=pump, name="router1-log-pump", daemon=True)
-    thread.start()
-    if tracker is not None:
-        tracker.start_process("router1_log", cmd, log_path, process)
-    return process, log_path
 
 
 def start_router2_log(
@@ -1025,108 +1106,68 @@ def start_router2_log(
     manifest: list[dict[str, Any]],
     tracker: RunTracker | None = None,
 ) -> tuple[subprocess.Popen[str] | None, Path]:
-    settings.run_logs_dir.mkdir(parents=True, exist_ok=True)
-    stamp = settings.run_logs_dir.name
-    log_path = settings.run_logs_dir / f"stock_router2_{stamp}.log"
-    cmd = esphome_base(settings) + ["logs", str(config_path(settings, "router2")), "--device", settings.devices["router2"]]
-    manifest.append({"time_utc": now_utc_iso(), "cmd": cmd, "log_path": str(log_path), "dry_run": dry_run})
-    if tracker is not None:
-        tracker.set_logs(router2_log=log_path)
-    log(("DRY-RUN " if dry_run else "START ") + quote_cmd(cmd) + f" > {log_path}")
-
-    if dry_run:
-        return None, log_path
-
-    log_file = log_path.open("w", encoding="utf-8", errors="replace")
-    log_file.write(f"# Command: {quote_cmd(cmd)}\n")
-    log_file.write(f"# Started UTC: {now_utc_iso()}\n")
-    log_file.flush()
-
-    process = subprocess.Popen(
-        cmd,
-        stdout=subprocess.PIPE,
-        stderr=subprocess.STDOUT,
-        text=True,
-        encoding="utf-8",
-        errors="replace",
-        bufsize=1,
+    return start_device_log(
+        settings,
+        logical_name="router2",
+        config_name="router2",
+        device_role="router2",
+        dry_run=dry_run,
+        manifest=manifest,
+        tracker=tracker,
     )
-
-    def pump() -> None:
-        try:
-            assert process.stdout is not None
-            for line in process.stdout:
-                log_file.write(line)
-                log_file.flush()
-        finally:
-            log_file.write(f"# Log reader stopped UTC: {now_utc_iso()}\n")
-            log_file.close()
-
-    thread = threading.Thread(target=pump, name="router2-log-pump", daemon=True)
-    thread.start()
-    if tracker is not None:
-        tracker.start_process("router2_log", cmd, log_path, process)
-    return process, log_path
 
 
 def stop_child_log(process: subprocess.Popen[str] | None, *, dry_run: bool) -> None:
+    stop_device_log(
+        process,
+        logical_name="child",
+        dry_run=dry_run,
+        tracker_log_path=_CURRENT_TRACKER.child_log if _CURRENT_TRACKER is not None else None,
+    )
+
+
+def stop_device_log(
+    process: subprocess.Popen[str] | None,
+    *,
+    logical_name: str,
+    dry_run: bool,
+    tracker_log_path: Path | None,
+) -> None:
     if dry_run or process is None:
         return
     if process.poll() is not None:
-        log(f"Child log process already exited with code {process.returncode}.")
+        log(f"{logical_name} log process already exited with code {process.returncode}.")
         if _CURRENT_TRACKER is not None:
-            _CURRENT_TRACKER.finish_process("child_log", process, expected=False, log_path=_CURRENT_TRACKER.child_log)
+            _CURRENT_TRACKER.finish_process(log_process_name(logical_name), process, expected=False, log_path=tracker_log_path)
         return
-    log("Stopping child log process.")
+    log(f"Stopping {logical_name} log process.")
     process.terminate()
     try:
         process.wait(timeout=10)
     except subprocess.TimeoutExpired:
-        log("Child log process did not stop after SIGTERM; killing it.")
+        log(f"{logical_name} log process did not stop after SIGTERM; killing it.")
         process.kill()
         process.wait(timeout=10)
     if _CURRENT_TRACKER is not None:
-        _CURRENT_TRACKER.finish_process("child_log", process, expected=True, log_path=_CURRENT_TRACKER.child_log)
+        _CURRENT_TRACKER.finish_process(log_process_name(logical_name), process, expected=True, log_path=tracker_log_path)
 
 
 def stop_router1_log(process: subprocess.Popen[str] | None, *, dry_run: bool) -> None:
-    if dry_run or process is None:
-        return
-    if process.poll() is not None:
-        log(f"Router1 log process already exited with code {process.returncode}.")
-        if _CURRENT_TRACKER is not None:
-            _CURRENT_TRACKER.finish_process("router1_log", process, expected=False, log_path=_CURRENT_TRACKER.router1_log)
-        return
-    log("Stopping router1 log process.")
-    process.terminate()
-    try:
-        process.wait(timeout=10)
-    except subprocess.TimeoutExpired:
-        log("Router1 log process did not stop after SIGTERM; killing it.")
-        process.kill()
-        process.wait(timeout=10)
-    if _CURRENT_TRACKER is not None:
-        _CURRENT_TRACKER.finish_process("router1_log", process, expected=True, log_path=_CURRENT_TRACKER.router1_log)
+    stop_device_log(
+        process,
+        logical_name="router1",
+        dry_run=dry_run,
+        tracker_log_path=_CURRENT_TRACKER.router1_log if _CURRENT_TRACKER is not None else None,
+    )
 
 
 def stop_router2_log(process: subprocess.Popen[str] | None, *, dry_run: bool) -> None:
-    if dry_run or process is None:
-        return
-    if process.poll() is not None:
-        log(f"Router2 log process already exited with code {process.returncode}.")
-        if _CURRENT_TRACKER is not None:
-            _CURRENT_TRACKER.finish_process("router2_log", process, expected=False, log_path=_CURRENT_TRACKER.router2_log)
-        return
-    log("Stopping router2 log process.")
-    process.terminate()
-    try:
-        process.wait(timeout=10)
-    except subprocess.TimeoutExpired:
-        log("Router2 log process did not stop after SIGTERM; killing it.")
-        process.kill()
-        process.wait(timeout=10)
-    if _CURRENT_TRACKER is not None:
-        _CURRENT_TRACKER.finish_process("router2_log", process, expected=True, log_path=_CURRENT_TRACKER.router2_log)
+    stop_device_log(
+        process,
+        logical_name="router2",
+        dry_run=dry_run,
+        tracker_log_path=_CURRENT_TRACKER.router2_log if _CURRENT_TRACKER is not None else None,
+    )
 
 
 def run_timed_sequence(
@@ -1137,12 +1178,11 @@ def run_timed_sequence(
     tracker: RunTracker,
 ) -> tuple[Path | None, Path | None, Path | None, Path | None, str | None, Path | None]:
     log("Starting timed upload/logging sequence. Upload-only commands are used from here onward.")
-    child_logger: subprocess.Popen[str] | None = None
     child_log_path: Path | None = None
-    router1_logger: subprocess.Popen[str] | None = None
     router1_log_path: Path | None = None
-    router2_logger: subprocess.Popen[str] | None = None
     router2_log_path: Path | None = None
+    device_loggers: dict[str, subprocess.Popen[str] | None] = {}
+    device_log_paths: dict[str, Path] = {}
     sniffer_process: subprocess.Popen[str] | None = None
     sniffer_log_path: Path | None = None
     sniffer_remote_pcap: str | None = None
@@ -1168,9 +1208,12 @@ def run_timed_sequence(
         tracker.set_step("flash_router1")
         upload(settings, "router1", "router1", dry_run=dry_run, manifest=manifest, tracker=tracker)
         if settings.capture_router2_log:
-            router1_logger, router1_log_path = start_router1_log(
+            logger, log_path = start_router1_log(
                 settings, dry_run=dry_run, manifest=manifest, tracker=tracker
             )
+            device_loggers["router1"] = logger
+            device_log_paths["router1"] = log_path
+            router1_log_path = log_path
         sleep_step(
             settings.timing.after_router1_seconds,
             "router 1 has been flashed; wait before adding child",
@@ -1181,7 +1224,10 @@ def run_timed_sequence(
 
         tracker.set_step("flash_child")
         upload(settings, "child", "child", dry_run=dry_run, manifest=manifest, tracker=tracker)
-        child_logger, child_log_path = start_child_log(settings, dry_run=dry_run, manifest=manifest, tracker=tracker)
+        logger, log_path = start_child_log(settings, dry_run=dry_run, manifest=manifest, tracker=tracker)
+        device_loggers["child"] = logger
+        device_log_paths["child"] = log_path
+        child_log_path = log_path
         sleep_step(
             settings.timing.after_child_seconds,
             "child flashed/logging; wait before adding router 2",
@@ -1193,9 +1239,12 @@ def run_timed_sequence(
         tracker.set_step("flash_router2")
         upload(settings, "router2", "router2", dry_run=dry_run, manifest=manifest, tracker=tracker)
         if settings.capture_router2_log:
-            router2_logger, router2_log_path = start_router2_log(
+            logger, log_path = start_router2_log(
                 settings, dry_run=dry_run, manifest=manifest, tracker=tracker
             )
+            device_loggers["router2"] = logger
+            device_log_paths["router2"] = log_path
+            router2_log_path = log_path
 
         tracker.set_step("flash_additional_routers", extra={"assignments": additional_router_plan})
         for assignment in additional_router_plan:
@@ -1207,6 +1256,18 @@ def run_timed_sequence(
                 manifest=manifest,
                 tracker=tracker,
             )
+            if settings.capture_router2_log:
+                logger, log_path = start_device_log(
+                    settings,
+                    logical_name=assignment["firmware_name"],
+                    config_name=assignment["firmware_name"],
+                    device_role=assignment["device_role"],
+                    dry_run=dry_run,
+                    manifest=manifest,
+                    tracker=tracker,
+                )
+                device_loggers[assignment["firmware_name"]] = logger
+                device_log_paths[assignment["firmware_name"]] = log_path
         sleep_step(
             settings.timing.after_router2_seconds,
             "router 2 and the additional routers have joined; wait before removing router 1",
@@ -1216,8 +1277,13 @@ def run_timed_sequence(
         )
 
         tracker.set_step("remove_router1")
-        stop_router1_log(router1_logger, dry_run=dry_run)
-        router1_logger = None
+        stop_device_log(
+            device_loggers.get("router1"),
+            logical_name="router1",
+            dry_run=dry_run,
+            tracker_log_path=device_log_paths.get("router1"),
+        )
+        device_loggers["router1"] = None
         upload(settings, "router1", "empty", dry_run=dry_run, manifest=manifest, tracker=tracker)
         sleep_step(
             settings.timing.after_router1_removed_seconds,
@@ -1245,11 +1311,17 @@ def run_timed_sequence(
             router2_log=router2_log_path,
             sniffer_log=sniffer_log_path,
         )
+        for logical_name, log_path in device_log_paths.items():
+            tracker.set_device_log(logical_name, log_path)
         tracker.set_sniffer_pcap(sniffer_remote_pcap, sniffer_local_pcap)
         stop_sniffer_capture(settings, sniffer_process, dry_run=dry_run)
-        stop_child_log(child_logger, dry_run=dry_run)
-        stop_router1_log(router1_logger, dry_run=dry_run)
-        stop_router2_log(router2_logger, dry_run=dry_run)
+        for logical_name, process in device_loggers.items():
+            stop_device_log(
+                process,
+                logical_name=logical_name,
+                dry_run=dry_run,
+                tracker_log_path=device_log_paths.get(logical_name),
+            )
 
 
 def write_manifest(
@@ -1262,6 +1334,7 @@ def write_manifest(
     child_log: Path | None,
     router1_log: Path | None,
     router2_log: Path | None,
+    device_logs: dict[str, Path] | None,
     sniffer_log: Path | None,
     sniffer_remote_pcap: str | None,
     sniffer_local_pcap: Path | None,
@@ -1290,9 +1363,11 @@ def write_manifest(
         "timing": settings.timing.__dict__,
         "max_router_number": settings.max_router_number,
         "additional_router_assignments": additional_router_assignments(settings),
+        "device_assignments": device_assignments(settings),
         "child_log": str(child_log) if child_log else None,
         "router1_log": str(router1_log) if router1_log else None,
         "router2_log": str(router2_log) if router2_log else None,
+        "device_logs": {name: str(path) for name, path in sorted((device_logs or {}).items())},
         "sniffer": {
             "enabled": settings.sniffer.enabled,
             "command": settings.sniffer.command,
@@ -1377,6 +1452,7 @@ def main(argv: list[str]) -> int:
                 child_log=None,
                 router1_log=None,
                 router2_log=None,
+                device_logs={},
                 sniffer_log=None,
                 sniffer_remote_pcap=None,
                 sniffer_local_pcap=None,
@@ -1417,6 +1493,9 @@ def main(argv: list[str]) -> int:
                     log(f"Router1 log: {tracker.router1_log}")
                 if tracker.router2_log:
                     log(f"Router2 log: {tracker.router2_log}")
+                for logical_name, log_path in sorted(tracker.device_logs.items()):
+                    if logical_name not in {"child", "router1", "router2"}:
+                        log(f"{logical_name} log: {log_path}")
                 if tracker.sniffer_log:
                     log(f"Sniffer log: {tracker.sniffer_log}")
                 if tracker.sniffer_local_pcap:
