@@ -776,7 +776,6 @@ def start_sniffer_capture(
             try:
                 assert process.stdout is not None
                 for line in process.stdout:
-                    print(line, end="")
                     log_file.write(line)
                     log_file.flush()
             finally:
@@ -924,7 +923,6 @@ def start_child_log(
         try:
             assert process.stdout is not None
             for line in process.stdout:
-                print(line, end="")
                 log_file.write(line)
                 log_file.flush()
         finally:
@@ -976,7 +974,6 @@ def start_router1_log(
         try:
             assert process.stdout is not None
             for line in process.stdout:
-                print(line, end="")
                 log_file.write(line)
                 log_file.flush()
         finally:
@@ -1028,7 +1025,6 @@ def start_router2_log(
         try:
             assert process.stdout is not None
             for line in process.stdout:
-                print(line, end="")
                 log_file.write(line)
                 log_file.flush()
         finally:
