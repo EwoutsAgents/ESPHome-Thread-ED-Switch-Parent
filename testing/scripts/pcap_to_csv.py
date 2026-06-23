@@ -2,15 +2,16 @@
 """
 pcap_to_csv.py
 
-For each input .pcap/.pcapng, write two CSVs alongside the PCAP file by default:
+For each input .pcap/.pcapng, write two CSVs alongside the PCAP file by default,
+matching the local sniffer naming scheme:
 
-  <pcap_dir>/all_packets.csv
-  <pcap_dir>/attach_mle.csv
+  <pcap_dir>/<variant>_all_packets_<run-stamp>.csv
+  <pcap_dir>/<variant>_attach_mle_<run-stamp>.csv
 
-all_packets.csv:
+<variant>_all_packets_<run-stamp>.csv:
   one row per packet in that PCAP.
 
-attach_mle.csv:
+<variant>_attach_mle_<run-stamp>.csv:
   only decoded MLE attach packets:
     - Parent Request       mle.cmd == 9
     - Parent Response      mle.cmd == 10
@@ -28,7 +29,7 @@ Examples:
   python3 testing/scripts/pcap_to_csv.py \
     testing/logs/stock-2router-100runs-20260622-141453/20260622-142051-run02/stock_sniffer_20260622-142051-run02.pcapng
 
-  # Whole experiment: writes all_packets.csv and attach_mle.csv inside each run directory.
+  # Whole experiment: writes variant-prefixed CSVs inside each run directory.
   python3 testing/scripts/pcap_to_csv.py \
     testing/logs/stock-2router-100runs-20260622-141453
 
@@ -321,15 +322,27 @@ def write_rows(path: Path, rows: list[dict[str, str]], fieldnames: list[str], ov
         writer.writerows(rows)
 
 
+def derived_csv_names(pcap: Path, args: argparse.Namespace) -> tuple[str, str]:
+    stem = pcap.stem
+
+    if "_sniffer_" in stem:
+        prefix, stamp = stem.split("_sniffer_", 1)
+        return f"{prefix}_{args.all_name}_{stamp}.csv", f"{prefix}_{args.attach_name}_{stamp}.csv"
+
+    return f"{stem}-{args.all_name}.csv", f"{stem}-{args.attach_name}.csv"
+
+
 def output_paths_for_pcap(pcap: Path, args: argparse.Namespace) -> tuple[Path, Path]:
+    all_name, attach_name = derived_csv_names(pcap, args)
+
     if args.out_dir:
         safe_stem = pcap.with_suffix("").name
-        all_path = args.out_dir / f"{pcap.parent.name}-{safe_stem}-{args.all_name}"
-        attach_path = args.out_dir / f"{pcap.parent.name}-{safe_stem}-{args.attach_name}"
+        all_path = args.out_dir / f"{pcap.parent.name}-{all_name}"
+        attach_path = args.out_dir / f"{pcap.parent.name}-{attach_name}"
         return all_path, attach_path
 
     # Default: write alongside the PCAP.
-    return pcap.parent / args.all_name, pcap.parent / args.attach_name
+    return pcap.parent / all_name, pcap.parent / attach_name
 
 
 def build_fields(field_map: dict[str, TSharkField], include_mle_challenge_response: bool) -> tuple[list[str], list[str]]:
@@ -352,7 +365,7 @@ def build_fields(field_map: dict[str, TSharkField], include_mle_challenge_respon
 
 def main() -> int:
     parser = argparse.ArgumentParser(
-        description="Write all_packets.csv and attach_mle.csv alongside each input PCAP."
+        description="Write variant-prefixed CSVs alongside each input PCAP."
     )
     parser.add_argument("inputs", nargs="+", type=Path, help="Input PCAP file(s) or directory/directories")
     parser.add_argument(
@@ -364,8 +377,8 @@ def main() -> int:
     parser.add_argument("--no-recursive", action="store_true", help="Do not recursively search directory inputs")
     parser.add_argument("--frame-range", help="Optional frame range applied to both outputs, e.g. 183:194")
     parser.add_argument("--filter", dest="extra_filter", help="Optional extra Wireshark display filter applied to both outputs")
-    parser.add_argument("--all-name", default="all_packets.csv", help="Filename for the all-packets CSV")
-    parser.add_argument("--attach-name", default="attach_mle.csv", help="Filename for the attach-MLE CSV")
+    parser.add_argument("--all-name", default="all_packets", help="Suffix stem for the all-packets CSV")
+    parser.add_argument("--attach-name", default="attach_mle", help="Suffix stem for the attach-MLE CSV")
     parser.add_argument("--out-dir", type=Path, help="Optional central output dir. Omit this to write alongside each PCAP.")
     parser.add_argument("--overwrite", action="store_true", help="Overwrite existing CSV files")
     parser.add_argument("--tshark", default="tshark", help="Path to tshark binary")
@@ -414,7 +427,7 @@ def main() -> int:
     if "mle.cmd" not in fields:
         print(
             "Warning: this tshark build does not expose 'mle.cmd'. "
-            "attach_mle.csv will probably be empty.",
+            "attach-MLE CSV output will probably be empty.",
             file=sys.stderr,
         )
 
