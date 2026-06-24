@@ -13,7 +13,7 @@ A run is considered suitable for the timed parent-removal phase only if, after t
 5. Flash the requested total number of router-capable ESP32-C6 boards using `stock_router_<n>.yaml`, where `<n>` starts at `1` and increases sequentially until the configured `n_routers` total is reached.
 6. Wait `router_settling_seconds` seconds before flashing the child. This delay gives the router-capable devices time to form a stable Thread topology before the child performs its initial stock attach. The runner does not extend this delay dynamically; instead, it validates the observed topology after the delay and skips or classifies the run separately if the topology is unsuitable.
 7. Flash the child ESP32-C6 with `stock_child.yaml`.
-8. Wait for the child to attach naturally to one of the available routers.
+8. Wait `child_attach_seconds` seconds to allow the child to attach naturally to one of the available routers.
 9. Determine the child’s current parent from the child log, router logs, or the captured MLE attach sequence.
 10. Apply the pre-removal safety gate. The child’s current parent cannot be safely removed if any of the following classifications apply. Classify the run explicitly using one of these skip reasons:
 
