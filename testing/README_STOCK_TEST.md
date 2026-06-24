@@ -15,7 +15,7 @@ A run is considered suitable for measurement only if, after the fixed router-set
 7. Flash the child ESP32-C6 with `stock_child.yaml`.
 8. Wait for the child to attach naturally to one of the available routers.
 9. Determine the child’s current parent from the child log, router logs, or the captured MLE attach sequence.
-10. The the child’s current parent cannot be safely removed if any of the following classifications apply. Classify the run explicitly using one of the following skip reasons:
+10. The child’s current parent cannot be safely removed if any of the following classifications apply. Classify the run explicitly using one of the following skip reasons:
     * `SKIP_NO_CHILD_PARENT`: the runner could not detect the child’s current parent from the available evidence. This does not necessarily prove that the child had no parent; it means no current parent could be reliably determined.
     * `SKIP_PARENT_NOT_MAPPED_TO_DEVICE`: the child’s parent was detected, but its extended address could not be mapped to one of the configured router devices in the test setup.
     * `SKIP_PARENT_IS_LEADER`: the detected child parent is the current Thread leader, so removing it would invalidate the stock parent-switch measurement by disrupting the network leader rather than only removing the child’s parent.
