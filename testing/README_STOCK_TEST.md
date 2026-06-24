@@ -4,7 +4,7 @@ The stock test is intended to measure natural OpenThread parent-switch behavior 
 
 Each variation follows the same setup until the requested router set has been flashed. Variations differ only in the total number of router-capable ESP32-C6 boards included in the run. The `n_routers` setting is the total router count and does not include the child. Routers are flashed in order using `stock_router_<n>.yaml`, where `<n>` starts at `1` and increases sequentially until the requested total router count is reached. The current maximum is four routers total. For a switch to occur, at least 2 routers must be presents.
 
-A run is considered suitable for measurement only if, after the fixed router-settling delay and the child's initial attach, the child’s current parent can be removed without also removing the network leader or a router that is required as a transit/nexthop between the remaining candidate parents. If those preconditions are not met, the run is skipped or classified separately instead of being treated as a valid stock parent-switch measurement.
+A run is considered suitable for measurement only if, after the fixed router-settling delay and the child's initial attach, the child’s current parent can be removed without also removing the network leader. If those preconditions are not met, the run classified separately instead of being treated as a valid stock parent-switch measurement.
 
 1. Erase firmware and non-volatile storage on all connected ESP32-C6 boards, including unused boards, using `esptool.py --chip esp32c6 --port <port> erase_flash`.
 2. Put all ESP32-C6 boards, including unused ones, in a predictable state by flashing `empty.yaml` to them.
