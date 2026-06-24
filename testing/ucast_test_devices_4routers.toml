@@ -1,4 +1,4 @@
-# Copy this file to stock_test_devices.toml and edit the serial ports.
+# Unicast parent-switch test config for 4-router batch runs.
 # Keep the same physical ESP32-C6 assigned to each role across reruns.
 
 [devices]
@@ -9,22 +9,24 @@ unused1 = "/dev/serial/by-id/usb-Espressif_USB_JTAG_serial_debug_unit_58:8C:81:5
 unused2 = "/dev/serial/by-id/usb-Espressif_USB_JTAG_serial_debug_unit_58:8C:81:5F:D9:28-if00"
 
 [variant]
+name = "ucast"
 # Total number of stock router-capable devices included in the run.
 # This does not include the child.
 #
 # n_routers = 2 means:
-#   stock_router_1.yaml + stock_router_2.yaml + stock_child.yaml
+#   stock_router_1.yaml + stock_router_2.yaml + ucast_child.yaml
 #
 # n_routers = 3 means:
-#   stock_router_1.yaml + stock_router_2.yaml + stock_router_3.yaml + stock_child.yaml
+#   stock_router_1.yaml + stock_router_2.yaml + stock_router_3.yaml + ucast_child.yaml
 #
 # n_routers = 4 means:
-#   stock_router_1.yaml + stock_router_2.yaml + stock_router_3.yaml + stock_router_4.yaml + stock_child.yaml
+#   stock_router_1.yaml + stock_router_2.yaml + stock_router_3.yaml + stock_router_4.yaml + ucast_child.yaml
 n_routers = 4
+
 [paths]
 # These are relative to this TOML file unless absolute.
 configs_dir = "configs"
-logs_dir = "logs/stock"
+logs_dir = "logs/ucast"
 
 [esphome]
 # Optional. If omitted or missing, the runner auto-detects:
@@ -45,10 +47,13 @@ clean_before_compile = false
 
 [timing]
 sniffer_lead_in_seconds = 5
-# after_router1_seconds = 5  # obsolete: routers are flashed before the child
-child_attach_seconds = 10
-router_settling_seconds = 98
-after_parent_removed_seconds = 180
+router_settling_seconds = 300
+child_attach_seconds = 30
+after_parent_removed_seconds = 360
+
+[selection]
+# Optional deterministic target selection. Leave commented for true random selection.
+# random_seed = 12345
 
 [sniffer]
 enabled = true

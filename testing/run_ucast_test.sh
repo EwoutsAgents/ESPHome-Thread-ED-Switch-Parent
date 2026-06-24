@@ -4,12 +4,7 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
 PYTHON_BIN=""
-for candidate in \
-  "$SCRIPT_DIR/../.venv/bin/python" \
-  "$SCRIPT_DIR/../venv/bin/python" \
-  "$SCRIPT_DIR/.venv/bin/python" \
-  "$SCRIPT_DIR/venv/bin/python" \
-  "python3"; do
+for candidate in   "$SCRIPT_DIR/../.venv/bin/python"   "$SCRIPT_DIR/../venv/bin/python"   "$SCRIPT_DIR/.venv/bin/python"   "$SCRIPT_DIR/venv/bin/python"   "python3"; do
   if command -v "$candidate" >/dev/null 2>&1; then
     PYTHON_BIN="$candidate"
     break
@@ -22,4 +17,4 @@ if [[ -z "$PYTHON_BIN" ]]; then
 fi
 
 cd "$SCRIPT_DIR"
-exec "$PYTHON_BIN" "$SCRIPT_DIR/scripts/run_ucast_test.py" "$@"
+exec "$PYTHON_BIN" "$SCRIPT_DIR/scripts/run_ucast_test.py" --variant ucast --config ucast_test_devices_4routers.toml "$@"
