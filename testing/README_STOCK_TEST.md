@@ -15,13 +15,13 @@ A run is considered suitable for measurement only if, after the fixed router-set
 7. Flash the child ESP32-C6 with `stock_child.yaml`.
 8. Wait for the child to attach naturally to one of the available routers.
 9. Determine the child’s current parent from the child log, router logs, or the captured MLE attach sequence.
-10. The child’s current parent cannot be safely removed if any of the following classifications apply. If they apply, classify the run and start a new one. Classify the run explicitly using one of the following skip reasons:
+10. The child’s current parent cannot be safely removed if any of the following classifications apply. Classify the run explicitly using one of the following skip reasons:
     * `SKIP_NO_CHILD_PARENT`: the runner could not detect the child’s current parent from the available evidence. This does not necessarily prove that the child had no parent; it means no current parent could be reliably determined.
     * `SKIP_PARENT_NOT_MAPPED_TO_DEVICE`: the child’s parent was detected, but its extended address could not be mapped to one of the configured router devices in the test setup.
     * `SKIP_PARENT_IS_LEADER`: the detected child parent is the current Thread leader, so removing it would invalidate the stock parent-switch measurement by disrupting the network leader rather than only removing the child’s parent.
 
 11. If the child’s current parent is safe to remove, flash that parent’s ESP32-C6 board with `empty.yaml`.
-12. Wait `after_parent_removed_seconds` seconds while continuing to record packets and device logs.
+12. If the child's current was safe to remove, wait `after_parent_removed_seconds` seconds while continuing to record packets and device logs.
 13. Stop the `IEEE 802.15.4` sniffer recording.
 14. Copy the resulting sniffer `.pcapng` into the current run folder under `testing/logs/stock/<timestamp>/` as `stock_sniffer_<timestamp>.pcapng`.
 15. Classify the run outcome. A valid stock reference switch requires the target child to lose its current parent and complete a new MLE attach to one of the remaining stable candidate parents, without router-capable devices reattaching, downgrading, changing RLOC16, or otherwise repairing the router topology during the measurement window.
