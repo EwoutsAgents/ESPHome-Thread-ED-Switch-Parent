@@ -50,6 +50,24 @@ MAX_ROUTER_COUNT = max(
 )
 PCAP_PATH_RE = re.compile(r"Saving (?:test )?capture to (\S+\.pcapng)")
 TAIL_SNAPSHOT_LINES = 120
+SKIP_NO_CHILD_PARENT = "SKIP_NO_CHILD_PARENT"
+SKIP_PARENT_NOT_MAPPED_TO_DEVICE = "SKIP_PARENT_NOT_MAPPED_TO_DEVICE"
+SKIP_PARENT_IS_LEADER = "SKIP_PARENT_IS_LEADER"
+
+SKIP_NO_CHILD_PARENT_NOTE = (
+    "No usable current-parent evidence was found within the child attach observation window. "
+    "This classification does not prove that the child had no parent; it means no current "
+    "parent could be reliably determined."
+)
+SKIP_PARENT_NOT_MAPPED_TO_DEVICE_NOTE = (
+    "A child parent was detected, but its extended address could not be mapped to any "
+    "configured router device in this test run."
+)
+SKIP_PARENT_IS_LEADER_NOTE = (
+    "The detected child parent is the current Thread leader. Removing it would invalidate "
+    "the stock parent-switch measurement by disrupting the leader rather than only removing "
+    "the child's parent."
+)
 
 
 _SUPERVISOR_LOG_PATH: Path | None = None
@@ -1304,6 +1322,44 @@ def map_router_extaddrs(device_logs: dict[str, Path]) -> dict[str, dict[str, str
     return mapped
 
 
+def parse_latest_thread_role(log_path: Path | None) -> tuple[str | None, str | None]:
+    if log_path is None or not log_path.exists():
+        return None, None
+    try:
+        lines = log_path.read_text(encoding="utf-8", errors="replace").splitlines()
+    except OSError:
+        return None, None
+
+    role_values = "disabled|detached|child|router|leader"
+    patterns = [
+        re.compile(rf"\b(?:OpenThread|Thread)\b.*\b(?:role|state)\b\s*[:=]\s*({role_values})\b", re.I),
+        re.compile(rf"\b(?:role|state)\b\s*[:=]\s*({role_values})\b", re.I),
+        re.compile(rf"\b(?:role|state)\b\s*(?:changed|change)?\s*(?:from\s+\w+\s*)?(?:to|->)\s*({role_values})\b", re.I),
+        re.compile(rf"\b(?:become|became)\s+({role_values})\b", re.I),
+    ]
+
+    for line in reversed(lines):
+        for pattern in patterns:
+            match = pattern.search(line)
+            if match:
+                return match.group(1).lower(), line.strip()
+    return None, None
+
+
+def map_router_thread_roles(device_logs: dict[str, Path]) -> dict[str, dict[str, str | None]]:
+    roles: dict[str, dict[str, str | None]] = {}
+    for logical_name, log_path in sorted(device_logs.items()):
+        if logical_name == "child" or not logical_name.startswith("router"):
+            continue
+        role, source = parse_latest_thread_role(log_path)
+        roles[logical_name] = {
+            "role": role,
+            "source": source,
+            "log_path": str(log_path),
+        }
+    return roles
+
+
 def record_parent_removal_decision(
     *,
     tracker: RunTracker,
@@ -1442,14 +1498,19 @@ def run_timed_sequence(
         }
 
         if not parent_extaddr:
+            skip_details = {
+                **detection_details,
+                "classification_note": SKIP_NO_CHILD_PARENT_NOTE,
+                "router_removed": None,
+            }
             record_parent_removal_decision(
                 tracker=tracker,
                 manifest=manifest,
                 action="skipped",
-                reason="SKIP_NO_CHILD_PARENT",
-                details=detection_details,
+                reason=SKIP_NO_CHILD_PARENT,
+                details=skip_details,
             )
-            mark_skipped_run(tracker, "SKIP_NO_CHILD_PARENT", details=detection_details)
+            mark_skipped_run(tracker, SKIP_NO_CHILD_PARENT, details=skip_details)
             tracker.set_step("stop_sniffer_after_skip")
             stop_sniffer_capture(settings, sniffer_process, dry_run=dry_run)
             sniffer_process = None
@@ -1463,14 +1524,19 @@ def run_timed_sequence(
             return child_log_path, router1_log_path, router2_log_path, sniffer_log_path, sniffer_remote_pcap, sniffer_local_pcap
 
         if not parent_match:
+            skip_details = {
+                **detection_details,
+                "classification_note": SKIP_PARENT_NOT_MAPPED_TO_DEVICE_NOTE,
+                "router_removed": None,
+            }
             record_parent_removal_decision(
                 tracker=tracker,
                 manifest=manifest,
                 action="skipped",
-                reason="SKIP_PARENT_NOT_MAPPED_TO_DEVICE",
-                details=detection_details,
+                reason=SKIP_PARENT_NOT_MAPPED_TO_DEVICE,
+                details=skip_details,
             )
-            mark_skipped_run(tracker, "SKIP_PARENT_NOT_MAPPED_TO_DEVICE", details=detection_details)
+            mark_skipped_run(tracker, SKIP_PARENT_NOT_MAPPED_TO_DEVICE, details=skip_details)
             tracker.set_step("stop_sniffer_after_skip")
             stop_sniffer_capture(settings, sniffer_process, dry_run=dry_run)
             sniffer_process = None
@@ -1495,6 +1561,54 @@ def run_timed_sequence(
             "parent_device_role": parent_plan["device_role"],
             "parent_device_port": settings.devices[parent_plan["device_role"]],
         }
+
+        router_thread_roles = map_router_thread_roles(device_log_paths)
+        parent_log_path = device_log_paths.get(removed_parent_logical_name)
+        parent_thread_role, parent_thread_role_source = parse_latest_thread_role(parent_log_path)
+        leader_logical_names = sorted(
+            logical_name
+            for logical_name, evidence in router_thread_roles.items()
+            if evidence.get("role") == "leader"
+        )
+        parent_is_leader = parent_thread_role == "leader" or removed_parent_logical_name in leader_logical_names
+
+        removal_details.update(
+            {
+                "parent_log_path": str(parent_log_path) if parent_log_path else None,
+                "parent_thread_role": parent_thread_role,
+                "parent_thread_role_source": parent_thread_role_source,
+                "router_thread_roles": router_thread_roles,
+                "leader_logical_names": leader_logical_names,
+                "leader_check": "parent_is_leader" if parent_is_leader else "parent_not_observed_as_leader",
+            }
+        )
+
+        if parent_is_leader:
+            skip_details = {
+                **removal_details,
+                "classification_note": SKIP_PARENT_IS_LEADER_NOTE,
+                "router_removed": None,
+            }
+            record_parent_removal_decision(
+                tracker=tracker,
+                manifest=manifest,
+                action="skipped",
+                reason=SKIP_PARENT_IS_LEADER,
+                details=skip_details,
+            )
+            mark_skipped_run(tracker, SKIP_PARENT_IS_LEADER, details=skip_details)
+            tracker.set_step("stop_sniffer_after_skip")
+            stop_sniffer_capture(settings, sniffer_process, dry_run=dry_run)
+            sniffer_process = None
+            sniffer_remote_pcap, sniffer_local_pcap = pull_sniffer_pcap(
+                settings,
+                sniffer_log_path=sniffer_log_path,
+                dry_run=dry_run,
+                manifest=manifest,
+                tracker=tracker,
+            )
+            return child_log_path, router1_log_path, router2_log_path, sniffer_log_path, sniffer_remote_pcap, sniffer_local_pcap
+
         record_parent_removal_decision(
             tracker=tracker,
             manifest=manifest,
