@@ -22,7 +22,11 @@ A run is considered suitable for measurement only if, after the fixed router-set
     * the remaining routers are stable and available as candidate parents;
     * no router-capable device has recently sent MLE Parent Request or Child ID Request messages;
     * no recent router RLOC16, leader, or route-table changes have been observed.
-11. If the child’s current parent is not safe to remove, do not remove it. Mark the run with an explicit skip or invalid classification, such as `SKIP_PARENT_IS_LEADER`, `SKIP_PARENT_IS_TRANSIT`, `SKIP_TOPOLOGY_UNSTABLE`, or `SKIP_NO_CHILD_PARENT`.
+11. If the child’s current parent cannot be safely identified or removed, do not remove any router. Classify the run explicitly using one of the following skip reasons:
+    * `SKIP_NO_CHILD_PARENT`: the runner could not detect the child’s current parent from the available evidence. This does not necessarily prove that the child had no parent; it means no current parent could be reliably determined.
+    * `SKIP_PARENT_NOT_MAPPED_TO_DEVICE`: the child’s parent was detected, but its extended address could not be mapped to one of the configured router devices in the test setup.
+    * `SKIP_PARENT_IS_LEADER`: the detected child parent is the current Thread leader, so removing it would invalidate the stock parent-switch measurement by disrupting the network leader rather than only removing the child’s parent.
+
 12. If the child’s current parent is safe to remove, flash that parent’s ESP32-C6 board with `empty.yaml`.
 13. Wait `after_parent_removed_seconds` seconds while continuing to record packets and device logs.
 14. Stop the `IEEE 802.15.4` sniffer recording.
