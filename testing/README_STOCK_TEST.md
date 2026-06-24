@@ -9,9 +9,9 @@ A run is considered suitable for measurement only if, after the fixed router-set
 1. Erase firmware and non-volatile storage on all connected ESP32-C6 boards, including unused boards, using `esptool.py --chip esp32c6 --port <port> erase_flash`.
 2. Put all ESP32-C6 boards, including unused ones, in a predictable state by flashing `empty.yaml` to them.
 3. Start the `IEEE 802.15.4` sniffer recording.
-4. Wait 5 seconds.
+4. Wait `sniffer_lead_in_seconds` seconds.
 5. Flash the requested total number of router-capable ESP32-C6 boards using `stock_router_<n>.yaml`, where `<n>` starts at `1` and increases sequentially until the configured `n_routers` total is reached.
-6. Wait a fixed router-settling delay, currently 90 seconds, before flashing the child. This delay gives the router-capable devices time to form a stable Thread topology before the child performs its initial stock attach. The runner does not extend this delay dynamically; instead, it validates the observed topology after the delay and skips or classifies the run separately if the topology is unsuitable.
+6. Wait `router_settling_seconds` seconds before flashing the child. This delay gives the router-capable devices time to form a stable Thread topology before the child performs its initial stock attach. The runner does not extend this delay dynamically; instead, it validates the observed topology after the delay and skips or classifies the run separately if the topology is unsuitable.
 7. Flash the child ESP32-C6 with `stock_child.yaml`.
 8. Wait for the child to attach naturally to one of the available routers.
 9. Determine the child’s current parent from the child log, router logs, or the captured MLE attach sequence.
@@ -24,7 +24,7 @@ A run is considered suitable for measurement only if, after the fixed router-set
     * no recent router RLOC16, leader, or route-table changes have been observed.
 11. If the child’s current parent is not safe to remove, do not remove it. Mark the run with an explicit skip or invalid classification, such as `SKIP_PARENT_IS_LEADER`, `SKIP_PARENT_IS_TRANSIT`, `SKIP_TOPOLOGY_UNSTABLE`, or `SKIP_NO_CHILD_PARENT`.
 12. If the child’s current parent is safe to remove, flash that parent’s ESP32-C6 board with `empty.yaml`.
-13. Wait 180 seconds while continuing to record packets and device logs.
+13. Wait `after_parent_removed_seconds` seconds while continuing to record packets and device logs.
 14. Stop the `IEEE 802.15.4` sniffer recording.
 15. Copy the resulting sniffer `.pcapng` into the current run folder under `testing/logs/stock/<timestamp>/` as `stock_sniffer_<timestamp>.pcapng`.
 16. Classify the run outcome. A valid stock reference switch requires the target child to lose its current parent and complete a new MLE attach to one of the remaining stable candidate parents, without router-capable devices reattaching, downgrading, changing RLOC16, or otherwise repairing the router topology during the measurement window.
