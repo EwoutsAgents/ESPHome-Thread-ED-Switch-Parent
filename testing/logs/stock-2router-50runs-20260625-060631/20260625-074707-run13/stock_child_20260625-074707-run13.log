@@ -1,0 +1,695 @@
+# Command: /home/ewout/.openclaw/workspace-softwaredeveloper/ESPHome-Thread-ED-Switch-Parent/.venv/bin/esphome logs /home/ewout/.openclaw/workspace-softwaredeveloper/ESPHome-Thread-ED-Switch-Parent/testing/configs/stock_child.yaml --device /dev/serial/by-id/usb-Espressif_USB_JTAG_serial_debug_unit_58:8C:81:5D:B0:E0-if00
+# Started UTC: 2026-06-25T05:52:47+00:00
+INFO ESPHome 2026.4.5
+INFO Reading configuration /home/ewout/.openclaw/workspace-softwaredeveloper/ESPHome-Thread-ED-Switch-Parent/testing/configs/stock_child.yaml...
+INFO Starting log output from /dev/serial/by-id/usb-Espressif_USB_JTAG_serial_debug_unit_58:8C:81:5D:B0:E0-if00 with baud rate 115200
+[07:52:47.257][VV][esp-idf:000]: D (363) event: created event loop 0x408195b4
+[07:52:47.259][VV][esp-idf:000]: D (365) esp_netif_lwip: LwIP stack has been initialized
+[07:52:47.260][VV][esp-idf:000]: D (366) esp_netif_lwip: esp-netif has been successfully initialized
+[07:52:47.261]D (368) efuse: BLK1 REG1 [8-15], len=8 bits
+[07:52:47.262]D (368) efuse: BLK1 REG1 [0-7], len=8 bits
+[07:52:47.262]D (368) efuse: BLK1 REG0 [24-31], len=8 bits
+[07:52:47.262]D (368) efuse: BLK1 REG0 [16-23], len=8 bits
+[07:52:47.262]D (369) efuse: BLK1 REG0 [8-15], len=8 bits
+[07:52:47.262]D (369) efuse: BLK1 REG0 [0-7], len=8 bits
+[07:52:47.263]D (369) efuse: BLK1 REG1 [24-31], len=8 bits
+[07:52:47.263]D (369) efuse: BLK1 REG1 [16-23], len=8 bits
+[07:52:47.268]D (374) temperature_sensor: range changed, change to index 2
+[07:52:47.312][VV][esp-idf:000][ot_main]: I (417) phy_init: Saving new calibration data due to checksum failure or outdated calibration 
+[07:52:47.313][VV][esp-idf:000][ot_main]: D (419) nvs: nvs_open_from_partition phy 1
+[07:52:47.315][VV][esp-idf:000][ot_main]: D (420) nvs: nvs_set_blob cal_data 1904
+[07:52:47.321]D (428) efuse: BLK1 REG1 [8-15], len=8 bits
+[07:52:47.321]D (428) efuse: BLK1 REG1 [0-7], len=8 bits
+[07:52:47.322]D (428) efuse: BLK1 REG0 [24-31], len=8 bits
+[07:52:47.322]D (428) efuse: BLK1 REG0 [16-23], len=8 bits
+[07:52:47.322]D (428) efuse: BLK1 REG0 [8-15], len=8 bits
+[07:52:47.322]D (429) efuse: BLK1 REG0 [0-7], len=8 bits
+[07:52:47.322]D (429) efuse: BLK1 REG1 [24-31], len=8 bits
+[07:52:47.323]D (429) efuse: BLK1 REG1 [16-23], len=8 bits
+[07:52:47.324][VV][esp-idf:000][ot_main]: D (429) nvs: nvs_set_blob cal_mac 6
+[07:52:47.326][VV][esp-idf:000][ot_main]: V (431) phy_init: phy_get_rf_cal_version: 343
+[07:52:47.327][VV][esp-idf:000][ot_main]: D (432) nvs: nvs_set cal_version 4 343
+[07:52:47.328][VV][esp-idf:000][ot_main]: D (434) nvs: nvs_close 2
+[07:52:47.330][VV][esp-idf:000][ot_main]: I (435) phy: libbtbb version: c493933, Nov 14 2025, 16:34:25
+[07:52:47.330]V (436) intr_alloc: esp_intr_alloc_intrstatus (cpu 0): checking args
+[07:52:47.330]V (437) intr_alloc: esp_intr_alloc_intrstatus (cpu 0): Args okay. Resulting flags 0xE
+[07:52:47.331]D (437) intr_alloc: Connected src 12 to int 12 (cpu 0)
+[07:52:47.331]V (437) intr_alloc: esp_intr_alloc_intrstatus (cpu 0): checking args
+[07:52:47.331]V (438) intr_alloc: esp_intr_alloc_intrstatus (cpu 0): Args okay. Resulting flags 0xE
+[07:52:47.332]D (438) intr_alloc: Connected src 73 to int 13 (cpu 0)
+[07:52:47.336][VV][esp-idf:000][ot_main]: V (442) gdma: new group (0) at 0x4081a62c
+[07:52:47.337][VV][esp-idf:000][ot_main]: V (443) gdma: new pair (0,0) at 0x4081a6a8
+[07:52:47.339][VV][esp-idf:000][ot_main]: V (444) gdma: new tx channel (0,0) at 0x4081a5f4
+[07:52:47.340][VV][esp-idf:000][ot_main]: V (445) gdma: new rx channel (0,0) at 0x408220f4
+[07:52:47.342][VV][esp-idf:000][ot_main]: D (447) OPENTHREAD: Millisecond timer alarm start running, t0=245, dt=1073741824
+[07:52:47.344][VV][esp-idf:000][ot_main]: D(450) OPENTHREAD:
+[07:52:47.345][VV][esp-idf:000][ot_main]: [D] SubMac--------: RadioState: Disabled -> Sleep
+[07:52:47.347][VV][esp-idf:000][ot_main]: D(452) OPENTHREAD:
+[07:52:47.348][VV][esp-idf:000][ot_main]: [D] SubMac--------: RadioExtAddress: 5e49865fdbdb2f82
+[07:52:47.349][VV][esp-idf:000][ot_main]: 
+[07:52:47.349][VV][esp-idf:000][ot_main]: D(455) OPENTHREAD:
+[07:52:47.350][VV][esp-idf:000][ot_main]: [D] SubMac--------: RadioShortAddress: 0xfffe
+[07:52:47.351][VV][esp-idf:000][ot_main]: 
+[07:52:47.352][VV][esp-idf:000][ot_main]: I(458) OPENTHREAD:
+[07:52:47.353][VV][esp-idf:000][ot_main]: [I] CslTxScheduler: Set frame request ahead: 2000 usec
+[07:52:47.354][VV][esp-idf:000][ot_main]: 
+[07:52:47.355][VV][esp-idf:000][ot_main]: I(461) OPENTHREAD:
+[07:52:47.356][VV][esp-idf:000][ot_main]: [I] ChildSupervsn-: Timeout: 0 -> 190
+[07:52:47.357][VV][esp-idf:000][ot_main]: 
+[07:52:47.358][VV][esp-idf:000][ot_main]: D (463) nvs: nvs_open_from_partition openthread 1
+[07:52:47.361][VV][esp-idf:000][ot_main]: D (466) esp_netif_lwip: check: remote, if=0x40821f78 fn=0x4200cd58
+[07:52:47.362][VV][esp-idf:000][ot_main]: V (468) esp_netif_objects: esp_netif_add_to_list_unsafe 0x40822130
+[07:52:47.364][VV][esp-idf:000][ot_main]: D (469) esp_netif_objects: esp_netif_add_to_list_unsafe netif added successfully (total netifs
+[07:52:47.365][VV][esp-idf:000][ot_main]: D (470) esp_netif_lwip: call api in lwip: ret=0x0, give sem
+[07:52:47.366][VV][esp-idf:000][ot_main]: I (472) OPENTHREAD: OpenThread attached to netif
+[07:52:47.369][VV][esp-idf:000][sys_evt]: D (473) event: running post OPENTHREAD_EVENT:0 with handler 0x42068156 and context 0x408223a8 
+[07:52:47.370][VV][esp-idf:000][sys_evt]: D (475) esp_netif_handlers: esp_netif action has started with netif0x40822130 from event_id=0
+[07:52:47.371][VV][esp-idf:000][sys_evt]: D (477) esp_netif_lwip: check: remote, if=0x40822130 fn=0x4200d03a
+[07:52:47.373][VV][esp-idf:000][sys_evt]: D (478) esp_netif_lwip: esp_netif_start_api 0x40822130
+[07:52:47.374][VV][esp-idf:000][sys_evt]: D (479) esp_netif_lwip: check: local, if=0x40822130 fn=0x4200dba4
+[07:52:47.376][VV][esp-idf:000][sys_evt]: D (481) esp_netif_lwip: esp_netif_update_default_netif_lwip 0x40822130
+[07:52:47.377][VV][esp-idf:000][sys_evt]: V (482) esp_netif_lwip: esp_netif_is_netif_up esp_netif:0x40822130
+[07:52:47.378][VV][esp-idf:000][sys_evt]: D (483) esp_netif_lwip: call api in lwip: ret=0x0, give sem
+[07:52:47.380][VV][esp-idf:000][ot_main]: D (485) esp_netif_lwip: check: remote, if=0x40822130 fn=0x4200dba4
+[07:52:47.381][VV][esp-idf:000][ot_main]: D (486) esp_netif_lwip: esp_netif_update_default_netif_lwip 0x40822130
+[07:52:47.382][VV][esp-idf:000][ot_main]: D (488) esp_netif_lwip: call api in lwip: ret=0x0, give sem
+[07:52:47.383][D][openthread:114][ot_main]: Thread Version: 4
+[07:52:47.384][D][openthread:138][ot_main]: Link Mode Device Type: FALSE, Network Data: FALSE, RX On When Idle: TRUE
+[07:52:47.385][I][openthread:153][ot_main]: Activating dataset...
+[07:52:47.387][VV][esp-idf:000][ot_main]: D (492) nvs: nvs_set_blob OT0100 90
+[07:52:47.389][VV][esp-idf:000][ot_main]: I(495) OPENTHREAD:
+[07:52:47.390][VV][esp-idf:000][ot_main]: [I] Settings------: Saved ActiveDataset
+[07:52:47.391][VV][esp-idf:000][ot_main]: 
+[07:52:47.392][VV][esp-idf:000][ot_main]: I(497) OPENTHREAD:
+[07:52:47.392][VV][esp-idf:000][ot_main]: [I] DatasetManager: Active dataset set
+[07:52:47.393][VV][esp-idf:000][ot_main]: 
+[07:52:47.394][VV][esp-idf:000][ot_main]: D(500) OPENTHREAD:
+[07:52:47.395][VV][esp-idf:000][ot_main]: [D] Mac-----------: Idle mode: Radio sleeping
+[07:52:47.396][VV][esp-idf:000][ot_main]: 
+[07:52:47.397][VV][esp-idf:000][ot_main]: D(503) OPENTHREAD:
+[07:52:47.398][VV][esp-idf:000][ot_main]: [D] SubMac--------: RadioPanId: 0x8f28
+[07:52:47.399][VV][esp-idf:000][ot_main]: 
+[07:52:47.400][VV][esp-idf:000][ot_main]: D(505) OPENTHREAD:
+[07:52:47.401][VV][esp-idf:000][ot_main]: [D] SubMac--------: RxOnWhenIdle: 1
+[07:52:47.401][VV][esp-idf:000][ot_main]: 
+[07:52:47.402][VV][esp-idf:000][ot_main]: D(508) OPENTHREAD:
+[07:52:47.403][VV][esp-idf:000][ot_main]: [D] SubMac--------: RadioState: Sleep -> Receive
+[07:52:47.404][VV][esp-idf:000][ot_main]: 
+[07:52:47.405][VV][esp-idf:000][ot_main]: D(510) OPENTHREAD:
+[07:52:47.406][VV][esp-idf:000][ot_main]: [D] Mac-----------: Idle mode: Radio receiving on channel 20
+[07:52:47.407][VV][esp-idf:000][ot_main]: 
+[07:52:47.408][VV][esp-idf:000][sys_evt]: D (513) event: running post OPENTHREAD_EVENT:9 with handler 0x420683b0 and context 0x408224c8 
+[07:52:47.410][VV][esp-idf:000][sys_evt]: D (515) esp_netif_handlers: esp_netif action join_ip6_multicast group with netif0x40822130 fro
+[07:52:47.411][VV][esp-idf:000][sys_evt]: D (516) esp_netif_lwip: check: remote, if=0x40822130 fn=0x4200c5ee
+[07:52:47.413][VV][esp-idf:000][sys_evt]: D (518) esp_netif_lwip: esp_netif_join_ip6_multicast_group_api esp_netif:0x40822130
+[07:52:47.414][VV][esp-idf:000][ot_main]: I(520) OPENTHREAD:
+[07:52:47.415][VV][esp-idf:000][ot_main]: [N] Mle-----------: Role disabled -> detached
+[07:52:47.416][VV][esp-idf:000][ot_main]: 
+[07:52:47.417][VV][esp-idf:000][ot_main]: D(522) OPENTHREAD:
+[07:52:47.418][VV][esp-idf:000][ot_main]: [D] SubMac--------: RadioShortAddress: 0xfffe
+[07:52:47.418][VV][esp-idf:000][ot_main]: 
+[07:52:47.420][VV][esp-idf:000][ot_main]: D (525) OPENTHREAD: Millisecond timer alarm start running, t0=323, dt=3600000
+[07:52:47.422][VV][esp-idf:000][ot_main]: D (527) nvs: nvs_get_str_or_blob OT0100
+[07:52:47.423][VV][esp-idf:000][ot_main]: I(529) OPENTHREAD:
+[07:52:47.424][VV][esp-idf:000][ot_main]: [I] Mle-----------: AttachState Idle -> Start
+[07:52:47.425][VV][esp-idf:000][ot_main]: 
+[07:52:47.426][VV][esp-idf:000][ot_main]: D (531) OPENTHREAD: Millisecond timer alarm start running, t0=329, dt=261
+[07:52:47.428][VV][esp-idf:000][sys_evt]: D (533) esp_netif_lwip: call api in lwip: ret=0x0, give sem
+[07:52:47.430][VV][esp-idf:000][sys_evt]: D (535) event: running post OPENTHREAD_EVENT:9 with handler 0x420683b0 and context 0x408224c8 
+[07:52:47.431][VV][esp-idf:000][sys_evt]: D (536) esp_netif_handlers: esp_netif action join_ip6_multicast group with netif0x40822130 fro
+[07:52:47.433][VV][esp-idf:000][sys_evt]: D (538) esp_netif_lwip: check: remote, if=0x40822130 fn=0x4200c5ee
+[07:52:47.434][VV][esp-idf:000][sys_evt]: D (539) esp_netif_lwip: esp_netif_join_ip6_multicast_group_api esp_netif:0x40822130
+[07:52:47.436][VV][esp-idf:000][sys_evt]: D (541) esp_netif_lwip: call api in lwip: ret=0x0, give sem
+[07:52:47.437][VV][esp-idf:000][sys_evt]: D (542) event: running post OPENTHREAD_EVENT:9 with handler 0x420683b0 and context 0x408224c8 
+[07:52:47.439][VV][esp-idf:000][sys_evt]: D (544) esp_netif_handlers: esp_netif action join_ip6_multicast group with netif0x40822130 fro
+[07:52:47.440][VV][esp-idf:000][sys_evt]: D (545) esp_netif_lwip: check: remote, if=0x40822130 fn=0x4200c5ee
+[07:52:47.442][VV][esp-idf:000][sys_evt]: D (547) esp_netif_lwip: esp_netif_join_ip6_multicast_group_api esp_netif:0x40822130
+[07:52:47.443][VV][esp-idf:000][sys_evt]: D (548) esp_netif_lwip: call api in lwip: ret=0x0, give sem
+[07:52:47.445][VV][esp-idf:000][sys_evt]: D (550) event: running post OPENTHREAD_EVENT:7 with handler 0x42068444 and context 0x40822468 
+[07:52:47.446][VV][esp-idf:000][sys_evt]: D (551) esp_netif_handlers: esp_netif action add_ip6_address with netif0x40822130 from event_i
+[07:52:47.448][VV][esp-idf:000][sys_evt]: D (553) esp_netif_lwip: check: remote, if=0x40822130 fn=0x4200d4c0
+[07:52:47.449][VV][esp-idf:000][sys_evt]: D (554) esp_netif_lwip: esp_netif_add_ip6_address_api esp_netif:0x40822130
+[07:52:47.450][VV][esp-idf:000][sys_evt]: D (556) esp_netif_lwip: check: local, if=0x40822130 fn=0x4200dba4
+[07:52:47.452][VV][esp-idf:000][sys_evt]: D (557) esp_netif_lwip: esp_netif_update_default_netif_lwip 0x40822130
+[07:52:47.453][VV][esp-idf:000][sys_evt]: D (558) esp_netif_lwip: esp_netif_internal_nd6_cb lwip-netif:0x4082219c
+[07:52:47.454][VV][esp-idf:000][sys_evt]: D (560) esp_netif_lwip: check: local, if=0x40822130 fn=0x4200dba4
+[07:52:47.456][VV][esp-idf:000][sys_evt]: D (561) esp_netif_lwip: esp_netif_update_default_netif_lwip 0x40822130
+[07:52:47.457][VV][esp-idf:000][sys_evt]: D (562) esp_netif_lwip: call api in lwip: ret=0x0, give sem
+[07:52:47.459][VV][esp-idf:000][sys_evt]: D (564) event: running post OPENTHREAD_EVENT:7 with handler 0x42068444 and context 0x40822468 
+[07:52:47.460][VV][esp-idf:000][sys_evt]: D (565) esp_netif_handlers: esp_netif action add_ip6_address with netif0x40822130 from event_i
+[07:52:47.462][VV][esp-idf:000][sys_evt]: D (567) esp_netif_lwip: check: remote, if=0x40822130 fn=0x4200d4c0
+[07:52:47.463][VV][esp-idf:000][sys_evt]: D (568) esp_netif_lwip: esp_netif_add_ip6_address_api esp_netif:0x40822130
+[07:52:47.464][VV][esp-idf:000][sys_evt]: D (570) esp_netif_lwip: check: local, if=0x40822130 fn=0x4200dba4
+[07:52:47.466][VV][esp-idf:000][sys_evt]: D (571) esp_netif_lwip: esp_netif_update_default_netif_lwip 0x40822130
+[07:52:47.467][VV][esp-idf:000][sys_evt]: D (572) esp_netif_lwip: esp_netif_internal_nd6_cb lwip-netif:0x4082219c
+[07:52:47.468][VV][esp-idf:000][sys_evt]: D (574) esp_netif_lwip: check: local, if=0x40822130 fn=0x4200dba4
+[07:52:47.470][VV][esp-idf:000][sys_evt]: D (575) esp_netif_lwip: esp_netif_update_default_netif_lwip 0x40822130
+[07:52:47.471][VV][esp-idf:000][sys_evt]: D (576) esp_netif_lwip: call api in lwip: ret=0x0, give sem
+[07:52:47.473][VV][esp-idf:000][sys_evt]: D (578) event: running post OPENTHREAD_EVENT:9 with handler 0x420683b0 and context 0x408224c8 
+[07:52:47.474][VV][esp-idf:000][sys_evt]: D (579) esp_netif_handlers: esp_netif action join_ip6_multicast group with netif0x40822130 fro
+[07:52:47.475][VV][esp-idf:000][sys_evt]: D (581) esp_netif_lwip: check: remote, if=0x40822130 fn=0x4200c5ee
+[07:52:47.477][VV][esp-idf:000][sys_evt]: D (582) esp_netif_lwip: esp_netif_join_ip6_multicast_group_api esp_netif:0x40822130
+[07:52:47.478][VV][esp-idf:000][sys_evt]: D (584) esp_netif_lwip: call api in lwip: ret=0x0, give sem
+[07:52:47.480][VV][esp-idf:000][sys_evt]: D (585) event: running post OPENTHREAD_EVENT:9 with handler 0x420683b0 and context 0x408224c8 
+[07:52:47.482][VV][esp-idf:000][sys_evt]: D (587) esp_netif_handlers: esp_netif action join_ip6_multicast group with netif0x40822130 fro
+[07:52:47.483][VV][esp-idf:000][sys_evt]: D (588) esp_netif_lwip: check: remote, if=0x40822130 fn=0x4200c5ee
+[07:52:47.484][VV][esp-idf:000][sys_evt]: D (589) esp_netif_lwip: esp_netif_join_ip6_multicast_group_api esp_netif:0x40822130
+[07:52:47.486][VV][esp-idf:000][sys_evt]: D (591) esp_netif_lwip: call api in lwip: ret=0x0, give sem
+[07:52:47.487][VV][esp-idf:000][sys_evt]: D (592) event: no handlers have been registered for event IP_EVENT:3 posted to loop 0x408195b4
+[07:52:47.489][VV][esp-idf:000][sys_evt]: D (594) event: no handlers have been registered for event IP_EVENT:3 posted to loop 0x408195b4
+[07:52:47.491][VV][esp-idf:000][sys_evt]: D (596) event: no handlers have been registered for event IP_EVENT:3 posted to loop 0x408195b4
+[07:52:47.492][VV][esp-idf:000][sys_evt]: D (597) event: no handlers have been registered for event IP_EVENT:3 posted to loop 0x408195b4
+[07:52:47.494][VV][esp-idf:000][ot_main]: D (600) OPENTHREAD: OpenThread stack filtered netif packet
+[07:52:47.496][VV][esp-idf:000][ot_main]: I(601) OPENTHREAD:
+[07:52:47.497][VV][esp-idf:000][ot_main]: [I] Notifier------: StateChanged (0x1107d31d) [Ip6+ Role LLAddr MLAddr KeySeqCntr NetData Ip6M
+[07:52:47.498][VV][esp-idf:000][ot_main]: 
+[07:52:47.499][VV][esp-idf:000][ot_main]: I(604) OPENTHREAD:
+[07:52:47.500][VV][esp-idf:000][ot_main]: [I] Notifier------: StateChanged (0x1107d31d) ... ExtPanId NetworkKey NetifState ActDset]
+[07:52:47.501][VV][esp-idf:000][ot_main]: 
+[07:52:47.502][VV][esp-idf:000][ot_main]: I(608) OPENTHREAD:
+[07:52:47.503][VV][esp-idf:000][ot_main]: [I] BbrLeader-----: PBBR state: None
+[07:52:47.504][VV][esp-idf:000][ot_main]: 
+[07:52:47.505][VV][esp-idf:000][ot_main]: I(610) OPENTHREAD:
+[07:52:47.506][VV][esp-idf:000][ot_main]: [I] AnnounceSender: Stopped
+[07:52:47.506][VV][esp-idf:000][ot_main]: 
+[07:52:47.508][VV][esp-idf:000][ot_main]: D (613) nvs: nvs_get_str_or_blob OT0100
+[07:52:47.509][VV][esp-idf:000][ot_main]: I(615) OPENTHREAD:
+[07:52:47.510][VV][esp-idf:000][ot_main]: [I] AnnounceSender: StartingChannel:20
+[07:52:47.510][VV][esp-idf:000][ot_main]: 
+[07:52:47.513][VV][esp-idf:000][sys_evt]: D (618) event: no handlers have been registered for event OPENTHREAD_EVENT:4 posted to loop 0x
+[07:52:47.514][VV][esp-idf:000][ot_main]: I (620) OT_STATE: netif up
+[07:52:47.516][VV][esp-idf:000][sys_evt]: D (621) event: running post OPENTHREAD_EVENT:5 with handler 0x420681da and context 0x40822408 
+[07:52:47.517][VV][esp-idf:000][sys_evt]: D (622) esp_netif_handlers: esp_netif action connected with netif0x40822130 from event_id=5[0
+[07:52:47.519][VV][esp-idf:000][sys_evt]: D (624) esp_netif_lwip: check: remote, if=0x40822130 fn=0x4200d32e
+[07:52:47.520][VV][esp-idf:000][sys_evt]: D (625) esp_netif_lwip: esp_netif_up_api esp_netif:0x40822130
+[07:52:47.522][VV][esp-idf:000][sys_evt]: D (627) esp_netif_lwip: check: local, if=0x40822130 fn=0x4200dba4
+[07:52:47.523][VV][esp-idf:000][sys_evt]: D (628) esp_netif_lwip: esp_netif_update_default_netif_lwip 0x40822130
+[07:52:47.524][VV][esp-idf:000][sys_evt]: D (630) esp_netif_lwip: call api in lwip: ret=0x0, give sem
+[07:52:47.526][VV][esp-idf:000][ot_main]: D (631) nvs: nvs_get_str_or_blob OT0100
+[07:52:47.528][VV][esp-idf:000][sys_evt]: D (633) event: no handlers have been registered for event OPENTHREAD_EVENT:17 posted to loop 0
+[07:52:47.531][VV][esp-idf:000][ot_main]: D (636) OPENTHREAD: OpenThread stack filtered netif packet
+[07:52:47.533][VV][esp-idf:000][ot_main]: D (639) OPENTHREAD: OpenThread stack filtered netif packet
+[07:52:47.536][VV][esp-idf:000][ot_main]: D (641) OPENTHREAD: OpenThread stack filtered netif packet
+[07:52:47.538][VV][esp-idf:000][ot_main]: D (643) OPENTHREAD: OpenThread stack filtered netif packet
+[07:52:47.540][VV][esp-idf:000][ot_main]: D (645) OPENTHREAD: OpenThread stack filtered netif packet
+[07:52:47.542][VV][esp-idf:000][ot_main]: D (648) OPENTHREAD: OpenThread stack filtered netif packet
+[07:52:47.545][VV][esp-idf:000][ot_main]: D (650) OPENTHREAD: OpenThread stack filtered netif packet
+[07:52:47.547][VV][esp-idf:000][ot_main]: D (652) OPENTHREAD: OpenThread stack filtered netif packet
+[07:52:47.548][C][component:246]: Setup openthread took 292ms
+[07:52:47.548][V][component:236]: Setup mdns
+[07:52:47.549][V][component:248]: Setup mdns took 0ms
+[07:52:47.549][V][component:236]: Setup openthread
+[07:52:47.550][VV][esp-idf:000]: I(656) OPENTHREAD:
+[07:52:47.551][VV][esp-idf:000]: [I] SrpClient-----: Host name "stock-child"
+[07:52:47.551][VV][esp-idf:000]: 
+[07:52:47.552][VV][esp-idf:000]: I(658) OPENTHREAD:
+[07:52:47.553][VV][esp-idf:000]: [I] SrpClient-----: HostInfo Removed -> ToAdd
+[07:52:47.553][VV][esp-idf:000]: 
+[07:52:47.554][VV][esp-idf:000]: I(660) OPENTHREAD:
+[07:52:47.554][VV][esp-idf:000]: [I] SrpClient-----: HostInfo enabled auto address
+[07:52:47.555][VV][esp-idf:000]: 
+[07:52:47.556][D][openthread:157]: Setting up SRP services. count = 1
+[07:52:47.556][VV][esp-idf:000]: I(662) OPENTHREAD:
+[07:52:47.557][VV][esp-idf:000]: [I] SrpClient-----: Service Removed -> ToAdd, "stock-child" "_http._tcp"
+[07:52:47.558][VV][esp-idf:000]: 
+[07:52:47.558][VV][esp-idf:000]: I(664) OPENTHREAD:
+[07:52:47.559][VV][esp-idf:000]: [I] SrpClient-----: subtypes:[] port:80 weight:0 prio:0 txts:1
+[07:52:47.560][VV][esp-idf:000]: 
+[07:52:47.560][D][openthread:207]: Added service: _http._tcp
+[07:52:47.561][D][openthread:211]: Finished SRP setup
+[07:52:47.562][V][component:248]: Setup openthread took 11ms
+[07:52:47.562][I][app:123]: setup() finished successfully!
+[07:52:47.563][VV][esp-idf:000][sys_evt]: D (362) event: running task for loop 0x408195b4
+[07:52:47.564][VV][esp-idf:000][ot_main]: I (367) OPENTHREAD: Host connection mode none
+[07:52:47.566][VV][esp-idf:000][ot_main]: I (367) phy_init: phy_version 343,b513b46,Nov 14 2025,16:34:12
+[07:52:47.567][VV][esp-idf:000][ot_main]: D (367) phy_init: loading PHY init data from application binary
+[07:52:47.568][VV][esp-idf:000][ot_main]: D (367) nvs: nvs_open_from_partition phy 0
+[07:52:47.569][VV][esp-idf:000][ot_main]: D (368) phy_init: esp_phy_load_cal_data_from_nvs: failed to open NVS namespace (0x1102)
+[07:52:47.571][VV][esp-idf:000][ot_main]: W (368) phy_init: failed to load RF calibration data (0x1102), falling back to full calibration
+[07:52:47.571][VV][esp-idf:000][ot_main]: 
+[07:52:47.572][I][app:154]: ESPHome version 2026.4.5 compiled on 2026-06-24 21:31:46 +0200
+[07:52:47.573][I][app:161]: ESP32 Chip: ESP32-C6 rev0.2, 1 core(s)
+[07:52:47.574][C][logger:219]: Logger:
+[07:52:47.574][C][logger:219]:   Max Level: VERY_VERBOSE
+[07:52:47.574][C][logger:219]:   Initial Level: VERY_VERBOSE
+[07:52:47.575][C][logger:226]:   Log Baud Rate: 115200
+[07:52:47.575][C][logger:226]:   Hardware UART: USB_SERIAL_JTAG
+[07:52:47.576][C][logger:235]:   Task Log Buffer Size: 768 bytes
+[07:52:47.577][W][logger:251]: VERY_VERBOSE logging is active — significant performance impact, short-term debugging only
+[07:52:47.578][W][logger:251]:   May cause connection instability. Set log level to DEBUG or lower for long-term use.
+[07:52:47.579][VV][component:292]: logger loop disabled
+[07:52:47.595][C][openthread:029]: Open Thread:
+[07:52:47.596][C][openthread:033]:   Device Type: MTD
+[07:52:47.597][C][openthread:040]:   Device is configured as Minimal End Device (MED)
+[07:52:47.602][C][mdns:194]: mDNS:
+[07:52:47.603][C][mdns:194]:   Hostname: stock-child
+[07:52:47.603][V][mdns:199]:   Services:
+[07:52:47.603][V][mdns:201]:   - _http, _tcp, 80
+[07:52:47.604][V][mdns:204]:     TXT: version = 2026.4.5
+[07:52:47.691][VV][esp-idf:000][ot_main]: D (796) OPENTHREAD: Millisecond timer alarm start running, t0=594, dt=750
+[07:52:47.692][VV][esp-idf:000][ot_main]: D (798) OPENTHREAD: Millisecond timer alarm fired
+[07:52:47.694][VV][esp-idf:000][ot_main]: D(800) OPENTHREAD:
+[07:52:47.696][VV][esp-idf:000][ot_main]: [D] Mac-----------: Request to start operation "TransmitDataDirect"
+[07:52:47.697][VV][esp-idf:000][ot_main]: D(802) OPENTHREAD:
+[07:52:47.698][VV][esp-idf:000][ot_main]: [D] Mac-----------: Starting operation "TransmitDataDirect"
+[07:52:47.698][VV][esp-idf:000][ot_main]: 
+[07:52:47.700][VV][esp-idf:000][ot_main]: D(805) OPENTHREAD:
+[07:52:47.701][VV][esp-idf:000][ot_main]: [D] SubMac--------: RadioState: Receive -> CsmaBackoff
+[07:52:47.702][VV][esp-idf:000][ot_main]: 
+[07:52:47.703][VV][esp-idf:000][ot_main]: D (808) OPENTHREAD: Microsecond timer alarm start running, t0=606297, dt=1883
+[07:52:47.705][VV][esp-idf:000][ot_main]: D(810) OPENTHREAD:
+[07:52:47.706][VV][esp-idf:000][ot_main]: [D] SubMac--------: RadioState: CsmaBackoff -> Transmit
+[07:52:47.706][VV][esp-idf:000][ot_main]: 
+[07:52:47.708][VV][esp-idf:000][ot_main]: D (813) OPENTHREAD: Microsecond timer alarm fired
+[07:52:47.709][VV][app:471]: logger loop enabled from ISR
+[07:52:47.711][VV][esp-idf:000][ot_main]: D (794) OPENTHREAD: Millisecond timer alarm start running, t0=591, dt=772
+[07:52:47.712][VV][esp-idf:000][ot_main]: [D] SubMac--------: RadioState: Transmit -> Receive
+[07:52:47.713][VV][esp-idf:000][ot_main]: D(819) OPENTHREAD:
+[07:52:47.714][VV][esp-idf:000][ot_main]: [D] Mac-----------: ==============================[TX len=063]==============================
+[07:52:47.715][VV][esp-idf:000][ot_main]: 
+[07:52:47.716][VV][esp-idf:000][ot_main]: D(822) OPENTHREAD:
+[07:52:47.717][VV][esp-idf:000][ot_main]: [D] Mac-----------: | 41 D8 B7 28 8F FF FF 82 | 2F DB DB 5F 86 49 5E 7F | A..(..../.._.I^. |
+[07:52:47.718][VV][esp-idf:000][ot_main]: 
+[07:52:47.719][VV][esp-idf:000][ot_main]: D(825) OPENTHREAD:
+[07:52:47.721][VV][esp-idf:000][ot_main]: [D] Mac-----------: | 3B 02 F0 4D 4C 4D 4C 07 | 64 00 15 00 00 00 00 00 | ;..MLML.d....... |
+[07:52:47.721][VV][esp-idf:000][ot_main]: 
+[07:52:47.722][VV][esp-idf:000][ot_main]: D(828) OPENTHREAD:
+[07:52:47.724][VV][esp-idf:000][ot_main]: [D] Mac-----------: | 00 00 00 01 7A 66 33 E5 | 39 10 13 A0 06 52 9A DF | ....zf3.9....R.. |
+[07:52:47.724][VV][esp-idf:000][ot_main]: 
+[07:52:47.725][VV][esp-idf:000][ot_main]: D(831) OPENTHREAD:
+[07:52:47.727][VV][esp-idf:000][ot_main]: [D] Mac-----------: | 5D 9C 3A F5 52 5A 36 3D | E1 49 B1 CF A8 00 00    | ].:.RZ6=.I.....  |
+[07:52:47.727][VV][esp-idf:000][ot_main]: 
+[07:52:47.728][VV][esp-idf:000][ot_main]: D(834) OPENTHREAD:
+[07:52:47.730][VV][esp-idf:000][ot_main]: [D] Mac-----------: ------------------------------------------------------------------------
+[07:52:47.731][VV][esp-idf:000][ot_main]: 
+[07:52:47.731][VV][esp-idf:000][ot_main]: D(837) OPENTHREAD:
+[07:52:47.733][VV][esp-idf:000][ot_main]: [D] Mac-----------: Finishing operation "TransmitDataDirect"
+[07:52:47.733][VV][esp-idf:000][ot_main]: 
+[07:52:47.734][VV][esp-idf:000][ot_main]: I(840) OPENTHREAD:
+[07:52:47.736][VV][esp-idf:000][ot_main]: [I] MeshForwarder-: Sent IPv6 UDP msg, len:84, chksum:0764, ecn:no, to:0xffff, sec:no, prio:ne
+[07:52:47.736][VV][esp-idf:000][ot_main]: 
+[07:52:47.737][VV][esp-idf:000][ot_main]: I(843) OPENTHREAD:
+[07:52:47.739][VV][esp-idf:000][ot_main]: [I] MeshForwarder-:     src:[fe80:0:0:0:5c49:865f:dbdb:2f82]:19788
+[07:52:47.739][VV][esp-idf:000][ot_main]: 
+[07:52:47.740][VV][esp-idf:000][ot_main]: I(846) OPENTHREAD:
+[07:52:47.741][VV][esp-idf:000][ot_main]: [I] MeshForwarder-:     dst:[ff02:0:0:0:0:0:0:2]:19788
+[07:52:47.742][VV][esp-idf:000][ot_main]: 
+[07:52:47.743][VV][esp-idf:000][ot_main]: D(849) OPENTHREAD:
+[07:52:47.744][VV][esp-idf:000][ot_main]: [D] Mac-----------: Idle mode: Radio receiving on channel 20
+[07:52:47.745][VV][esp-idf:000][ot_main]: 
+[07:52:47.746][VV][esp-idf:000][ot_main]: I(794) OPENTHREAD:
+[07:52:47.747][VV][esp-idf:000][ot_main]: [N] Mle-----------: Attach attempt 1, AnyPartition reattaching with Active Dataset
+[07:52:47.748][VV][esp-idf:000][ot_main]: 
+[07:52:47.749][VV][esp-idf:000][ot_main]: I(794) OPENTHREAD:
+[07:52:47.750][VV][esp-idf:000][ot_main]: [I] Mle-----------: AttachState Start -> ParentReq
+[07:52:47.751][VV][esp-idf:000][ot_main]: 
+[07:52:47.751][VV][esp-idf:000][ot_main]: I(796) OPENTHREAD:
+[07:52:47.753][VV][esp-idf:000][ot_main]: [I] Mle-----------: Send Parent Request to routers (ff02:0:0:0:0:0:0:2)
+[07:52:47.753][VV][esp-idf:000][ot_main]: 
+[07:52:47.754][VV][esp-idf:000][ot_main]: 
+[07:52:47.755][VV][esp-idf:000][ot_main]: D(816) OPENTHREAD:
+[07:52:47.755][VV][esp-idf:000][ot_main]: 
+[07:52:47.756][VV][component:292]: logger loop disabled
+[07:52:47.984][VV][esp-idf:000][ot_main]: [D] Mac-----------: | 27 00 00 00 00 00 00 00 | 01 8B 4C 49 78 E9 38 3F | '.........LIx.8? |
+[07:52:47.985][VV][esp-idf:000][ot_main]: 
+[07:52:47.986][VV][esp-idf:000][ot_main]: D(1091) OPENTHREAD:
+[07:52:47.987][VV][esp-idf:000][ot_main]: [D] Mac-----------: | CD 90 B9 14 30 56 AB 43 | AC 5A E2 B0 9E 92 D2 D4 | ....0V.C.Z...... |
+[07:52:47.988][VV][esp-idf:000][ot_main]: 
+[07:52:47.989][VV][esp-idf:000][ot_main]: D(1094) OPENTHREAD:
+[07:52:47.990][VV][esp-idf:000][ot_main]: [D] Mac-----------: | F4 B1 1A 97 ED 82 02 1B | B6 97 02 65 EA 1B 0E FF | ...........e.... |
+[07:52:47.991][VV][esp-idf:000][ot_main]: 
+[07:52:47.992][VV][esp-idf:000][ot_main]: D(1098) OPENTHREAD:
+[07:52:47.993][VV][esp-idf:000][ot_main]: [D] Mac-----------: | C0 84 EA 5C 34 B8 AB 37 | 36 65 5D 9C BD E2 41 CB | ...\4..76e]...A. |
+[07:52:47.994][VV][esp-idf:000][ot_main]: 
+[07:52:47.995][VV][esp-idf:000][ot_main]: D(1101) OPENTHREAD:
+[07:52:47.996][VV][esp-idf:000][ot_main]: [D] Mac-----------: | 10 D0 0E 6D 98 17 24 CD | E1 4A 51 F6 20 EE CF F4 | ...m..$..JQ. ... |
+[07:52:47.997][VV][esp-idf:000][ot_main]: 
+[07:52:47.998][VV][esp-idf:000][ot_main]: D(1104) OPENTHREAD:
+[07:52:47.999][VV][esp-idf:000][ot_main]: [D] Mac-----------: | 0A                      |                         | .                |
+[07:52:48.000][VV][esp-idf:000][ot_main]: 
+[07:52:48.001][VV][esp-idf:000][ot_main]: D(1107) OPENTHREAD:
+[07:52:48.003][VV][esp-idf:000][ot_main]: [D] Mac-----------: ------------------------------------------------------------------------
+[07:52:48.003][VV][esp-idf:000][ot_main]: 
+[07:52:48.005][VV][esp-idf:000][ot_main]: I(1110) OPENTHREAD:
+[07:52:48.006][VV][esp-idf:000][ot_main]: [I] MeshForwarder-: Received IPv6 UDP msg, len:129, chksum:8eab, ecn:no, from:8e3c86b18393fcd7
+[07:52:48.007][VV][esp-idf:000][ot_main]: 
+[07:52:48.008][VV][esp-idf:000][ot_main]: I(1114) OPENTHREAD:
+[07:52:48.009][VV][esp-idf:000][ot_main]: [I] MeshForwarder-:     src:[fe80:0:0:0:8c3c:86b1:8393:fcd7]:19788
+[07:52:48.010][VV][esp-idf:000][ot_main]: 
+[07:52:48.011][VV][esp-idf:000][ot_main]: I(1116) OPENTHREAD:
+[07:52:48.012][VV][esp-idf:000][ot_main]: [I] MeshForwarder-:     dst:[fe80:0:0:0:5c49:865f:dbdb:2f82]:19788
+[07:52:48.012][VV][esp-idf:000][ot_main]: 
+[07:52:48.014][VV][esp-idf:000][ot_main]: D(1119) OPENTHREAD:
+[07:52:48.015][VV][esp-idf:000][ot_main]: [D] Mle-----------: Receive MLE message
+[07:52:48.015][VV][esp-idf:000][ot_main]: 
+[07:52:48.017][VV][esp-idf:000][ot_main]: I(1123) OPENTHREAD:
+[07:52:48.019][VV][esp-idf:000][ot_main]: [I] Mle-----------: Receive Parent Response (fe80:0:0:0:8c3c:86b1:8393:fcd7,0x9400)
+[07:52:48.019][VV][esp-idf:000][ot_main]: 
+[07:52:48.020]TPP notify parent response cb=0x0 ctx=0x0 info=0x40821c84 rloc16=0x9400
+[07:52:48.022][VV][esp-idf:000][ot_main]: D(1127) OPENTHREAD:
+[07:52:48.023][VV][esp-idf:000][ot_main]: [D] Mac-----------: Idle mode: Radio receiving on channel 20
+[07:52:48.024][VV][esp-idf:000][ot_main]: 
+[07:52:48.025][VV][app:471]: logger loop enabled from ISR
+[07:52:48.026][VV][esp-idf:000][ot_main]: D(1088) OPENTHREAD:
+[07:52:48.027][VV][esp-idf:000][ot_main]: [D] Mac-----------: ==============================[RX len=113]==============================
+[07:52:48.028][VV][esp-idf:000][ot_main]: 
+[07:52:48.028][VV][esp-idf:000][ot_main]: D(1088) OPENTHREAD:
+[07:52:48.030][VV][esp-idf:000][ot_main]: [D] Mac-----------: | 61 DC B9 28 8F 82 2F DB | DB 5F 86 49 5E D7 FC 93 | a..(../.._.I^... |
+[07:52:48.031][VV][esp-idf:000][ot_main]: 
+[07:52:48.031][VV][esp-idf:000][ot_main]: D(1089) OPENTHREAD:
+[07:52:48.033][VV][esp-idf:000][ot_main]: [D] Mac-----------: | 83 B1 86 3C 8E 7F 33 F0 | 4D 4C 4D 4C 8E AB 00 15 | ...<..3.MLML.... |
+[07:52:48.033][VV][esp-idf:000][ot_main]: 
+[07:52:48.034][VV][esp-idf:000][ot_main]: D(1089) OPENTHREAD:
+[07:52:48.035][VV][component:292]: logger loop disabled
+[07:52:48.100][VV][esp-idf:000][ot_main]: [D] Mac-----------: | 18 00 00 00 00 00 00 00 | 01 6A E1 E6 36 F2 D0 7D | .........j..6..} |
+[07:52:48.101][VV][esp-idf:000][ot_main]: 
+[07:52:48.102][VV][esp-idf:000][ot_main]: D(1207) OPENTHREAD:
+[07:52:48.103][VV][esp-idf:000][ot_main]: [D] Mac-----------: | 2D 1B 59 78 C9 42 72 A3 | E4 E2 9B 49 E5 E5 8A 26 | -.Yx.Br....I...& |
+[07:52:48.104][VV][esp-idf:000][ot_main]: 
+[07:52:48.105][VV][esp-idf:000][ot_main]: D(1211) OPENTHREAD:
+[07:52:48.106][VV][esp-idf:000][ot_main]: [D] Mac-----------: | 3E 1D B7 B0 8A 15 96 E4 | 66 0D 51 E6 94 06 18 EC | >.......f.Q..... |
+[07:52:48.107][VV][esp-idf:000][ot_main]: 
+[07:52:48.108][VV][esp-idf:000][ot_main]: D(1214) OPENTHREAD:
+[07:52:48.109][VV][esp-idf:000][ot_main]: [D] Mac-----------: | 36 C5 BD 83 28 D9 7A 76 | E7 C4 C7 C2 94 A6 01 C0 | 6...(.zv........ |
+[07:52:48.110][VV][esp-idf:000][ot_main]: 
+[07:52:48.111][VV][esp-idf:000][ot_main]: D(1217) OPENTHREAD:
+[07:52:48.113][VV][esp-idf:000][ot_main]: [D] Mac-----------: | 59 9A BD 0C 2A D4 12 6E | A1 8F B2 13 28 02 EE F4 | Y...*..n....(... |
+[07:52:48.113][VV][esp-idf:000][ot_main]: 
+[07:52:48.114][VV][esp-idf:000][ot_main]: D(1220) OPENTHREAD:
+[07:52:48.116][VV][esp-idf:000][ot_main]: [D] Mac-----------: | 09                      |                         | .                |
+[07:52:48.116][VV][esp-idf:000][ot_main]: 
+[07:52:48.117][VV][esp-idf:000][ot_main]: D(1223) OPENTHREAD:
+[07:52:48.119][VV][esp-idf:000][ot_main]: [D] Mac-----------: ------------------------------------------------------------------------
+[07:52:48.119][VV][esp-idf:000][ot_main]: 
+[07:52:48.121][VV][esp-idf:000][ot_main]: I(1227) OPENTHREAD:
+[07:52:48.122][VV][esp-idf:000][ot_main]: [I] MeshForwarder-: Received IPv6 UDP msg, len:129, chksum:d496, ecn:no, from:ee041191db5dffc2
+[07:52:48.123][VV][esp-idf:000][ot_main]: 
+[07:52:48.124][VV][esp-idf:000][ot_main]: I(1230) OPENTHREAD:
+[07:52:48.125][VV][esp-idf:000][ot_main]: [I] MeshForwarder-:     src:[fe80:0:0:0:ec04:1191:db5d:ffc2]:19788
+[07:52:48.126][VV][esp-idf:000][ot_main]: 
+[07:52:48.127][VV][esp-idf:000][ot_main]: I(1232) OPENTHREAD:
+[07:52:48.128][VV][esp-idf:000][ot_main]: [I] MeshForwarder-:     dst:[fe80:0:0:0:5c49:865f:dbdb:2f82]:19788
+[07:52:48.129][VV][esp-idf:000][ot_main]: 
+[07:52:48.130][VV][esp-idf:000][ot_main]: D(1235) OPENTHREAD:
+[07:52:48.131][VV][esp-idf:000][ot_main]: [D] Mle-----------: Receive MLE message
+[07:52:48.131][VV][esp-idf:000][ot_main]: 
+[07:52:48.133][VV][esp-idf:000][ot_main]: I(1239) OPENTHREAD:
+[07:52:48.135][VV][esp-idf:000][ot_main]: [I] Mle-----------: Receive Parent Response (fe80:0:0:0:ec04:1191:db5d:ffc2,0x1800)
+[07:52:48.135][VV][esp-idf:000][ot_main]: 
+[07:52:48.136]TPP notify parent response cb=0x0 ctx=0x0 info=0x40821c84 rloc16=0x1800
+[07:52:48.137][VV][esp-idf:000][ot_main]: D(1243) OPENTHREAD:
+[07:52:48.139][VV][esp-idf:000][ot_main]: [D] Mac-----------: Idle mode: Radio receiving on channel 20
+[07:52:48.139][VV][esp-idf:000][ot_main]: 
+[07:52:48.140][VV][app:471]: logger loop enabled from ISR
+[07:52:48.141][VV][esp-idf:000][ot_main]: D(1204) OPENTHREAD:
+[07:52:48.143][VV][esp-idf:000][ot_main]: [D] Mac-----------: ==============================[RX len=113]==============================
+[07:52:48.143][VV][esp-idf:000][ot_main]: 
+[07:52:48.144][VV][esp-idf:000][ot_main]: D(1204) OPENTHREAD:
+[07:52:48.146][VV][esp-idf:000][ot_main]: [D] Mac-----------: | 61 DC C1 28 8F 82 2F DB | DB 5F 86 49 5E C2 FF 5D | a..(../.._.I^..] |
+[07:52:48.146][VV][esp-idf:000][ot_main]: 
+[07:52:48.147][VV][esp-idf:000][ot_main]: D(1205) OPENTHREAD:
+[07:52:48.148][VV][esp-idf:000][ot_main]: [D] Mac-----------: | DB 91 11 04 EE 7F 33 F0 | 4D 4C 4D 4C D4 96 00 15 | ......3.MLML.... |
+[07:52:48.149][VV][esp-idf:000][ot_main]: 
+[07:52:48.150][VV][esp-idf:000][ot_main]: D(1205) OPENTHREAD:
+[07:52:48.150][VV][component:292]: logger loop disabled
+[07:52:48.261][VV][app:471]: logger loop enabled from ISR
+[07:52:48.262][VV][esp-idf:000][ot_main]: D (1366) OPENTHREAD: OpenThread stack filtered netif packet
+[07:52:48.263][VV][component:292]: logger loop disabled
+[07:52:48.445][VV][esp-idf:000][ot_main]: [D] Mac-----------: Request to start operation "TransmitDataDirect"
+[07:52:48.446][VV][esp-idf:000][ot_main]: D(1551) OPENTHREAD:
+[07:52:48.447][VV][esp-idf:000][ot_main]: [D] Mac-----------: Starting operation "TransmitDataDirect"
+[07:52:48.447][VV][esp-idf:000][ot_main]: 
+[07:52:48.449][VV][esp-idf:000][ot_main]: D(1554) OPENTHREAD:
+[07:52:48.450][VV][esp-idf:000][ot_main]: [D] SubMac--------: RadioState: Receive -> CsmaBackoff
+[07:52:48.451][VV][esp-idf:000][ot_main]: 
+[07:52:48.452][VV][esp-idf:000][ot_main]: D (1557) OPENTHREAD: Microsecond timer alarm start running, t0=1355282, dt=1579
+[07:52:48.454][VV][esp-idf:000][ot_main]: D(1559) OPENTHREAD:
+[07:52:48.455][VV][esp-idf:000][ot_main]: [D] SubMac--------: RadioState: CsmaBackoff -> Transmit
+[07:52:48.455][VV][esp-idf:000][ot_main]: 
+[07:52:48.457][VV][esp-idf:000][ot_main]: D (1562) OPENTHREAD: Microsecond timer alarm fired
+[07:52:48.458][VV][app:471]: logger loop enabled from ISR
+[07:52:48.459][VV][esp-idf:000][ot_main]: D (1547) OPENTHREAD: Millisecond timer alarm start running, t0=1344, dt=19
+[07:52:48.461][VV][esp-idf:000][ot_main]: D (1566) OPENTHREAD: Millisecond timer alarm start running, t0=1363, dt=998
+[07:52:48.462][VV][esp-idf:000][ot_main]: D (1567) OPENTHREAD: Millisecond timer alarm fired
+[07:52:48.463][VV][esp-idf:000][ot_main]: D(1569) OPENTHREAD:
+[07:52:48.464][VV][esp-idf:000][ot_main]: [D] SubMac--------: RadioState: Transmit -> Receive
+[07:52:48.465][VV][esp-idf:000][ot_main]: 
+[07:52:48.466][VV][esp-idf:000][ot_main]: D(1572) OPENTHREAD:
+[07:52:48.467][VV][esp-idf:000][ot_main]: [D] Mac-----------: ==============================[TX len=108]==============================
+[07:52:48.468][VV][esp-idf:000][ot_main]: 
+[07:52:48.469][VV][esp-idf:000][ot_main]: D(1575) OPENTHREAD:
+[07:52:48.471][VV][esp-idf:000][ot_main]: [D] Mac-----------: | 61 DC B8 28 8F D7 FC 93 | 83 B1 86 3C 8E 82 2F DB | a..(.......<../. |
+[07:52:48.471][VV][esp-idf:000][ot_main]: 
+[07:52:48.472][VV][esp-idf:000][ot_main]: D(1578) OPENTHREAD:
+[07:52:48.474][VV][esp-idf:000][ot_main]: [D] Mac-----------: | DB 5F 86 49 5E 7F 33 F0 | 4D 4C 4D 4C 50 0A 00 15 | ._.I^.3.MLMLP... |
+[07:52:48.474][VV][esp-idf:000][ot_main]: 
+[07:52:48.475][VV][esp-idf:000][ot_main]: D(1581) OPENTHREAD:
+[07:52:48.477][VV][esp-idf:000][ot_main]: [D] Mac-----------: | 01 00 00 00 00 00 00 00 | 01 FD 72 65 4B D0 D1 5F | ..........reK.._ |
+[07:52:48.477][VV][esp-idf:000][ot_main]: 
+[07:52:48.478][VV][esp-idf:000][ot_main]: D(1584) OPENTHREAD:
+[07:52:48.480][VV][esp-idf:000][ot_main]: [D] Mac-----------: | 8B 0B D8 77 8C 3C D0 AB | A1 92 3D 89 63 55 BD 30 | ...w.<....=.cU.0 |
+[07:52:48.481][VV][esp-idf:000][ot_main]: 
+[07:52:48.482][VV][esp-idf:000][ot_main]: D(1587) OPENTHREAD:
+[07:52:48.483][VV][esp-idf:000][ot_main]: [D] Mac-----------: | C4 F8 83 73 4C 7B 44 03 | DC FA 5D 70 2A E8 AB 44 | ...sL{D...]p*..D |
+[07:52:48.484][VV][esp-idf:000][ot_main]: 
+[07:52:48.485][VV][esp-idf:000][ot_main]: D(1590) OPENTHREAD:
+[07:52:48.486][VV][esp-idf:000][ot_main]: [D] Mac-----------: | 7D D1 49 2A 8A 58 4C 3E | 81 78 9D FD 05 06 E5 9F | }.I*.XL>.x...... |
+[07:52:48.487][VV][esp-idf:000][ot_main]: 
+[07:52:48.488][VV][esp-idf:000][ot_main]: D(1594) OPENTHREAD:
+[07:52:48.489][VV][esp-idf:000][ot_main]: [D] Mac-----------: | 09 83 7B 5E AA 02 1C 58 | 67 1E 00 00             | ..{^...Xg...     |
+[07:52:48.490][VV][esp-idf:000][ot_main]: 
+[07:52:48.491][VV][esp-idf:000][ot_main]: D(1597) OPENTHREAD:
+[07:52:48.492][VV][esp-idf:000][ot_main]: [D] Mac-----------: ------------------------------------------------------------------------
+[07:52:48.493][VV][esp-idf:000][ot_main]: 
+[07:52:48.494][VV][esp-idf:000][ot_main]: D(1600) OPENTHREAD:
+[07:52:48.495][VV][esp-idf:000][ot_main]: [D] Mac-----------: Finishing operation "TransmitDataDirect"
+[07:52:48.496][VV][esp-idf:000][ot_main]: 
+[07:52:48.497][VV][esp-idf:000][ot_main]: I(1603) OPENTHREAD:
+[07:52:48.498][VV][esp-idf:000][ot_main]: [I] MeshForwarder-: Sent IPv6 UDP msg, len:124, chksum:500a, ecn:no, to:8e3c86b18393fcd7, sec:
+[07:52:48.499][VV][esp-idf:000][ot_main]: 
+[07:52:48.500][VV][esp-idf:000][ot_main]: I(1606) OPENTHREAD:
+[07:52:48.501][VV][esp-idf:000][ot_main]: [I] MeshForwarder-:     src:[fe80:0:0:0:5c49:865f:dbdb:2f82]:19788
+[07:52:48.502][VV][esp-idf:000][ot_main]: 
+[07:52:48.503][VV][esp-idf:000][ot_main]: I(1608) OPENTHREAD:
+[07:52:48.504][VV][esp-idf:000][ot_main]: [I] MeshForwarder-:     dst:[fe80:0:0:0:8c3c:86b1:8393:fcd7]:19788
+[07:52:48.505][VV][esp-idf:000][ot_main]: 
+[07:52:48.506][VV][esp-idf:000][ot_main]: D(1611) OPENTHREAD:
+[07:52:48.507][VV][esp-idf:000][ot_main]: [D] Mac-----------: Idle mode: Radio receiving on channel 20
+[07:52:48.507][VV][esp-idf:000][ot_main]: 
+[07:52:48.509][VV][esp-idf:000][ot_main]: I(1549) OPENTHREAD:
+[07:52:48.510][VV][esp-idf:000][ot_main]: [I] Mle-----------: Send Child ID Request (fe80:0:0:0:8c3c:86b1:8393:fcd7)
+[07:52:48.511][VV][esp-idf:000][ot_main]: 
+[07:52:48.512][VV][esp-idf:000][ot_main]: I(1549) OPENTHREAD:
+[07:52:48.513][VV][esp-idf:000][ot_main]: [I] Mle-----------: AttachState ParentReq -> ChildIdReq
+[07:52:48.513][VV][esp-idf:000][ot_main]: 
+[07:52:48.514][VV][esp-idf:000][ot_main]: D (1549) OPENTHREAD: Millisecond timer alarm fired
+[07:52:48.515][VV][esp-idf:000][ot_main]: D(1550) OPENTHREAD:
+[07:52:48.516][VV][esp-idf:000][ot_main]: 
+[07:52:48.517][VV][esp-idf:000][ot_main]: D (1566) OPENTHREAD: Millisecond timer alarm start running, t0=1363, dt=1234
+[07:52:48.518][W][component:522]: logger took a long time for an operation (60 ms), max is 30 ms
+[07:52:48.519][VV][component:292]: logger loop disabled
+[07:52:48.526][VV][esp-idf:000][ot_main]: [D] Mac-----------: | 28 00 00 00 00 00 00 00 | 01 B3 F4 A7 FA 15 02 00 | (............... |
+[07:52:48.526][VV][esp-idf:000][ot_main]: 
+[07:52:48.527][VV][esp-idf:000][ot_main]: D(1633) OPENTHREAD:
+[07:52:48.529][VV][esp-idf:000][ot_main]: [D] Mac-----------: | BD 22 A0 F7 33 76 24 2E | EF BE EE C5 A8 B7 9E 6E | ."..3v$........n |
+[07:52:48.529][VV][esp-idf:000][ot_main]: 
+[07:52:48.530][VV][esp-idf:000][ot_main]: D(1636) OPENTHREAD:
+[07:52:48.532][VV][esp-idf:000][ot_main]: [D] Mac-----------: | EA 26 4C B1 90 70 38 12 | C9 95 50 F0 47 14 F4 0A | .&L..p8...P.G... |
+[07:52:48.532][VV][esp-idf:000][ot_main]: 
+[07:52:48.533][VV][esp-idf:000][ot_main]: D(1639) OPENTHREAD:
+[07:52:48.535][VV][esp-idf:000][ot_main]: [D] Mac-----------: ------------------------------------------------------------------------
+[07:52:48.536][VV][esp-idf:000][ot_main]: 
+[07:52:48.537][VV][esp-idf:000][ot_main]: I(1643) OPENTHREAD:
+[07:52:48.539][VV][esp-idf:000][ot_main]: [I] MeshForwarder-: Received IPv6 UDP msg, len:96, chksum:8f9e, ecn:no, from:8e3c86b18393fcd7,
+[07:52:48.539][VV][esp-idf:000][ot_main]: 
+[07:52:48.540][VV][esp-idf:000][ot_main]: I(1646) OPENTHREAD:
+[07:52:48.541][VV][esp-idf:000][ot_main]: [I] MeshForwarder-:     src:[fe80:0:0:0:8c3c:86b1:8393:fcd7]:19788
+[07:52:48.542][VV][esp-idf:000][ot_main]: 
+[07:52:48.543][VV][esp-idf:000][ot_main]: I(1649) OPENTHREAD:
+[07:52:48.544][VV][esp-idf:000][ot_main]: [I] MeshForwarder-:     dst:[fe80:0:0:0:5c49:865f:dbdb:2f82]:19788
+[07:52:48.545][VV][esp-idf:000][ot_main]: 
+[07:52:48.546][VV][esp-idf:000][ot_main]: D(1652) OPENTHREAD:
+[07:52:48.547][VV][esp-idf:000][ot_main]: [D] Mle-----------: Receive MLE message
+[07:52:48.547][VV][esp-idf:000][ot_main]: 
+[07:52:48.549][VV][esp-idf:000][ot_main]: I(1655) OPENTHREAD:
+[07:52:48.551][VV][esp-idf:000][ot_main]: [I] Mle-----------: Receive Child ID Response (fe80:0:0:0:8c3c:86b1:8393:fcd7,0x9400)
+[07:52:48.551][VV][esp-idf:000][ot_main]: 
+[07:52:48.553][VV][esp-idf:000][ot_main]: I(1659) OPENTHREAD:
+[07:52:48.554][VV][esp-idf:000][ot_main]: [I] Settings------: Deleted PendingDataset
+[07:52:48.555][VV][esp-idf:000][ot_main]: 
+[07:52:48.556][VV][esp-idf:000][ot_main]: I(1661) OPENTHREAD:
+[07:52:48.557][VV][esp-idf:000][ot_main]: [I] Mle-----------: AttachState ChildIdReq -> Idle
+[07:52:48.557][VV][esp-idf:000][ot_main]: 
+[07:52:48.559][VV][esp-idf:000][ot_main]: D(1664) OPENTHREAD:
+[07:52:48.560][VV][esp-idf:000][ot_main]: [D] NetworkData---: ========================[SetNetworkData len=000]========================
+[07:52:48.561][VV][esp-idf:000][ot_main]: 
+[07:52:48.562][VV][esp-idf:000][ot_main]: D(1668) OPENTHREAD:
+[07:52:48.563][VV][esp-idf:000][ot_main]: [D] NetworkData---: |                         |                         |                  |
+[07:52:48.564][VV][esp-idf:000][ot_main]: 
+[07:52:48.565][VV][esp-idf:000][ot_main]: D(1671) OPENTHREAD:
+[07:52:48.567][VV][esp-idf:000][ot_main]: [D] NetworkData---: ------------------------------------------------------------------------
+[07:52:48.567][VV][esp-idf:000][ot_main]: 
+[07:52:48.568][VV][esp-idf:000][ot_main]: I(1674) OPENTHREAD:
+[07:52:48.569][VV][esp-idf:000][ot_main]: [N] Mle-----------: RLOC16 fffe -> 9402
+[07:52:48.570][VV][esp-idf:000][ot_main]: 
+[07:52:48.570][VV][esp-idf:000][ot_main]: D(1676) OPENTHREAD:
+[07:52:48.571][VV][esp-idf:000][ot_main]: [D] SubMac--------: RadioShortAddress: 0x9402
+[07:52:48.572][VV][esp-idf:000][ot_main]: 
+[07:52:48.573][VV][esp-idf:000][ot_main]: I(1679) OPENTHREAD:
+[07:52:48.574][VV][esp-idf:000][ot_main]: [N] Mle-----------: Role detached -> child
+[07:52:48.575][VV][esp-idf:000][ot_main]: 
+[07:52:48.576][VV][esp-idf:000][ot_main]: D(1681) OPENTHREAD:
+[07:52:48.577][VV][esp-idf:000][ot_main]: [D] Mac-----------: Idle mode: Radio receiving on channel 20
+[07:52:48.578][VV][esp-idf:000][ot_main]: 
+[07:52:48.579][VV][esp-idf:000][ot_main]: I(1684) OPENTHREAD:
+[07:52:48.580][VV][esp-idf:000][ot_main]: [I] Notifier------: StateChanged (0x200002a4) [Role Rloc+ PartitionId NetData PndDset]
+[07:52:48.581][VV][esp-idf:000][ot_main]: 
+[07:52:48.582][VV][esp-idf:000][ot_main]: D (1688) nvs: nvs_set_blob OT0400 10
+[07:52:48.584][VV][esp-idf:000][ot_main]: I(1690) OPENTHREAD:
+[07:52:48.586][VV][esp-idf:000][ot_main]: [I] Settings------: Saved ParentInfo {extaddr:8e3c86b18393fcd7, version:5}
+[07:52:48.586][VV][esp-idf:000][ot_main]: 
+[07:52:48.588][VV][esp-idf:000][ot_main]: D (1693) nvs: nvs_set_blob OT0300 38
+[07:52:48.590][VV][esp-idf:000][ot_main]: I(1696) OPENTHREAD:
+[07:52:48.591][VV][esp-idf:000][ot_main]: [I] Settings------: Saved NetworkInfo {rloc:0x9402, extaddr:5e49865fdbdb2f82, role:child, mode
+[07:52:48.592][VV][esp-idf:000][ot_main]: 
+[07:52:48.593][VV][esp-idf:000][ot_main]: I(1699) OPENTHREAD:
+[07:52:48.594][VV][esp-idf:000][ot_main]: [I] Settings------: ... pid:0x72ce60c6, mlecntr:0x3ea, maccntr:0x3e8, mliid:f0fd4c0f934ddc1f}
+[07:52:48.595][VV][esp-idf:000][ot_main]: 
+[07:52:48.596][VV][esp-idf:000][ot_main]: D(1702) OPENTHREAD:
+[07:52:48.597][VV][esp-idf:000][ot_main]: [D] Mle-----------: Store Network Information
+[07:52:48.597][VV][esp-idf:000][ot_main]: 
+[07:52:48.598][VV][esp-idf:000][ot_main]: I(1704) OPENTHREAD:
+[07:52:48.599][VV][esp-idf:000][ot_main]: [I] BbrLeader-----: PBBR state: None
+[07:52:48.600][VV][esp-idf:000][ot_main]: 
+[07:52:48.601][VV][esp-idf:000][ot_main]: I(1707) OPENTHREAD:
+[07:52:48.602][VV][esp-idf:000][ot_main]: [I] AnnounceSender: Stopped
+[07:52:48.602][VV][esp-idf:000][ot_main]: 
+[07:52:48.605][VV][esp-idf:000][sys_evt]: D (1710) event: no handlers have been registered for event OPENTHREAD_EVENT:4 posted to loop 0
+[07:52:48.607][VV][esp-idf:000][ot_main]: D (1712) nvs: nvs_get_str_or_blob OT0100
+[07:52:48.609][VV][esp-idf:000][sys_evt]: D (1714) event: no handlers have been registered for event OPENTHREAD_EVENT:3 posted to loop 0
+[07:52:48.611][VV][esp-idf:000][sys_evt]: D (1716) event: no handlers have been registered for event OPENTHREAD_EVENT:17 posted to loop 
+[07:52:48.613][VV][app:471]: logger loop enabled from ISR
+[07:52:48.614][VV][esp-idf:000][ot_main]: D(1629) OPENTHREAD:
+[07:52:48.615][VV][esp-idf:000][ot_main]: [D] Mac-----------: ==============================[RX len=080]==============================
+[07:52:48.616][VV][esp-idf:000][ot_main]: 
+[07:52:48.617][VV][esp-idf:000][ot_main]: D(1630) OPENTHREAD:
+[07:52:48.618][VV][esp-idf:000][ot_main]: [D] Mac-----------: | 61 DC BA 28 8F 82 2F DB | DB 5F 86 49 5E D7 FC 93 | a..(../.._.I^... |
+[07:52:48.619][VV][esp-idf:000][ot_main]: 
+[07:52:48.619][VV][esp-idf:000][ot_main]: D(1630) OPENTHREAD:
+[07:52:48.621][VV][esp-idf:000][ot_main]: [D] Mac-----------: | 83 B1 86 3C 8E 7F 33 F0 | 4D 4C 4D 4C 8F 9E 00 15 | ...<..3.MLML.... |
+[07:52:48.621][VV][esp-idf:000][ot_main]: 
+[07:52:48.622][VV][esp-idf:000][ot_main]: D(1630) OPENTHREAD:
+[07:52:48.623][VV][component:292]: logger loop disabled
+[07:52:49.458][VV][app:471]: logger loop enabled from ISR
+[07:52:49.460][VV][esp-idf:000][ot_main]: D (2564) OPENTHREAD: Millisecond timer alarm start running, t0=2361, dt=146
+[07:52:49.461][VV][esp-idf:000][ot_main]: D (2564) OPENTHREAD: Millisecond timer alarm fired
+[07:52:49.471][VV][component:292]: logger loop disabled
+[07:52:49.605][VV][app:471]: logger loop enabled from ISR
+[07:52:49.606][VV][esp-idf:000][ot_main]: D (2711) OPENTHREAD: Millisecond timer alarm start running, t0=2508, dt=854
+[07:52:49.608][VV][esp-idf:000][ot_main]: D (2711) OPENTHREAD: Millisecond timer alarm fired
+[07:52:49.615][VV][component:292]: logger loop disabled
+[07:52:50.460][VV][app:471]: logger loop enabled from ISR
+[07:52:50.462][VV][esp-idf:000][ot_main]: D (3566) OPENTHREAD: Millisecond timer alarm start running, t0=3363, dt=18116
+[07:52:50.463][VV][esp-idf:000][ot_main]: D (3566) OPENTHREAD: Millisecond timer alarm start running, t0=3363, dt=997
+[07:52:50.464][VV][esp-idf:000][ot_main]: D (3566) OPENTHREAD: Millisecond timer alarm fired
+[07:52:50.472][VV][component:292]: logger loop disabled
+[07:52:51.458][VV][app:471]: logger loop enabled from ISR
+[07:52:51.460][VV][esp-idf:000][ot_main]: D (4564) OPENTHREAD: Millisecond timer alarm start running, t0=4361, dt=17118
+[07:52:51.461][VV][esp-idf:000][ot_main]: D (4564) OPENTHREAD: Millisecond timer alarm start running, t0=4361, dt=995
+[07:52:51.462][VV][esp-idf:000][ot_main]: D (4564) OPENTHREAD: Millisecond timer alarm fired
+[07:52:51.472][VV][component:292]: logger loop disabled
+[07:52:52.260][VV][app:471]: logger loop enabled from ISR
+[07:52:52.262][VV][esp-idf:000][ot_main]: D (5366) OPENTHREAD: OpenThread stack filtered netif packet
+[07:52:52.272][VV][component:292]: logger loop disabled
+[07:52:52.453][VV][app:471]: logger loop enabled from ISR
+[07:52:52.455][VV][esp-idf:000][ot_main]: D (5559) OPENTHREAD: Millisecond timer alarm start running, t0=5356, dt=16123
+[07:52:52.456][VV][esp-idf:000][ot_main]: D (5559) OPENTHREAD: Millisecond timer alarm start running, t0=5356, dt=996
+[07:52:52.457][VV][esp-idf:000][ot_main]: D (5559) OPENTHREAD: Millisecond timer alarm start running, t0=5356, dt=16123
+[07:52:52.459][VV][esp-idf:000][ot_main]: D (5559) OPENTHREAD: Millisecond timer alarm fired
+[07:52:52.464][VV][component:292]: logger loop disabled
+[07:52:54.973][VV][esp-idf:000][ot_main]: D(8079) OPENTHREAD:
+[07:52:54.975][VV][esp-idf:000][ot_main]: [D] Mac-----------: | 00 00 00 01 E1 11 9E 0F | F0 3C 5F 84 BE DA EF BF | .........<_..... |
+[07:52:54.976][VV][esp-idf:000][ot_main]: 
+[07:52:54.977][VV][esp-idf:000][ot_main]: D(8082) OPENTHREAD:
+[07:52:54.978][VV][esp-idf:000][ot_main]: [D] Mac-----------: | 34 08 E2 B9 48 96 87 4F | F4 B1 67 06 B2 DC 73 42 | 4...H..O..g...sB |
+[07:52:54.979][VV][esp-idf:000][ot_main]: 
+[07:52:54.980][VV][esp-idf:000][ot_main]: D(8085) OPENTHREAD:
+[07:52:54.981][VV][esp-idf:000][ot_main]: [D] Mac-----------: | 29 42 73 3D F4 09       |                         | )Bs=..           |
+[07:52:54.982][VV][esp-idf:000][ot_main]: 
+[07:52:54.983][VV][esp-idf:000][ot_main]: D(8089) OPENTHREAD:
+[07:52:54.984][VV][esp-idf:000][ot_main]: [D] Mac-----------: ------------------------------------------------------------------------
+[07:52:54.985][VV][esp-idf:000][ot_main]: 
+[07:52:54.987][VV][esp-idf:000][ot_main]: I(8092) OPENTHREAD:
+[07:52:54.988][VV][esp-idf:000][ot_main]: [I] MeshForwarder-: Received IPv6 UDP msg, len:91, chksum:f81c, ecn:no, from:ee041191db5dffc2,
+[07:52:54.989][VV][esp-idf:000][ot_main]: 
+[07:52:54.990][VV][esp-idf:000][ot_main]: I(8095) OPENTHREAD:
+[07:52:54.991][VV][esp-idf:000][ot_main]: [I] MeshForwarder-:     src:[fe80:0:0:0:ec04:1191:db5d:ffc2]:19788
+[07:52:54.992][VV][esp-idf:000][ot_main]: 
+[07:52:54.993][VV][esp-idf:000][ot_main]: I(8098) OPENTHREAD:
+[07:52:54.994][VV][esp-idf:000][ot_main]: [I] MeshForwarder-:     dst:[ff02:0:0:0:0:0:0:1]:19788
+[07:52:54.994][VV][esp-idf:000][ot_main]: 
+[07:52:54.995][VV][esp-idf:000][ot_main]: D(8101) OPENTHREAD:
+[07:52:54.996][VV][esp-idf:000][ot_main]: [D] Mle-----------: Receive MLE message
+[07:52:54.997][VV][esp-idf:000][ot_main]: 
+[07:52:54.999][VV][esp-idf:000][ot_main]: I(8105) OPENTHREAD:
+[07:52:55.000][VV][esp-idf:000][ot_main]: [I] Mle-----------: Receive Advertisement (fe80:0:0:0:ec04:1191:db5d:ffc2,0x1800)
+[07:52:55.001][VV][esp-idf:000][ot_main]: 
+[07:52:55.002][VV][esp-idf:000][ot_main]: D(8108) OPENTHREAD:
+[07:52:55.003][VV][esp-idf:000][ot_main]: [D] Mac-----------: Idle mode: Radio receiving on channel 20
+[07:52:55.004][VV][esp-idf:000][ot_main]: 
+[07:52:55.005][VV][app:471]: logger loop enabled from ISR
+[07:52:55.006][VV][esp-idf:000][ot_main]: D(8078) OPENTHREAD:
+[07:52:55.007][VV][esp-idf:000][ot_main]: [D] Mac-----------: ==============================[RX len=070]==============================
+[07:52:55.008][VV][esp-idf:000][ot_main]: 
+[07:52:55.009][VV][esp-idf:000][ot_main]: D(8078) OPENTHREAD:
+[07:52:55.010][VV][esp-idf:000][ot_main]: [D] Mac-----------: | 41 D8 C2 28 8F FF FF C2 | FF 5D DB 91 11 04 EE 7F | A..(.....]...... |
+[07:52:55.011][VV][esp-idf:000][ot_main]: 
+[07:52:55.011][VV][esp-idf:000][ot_main]: D(8079) OPENTHREAD:
+[07:52:55.013][VV][esp-idf:000][ot_main]: [D] Mac-----------: | 3B 01 F0 4D 4C 4D 4C F8 | 1C 00 15 19 00 00 00 00 | ;..MLML......... |
+[07:52:55.014][VV][esp-idf:000][ot_main]: 
+[07:52:55.014][VV][component:292]: logger loop disabled
+[07:52:55.907][VV][esp-idf:000][ot_main]: D(9012) OPENTHREAD:
+[07:52:55.908][VV][esp-idf:000][ot_main]: [D] Mac-----------: | 00 00 00 01 94 C0 F1 67 | 67 C5 05 35 C0 D8 85 04 | .......gg..5.... |
+[07:52:55.909][VV][esp-idf:000][ot_main]: 
+[07:52:55.910][VV][esp-idf:000][ot_main]: D(9015) OPENTHREAD:
+[07:52:55.911][VV][esp-idf:000][ot_main]: [D] Mac-----------: | 46 36 A5 A3 82 99 FF 5D | D1 8D 41 92 E6 48 53 E7 | F6.....]..A..HS. |
+[07:52:55.912][VV][esp-idf:000][ot_main]: 
+[07:52:55.913][VV][esp-idf:000][ot_main]: D(9019) OPENTHREAD:
+[07:52:55.914][VV][esp-idf:000][ot_main]: [D] Mac-----------: | 48 04 B0 2B F4 0A       |                         | H..+..           |
+[07:52:55.915][VV][esp-idf:000][ot_main]: 
+[07:52:55.916][VV][esp-idf:000][ot_main]: D(9022) OPENTHREAD:
+[07:52:55.917][VV][esp-idf:000][ot_main]: [D] Mac-----------: ------------------------------------------------------------------------
+[07:52:55.918][VV][esp-idf:000][ot_main]: 
+[07:52:55.920][VV][esp-idf:000][ot_main]: I(9025) OPENTHREAD:
+[07:52:55.921][VV][esp-idf:000][ot_main]: [I] MeshForwarder-: Received IPv6 UDP msg, len:91, chksum:5810, ecn:no, from:8e3c86b18393fcd7,
+[07:52:55.922][VV][esp-idf:000][ot_main]: 
+[07:52:55.923][VV][esp-idf:000][ot_main]: I(9028) OPENTHREAD:
+[07:52:55.924][VV][esp-idf:000][ot_main]: [I] MeshForwarder-:     src:[fe80:0:0:0:8c3c:86b1:8393:fcd7]:19788
+[07:52:55.925][VV][esp-idf:000][ot_main]: 
+[07:52:55.926][VV][esp-idf:000][ot_main]: I(9031) OPENTHREAD:
+[07:52:55.927][VV][esp-idf:000][ot_main]: [I] MeshForwarder-:     dst:[ff02:0:0:0:0:0:0:1]:19788
+[07:52:55.927][VV][esp-idf:000][ot_main]: 
+[07:52:55.928][VV][esp-idf:000][ot_main]: D(9034) OPENTHREAD:
+[07:52:55.930][VV][esp-idf:000][ot_main]: [D] Mle-----------: Receive MLE message
+[07:52:55.930][VV][esp-idf:000][ot_main]: 
+[07:52:55.932][VV][esp-idf:000][ot_main]: I(9037) OPENTHREAD:
+[07:52:55.933][VV][esp-idf:000][ot_main]: [I] Mle-----------: Receive Advertisement (fe80:0:0:0:8c3c:86b1:8393:fcd7,0x9400)
+[07:52:55.934][VV][esp-idf:000][ot_main]: 
+[07:52:55.935][VV][esp-idf:000][ot_main]: D(9041) OPENTHREAD:
+[07:52:55.936][VV][esp-idf:000][ot_main]: [D] Mac-----------: Idle mode: Radio receiving on channel 20
+[07:52:55.937][VV][esp-idf:000][ot_main]: 
+[07:52:55.938][VV][app:471]: logger loop enabled from ISR
+[07:52:55.939][VV][esp-idf:000][ot_main]: D(9011) OPENTHREAD:
+[07:52:55.940][VV][esp-idf:000][ot_main]: [D] Mac-----------: ==============================[RX len=070]==============================
+[07:52:55.941][VV][esp-idf:000][ot_main]: 
+[07:52:55.942][VV][esp-idf:000][ot_main]: D(9012) OPENTHREAD:
+[07:52:55.943][VV][esp-idf:000][ot_main]: [D] Mac-----------: | 41 D8 BB 28 8F FF FF D7 | FC 93 83 B1 86 3C 8E 7F | A..(.........<.. |
+[07:52:55.944][VV][esp-idf:000][ot_main]: 
+[07:52:55.945][VV][esp-idf:000][ot_main]: D(9012) OPENTHREAD:
+[07:52:55.946][VV][esp-idf:000][ot_main]: [D] Mac-----------: | 3B 01 F0 4D 4C 4D 4C 58 | 10 00 15 29 00 00 00 00 | ;..MLMLX...).... |
+[07:52:55.947][VV][esp-idf:000][ot_main]: 
+[07:52:55.947][VV][component:292]: logger loop disabled
+[07:52:56.261][VV][app:471]: logger loop enabled from ISR
+[07:52:56.262][VV][esp-idf:000][ot_main]: D (9366) OPENTHREAD: OpenThread stack filtered netif packet
+[07:52:56.267][VV][component:292]: logger loop disabled
+# Log reader stopped UTC: 2026-06-25T05:52:57+00:00
