@@ -69,6 +69,10 @@ SKIP_NO_CHILD_PARENT = "SKIP_NO_CHILD_PARENT"
 SKIP_PARENT_NOT_MAPPED_TO_DEVICE = "SKIP_PARENT_NOT_MAPPED_TO_DEVICE"
 SKIP_NO_ELIGIBLE_TARGET_PARENT = "SKIP_NO_ELIGIBLE_TARGET_PARENT"
 SKIP_PARENT_IS_LEADER = "SKIP_PARENT_IS_LEADER"
+SKIP_PARENT_IS_LEADER_NOTE = (
+    "The detected child parent is the current Thread leader. The run continues, but it keeps "
+    "the SKIP_PARENT_IS_LEADER label because removing the initial parent also disrupts the current leader."
+)
 
 _BATCH_LOG_PATH: Path | None = None
 
@@ -686,6 +690,11 @@ def mark_skip(manifest: list[dict[str, Any]], reason: str, details: dict[str, An
     log(f"SKIP {reason}: {details}")
 
 
+def add_label(manifest: list[dict[str, Any]], reason: str, details: dict[str, Any]) -> None:
+    manifest.append({"time_utc": now_utc_iso(), "type": "label", "reason": reason, **details})
+    log(f"LABEL {reason}: {details}")
+
+
 def run_timed_sequence(settings: Settings, *, dry_run: bool, manifest: list[dict[str, Any]], run_index: int) -> tuple[Path | None, dict[str, Path], Path | None, str | None, Path | None, str]:
     child_log_path: Path | None = None
     device_loggers: dict[str, subprocess.Popen[str] | None] = {}
@@ -751,22 +760,24 @@ def run_timed_sequence(settings: Settings, *, dry_run: bool, manifest: list[dict
             parent_role, parent_role_source = parse_latest_thread_role(parent_log_path)
             details.update({"parent_logical_name": parent_logical, "parent_log_path": str(parent_log_path) if parent_log_path else None, "parent_thread_role": parent_role, "parent_thread_role_source": parent_role_source})
             if parent_role == "leader":
+                add_label(
+                    manifest,
+                    SKIP_PARENT_IS_LEADER,
+                    {**details, "classification_note": SKIP_PARENT_IS_LEADER_NOTE},
+                )
+            target = select_target(router_extaddrs, parent_key, seed=settings.selection.random_seed, run_index=run_index)
+            if target is None:
                 status = "skipped"
-                mark_skip(manifest, SKIP_PARENT_IS_LEADER, details)
+                mark_skip(manifest, SKIP_NO_ELIGIBLE_TARGET_PARENT, details)
             else:
-                target = select_target(router_extaddrs, parent_key, seed=settings.selection.random_seed, run_index=run_index)
-                if target is None:
-                    status = "skipped"
-                    mark_skip(manifest, SKIP_NO_ELIGIBLE_TARGET_PARENT, details)
-                else:
-                    parent_plan = {router["logical_name"]: router for router in router_plan}[parent_logical]
-                    details.update({"target_parent": target, "target_parent_logical_name": target["logical_name"], "target_parent_extaddr": target["extaddr"], "target_selection": "random_non_current_parent", "random_seed": settings.selection.random_seed, "removed_parent_device_role": parent_plan["device_role"]})
-                    manifest.append({"time_utc": now_utc_iso(), "type": "directed_switch_decision", "action": "will_switch_then_remove", "reason": "TARGET_SELECTED", **details})
-                    send_child_switch_command(settings, target["extaddr"], dry_run=dry_run, manifest=manifest)
-                    stop_device_log(device_loggers.get(parent_logical), logical_name=parent_logical, dry_run=dry_run)
-                    device_loggers[parent_logical] = None
-                    upload(settings, parent_plan["device_role"], "empty", dry_run=dry_run, manifest=manifest)
-                    sleep_step(settings.timing.after_parent_removed_seconds, "targeted switch requested and initial parent removed; keep recording", dry_run=dry_run, manifest=manifest)
+                parent_plan = {router["logical_name"]: router for router in router_plan}[parent_logical]
+                details.update({"target_parent": target, "target_parent_logical_name": target["logical_name"], "target_parent_extaddr": target["extaddr"], "target_selection": "random_non_current_parent", "random_seed": settings.selection.random_seed, "removed_parent_device_role": parent_plan["device_role"]})
+                manifest.append({"time_utc": now_utc_iso(), "type": "directed_switch_decision", "action": "will_switch_then_remove", "reason": "TARGET_SELECTED", **details})
+                send_child_switch_command(settings, target["extaddr"], dry_run=dry_run, manifest=manifest)
+                stop_device_log(device_loggers.get(parent_logical), logical_name=parent_logical, dry_run=dry_run)
+                device_loggers[parent_logical] = None
+                upload(settings, parent_plan["device_role"], "empty", dry_run=dry_run, manifest=manifest)
+                sleep_step(settings.timing.after_parent_removed_seconds, "targeted switch requested and initial parent removed; keep recording", dry_run=dry_run, manifest=manifest)
 
         stop_sniffer_capture(settings, sniffer_process, dry_run=dry_run)
         sniffer_process = None

@@ -64,9 +64,8 @@ SKIP_PARENT_NOT_MAPPED_TO_DEVICE_NOTE = (
     "configured router device in this test run."
 )
 SKIP_PARENT_IS_LEADER_NOTE = (
-    "The detected child parent is the current Thread leader. Removing it would invalidate "
-    "the stock parent-switch measurement by disrupting the leader rather than only removing "
-    "the child's parent."
+    "The detected child parent is the current Thread leader. The run continues, but it keeps "
+    "the SKIP_PARENT_IS_LEADER label because parent removal also disrupts the current leader."
 )
 
 
@@ -1379,6 +1378,16 @@ def record_parent_removal_decision(
     tracker.append_event(event)
 
 
+def add_run_label(tracker: RunTracker, reason: str, *, details: dict[str, Any] | None = None) -> None:
+    event = {
+        "time_utc": now_utc_iso(),
+        "type": "label",
+        "reason": reason,
+        **(details or {}),
+    }
+    tracker.append_event(event)
+
+
 def mark_skipped_run(tracker: RunTracker, reason: str, *, details: dict[str, Any] | None = None) -> None:
     with tracker.lock:
         tracker.status = "skipped"
@@ -1584,30 +1593,15 @@ def run_timed_sequence(
         )
 
         if parent_is_leader:
-            skip_details = {
+            label_details = {
                 **removal_details,
                 "classification_note": SKIP_PARENT_IS_LEADER_NOTE,
-                "router_removed": None,
             }
-            record_parent_removal_decision(
-                tracker=tracker,
-                manifest=manifest,
-                action="skipped",
-                reason=SKIP_PARENT_IS_LEADER,
-                details=skip_details,
+            add_run_label(
+                tracker,
+                SKIP_PARENT_IS_LEADER,
+                details=label_details,
             )
-            mark_skipped_run(tracker, SKIP_PARENT_IS_LEADER, details=skip_details)
-            tracker.set_step("stop_sniffer_after_skip")
-            stop_sniffer_capture(settings, sniffer_process, dry_run=dry_run)
-            sniffer_process = None
-            sniffer_remote_pcap, sniffer_local_pcap = pull_sniffer_pcap(
-                settings,
-                sniffer_log_path=sniffer_log_path,
-                dry_run=dry_run,
-                manifest=manifest,
-                tracker=tracker,
-            )
-            return child_log_path, router1_log_path, router2_log_path, sniffer_log_path, sniffer_remote_pcap, sniffer_local_pcap
 
         record_parent_removal_decision(
             tracker=tracker,

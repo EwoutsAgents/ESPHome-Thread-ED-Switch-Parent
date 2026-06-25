@@ -364,6 +364,21 @@ def manifest_for_log(log_path: Path) -> dict[str, Any] | None:
     return None
 
 
+def manifest_labels(manifest: dict[str, Any] | None) -> list[str]:
+    if not manifest:
+        return []
+    labels: list[str] = []
+    for event in manifest.get("events", []):
+        if not isinstance(event, dict):
+            continue
+        if event.get("type") not in {"label", "skip"}:
+            continue
+        reason = event.get("reason")
+        if isinstance(reason, str) and reason not in labels:
+            labels.append(reason)
+    return labels
+
+
 def sniffer_pcap_path(sniffer_log_path: Path) -> str | None:
     try:
         lines = sniffer_log_path.read_text(encoding="utf-8", errors="replace").splitlines()
@@ -872,6 +887,7 @@ def analyze_log(
     pending_mesh_extaddr: str | None = None
     child_extaddr: str | None = None
     switch_targets: list[str] = []
+    manifest = manifest_for_log(path)
 
     for line_no, line in enumerate(lines, start=1):
         timestamp_ms = parse_timestamp_ms(line)
@@ -974,6 +990,9 @@ def analyze_log(
     return {
         "group": log_group_name(path),
         "log_file": str(path),
+        "manifest_status": manifest.get("status") if manifest else None,
+        "manifest_path": manifest.get("_manifest_path") if manifest else None,
+        "labels": manifest_labels(manifest),
         "child_extaddr": child_extaddr,
         "switch_targets": switch_targets,
         "attach_sequences": [seq.to_summary() for seq in completed],
@@ -1073,6 +1092,11 @@ def render_markdown_report(results: list[dict[str, Any]]) -> str:
         out.append("")
         for result in grouped[group_name]:
             out.extend([f"### `{Path(result['log_file']).name}`", ""])
+            if result.get("manifest_status") is not None:
+                out.append(f"- manifest status: `{result['manifest_status']}`")
+            labels = result.get("labels") or []
+            if labels:
+                out.append(f"- labels: `{', '.join(labels)}`")
             out.append(f"- child extaddr: `{format_optional(result.get('child_extaddr'))}`")
             if result.get("switch_targets"):
                 out.append(f"- switch target extaddr(s): `{', '.join(result['switch_targets'])}`")
