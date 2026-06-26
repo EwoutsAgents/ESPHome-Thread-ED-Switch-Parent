@@ -101,6 +101,11 @@ thread_preferred_parent:
   # instead of the all-routers multicast address.
   parent_request_unicast: false
 
+  # Optional: experimental build-time fast path for router-side unicast Parent
+  # Requests. This bypasses the randomized Parent Response delay only for
+  # IPv6-unicast Parent Requests handled by the patched OpenThread tree.
+  unicast_parent_response_fastpath: false
+
   # Optional: after the target Parent Response is seen, wait a short grace
   # period and then continue into selected-parent attach.
   target_response_grace: 500ms
@@ -150,6 +155,7 @@ text:
 | `retry_interval` | `8s` | Maximum length of the discovery/preflight window and the delay before retrying discovery. During this window, the component listens for Parent Responses and checks whether the configured target parent is visible. If the target is never observed, the component waits for this full interval before deciding the attempt failed. |
 | `selected_attach_timeout` | `16s` | Maximum time to wait after starting selected-parent attach for the device to become attached to the requested parent. If the current parent does not match the target before this timeout expires, the attach attempt is treated as timed out and the component returns to discovery, subject to `max_attempts`. |
 | `parent_request_unicast` | `false` | When `false`, the preflight Parent Request is sent using normal multicast discovery. When `true`, the component tries to send the Parent Request directly to the target extended address. This is most useful together with `parent_extaddr`; when only an RLOC16 is configured, the component must first resolve it to an extended address. |
+| `unicast_parent_response_fastpath` | `false` | Experimental compile-time option for the vendored OpenThread patch. When `true`, the build sets `OPENTHREAD_CONFIG_EXPERIMENTAL_UNICAST_PARENT_RESPONSE_FASTPATH_ENABLE=1`, allowing the router-side `HandleParentRequest()` path to skip the randomized Parent Response delay for IPv6-unicast Parent Requests. Multicast Parent Requests keep the stock randomized delay path. |
 | `target_response_grace` | `250ms` | Delay between observing the target Parent Response and starting selected-parent attach. This gives the discovery path a short settle period before the discovery-to-attach handoff. Higher values, such as `500ms`, may be useful while testing. |
 | `require_selected_parent_hook` | `true` | Require the patched OpenThread selected-parent attach hook to be available. Keeping this enabled makes failures explicit if the patch was not applied or is incompatible with the ESP-IDF/OpenThread version. If disabled, the component may try fallback OpenThread APIs where available, but behaviour is less controlled. |
 | `log_parent_responses` | `true` | Enable buffered Parent Response diagnostics. With `logger.level: INFO` or `DEBUG`, the component reports lifecycle events, summaries, and relevant buffered responses on success or failure. With `logger.level: VERY_VERBOSE`, it also logs live Parent Response rows as they arrive. |

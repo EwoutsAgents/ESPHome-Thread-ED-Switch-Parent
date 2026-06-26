@@ -28,6 +28,7 @@ CONF_REQUIRE_SELECTED_PARENT_HOOK = "require_selected_parent_hook"
 CONF_LOG_PARENT_RESPONSES = "log_parent_responses"
 CONF_PARENT_REQUEST_UNICAST = "parent_request_unicast"
 CONF_TARGET_RESPONSE_GRACE = "target_response_grace"
+CONF_UNICAST_PARENT_RESPONSE_FASTPATH = "unicast_parent_response_fastpath"
 
 SCRIPT_PATH = os.path.abspath(
     os.path.join(os.path.dirname(__file__), "apply-openthread-selected-parent-hook.py")
@@ -102,6 +103,7 @@ CONFIG_SCHEMA = cv.All(
             cv.Optional(CONF_LOG_PARENT_RESPONSES, default=True): cv.boolean,
             cv.Optional(CONF_PARENT_REQUEST_UNICAST, default=False): cv.boolean,
             cv.Optional(CONF_TARGET_RESPONSE_GRACE, default="250ms"): cv.positive_time_period_milliseconds,
+            cv.Optional(CONF_UNICAST_PARENT_RESPONSE_FASTPATH, default=False): cv.boolean,
         }
     ).extend(cv.COMPONENT_SCHEMA),
     validate_identifier,
@@ -131,3 +133,10 @@ async def to_code(config):
     cg.add(var.set_log_parent_responses(config[CONF_LOG_PARENT_RESPONSES]))
     cg.add(var.set_parent_request_unicast(config[CONF_PARENT_REQUEST_UNICAST]))
     cg.add(var.set_target_response_grace(config[CONF_TARGET_RESPONSE_GRACE].total_milliseconds))
+    cg.add_platformio_option(
+        "build_flags",
+        [
+            "-DOPENTHREAD_CONFIG_EXPERIMENTAL_UNICAST_PARENT_RESPONSE_FASTPATH_ENABLE="
+            f"{1 if config[CONF_UNICAST_PARENT_RESPONSE_FASTPATH] else 0}"
+        ],
+    )
