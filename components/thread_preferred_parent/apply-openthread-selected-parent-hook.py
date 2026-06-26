@@ -27,9 +27,6 @@ Current patch notes:
   * optionally expose unicast Parent Request discovery, so ESPHome can send the
     preflight Parent Request directly to the configured target ExtAddr instead
     of the all-routers multicast address.
-  * optionally bypass the randomized router-side Parent Response delay for
-    IPv6-unicast Parent Requests when the build enables
-    OPENTHREAD_CONFIG_EXPERIMENTAL_UNICAST_PARENT_RESPONSE_FASTPATH_ENABLE.
 """
 
 from __future__ import annotations
@@ -1979,71 +1976,6 @@ def patch_parent_request_child_timeout(root: Path, *, dry_run: bool = False) -> 
     )
 
 
-def patch_unicast_parent_response_fastpath(root: Path, *, dry_run: bool = False) -> str:
-    """Optionally skip randomized Parent Response delay for IPv6-unicast requests."""
-    path = root / "thread/mle_ftd.cpp"
-    text = normalize_newlines(path.read_text())
-    if "THREAD_PREFERRED_PARENT_UNICAST_PARENT_RESPONSE_FASTPATH" in text:
-        return "already"
-
-    macro_old = '#include "instance/instance.hpp"\n'
-    macro_new = """#include "instance/instance.hpp"
-
-#ifndef OPENTHREAD_CONFIG_EXPERIMENTAL_UNICAST_PARENT_RESPONSE_FASTPATH_ENABLE
-#define OPENTHREAD_CONFIG_EXPERIMENTAL_UNICAST_PARENT_RESPONSE_FASTPATH_ENABLE 0
-#endif
-"""
-    text_after_macro = text
-    if "OPENTHREAD_CONFIG_EXPERIMENTAL_UNICAST_PARENT_RESPONSE_FASTPATH_ENABLE" not in text:
-        if macro_old not in text:
-            return "missing"
-        text_after_macro = text.replace(macro_old, macro_new, 1)
-
-    old_decl = """    DeviceMode         mode;
-    uint32_t           delay;
-    ParentResponseInfo info;
-"""
-    new_decl = """    DeviceMode         mode;
-    uint32_t           delay;
-    bool               isIpv6UnicastRequest;
-    ParentResponseInfo info;
-"""
-    if "bool               isIpv6UnicastRequest;" not in text_after_macro:
-        if old_decl not in text_after_macro:
-            return "missing"
-        text_after_macro = text_after_macro.replace(old_decl, new_decl, 1)
-
-    old_delay = """    delay = GenerateRandomDelay(!ScanMaskTlv::IsEndDeviceFlagSet(scanMask) ? kParentResponseMaxDelayRouters
-                                                                           : kParentResponseMaxDelayAll);
-"""
-    new_delay = """    isIpv6UnicastRequest = !aRxInfo.mMessageInfo.GetSockAddr().IsMulticast();
-
-    delay = !ScanMaskTlv::IsEndDeviceFlagSet(scanMask) ? kParentResponseMaxDelayRouters
-                                                       : kParentResponseMaxDelayAll;
-
-#if OPENTHREAD_CONFIG_EXPERIMENTAL_UNICAST_PARENT_RESPONSE_FASTPATH_ENABLE
-    if (isIpv6UnicastRequest)
-    {
-        // THREAD_PREFERRED_PARENT_UNICAST_PARENT_RESPONSE_FASTPATH
-        // RxInfo exposes the IPv6 destination but not the original IEEE
-        // 802.15.4 destination address, so this fast path is gated on the
-        // IPv6 layer only.
-        delay = 0;
-    }
-    else
-    {
-        delay = GenerateRandomDelay(delay);
-    }
-#else
-    delay = GenerateRandomDelay(delay);
-#endif
-"""
-    if old_delay not in text_after_macro:
-        return "missing"
-
-    return write_if_changed(path, text, text_after_macro.replace(old_delay, new_delay, 1), dry_run=dry_run)
-
-
 def patch_attacher_snapshot_init(root: Path, *, dry_run: bool = False) -> str:
     """Initialize the saved discovery target candidate."""
     path = root / "thread/mle.cpp"
@@ -2311,7 +2243,6 @@ def apply_patches(root: Path, *, dry_run: bool = False) -> int:
         ("mle.cpp selected-parent bypass better-parent gate", root / "thread/mle.cpp", patch_selected_parent_target_bypass_better_parent_gate, True),
         ("mle.cpp preferred discovery target snapshot", root / "thread/mle.cpp", patch_parent_response_target_snapshot, True),
         ("mle_ftd.cpp provisional child timeout for discovery continuation", root / "thread/mle_ftd.cpp", patch_parent_request_child_timeout, True),
-        ("mle_ftd.cpp unicast Parent Response fast path", root / "thread/mle_ftd.cpp", patch_unicast_parent_response_fastpath, True),
         ("mle.cpp selected-parent non-target Parent Response filter", root / "thread/mle.cpp", patch_selected_parent_parent_response_filter, True),
         ("diag ParentResponse challenge", root / "thread/mle.cpp", patch_parent_response_challenge_log, False),
         ("diag ParentResponse rx", root / "thread/mle.cpp", patch_parent_response_rx_log, False),
