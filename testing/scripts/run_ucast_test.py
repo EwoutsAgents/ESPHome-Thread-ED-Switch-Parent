@@ -62,6 +62,10 @@ VARIANT_PRESETS = {
     },
 }
 
+
+def use_batch_layout(variant: str, runs: int) -> bool:
+    return runs > 1 or variant == "ucast_fastpr"
+
 CONFIG_NAMES = {
     "empty": "empty.yaml",
     "child": "ucast_child.yaml",  # replaced by variant in config_path()
@@ -318,7 +322,7 @@ def load_settings(args: argparse.Namespace) -> Settings:
     random_seed_raw = selection_raw.get("random_seed", None)
     random_seed = int(random_seed_raw) if random_seed_raw is not None else None
 
-    if args.runs > 1:
+    if use_batch_layout(variant_raw, args.runs):
         logs_dir = allocate_batch_logs_dir(logs_dir.parent, variant_name=variant_raw, router_count=max_router_number, total_runs=args.runs)
         run_logs_dir = build_run_logs_dir(logs_dir)
 
@@ -868,7 +872,7 @@ def main(argv: list[str]) -> int:
     if args.config is None:
         args.config = str(VARIANT_PRESETS[args.variant]["default_config"])
     settings = load_settings(args)
-    set_batch_log(settings.logs_dir / f"{settings.logs_dir.name}.log" if args.runs > 1 else None)
+    set_batch_log(settings.logs_dir / f"{settings.logs_dir.name}.log" if use_batch_layout(settings.variant, args.runs) else None)
 
     log(f"Using ESPHome: {settings.esphome_bin}")
     log(f"Using esptool: {settings.esptool_bin}")
@@ -887,7 +891,11 @@ def main(argv: list[str]) -> int:
         return 0
 
     for run_index in range(1, args.runs + 1):
-        settings.run_logs_dir = build_run_logs_dir(settings.logs_dir, run_index=run_index) if args.runs > 1 else build_run_logs_dir(settings.logs_dir)
+        settings.run_logs_dir = (
+            build_run_logs_dir(settings.logs_dir, run_index=run_index)
+            if use_batch_layout(settings.variant, args.runs)
+            else build_run_logs_dir(settings.logs_dir)
+        )
         log(f"Starting run {run_index}/{args.runs}")
         log(f"Using run logs dir: {settings.run_logs_dir}")
         manifest = list(compile_manifest)
