@@ -28,6 +28,26 @@ typedef void (*thread_preferred_parent_parent_response_callback_t)(
 );
 
 /**
+ * Function pointer type used to receive ParentReq-start callbacks.
+ *
+ * @param aContext Opaque callback context provided at registration time.
+ */
+typedef void (*thread_preferred_parent_parent_req_started_callback_t)(
+    void *aContext
+);
+
+/**
+ * Function pointer type used to receive attacher state callbacks.
+ *
+ * @param aState OpenThread `Mle::Attacher::State` numeric value.
+ * @param aContext Opaque callback context provided at registration time.
+ */
+typedef void (*thread_preferred_parent_attacher_state_callback_t)(
+    uint8_t aState,
+    void *aContext
+);
+
+/**
  * Register a callback for Parent Response notifications emitted by the patch.
  *
  * @param aCallback Callback invoked for each parsed Parent Response.
@@ -35,6 +55,28 @@ typedef void (*thread_preferred_parent_parent_response_callback_t)(
  */
 void thread_preferred_parent_ot_register_parent_response_callback(
     thread_preferred_parent_parent_response_callback_t aCallback,
+    void *aContext
+) __attribute__((weak));
+
+/**
+ * Register a callback that fires when OpenThread actually enters ParentReq.
+ *
+ * @param aCallback Callback invoked when ParentReq starts on-air discovery.
+ * @param aContext Opaque context forwarded back to `aCallback`.
+ */
+void thread_preferred_parent_ot_register_parent_req_started_callback(
+    thread_preferred_parent_parent_req_started_callback_t aCallback,
+    void *aContext
+) __attribute__((weak));
+
+/**
+ * Register a callback that fires whenever OpenThread attacher state changes.
+ *
+ * @param aCallback Callback invoked with the new `Mle::Attacher::State`.
+ * @param aContext Opaque context forwarded back to `aCallback`.
+ */
+void thread_preferred_parent_ot_register_attacher_state_callback(
+    thread_preferred_parent_attacher_state_callback_t aCallback,
     void *aContext
 ) __attribute__((weak));
 
@@ -54,6 +96,30 @@ otError thread_preferred_parent_ot_start_parent_discovery(otInstance *aInstance)
  * @return OpenThread status describing whether discovery started successfully.
  */
 otError thread_preferred_parent_ot_start_parent_discovery_unicast(
+    otInstance *aInstance,
+    const otExtAddress *aPreferredExtAddress
+) __attribute__((weak));
+
+/**
+ * Continue a discovery-observed selected-parent attach without a new Parent Request.
+ *
+ * @param aInstance Active OpenThread instance.
+ * @param aPreferredExtAddress Extended address of the preferred parent target.
+ * @return OpenThread status describing whether Child ID startup succeeded.
+ */
+otError thread_preferred_parent_ot_continue_selected_parent_attach(
+    otInstance *aInstance,
+    const otExtAddress *aPreferredExtAddress
+) __attribute__((weak));
+
+/**
+ * Tell OpenThread which preferred parent response should be snapshotted during discovery.
+ *
+ * @param aInstance Active OpenThread instance.
+ * @param aPreferredExtAddress Extended address of the preferred parent target.
+ * @return OpenThread status describing whether the hint was accepted.
+ */
+otError thread_preferred_parent_ot_set_discovery_target_extaddr(
     otInstance *aInstance,
     const otExtAddress *aPreferredExtAddress
 ) __attribute__((weak));
@@ -270,18 +336,13 @@ class ThreadPreferredParentComponent : public Component {
   void set_parent_request_unicast(bool enabled) { this->parent_request_unicast_ = enabled; }
 
   /**
-   * Enable or disable early attach once the target is observed.
+   * Set the grace period used after the target Parent Response is observed.
    *
-   * @param enabled `true` to arm the early-attach path.
+   * @param target_response_grace_ms Grace delay in milliseconds.
    */
-  void set_early_attach_on_target(bool enabled) { this->early_attach_on_target_ = enabled; }
-
-  /**
-   * Set the debounce delay used before early attach begins.
-   *
-   * @param early_attach_delay_ms Early-attach delay in milliseconds.
-   */
-  void set_early_attach_delay(uint32_t early_attach_delay_ms) { this->early_attach_delay_ms_ = early_attach_delay_ms; }
+  void set_target_response_grace(uint32_t target_response_grace_ms) {
+    this->target_response_grace_ms_ = target_response_grace_ms;
+  }
 
   /**
    * Start a preferred-parent switch using the currently configured target.
@@ -442,6 +503,8 @@ class ThreadPreferredParentComponent : public Component {
    * @param context Opaque pointer to the owning component instance.
    */
   static void parent_response_callback_(const otThreadParentResponseInfo *info, void *context);
+  static void parent_req_started_callback_(void *context);
+  static void attacher_state_callback_(uint8_t state, void *context);
 
   /**
    * Check whether the current OpenThread parent matches the requested target.
@@ -576,6 +639,15 @@ class ThreadPreferredParentComponent : public Component {
   otError start_selected_parent_attach_(otInstance *instance);
 
   /**
+   * Replay an important branch decision across several loop iterations.
+   *
+   * @param message Message to emit at INFO level.
+   * @param repeats Number of times to emit the message.
+   * @param interval_ms Delay between repeated emissions.
+   */
+  void schedule_branch_replay_(const std::string &message, uint8_t repeats = 8, uint32_t interval_ms = 500);
+
+  /**
    * Clear any preferred-parent hints stored inside the OpenThread instance.
    *
    * @param instance Active OpenThread instance.
@@ -605,6 +677,7 @@ class ThreadPreferredParentComponent : public Component {
    * @param info Parsed Parent Response information from OpenThread.
    */
   void handle_parent_response_(const otThreadParentResponseInfo *info);
+  void handle_attacher_state_(uint8_t state);
 
   /**
    * Log one buffered Parent Response at INFO level.
@@ -652,20 +725,33 @@ class ThreadPreferredParentComponent : public Component {
   uint32_t retry_interval_ms_{8000};
   uint32_t selected_attach_timeout_ms_{16000};
   uint32_t phase_deadline_ms_{0};
+  bool discovery_close_drain_pending_{false};
   bool active_{false};
   bool require_selected_parent_hook_{true};
   bool log_parent_responses_{true};
   bool parent_request_unicast_{false};
   bool parent_response_callback_registered_{false};
+  bool attacher_state_callback_registered_{false};
+  bool parent_req_started_callback_registered_{false};
   uint32_t parent_response_count_{0};
   uint32_t parent_response_last_dumped_count_{0};
   uint32_t parent_response_target_count_{0};
   uint32_t current_attempt_start_ms_{0};
+  bool discovery_launch_requested_this_attempt_{false};
+  bool attacher_start_seen_this_attempt_{false};
+  bool parent_req_started_this_attempt_{false};
+  bool parent_req_launch_timed_out_this_attempt_{false};
+  uint32_t parent_req_launch_deadline_ms_{0};
+  // The attacher can sit in Start for multiple seconds before ParentReq
+  // begins, especially when the network is busy. Smaller gates proved too
+  // eager and marked the preferred-parent attempt failed before the later
+  // Parent Responses arrived.
+  uint32_t parent_req_launch_timeout_ms_{15000};
   uint32_t attach_start_ms_{0};
   uint32_t discovery_target_observed_ms_{0};
-  bool early_attach_on_target_{true};
-  bool early_attach_pending_{false};
-  uint32_t early_attach_delay_ms_{250};
+  bool target_response_grace_pending_{false};
+  uint32_t target_response_grace_ms_{250};
+  uint32_t discovery_close_drain_ms_{250};
   bool probe_active_{false};
   bool probe_completed_{false};
   uint32_t probe_parent_response_count_{0};
@@ -674,6 +760,11 @@ class ThreadPreferredParentComponent : public Component {
   bool best_target_rssi_valid_{false};
   int8_t best_target_rssi_{-128};
   uint16_t best_target_rloc16_{0xFFFE};
+  bool branch_replay_active_{false};
+  uint32_t branch_replay_next_ms_{0};
+  uint32_t branch_replay_interval_ms_{500};
+  uint8_t branch_replay_remaining_{0};
+  std::string branch_replay_message_{};
   uint8_t parent_response_buffer_head_{0};
   BufferedParentResponse parent_response_buffer_[PARENT_RESPONSE_BUFFER_SIZE]{};
   Status status_{Status::IDLE};

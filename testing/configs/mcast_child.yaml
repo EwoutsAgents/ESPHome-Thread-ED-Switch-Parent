@@ -1,0 +1,198 @@
+esphome:
+  name: stock-child
+  friendly_name: stock-child
+  on_boot:
+    priority: -100
+    then:
+      - lambda: |-
+          static bool usb_cli_started = false;
+          if (usb_cli_started) return;
+          usb_cli_started = true;
+
+          auto *preferred = id(preferred_parent);
+
+          xTaskCreate(
+            [](void *param) {
+              auto *preferred = static_cast<
+                esphome::thread_preferred_parent::ThreadPreferredParentComponent *
+              >(param);
+
+              char line[96];
+              size_t pos = 0;
+
+              auto print_help = []() {
+                printf("\r\nThread parent USB CLI ready.\r\n");
+                printf("Commands:\r\n");
+                printf("  extaddr 00124b0001abcdef\r\n");
+                printf("  extaddr 00:12:4b:00:01:ab:cd:ef\r\n");
+                printf("  00124b0001abcdef\r\n");
+                printf("  switch\r\n");
+                printf("  help\r\n\r\n");
+                fflush(stdout);
+              };
+
+              print_help();
+
+              while (true) {
+                int c = getchar();
+
+                if (c == EOF) {
+                  vTaskDelay(pdMS_TO_TICKS(20));
+                  continue;
+                }
+
+                if (c == '\r' || c == '\n') {
+                  if (pos == 0) continue;
+
+                  line[pos] = '\0';
+                  pos = 0;
+
+                  std::string s(line);
+
+                  auto trim = [](std::string v) -> std::string {
+                    const char *ws = " \t\r\n";
+                    const auto start = v.find_first_not_of(ws);
+                    if (start == std::string::npos) return "";
+                    const auto end = v.find_last_not_of(ws);
+                    return v.substr(start, end - start + 1);
+                  };
+
+                  auto lower = [](std::string v) -> std::string {
+                    for (auto &ch : v) {
+                      if (ch >= 'A' && ch <= 'Z') {
+                        ch = ch - 'A' + 'a';
+                      }
+                    }
+                    return v;
+                  };
+
+                  s = trim(s);
+                  std::string cmd = lower(s);
+
+                  if (cmd == "help" || cmd == "?") {
+                    print_help();
+                    continue;
+                  }
+
+                  if (cmd == "switch") {
+                    preferred->request_switch();
+                    printf("Requested switch using currently configured parent.\r\n");
+                    fflush(stdout);
+                    continue;
+                  }
+
+                  if (cmd.rfind("extaddr", 0) == 0) {
+                    s = trim(s.substr(7));
+                  } else if (cmd.rfind("parent_extaddr", 0) == 0) {
+                    s = trim(s.substr(14));
+                  }
+
+                  s = lower(trim(s));
+
+                  if (s.rfind("0x", 0) == 0) {
+                    s = s.substr(2);
+                  }
+
+                  std::string ext;
+                  bool valid = true;
+
+                  for (char ch : s) {
+                    if (ch == ':' || ch == '-' || ch == ' ' || ch == '\t') {
+                      continue;
+                    }
+
+                    const bool is_hex =
+                      (ch >= '0' && ch <= '9') ||
+                      (ch >= 'a' && ch <= 'f');
+
+                    if (!is_hex) {
+                      valid = false;
+                      break;
+                    }
+
+                    ext.push_back(ch);
+                  }
+
+                  if (!valid || ext.size() != 16) {
+                    printf("Invalid ExtAddr. Expected 16 hex digits, e.g. 00124b0001abcdef\r\n");
+                    fflush(stdout);
+                    continue;
+                  }
+
+                  preferred->set_parent_extaddr(ext);
+                  preferred->request_switch();
+
+                  printf("Requested Thread parent switch to ExtAddr %s\r\n", ext.c_str());
+                  fflush(stdout);
+                  continue;
+                }
+
+                if (pos < sizeof(line) - 1) {
+                  line[pos++] = static_cast<char>(c);
+                } else {
+                  pos = 0;
+                  printf("Input too long; line discarded.\r\n");
+                  fflush(stdout);
+                }
+              }
+            },
+            "usb_parent_cli",
+            4096,
+            preferred,
+            5,
+            nullptr
+          );
+          
+esp32:
+  variant: esp32c6
+  framework:
+    type: esp-idf
+    sdkconfig_options:
+      CONFIG_OPENTHREAD_PARENT_SEARCH_MTD: n  # explicitly disables ESP-IDF/OpenThread's default MTD periodic parent-search feature
+    log_level: VERBOSE
+
+logger:
+  level: VERY_VERBOSE
+  hardware_uart: USB_SERIAL_JTAG
+
+network:
+  enable_ipv6: true
+
+openthread:
+  device_type: MTD
+  channel: 20
+  network_name: parent-switch
+  network_key: 0xdfd34f0f05cad978ec4e32b0413038ff
+  pan_id: 0x8f28
+  ext_pan_id: 0xd63e8e3e495ebbc3
+  pskc: 0xc23a76e98f1a6483639b1ac1271e2e27
+  mesh_local_prefix: fd53:145f:ed22:ad81::/64
+  force_dataset: true
+
+external_components:
+  - source:
+      type: local
+      path: ../../components
+    components: [thread_preferred_parent]
+
+thread_preferred_parent:
+  id: preferred_parent
+
+  # Alternative: target the parent by RLOC16 instead.
+  # Do not configure parent_extaddr and parent_rloc at the same time.
+  # parent_rloc: 0x5800
+
+  max_attempts: 1
+  retry_interval: 8s
+  selected_attach_timeout: 16s
+
+  # Optional: send the preflight Parent Request directly to the target ExtAddr
+  # instead of the all-routers multicast address.
+  parent_request_unicast: false
+
+  # Optional: after the target Parent Response is seen, wait a short grace
+  # period and then continue into selected-parent attach.
+  target_response_grace: 250ms
+
+  require_selected_parent_hook: true
+  log_parent_responses: false
