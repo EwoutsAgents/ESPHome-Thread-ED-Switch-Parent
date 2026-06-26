@@ -78,7 +78,9 @@ def patch_unicast_parent_response_fastpath(root: Path, *, dry_run: bool = False)
     old_delay = """    delay = GenerateRandomDelay(!ScanMaskTlv::IsEndDeviceFlagSet(scanMask) ? kParentResponseMaxDelayRouters
                                                                            : kParentResponseMaxDelayAll);
 """
-    new_delay = """    isIpv6UnicastRequest = !aRxInfo.mMessageInfo.GetSockAddr().IsMulticast();
+    old_schedule = """    mDelayedSender.ScheduleParentResponse(info, delay);
+"""
+    old_fastpath_block = """    isIpv6UnicastRequest = !aRxInfo.mMessageInfo.GetSockAddr().IsMulticast();
 
     delay = !ScanMaskTlv::IsEndDeviceFlagSet(scanMask) ? kParentResponseMaxDelayRouters
                                                        : kParentResponseMaxDelayAll;
@@ -100,9 +102,33 @@ def patch_unicast_parent_response_fastpath(root: Path, *, dry_run: bool = False)
     delay = GenerateRandomDelay(delay);
 #endif
 """
-    if old_delay in text_after_macro:
-        text_after_macro = text_after_macro.replace(old_delay, new_delay, 1)
+    new_fastpath_block = """    isIpv6UnicastRequest = !aRxInfo.mMessageInfo.GetSockAddr().IsMulticast();
+
+    delay = !ScanMaskTlv::IsEndDeviceFlagSet(scanMask) ? kParentResponseMaxDelayRouters
+                                                       : kParentResponseMaxDelayAll;
+
+#if OPENTHREAD_CONFIG_EXPERIMENTAL_UNICAST_PARENT_RESPONSE_FASTPATH_ENABLE
+    if (isIpv6UnicastRequest)
+    {
+        // THREAD_FAST_UNICAST_PARENT_RESPONSE_COMPONENT
+        // RxInfo exposes the IPv6 destination but not the original IEEE
+        // 802.15.4 destination address, so this fast path is gated on the
+        // IPv6 layer only.
+        SendParentResponse(info);
+        ExitNow();
+    }
+#endif
+
+    delay = GenerateRandomDelay(delay);
+"""
+    if old_fastpath_block in text_after_macro:
+        text_after_macro = text_after_macro.replace(old_fastpath_block, new_fastpath_block, 1)
+    elif old_delay in text_after_macro:
+        text_after_macro = text_after_macro.replace(old_delay, new_fastpath_block, 1)
     elif "THREAD_FAST_UNICAST_PARENT_RESPONSE_COMPONENT" not in text_after_macro:
+        return "missing"
+
+    if old_schedule not in text_after_macro:
         return "missing"
 
     return write_if_changed(path, text, text_after_macro, dry_run=dry_run)
