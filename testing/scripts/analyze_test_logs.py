@@ -31,6 +31,7 @@ from typing import Any, Iterable, Literal
 
 LOG_GROUP_RE = re.compile(r"^(.*_child)(?:_.*)?$")
 TIMESTAMP_SUFFIX_RE = re.compile(r"-\d{8}-\d{6}$")
+RUNCOUNT_SUFFIX_RE = re.compile(r"-\d+runs$")
 TIMESTAMP_RE = re.compile(r"^\[(\d{2}):(\d{2}):(\d{2})\.(\d{3})\]")
 STARTED_UTC_RE = re.compile(r"^# Started UTC:\s*([^\s]+)")
 PARENT_REQ_RE = re.compile(r"Send Parent Request to routers")
@@ -293,7 +294,8 @@ def batch_dir_name(path: Path) -> str:
 
 def batch_family_name(path: Path) -> str:
     name = batch_dir_name(path)
-    return TIMESTAMP_SUFFIX_RE.sub("", name)
+    name = TIMESTAMP_SUFFIX_RE.sub("", name)
+    return RUNCOUNT_SUFFIX_RE.sub("", name)
 
 
 def format_optional(value: Any) -> str:
@@ -1108,7 +1110,7 @@ def render_markdown_report(
     if group_by == "batch-family":
         out.extend(
             [
-                "Grouped by batch family, combining multiple batch folders that share the same variant/router/run-count pattern.",
+                "Grouped by batch family, combining multiple batch folders that share the same variant/router pattern even when the run counts differ.",
                 "",
             ]
         )
