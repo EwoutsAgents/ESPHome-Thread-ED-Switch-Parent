@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 """Patch ESP-IDF's vendored OpenThread core for fast unicast Parent Responses.
 
-This is a router-side OpenThread behavior patch. It keeps stock behavior for
-multicast Parent Requests and only enables the fast path when the build sets
-`OPENTHREAD_CONFIG_EXPERIMENTAL_UNICAST_PARENT_RESPONSE_FASTPATH_ENABLE=1`.
+This is a router-side OpenThread behavior patch. When this component is
+enabled, the source patch itself forces the fast-path macro on in `mle_ftd.cpp`
+so the OpenThread component build cannot silently miss the define.
 """
 
 from __future__ import annotations
@@ -40,19 +40,23 @@ def write_if_changed(path: Path, old: str, new: str, *, dry_run: bool = False) -
 def patch_unicast_parent_response_fastpath(root: Path, *, dry_run: bool = False) -> str:
     path = root / "thread/mle_ftd.cpp"
     text = normalize_newlines(path.read_text())
-    marker = "THREAD_FAST_UNICAST_PARENT_RESPONSE_COMPONENT"
-    if marker in text:
-        return "already"
 
     macro_old = '#include "instance/instance.hpp"\n'
     macro_new = """#include "instance/instance.hpp"
 
 #ifndef OPENTHREAD_CONFIG_EXPERIMENTAL_UNICAST_PARENT_RESPONSE_FASTPATH_ENABLE
-#define OPENTHREAD_CONFIG_EXPERIMENTAL_UNICAST_PARENT_RESPONSE_FASTPATH_ENABLE 0
+#define OPENTHREAD_CONFIG_EXPERIMENTAL_UNICAST_PARENT_RESPONSE_FASTPATH_ENABLE 1
 #endif
 """
     text_after_macro = text
-    if "OPENTHREAD_CONFIG_EXPERIMENTAL_UNICAST_PARENT_RESPONSE_FASTPATH_ENABLE" not in text:
+    macro_existing = """#ifndef OPENTHREAD_CONFIG_EXPERIMENTAL_UNICAST_PARENT_RESPONSE_FASTPATH_ENABLE
+#define OPENTHREAD_CONFIG_EXPERIMENTAL_UNICAST_PARENT_RESPONSE_FASTPATH_ENABLE 0
+#endif
+"""
+
+    if macro_existing in text_after_macro:
+        text_after_macro = text_after_macro.replace(macro_existing, macro_new.split('\n', 1)[1], 1)
+    elif "OPENTHREAD_CONFIG_EXPERIMENTAL_UNICAST_PARENT_RESPONSE_FASTPATH_ENABLE" not in text:
         if macro_old not in text:
             return "missing"
         text_after_macro = text.replace(macro_old, macro_new, 1)
@@ -96,10 +100,12 @@ def patch_unicast_parent_response_fastpath(root: Path, *, dry_run: bool = False)
     delay = GenerateRandomDelay(delay);
 #endif
 """
-    if old_delay not in text_after_macro:
+    if old_delay in text_after_macro:
+        text_after_macro = text_after_macro.replace(old_delay, new_delay, 1)
+    elif "THREAD_FAST_UNICAST_PARENT_RESPONSE_COMPONENT" not in text_after_macro:
         return "missing"
 
-    return write_if_changed(path, text, text_after_macro.replace(old_delay, new_delay, 1), dry_run=dry_run)
+    return write_if_changed(path, text, text_after_macro, dry_run=dry_run)
 
 
 def apply_patches(root: Path, *, dry_run: bool = False) -> int:

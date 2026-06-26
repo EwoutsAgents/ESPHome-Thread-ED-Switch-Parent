@@ -1,8 +1,7 @@
 """ESPHome configuration glue for the fast unicast Parent Response patch.
 
-This component is intentionally router-side only. It registers a pre-build
-script that patches ESP-IDF's vendored OpenThread sources and emits the
-compile-time define used by that patch.
+This component is intentionally router-side only. When enabled, it registers a
+pre-build script that patches ESP-IDF's vendored OpenThread sources.
 """
 
 import os
@@ -27,13 +26,9 @@ CONFIG_SCHEMA = cv.Schema(
 
 
 async def to_code(config):
-    """Register the router-side OpenThread patcher and build flag."""
+    """Register the router-side OpenThread patcher when enabled."""
+
+    if not config[CONF_ENABLED]:
+        return
 
     cg.add_platformio_option("extra_scripts", [f"pre:{SCRIPT_PATH}"])
-    cg.add_platformio_option(
-        "build_flags",
-        [
-            "-DOPENTHREAD_CONFIG_EXPERIMENTAL_UNICAST_PARENT_RESPONSE_FASTPATH_ENABLE="
-            f"{1 if config[CONF_ENABLED] else 0}"
-        ],
-    )
