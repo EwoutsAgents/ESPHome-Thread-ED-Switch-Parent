@@ -1,0 +1,51 @@
+diff --git a/src/core/thread/mle_ftd.cpp b/src/core/thread/mle_ftd.cpp
+--- a/src/core/thread/mle_ftd.cpp
++++ b/src/core/thread/mle_ftd.cpp
+@@ -36,6 +36,10 @@
+ 
+ #include "instance/instance.hpp"
+ 
++#ifndef OPENTHREAD_CONFIG_EXPERIMENTAL_UNICAST_PARENT_RESPONSE_FASTPATH_ENABLE
++#define OPENTHREAD_CONFIG_EXPERIMENTAL_UNICAST_PARENT_RESPONSE_FASTPATH_ENABLE 0
++#endif
++
+ namespace ot {
+ namespace Mle {
+ 
+@@ -1416,6 +1420,7 @@
+     Child             *child;
+     DeviceMode         mode;
+     uint32_t           delay;
++    bool               isIpv6UnicastRequest;
+     ParentResponseInfo info;
+ 
+     Log(kMessageReceive, kTypeParentRequest, aRxInfo.mMessageInfo.GetPeerAddr());
+@@ -1486,8 +1491,26 @@
+     aRxInfo.mClass = RxInfo::kPeerMessage;
+     ProcessKeySequence(aRxInfo);
+ 
+-    delay = GenerateRandomDelay(!ScanMaskTlv::IsEndDeviceFlagSet(scanMask) ? kParentResponseMaxDelayRouters
+-                                                                           : kParentResponseMaxDelayAll);
++    isIpv6UnicastRequest = !aRxInfo.mMessageInfo.GetSockAddr().IsMulticast();
++
++    delay = !ScanMaskTlv::IsEndDeviceFlagSet(scanMask) ? kParentResponseMaxDelayRouters
++                                                       : kParentResponseMaxDelayAll;
++
++#if OPENTHREAD_CONFIG_EXPERIMENTAL_UNICAST_PARENT_RESPONSE_FASTPATH_ENABLE
++    if (isIpv6UnicastRequest)
++    {
++        // RxInfo exposes the IPv6 destination but not the original IEEE
++        // 802.15.4 destination address, so this fast path is gated on the
++        // IPv6 layer only.
++        delay = 0;
++    }
++    else
++    {
++        delay = GenerateRandomDelay(delay);
++    }
++#else
++    delay = GenerateRandomDelay(delay);
++#endif
+     mDelayedSender.ScheduleParentResponse(info, delay);
+ 
+ exit:
