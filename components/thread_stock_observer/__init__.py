@@ -12,6 +12,7 @@ ThreadStockObserverComponent = thread_stock_observer_ns.class_(
 )
 
 CONF_TARGET_PARENT_EXTADDR = "target_parent_extaddr"
+CONF_INITIAL_PARENT_EXTADDR = "initial_parent_extaddr"
 CONF_OBSERVE_TIMEOUT = "observe_timeout"
 CONF_LOG_PARENT_RESPONSES = "log_parent_responses"
 
@@ -44,6 +45,7 @@ CONFIG_SCHEMA = cv.Schema(
     {
         cv.GenerateID(): cv.declare_id(ThreadStockObserverComponent),
         cv.Required(CONF_TARGET_PARENT_EXTADDR): validate_extaddr,
+        cv.Optional(CONF_INITIAL_PARENT_EXTADDR): validate_extaddr,
         cv.Optional(CONF_OBSERVE_TIMEOUT, default="16s"): cv.positive_time_period_milliseconds,
         cv.Optional(CONF_LOG_PARENT_RESPONSES, default=True): cv.boolean,
     }
@@ -57,5 +59,7 @@ async def to_code(config):
     await cg.register_component(var, config)
 
     cg.add(var.set_target_parent_extaddr(config[CONF_TARGET_PARENT_EXTADDR]))
+    if CONF_INITIAL_PARENT_EXTADDR in config:
+        cg.add(var.set_initial_parent_extaddr(config[CONF_INITIAL_PARENT_EXTADDR]))
     cg.add(var.set_observe_timeout(config[CONF_OBSERVE_TIMEOUT].total_milliseconds))
     cg.add(var.set_log_parent_responses(config[CONF_LOG_PARENT_RESPONSES]))

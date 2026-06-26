@@ -143,6 +143,8 @@ bool ThreadRouterControlComponent::apply_thread_enabled_(bool enabled, const cha
 
   otInstance *instance = lock->get_instance();
   otError err = OT_ERROR_NONE;
+  otError ip6_err = OT_ERROR_NONE;
+  otError link_err = OT_ERROR_NONE;
 
   otExtAddress factory_eui64{};
   otLinkGetFactoryAssignedIeeeEui64(instance, &factory_eui64);
@@ -150,6 +152,16 @@ bool ThreadRouterControlComponent::apply_thread_enabled_(bool enabled, const cha
   this->preserved_extaddr_valid_ = true;
 
   if (enabled) {
+    ip6_err = otIp6SetEnabled(instance, true);
+    if (ip6_err != OT_ERROR_NONE && ip6_err != OT_ERROR_INVALID_STATE) {
+      ESP_LOGW(TAG, "USB_CTL failed to enable IPv6: %s", error_to_string_(ip6_err));
+    }
+
+    link_err = otLinkSetEnabled(instance, true);
+    if (link_err != OT_ERROR_NONE && link_err != OT_ERROR_INVALID_STATE) {
+      ESP_LOGW(TAG, "USB_CTL failed to enable link: %s", error_to_string_(link_err));
+    }
+
     if (this->preserved_extaddr_valid_) {
       const otError extaddr_err = otLinkSetExtendedAddress(instance, &this->preserved_extaddr_);
       if (extaddr_err != OT_ERROR_NONE) {
@@ -176,6 +188,16 @@ bool ThreadRouterControlComponent::apply_thread_enabled_(bool enabled, const cha
     }
   } else {
     err = otThreadSetEnabled(instance, false);
+
+    ip6_err = otIp6SetEnabled(instance, false);
+    if (ip6_err != OT_ERROR_NONE && ip6_err != OT_ERROR_INVALID_STATE) {
+      ESP_LOGW(TAG, "USB_CTL failed to disable IPv6: %s", error_to_string_(ip6_err));
+    }
+
+    link_err = otLinkSetEnabled(instance, false);
+    if (link_err != OT_ERROR_NONE && link_err != OT_ERROR_INVALID_STATE) {
+      ESP_LOGW(TAG, "USB_CTL failed to disable link: %s", error_to_string_(link_err));
+    }
   }
 
   const bool ip6_enabled = otIp6IsEnabled(instance);
@@ -185,15 +207,22 @@ bool ThreadRouterControlComponent::apply_thread_enabled_(bool enabled, const cha
 
   if (enabled && err == OT_ERROR_INVALID_STATE && enabled_effective) {
     ESP_LOGI(TAG,
-             "USB_CTL %s -> %s (treated as success; stack already enabled: ip6=%s link=%s role=%s)",
+             "USB_CTL %s -> %s (treated as success; stack already enabled: ip6=%s link=%s role=%s thread_err=%s link_err=%s ip6_err=%s)",
              log_action, error_to_string_(err), ip6_enabled ? "true" : "false",
-             link_enabled ? "true" : "false", role_to_string_(role));
+             link_enabled ? "true" : "false", role_to_string_(role),
+             error_to_string_(err), error_to_string_(link_err), error_to_string_(ip6_err));
     return true;
   }
 
-  ESP_LOGI(TAG, "USB_CTL %s -> %s (ip6=%s link=%s role=%s)", log_action, error_to_string_(err),
-           ip6_enabled ? "true" : "false", link_enabled ? "true" : "false", role_to_string_(role));
-  return err == OT_ERROR_NONE;
+  ESP_LOGI(TAG,
+           "USB_CTL %s -> %s (ip6=%s link=%s role=%s thread_err=%s link_err=%s ip6_err=%s)",
+           log_action, error_to_string_(err),
+           ip6_enabled ? "true" : "false", link_enabled ? "true" : "false", role_to_string_(role),
+           error_to_string_(err), error_to_string_(link_err), error_to_string_(ip6_err));
+  const bool thread_ok = err == OT_ERROR_NONE || err == OT_ERROR_INVALID_STATE;
+  const bool link_ok = link_err == OT_ERROR_NONE || link_err == OT_ERROR_INVALID_STATE;
+  const bool ip6_ok = ip6_err == OT_ERROR_NONE || ip6_err == OT_ERROR_INVALID_STATE;
+  return thread_ok && link_ok && ip6_ok;
 }
 
 bool ThreadRouterControlComponent::get_thread_enabled_(bool *enabled, otDeviceRole *role) {
