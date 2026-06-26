@@ -26,16 +26,19 @@ Runner wrappers:
 Device configuration examples:
 
 * `stock_test_devices.example.toml`
-* `ucast_test_devices.example.toml`
 * `mcast_test_devices.example.toml`
 
 Local device configuration files:
 
-* `stock_test_devices.toml`
 * `stock_test_devices_2routers.toml`
 * `stock_test_devices_3routers.toml`
 * `stock_test_devices_4routers.toml`
-* `ucast_test_devices.toml`
+* `ucast_test_devices_2routers.toml`
+* `ucast_test_devices_3routers.toml`
+* `ucast_test_devices_4routers.toml`
+* `mcast_test_devices_2routers.toml`
+* `mcast_test_devices_3routers.toml`
+* `mcast_test_devices_4routers.toml`
 * `mcast_test_devices.toml`
 
 Test methodology documents:
@@ -73,7 +76,6 @@ Create a local device configuration file from the appropriate example:
 ```bash
 cd testing
 cp stock_test_devices.example.toml stock_test_devices.toml
-cp ucast_test_devices.example.toml ucast_test_devices.toml
 cp mcast_test_devices.example.toml mcast_test_devices.toml
 ```
 
@@ -176,7 +178,7 @@ Each repeated timed run gets its own run folder with a `-runNN` suffix.
 Example:
 
 ```text
-logs/stock/20260609-030000-run03/
+logs/stock-4router-50runs-20260624-043022/20260624-054321-run03/
 ```
 
 ## Dry run
@@ -215,12 +217,12 @@ This is recommended after changing `sdkconfig_options`, so the generated ESP-IDF
 
 Each run writes into its own timestamped folder under the relevant variant log directory.
 
-Typical variant roots:
+Typical batch roots:
 
 ```text
-logs/stock/
-logs/ucast/
-logs/mcast/
+logs/stock-<n_routers>router-<runs>runs-<timestamp>/
+logs/ucast-<n_routers>router-<runs>runs-<timestamp>/
+logs/mcast-<n_routers>router-<runs>runs-<timestamp>/
 ```
 
 Typical generated files include:
@@ -269,45 +271,55 @@ Use `scripts/analyze_test_logs.py` for post-run analysis across `stock`, `ucast`
 Examples:
 
 ```bash
-python3 scripts/analyze_test_logs.py --logs-dir logs/stock --markdown
-python3 scripts/analyze_test_logs.py --logs-dir logs/ucast --markdown
-python3 scripts/analyze_test_logs.py --logs-dir logs/mcast --markdown
+python3 scripts/analyze_test_logs.py \
+  --run-dir logs/stock-4router-50runs-20260624-043022/20260624-054321-run03 \
+  --markdown
 
-python3 scripts/analyze_test_logs.py --run-dir logs/stock/<timestamp> --markdown
-python3 scripts/analyze_test_logs.py --run-dir logs/ucast/<timestamp> --markdown
-python3 scripts/analyze_test_logs.py --run-dir logs/mcast/<timestamp> --markdown
+python3 scripts/analyze_test_logs.py \
+  --logs-dir logs/stock-4router-50runs-20260624-043022 \
+  --markdown
+
+python3 scripts/analyze_test_logs.py \
+  --logs-dir logs \
+  --markdown \
+  --group-by batch-family \
+  --summary-only
 ```
 
 To write a Markdown report to disk:
 
 ```bash
 python3 scripts/analyze_test_logs.py \
-  --logs-dir logs/stock \
+  --logs-dir logs/stock-4router-50runs-20260624-043022 \
   --write-markdown
 
 python3 scripts/analyze_test_logs.py \
-  --logs-dir logs/ucast \
+  --logs-dir logs \
+  --group-by batch-family \
+  --summary-only \
   --write-markdown
 
 python3 scripts/analyze_test_logs.py \
-  --logs-dir logs/mcast \
-  --write-markdown
-
-python3 scripts/analyze_test_logs.py \
-  --run-dir logs/stock/<timestamp> \
+  --run-dir logs/stock-4router-50runs-20260624-043022/20260624-054321-run03 \
   --write-markdown
 ```
 
-With `--logs-dir logs/<variant>`, `--write-markdown` writes a variant-wide report:
+With `--logs-dir <batch-root>`, `--write-markdown` writes a batch-scoped report:
 
 ```text
-logs/<variant>/<generated-at>-<variant>-analysis-report.md
+<batch-root>/<generated-at>-<batch-name>-analysis-report.md
 ```
 
 With a single `--run-dir`, `--write-markdown` writes a scoped single-run report at the same variant root:
 
 ```text
-logs/<variant>/<run-timestamp>-<variant>-analysis-report.md
+<batch-root>/<run-timestamp>-<batch-name>-analysis-report.md
+```
+
+With `--logs-dir logs --group-by batch-family --summary-only --write-markdown`, the analyzer writes a combined top-level summary that merges matching variant/router families across multiple batch folders, even when the run counts differ:
+
+```text
+logs/<generated-at>-all-batches-summary-report.md
 ```
 
 ## Timing policy
