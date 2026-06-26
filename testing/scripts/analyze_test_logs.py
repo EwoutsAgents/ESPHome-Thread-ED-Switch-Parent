@@ -26,10 +26,11 @@ import sys
 from dataclasses import asdict, dataclass, field
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Any, Iterable
+from typing import Any, Iterable, Literal
 
 
 LOG_GROUP_RE = re.compile(r"^(.*_child)(?:_.*)?$")
+TIMESTAMP_SUFFIX_RE = re.compile(r"-\d{8}-\d{6}$")
 TIMESTAMP_RE = re.compile(r"^\[(\d{2}):(\d{2}):(\d{2})\.(\d{3})\]")
 STARTED_UTC_RE = re.compile(r"^# Started UTC:\s*([^\s]+)")
 PARENT_REQ_RE = re.compile(r"Send Parent Request to routers")
@@ -284,6 +285,15 @@ def epoch_to_local_ms(epoch: float, offset_ms: int) -> int:
 def log_group_name(path: Path) -> str:
     match = LOG_GROUP_RE.match(path.stem)
     return match.group(1) if match else path.stem
+
+
+def batch_dir_name(path: Path) -> str:
+    return path.parent.parent.name
+
+
+def batch_family_name(path: Path) -> str:
+    name = batch_dir_name(path)
+    return TIMESTAMP_SUFFIX_RE.sub("", name)
 
 
 def format_optional(value: Any) -> str:
@@ -989,6 +999,8 @@ def analyze_log(
 
     return {
         "group": log_group_name(path),
+        "batch_dir": batch_dir_name(path),
+        "batch_family": batch_family_name(path),
         "log_file": str(path),
         "manifest_status": manifest.get("status") if manifest else None,
         "manifest_path": manifest.get("_manifest_path") if manifest else None,
@@ -1002,10 +1014,23 @@ def analyze_log(
     }
 
 
-def group_results(results: list[dict[str, Any]]) -> dict[str, list[dict[str, Any]]]:
+GroupByMode = Literal["log-group", "batch-dir", "batch-family"]
+
+
+def group_key_for_result(result: dict[str, Any], mode: GroupByMode) -> str:
+    if mode == "log-group":
+        return result["group"]
+    if mode == "batch-dir":
+        return result["batch_dir"]
+    if mode == "batch-family":
+        return result["batch_family"]
+    raise ValueError(f"Unsupported group mode: {mode}")
+
+
+def group_results(results: list[dict[str, Any]], *, mode: GroupByMode) -> dict[str, list[dict[str, Any]]]:
     grouped: dict[str, list[dict[str, Any]]] = {}
     for result in results:
-        grouped.setdefault(result["group"], []).append(result)
+        grouped.setdefault(group_key_for_result(result, mode), []).append(result)
     return grouped
 
 
@@ -1070,14 +1095,31 @@ def render_sequence_lines(seq: dict[str, Any], *, include_pcap: bool) -> list[st
     return out
 
 
-def render_markdown_report(results: list[dict[str, Any]]) -> str:
+def render_markdown_report(
+    results: list[dict[str, Any]],
+    *,
+    group_by: GroupByMode = "log-group",
+    summary_only: bool = False,
+) -> str:
     if not results:
         return "# Child Log Analysis\n\nNo `.log` files found.\n"
-    grouped = group_results(results)
+    grouped = group_results(results, mode=group_by)
     out: list[str] = ["# Child Log Analysis", ""]
+    if group_by == "batch-family":
+        out.extend(
+            [
+                "Grouped by batch family, combining multiple batch folders that share the same variant/router/run-count pattern.",
+                "",
+            ]
+        )
     for group_name in sorted(grouped):
-        summary = group_summary(grouped[group_name])
-        out.extend([f"## {group_name}", "", f"Files analyzed: **{len(grouped[group_name])}**", ""])
+        group_items = grouped[group_name]
+        summary = group_summary(group_items)
+        out.extend([f"## {group_name}", "", f"Files analyzed: **{len(group_items)}**", ""])
+        batch_dirs = sorted({result["batch_dir"] for result in group_items})
+        if group_by != "batch-dir":
+            out.append(f"- batch folders: `{', '.join(batch_dirs)}`")
+            out.append("")
         out.extend(["### PCAP-complete child attach summary", "", "| Attach | Metric | M (SD), ms | n |", "| --- | --- | ---: | ---: |"])
         for attach_index in sorted(summary["attaches"]):
             attach = summary["attaches"][attach_index]
@@ -1090,7 +1132,9 @@ def render_markdown_report(results: list[dict[str, Any]]) -> str:
         out.append(f"| Failed TX Attempts per Log | {format_mean_sd(failed[0], failed[1])} | {failed[2]} |")
         out.append(f"| Log-only or Partial Sequences per Log | {format_mean_sd(partial[0], partial[1])} | {partial[2]} |")
         out.append("")
-        for result in grouped[group_name]:
+        if summary_only:
+            continue
+        for result in group_items:
             out.extend([f"### `{Path(result['log_file']).name}`", ""])
             if result.get("manifest_status") is not None:
                 out.append(f"- manifest status: `{result['manifest_status']}`")
@@ -1155,6 +1199,17 @@ def parse_args(argv: list[str]) -> argparse.Namespace:
     parser.add_argument("--markdown", action="store_true", help="Emit Markdown instead of plain text.")
     parser.add_argument("--write-markdown", nargs="?", const=Path("__AUTO__"), type=Path, help="Write the Markdown report to this path.")
     parser.add_argument(
+        "--group-by",
+        choices=("log-group", "batch-dir", "batch-family"),
+        default="log-group",
+        help="How to group analyzed runs in the output.",
+    )
+    parser.add_argument(
+        "--summary-only",
+        action="store_true",
+        help="Only emit per-group summaries, without the per-log detailed sections.",
+    )
+    parser.add_argument(
         "--reuse-pcap-csv",
         action="store_true",
         help="Reuse an existing attach-MLE CSV next to each PCAP when present; generate it only when missing.",
@@ -1183,10 +1238,12 @@ def default_markdown_path_for_run_dir(run_dir: Path) -> Path:
     return variant_dir / f"{run_dir.name}-{variant_name}-analysis-report.md"
 
 
-def default_markdown_path_for_logs_dir(logs_dir: Path) -> Path:
+def default_markdown_path_for_logs_dir(logs_dir: Path, *, group_by: GroupByMode, summary_only: bool) -> Path:
     logs_dir = logs_dir.resolve()
-    variant_name = logs_dir.name
     timestamp = datetime.now().strftime("%Y%m%d-%H%M%S")
+    if group_by == "batch-family" and summary_only:
+        return logs_dir / f"{timestamp}-all-batches-summary-report.md"
+    variant_name = logs_dir.name
     return logs_dir / f"{timestamp}-{variant_name}-analysis-report.md"
 
 
@@ -1209,7 +1266,7 @@ def main(argv: list[str]) -> int:
     if args.json:
         output = json.dumps(results, indent=2)
     elif args.markdown or args.write_markdown:
-        output = render_markdown_report(results)
+        output = render_markdown_report(results, group_by=args.group_by, summary_only=args.summary_only)
     else:
         output = render_text_report(results)
 
@@ -1221,7 +1278,11 @@ def main(argv: list[str]) -> int:
                     raise SystemExit("--write-markdown without a path supports exactly one --run-dir.")
                 write_path = default_markdown_path_for_run_dir(args.run_dirs[0])
             else:
-                write_path = default_markdown_path_for_logs_dir(logs_dir)
+                write_path = default_markdown_path_for_logs_dir(
+                    logs_dir,
+                    group_by=args.group_by,
+                    summary_only=args.summary_only,
+                )
         write_path.parent.mkdir(parents=True, exist_ok=True)
         write_path.write_text(output, encoding="utf-8")
     else:
