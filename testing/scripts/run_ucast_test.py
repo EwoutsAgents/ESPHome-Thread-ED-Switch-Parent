@@ -311,7 +311,7 @@ def load_settings(args: argparse.Namespace) -> Settings:
         raise SystemExit("[sniffer].enabled is true, but [sniffer].command is empty.")
 
     max_router_number = int(raw.get("variant", {}).get("n_routers", 4))
-    if max_router_number < 2 or f"router{max_router_number}" not in CONFIG_NAMES:
+    if max_router_number < 2 or max_router_number > MAX_ROUTER_COUNT:
         raise SystemExit(f"[variant].n_routers must be 2..{MAX_ROUTER_COUNT} total routers.")
 
     selection_raw = raw.get("selection", {})
