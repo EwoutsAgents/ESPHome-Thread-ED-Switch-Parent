@@ -6,12 +6,13 @@ The test variants are:
 
 * `stock`: natural OpenThread parent switching without using the preferred-parent switching mechanism.
 * `ucast`: preferred-parent switching using unicast control.
+* `ucast_fastpr`: preferred-parent switching using unicast control with fast unicast Parent Responses on routers.
 * `mcast`: preferred-parent switching using multicast control.
 
 Variant-specific methodology is documented separately:
 
 * `README_STOCK_TEST.md` — stock/reference parent-switching methodology and validity criteria.
-* `README_MCAST_UCAST_TEST.md` — preferred-parent unicast and multicast methodology.
+* `README_MCAST_UCAST_TEST.md` — preferred-parent unicast, unicast-fastpr, and multicast methodology.
 
 This README covers the shared automation, setup, runner usage, output layout, and analysis workflow.
 
@@ -21,6 +22,7 @@ Runner wrappers:
 
 * `run_stock_test.sh`
 * `run_ucast_test.sh`
+* `run_ucast_fastpr_test.sh`
 * `run_mcast_test.sh`
 
 Device configuration examples:
@@ -36,6 +38,9 @@ Local device configuration files:
 * `ucast_test_devices_2routers.toml`
 * `ucast_test_devices_3routers.toml`
 * `ucast_test_devices_4routers.toml`
+* `ucast_fastpr_test_devices_2routers.toml`
+* `ucast_fastpr_test_devices_3routers.toml`
+* `ucast_fastpr_test_devices_4routers.toml`
 * `mcast_test_devices_2routers.toml`
 * `mcast_test_devices_3routers.toml`
 * `mcast_test_devices_4routers.toml`
@@ -145,6 +150,12 @@ Alternative stock configurations can be used when present:
 ./run_ucast_test.sh --config ucast_test_devices.toml
 ```
 
+### Unicast preferred-parent with fast router Parent Responses
+
+```bash
+./run_ucast_fastpr_test.sh --config ucast_fastpr_test_devices_4routers.toml
+```
+
 ### Multicast preferred-parent
 
 ```bash
@@ -170,6 +181,7 @@ Repeated runs can be executed with `--runs` where supported by the runner:
 ```bash
 ./run_stock_test.sh --config stock_test_devices.toml --runs 5
 ./run_ucast_test.sh --config ucast_test_devices.toml --runs 5
+./run_ucast_fastpr_test.sh --config ucast_fastpr_test_devices_4routers.toml --runs 5
 ./run_mcast_test.sh --config mcast_test_devices.toml --runs 5
 ```
 
@@ -188,6 +200,7 @@ Use `--dry-run` to print the planned compile, upload, log, wait, control, and ca
 ```bash
 ./run_stock_test.sh --config stock_test_devices.toml --dry-run
 ./run_ucast_test.sh --config ucast_test_devices.toml --dry-run
+./run_ucast_fastpr_test.sh --config ucast_fastpr_test_devices_4routers.toml --dry-run
 ./run_mcast_test.sh --config mcast_test_devices.toml --dry-run
 ```
 
@@ -198,6 +211,7 @@ Use `--precompile-only` to compile the required firmware artifacts and exit befo
 ```bash
 ./run_stock_test.sh --config stock_test_devices.toml --precompile-only
 ./run_ucast_test.sh --config ucast_test_devices.toml --precompile-only
+./run_ucast_fastpr_test.sh --config ucast_fastpr_test_devices_4routers.toml --precompile-only
 ./run_mcast_test.sh --config mcast_test_devices.toml --precompile-only
 ```
 
@@ -208,6 +222,7 @@ Use `--clean-before-compile` when firmware artifacts should be rebuilt from scra
 ```bash
 ./run_stock_test.sh --config stock_test_devices.toml --clean-before-compile
 ./run_ucast_test.sh --config ucast_test_devices.toml --clean-before-compile
+./run_ucast_fastpr_test.sh --config ucast_fastpr_test_devices_4routers.toml --clean-before-compile
 ./run_mcast_test.sh --config mcast_test_devices.toml --clean-before-compile
 ```
 
@@ -222,6 +237,7 @@ Typical batch roots:
 ```text
 logs/stock-<n_routers>router-<runs>runs-<timestamp>/
 logs/ucast-<n_routers>router-<runs>runs-<timestamp>/
+logs/ucast_fastpr-<n_routers>router-<runs>runs-<timestamp>/
 logs/mcast-<n_routers>router-<runs>runs-<timestamp>/
 ```
 
@@ -266,7 +282,7 @@ At a high level, these tests measure explicit preferred-parent switching behavio
 
 ## Log analysis
 
-Use `scripts/analyze_test_logs.py` for post-run analysis across `stock`, `ucast`, and `mcast` runs. The analyzer is variant-agnostic and discovers the matching `*_test_manifest_*.json` file from each run directory.
+Use `scripts/analyze_test_logs.py` for post-run analysis across `stock`, `ucast`, `ucast_fastpr`, and `mcast` runs. The analyzer is variant-agnostic and discovers the matching `*_test_manifest_*.json` file from each run directory.
 
 Examples:
 
@@ -330,7 +346,7 @@ Log timestamps are retained as reference metadata in the report, but they are no
 
 If a run does not have a usable manifest, PCAP, network key, or complete matched attach sequence in the PCAP, the timing fields remain unavailable.
 
-This policy applies to all three variants: `stock`, `ucast`, and `mcast`.
+This policy applies to all four variants: `stock`, `ucast`, `ucast_fastpr`, and `mcast`.
 
 ## CSV and packet exports
 

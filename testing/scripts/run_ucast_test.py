@@ -41,12 +41,21 @@ except ModuleNotFoundError:
 VARIANT_PRESETS = {
     "ucast": {
         "child_config": "ucast_child.yaml",
+        "router_prefix": "stock_router",
         "logs_subdir": "ucast",
         "name_prefix": "ucast",
         "default_config": "ucast_test_devices_4routers.toml",
     },
+    "ucast_fastpr": {
+        "child_config": "ucast_fastpr_child.yaml",
+        "router_prefix": "fastpr_router",
+        "logs_subdir": "ucast_fastpr",
+        "name_prefix": "ucast_fastpr",
+        "default_config": "ucast_fastpr_test_devices_4routers.toml",
+    },
     "mcast": {
         "child_config": "mcast_child.yaml",
+        "router_prefix": "stock_router",
         "logs_subdir": "mcast",
         "name_prefix": "mcast",
         "default_config": "mcast_test_devices_4routers.toml",
@@ -55,14 +64,10 @@ VARIANT_PRESETS = {
 
 CONFIG_NAMES = {
     "empty": "empty.yaml",
-    "router1": "stock_router_1.yaml",
     "child": "ucast_child.yaml",  # replaced by variant in config_path()
-    "router2": "stock_router_2.yaml",
-    "router3": "stock_router_3.yaml",
-    "router4": "stock_router_4.yaml",
 }
 CORE_COMPILE_ORDER = ["empty", "router1", "child", "router2"]
-MAX_ROUTER_COUNT = max(int(name.removeprefix("router")) for name in CONFIG_NAMES if name.startswith("router"))
+MAX_ROUTER_COUNT = 4
 PCAP_PATH_RE = re.compile(r"Saving (?:test )?capture to (\S+\.pcapng)")
 
 SKIP_NO_CHILD_PARENT = "SKIP_NO_CHILD_PARENT"
@@ -339,7 +344,13 @@ def load_settings(args: argparse.Namespace) -> Settings:
 
 
 def config_path(settings: Settings, name: str) -> Path:
-    file_name = str(VARIANT_PRESETS[settings.variant]["child_config"]) if name == "child" else CONFIG_NAMES[name]
+    if name == "child":
+        file_name = str(VARIANT_PRESETS[settings.variant]["child_config"])
+    elif name.startswith("router"):
+        router_index = name.removeprefix("router")
+        file_name = f"{VARIANT_PRESETS[settings.variant]['router_prefix']}_{router_index}.yaml"
+    else:
+        file_name = CONFIG_NAMES[name]
     path = settings.configs_dir / file_name
     if not path.exists():
         raise SystemExit(f"Missing ESPHome config: {path}")
