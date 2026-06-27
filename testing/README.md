@@ -193,6 +193,25 @@ Example:
 logs/stock-4router-50runs-20260624-043022/20260624-054321-run03/
 ```
 
+## Detached long-running batches
+
+For long hardware batches, start the runner in a detached session from the `testing/` directory so the job survives after the launching shell exits. In this environment, `setsid` worked reliably, while `nohup` alone did not reliably keep `esphome compile` alive.
+
+Example for a 4-router `ucast_fastpr` batch:
+
+```bash
+ts=$(date +%Y%m%d-%H%M%S)
+setsid bash -lc './run_ucast_fastpr_test.sh --config ucast_fastpr_test_devices_4routers.toml --runs 20' \
+  > "logs/ucast_fastpr-launch-20runs-${ts}.log" 2>&1 < /dev/null &
+```
+
+This creates:
+
+* a detached launcher log such as `testing/logs/ucast_fastpr-launch-20runs-<timestamp>.log`
+* the normal batch output directory such as `testing/logs/ucast_fastpr-4router-20runs-<timestamp>/`
+
+The same pattern can be used for the other runners by replacing the wrapper script, config file, and run count.
+
 ## Dry run
 
 Use `--dry-run` to print the planned compile, upload, log, wait, control, and capture sequence without touching hardware, where supported:
