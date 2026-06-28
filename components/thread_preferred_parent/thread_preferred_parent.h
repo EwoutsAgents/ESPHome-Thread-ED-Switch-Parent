@@ -750,7 +750,7 @@ class ThreadPreferredParentComponent : public Component {
   uint32_t attach_start_ms_{0};
   uint32_t discovery_target_observed_ms_{0};
   bool target_response_grace_pending_{false};
-  uint32_t target_response_grace_ms_{250};
+  uint32_t target_response_grace_ms_{0};
   uint32_t discovery_close_drain_ms_{250};
   bool probe_active_{false};
   bool probe_completed_{false};
