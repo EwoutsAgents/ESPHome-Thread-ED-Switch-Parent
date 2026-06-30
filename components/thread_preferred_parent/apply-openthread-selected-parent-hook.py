@@ -42,6 +42,23 @@ DEFAULT_ROOT = Path.home() / ".platformio/packages/framework-espidf/components/o
 FRAMEWORK_RELATIVE_CORE = Path("framework-espidf/components/openthread/openthread/src/core")
 MARKER = "THREAD_PREFERRED_PARENT_SELECTED_PARENT_HOOK"
 
+ATTACHER_STATE_BRIDGE_TYPEDEF = (
+    "using thread_preferred_parent_attacher_state_callback_t = void (*)(uint8_t aState, void *aContext);"
+)
+ATTACHER_STATE_BRIDGE_STATIC_CB = (
+    "static thread_preferred_parent_attacher_state_callback_t sThreadPreferredParentAttacherStateCallback = nullptr;"
+)
+ATTACHER_STATE_BRIDGE_STATIC_CTX = "static void *sThreadPreferredParentAttacherStateCallbackContext = nullptr;"
+ATTACHER_STATE_BRIDGE_REGISTER = 'extern "C" void thread_preferred_parent_ot_register_attacher_state_callback('
+ATTACHER_STATE_BRIDGE_NOTIFY = 'extern "C" void thread_preferred_parent_ot_notify_attacher_state(uint8_t aState)'
+ATTACHER_STATE_BRIDGE_NEEDLES = [
+    ATTACHER_STATE_BRIDGE_TYPEDEF,
+    ATTACHER_STATE_BRIDGE_STATIC_CB,
+    ATTACHER_STATE_BRIDGE_STATIC_CTX,
+    ATTACHER_STATE_BRIDGE_REGISTER,
+    ATTACHER_STATE_BRIDGE_NOTIFY,
+]
+
 
 def normalize_newlines(text: str) -> str:
     """Normalize file content to LF so patch matching is platform-independent."""
@@ -149,6 +166,14 @@ def replace_regex(
         print(f"[thread_preferred_parent][detail] no regex match for {label}")
         return "missing"
     return write_if_changed(path, text, new, dry_run=dry_run)
+
+
+def insert_before_marker(text: str, marker: str, addition: str) -> Optional[str]:
+    """Insert `addition` immediately before `marker`, keeping text unchanged if absent."""
+    idx = text.find(marker)
+    if idx < 0:
+        return None
+    return text[:idx] + addition + "\n" + text[idx:]
 
 
 def patch_mle_hpp(root: Path, *, dry_run: bool = False) -> str:
@@ -958,15 +983,6 @@ extern "C" void thread_preferred_parent_ot_notify_parent_req_started(void)
     }
 }
 
-extern "C" void thread_preferred_parent_ot_notify_attacher_state(uint8_t aState)
-{
-    // THREAD_PREFERRED_PARENT_ATTACHER_STATE_HOOK
-    if (sThreadPreferredParentAttacherStateCallback != nullptr)
-    {
-        sThreadPreferredParentAttacherStateCallback(aState, sThreadPreferredParentAttacherStateCallbackContext);
-    }
-}
-
 """
 
     # If an earlier v4 patch already inserted the selected-parent bridge, place
@@ -1041,18 +1057,24 @@ def patch_thread_api_attacher_state_bridge(root: Path, *, dry_run: bool = False)
     """Add the attacher-state callback bridge to thread_api.cpp."""
     path = root / "api/thread_api.cpp"
     text = normalize_newlines(path.read_text())
-    if "thread_preferred_parent_ot_notify_attacher_state" in text:
+    if all(needle in text for needle in ATTACHER_STATE_BRIDGE_NEEDLES):
         return "already"
 
-    pattern = (
-        r"(extern\s+\"C\"\s+void\s+thread_preferred_parent_ot_notify_parent_req_started\s*\([^)]*\)\s*\{.*?\n\}\n)"
-    )
-    addition = """
-using thread_preferred_parent_attacher_state_callback_t = void (*)(uint8_t aState, void *aContext);
+    typedef_exists = ATTACHER_STATE_BRIDGE_TYPEDEF in text
+    static_cb_exists = ATTACHER_STATE_BRIDGE_STATIC_CB in text
+    static_ctx_exists = ATTACHER_STATE_BRIDGE_STATIC_CTX in text
+    register_exists = ATTACHER_STATE_BRIDGE_REGISTER in text
+    notify_exists = ATTACHER_STATE_BRIDGE_NOTIFY in text
 
-static thread_preferred_parent_attacher_state_callback_t sThreadPreferredParentAttacherStateCallback = nullptr;
-static void *sThreadPreferredParentAttacherStateCallbackContext = nullptr;
+    preamble = []
+    if not typedef_exists:
+        preamble.append(ATTACHER_STATE_BRIDGE_TYPEDEF)
+    if not static_cb_exists:
+        preamble.append(ATTACHER_STATE_BRIDGE_STATIC_CB)
+    if not static_ctx_exists:
+        preamble.append(ATTACHER_STATE_BRIDGE_STATIC_CTX)
 
+    register_block = """
 extern "C" void thread_preferred_parent_ot_register_attacher_state_callback(
     thread_preferred_parent_attacher_state_callback_t aCallback,
     void *aContext)
@@ -1061,7 +1083,9 @@ extern "C" void thread_preferred_parent_ot_register_attacher_state_callback(
     sThreadPreferredParentAttacherStateCallback = aCallback;
     sThreadPreferredParentAttacherStateCallbackContext = aContext;
 }
+""".strip()
 
+    notify_block = """
 extern "C" void thread_preferred_parent_ot_notify_attacher_state(uint8_t aState)
 {
     // THREAD_PREFERRED_PARENT_ATTACHER_STATE_HOOK
@@ -1070,16 +1094,83 @@ extern "C" void thread_preferred_parent_ot_notify_attacher_state(uint8_t aState)
         sThreadPreferredParentAttacherStateCallback(aState, sThreadPreferredParentAttacherStateCallbackContext);
     }
 }
+""".strip()
 
-"""
-    return replace_regex(
-        path,
-        pattern,
-        lambda m: m.group(1) + "\n" + addition,
-        already="thread_preferred_parent_ot_notify_attacher_state",
-        label="thread_api.cpp attacher-state bridge",
-        dry_run=dry_run,
-    )
+    new_text = text
+
+    if notify_exists:
+        addition_parts = []
+        if preamble:
+            addition_parts.extend(preamble)
+            addition_parts.append("")
+        if not register_exists:
+            addition_parts.append(register_block)
+        if addition_parts:
+            inserted = insert_before_marker(new_text, ATTACHER_STATE_BRIDGE_NOTIFY, "\n".join(addition_parts).rstrip() + "\n")
+            if inserted is None:
+                return "missing"
+            new_text = inserted
+    elif register_exists:
+        if preamble:
+            inserted = insert_before_marker(new_text, ATTACHER_STATE_BRIDGE_REGISTER, "\n".join(preamble).rstrip() + "\n")
+            if inserted is None:
+                return "missing"
+            new_text = inserted
+        register_span = find_function_span(
+            new_text, r'extern\s+"C"\s+void\s+thread_preferred_parent_ot_register_attacher_state_callback\s*\('
+        )
+        if register_span is None:
+            return "missing"
+        _sig_start, _open_brace, _close_brace, body_end = register_span
+        new_text = new_text[:body_end] + "\n\n" + notify_block + "\n" + new_text[body_end:]
+    else:
+        block_parts = []
+        if preamble:
+            block_parts.extend(preamble)
+            block_parts.append("")
+        block_parts.append(register_block)
+        block_parts.append("")
+        block_parts.append(notify_block)
+        inserted = insert_before_marker(
+            new_text,
+            'extern "C" void thread_preferred_parent_ot_notify_parent_req_started(void)',
+            "\n".join(block_parts).rstrip() + "\n",
+        )
+        if inserted is None:
+            return "missing"
+        new_text = inserted
+
+    counts = {needle: new_text.count(needle) for needle in ATTACHER_STATE_BRIDGE_NEEDLES}
+    if any(count != 1 for count in counts.values()):
+        for needle, count in counts.items():
+            if count != 1:
+                print(f"[thread_preferred_parent][detail] attacher-state bridge count={count} needle={needle}")
+        return "missing"
+
+    return write_if_changed(path, text, new_text, dry_run=dry_run)
+
+
+def validate_thread_api_attacher_state_bridge(root: Path, *, dry_run: bool = False) -> str:
+    """Validate that the attacher-state bridge exists exactly once in thread_api.cpp."""
+    del dry_run
+    path = root / "api/thread_api.cpp"
+    text = normalize_newlines(path.read_text())
+
+    checks = {
+        "attacher-state typedef": ATTACHER_STATE_BRIDGE_TYPEDEF,
+        "attacher-state callback static": ATTACHER_STATE_BRIDGE_STATIC_CB,
+        "attacher-state context static": ATTACHER_STATE_BRIDGE_STATIC_CTX,
+        "attacher-state register function": ATTACHER_STATE_BRIDGE_REGISTER,
+        "attacher-state notify function": ATTACHER_STATE_BRIDGE_NOTIFY,
+    }
+
+    for label, needle in checks.items():
+        count = text.count(needle)
+        if count != 1:
+            print(f"[thread_preferred_parent][detail] {label} count={count}, expected=1")
+            return "missing"
+
+    return "already"
 
 
 def patch_thread_api_discovery_bridge(root: Path, *, dry_run: bool = False) -> str:
@@ -2219,6 +2310,7 @@ def apply_patches(root: Path, *, dry_run: bool = False) -> int:
         ("thread_api.cpp parent-response reporting bridge", root / "api/thread_api.cpp", patch_thread_api_parent_response_reporting, True),
         ("thread_api.cpp ParentReq-start bridge", root / "api/thread_api.cpp", patch_thread_api_parent_req_started_bridge, True),
         ("thread_api.cpp attacher-state bridge", root / "api/thread_api.cpp", patch_thread_api_attacher_state_bridge, True),
+        ("thread_api.cpp attacher-state bridge validation", root / "api/thread_api.cpp", validate_thread_api_attacher_state_bridge, True),
         ("thread_api.cpp discovery continuation bridge", root / "api/thread_api.cpp", patch_thread_api_continue_bridge, True),
         ("thread_api.cpp discovery target hint bridge", root / "api/thread_api.cpp", patch_thread_api_target_hint_bridge, True),
         ("mle.cpp parent-response reporting declaration", root / "thread/mle.cpp", patch_mle_parent_response_reporting_declaration, True),
