@@ -336,15 +336,6 @@ class ThreadPreferredParentComponent : public Component {
   void set_parent_request_unicast(bool enabled) { this->parent_request_unicast_ = enabled; }
 
   /**
-   * Set the grace period used after the target Parent Response is observed.
-   *
-   * @param target_response_grace_ms Grace delay in milliseconds.
-   */
-  void set_target_response_grace(uint32_t target_response_grace_ms) {
-    this->target_response_grace_ms_ = target_response_grace_ms;
-  }
-
-  /**
    * Start a preferred-parent switch using the currently configured target.
    */
   void request_switch();
@@ -749,8 +740,6 @@ class ThreadPreferredParentComponent : public Component {
   uint32_t parent_req_launch_timeout_ms_{15000};
   uint32_t attach_start_ms_{0};
   uint32_t discovery_target_observed_ms_{0};
-  bool target_response_grace_pending_{false};
-  uint32_t target_response_grace_ms_{0};
   uint32_t discovery_close_drain_ms_{250};
   bool probe_active_{false};
   bool probe_completed_{false};

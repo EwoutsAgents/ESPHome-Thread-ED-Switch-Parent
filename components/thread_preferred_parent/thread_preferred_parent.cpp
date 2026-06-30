@@ -60,8 +60,7 @@ void ThreadPreferredParentComponent::setup() {
           }
 
           auto *self = static_cast<ThreadPreferredParentComponent *>(context);
-          if (!self->active_ || self->phase_ != SwitchPhase::DISCOVERING || self->target_response_grace_pending_ ||
-              self->parent_req_started_this_attempt_) {
+          if (!self->active_ || self->phase_ != SwitchPhase::DISCOVERING || self->parent_req_started_this_attempt_) {
             return;
           }
 
@@ -90,7 +89,6 @@ void ThreadPreferredParentComponent::dump_config() {
   ESP_LOGCONFIG(TAG, "  Retry interval: %u ms", this->retry_interval_ms_);
   ESP_LOGCONFIG(TAG, "  Selected attach timeout: %u ms", this->selected_attach_timeout_ms_);
   ESP_LOGCONFIG(TAG, "  Parent Request unicast: %s", YESNO(this->parent_request_unicast_));
-  ESP_LOGCONFIG(TAG, "  Target response grace: %u ms", this->target_response_grace_ms_);
   ESP_LOGCONFIG(TAG, "  Require selected-parent hook: %s", YESNO(this->require_selected_parent_hook_));
   ESP_LOGCONFIG(TAG, "  Discovery hook available: %s", YESNO(this->discovery_hook_available_()));
   ESP_LOGCONFIG(TAG, "  Discovery unicast hook available: %s", YESNO(this->discovery_unicast_hook_available_()));
@@ -255,7 +253,6 @@ void ThreadPreferredParentComponent::start_parent_response_probe() {
   this->phase_deadline_ms_ = 0;
   this->attach_start_ms_ = 0;
   this->discovery_target_observed_ms_ = 0;
-  this->target_response_grace_pending_ = false;
   this->target_observed_this_attempt_ = false;
   std::memset(&this->observed_target_extaddr_, 0, sizeof(this->observed_target_extaddr_));
   this->reset_parent_response_tracking_();
@@ -295,7 +292,6 @@ void ThreadPreferredParentComponent::reset_parent_response_tracking_() {
   this->best_target_rssi_ = -128;
   this->best_target_rloc16_ = 0xFFFE;
   this->discovery_target_observed_ms_ = 0;
-  this->target_response_grace_pending_ = false;
   for (auto &entry : this->parent_response_buffer_) {
     entry = BufferedParentResponse{};
   }
@@ -312,7 +308,6 @@ void ThreadPreferredParentComponent::begin_switch_() {
   this->phase_deadline_ms_ = 0;
   this->attach_start_ms_ = 0;
   this->discovery_target_observed_ms_ = 0;
-  this->target_response_grace_pending_ = false;
   this->target_observed_this_attempt_ = false;
   this->probe_active_ = false;
   this->probe_completed_ = false;
@@ -416,13 +411,13 @@ void ThreadPreferredParentComponent::loop() {
         return;
       }
 
-      // Wait until the active discovery deadline or target-response grace expires.
+      // Wait until the active discovery deadline expires.
       if (this->phase_deadline_ms_ != 0 && static_cast<int32_t>(now - this->phase_deadline_ms_) < 0) {
         return;
       }
 
       if (this->phase_deadline_ms_ != 0) {
-        if (!this->target_observed_this_attempt_ && !this->target_response_grace_pending_ && !this->discovery_close_drain_pending_) {
+        if (!this->target_observed_this_attempt_ && !this->discovery_close_drain_pending_) {
           this->discovery_close_drain_pending_ = true;
           this->phase_deadline_ms_ = now + this->discovery_close_drain_ms_;
           ESP_LOGI(TAG,
@@ -434,9 +429,8 @@ void ThreadPreferredParentComponent::loop() {
         // The current discovery window has ended; decide whether to attach or
         // schedule another discovery pass.
         const uint32_t discovery_elapsed_ms = now - this->current_attempt_start_ms_;
-        const bool target_grace_deadline = this->target_response_grace_pending_ && this->target_observed_this_attempt_;
         this->discovery_close_drain_pending_ = false;
-        this->log_discovery_summary_(target_grace_deadline ? "target grace complete" : "discovery window complete");
+        this->log_discovery_summary_(this->target_observed_this_attempt_ ? "target observed" : "discovery window complete");
 
         if (this->probe_active_) {
           this->probe_parent_response_count_ = this->parent_response_count_;
@@ -446,7 +440,6 @@ void ThreadPreferredParentComponent::loop() {
           this->active_ = false;
           this->phase_ = SwitchPhase::IDLE;
           this->phase_deadline_ms_ = 0;
-          this->target_response_grace_pending_ = false;
           this->set_status_(Status::IDLE);
           ESP_LOGI(TAG,
                    "Discovery-only probe complete: buffered=%lu target_matches=%lu representative_non_target=%s",
@@ -460,27 +453,19 @@ void ThreadPreferredParentComponent::loop() {
           // We saw at least one Parent Response from the requested target during
           // this attempt, so discovery has done its job. The next step is to
           // convert that observation into a constrained selected-parent attach.
-          if (target_grace_deadline) {
-            ESP_LOGI(TAG,
-                     "Discovery result: target observed after %lu ms; starting selected-parent attach after %lu ms total discovery time (%u ms target-response grace)",
-                     static_cast<unsigned long>(this->discovery_target_observed_ms_),
-                     static_cast<unsigned long>(discovery_elapsed_ms), this->target_response_grace_ms_);
-          } else {
-            ESP_LOGI(TAG,
-                     "Discovery result: target observed after %lu ms; starting selected-parent attach after %lu ms discovery window",
-                     static_cast<unsigned long>(this->discovery_target_observed_ms_),
-                     static_cast<unsigned long>(discovery_elapsed_ms));
-          }
+          ESP_LOGI(TAG,
+                   "Discovery result: target observed after %lu ms; starting selected-parent attach after %lu ms total discovery time",
+                   static_cast<unsigned long>(this->discovery_target_observed_ms_),
+                   static_cast<unsigned long>(discovery_elapsed_ms));
           ESP_LOGI(TAG,
                    "Discovery-to-attach handoff: closing discovery attempt after %lu ms; buffered=%lu target_matches=%lu; in-flight Parent Responses may still be logged",
                    static_cast<unsigned long>(discovery_elapsed_ms),
                    static_cast<unsigned long>(this->parent_response_count_),
                    static_cast<unsigned long>(this->parent_response_target_count_));
           ESP_LOGI(TAG,
-                   "Discovery-to-attach state: observed_target=%s best_target_rloc16=0x%04x best_target_rssi=%d best_target_rssi_valid=%s grace_pending=%s",
+                   "Discovery-to-attach state: observed_target=%s best_target_rloc16=0x%04x best_target_rssi=%d best_target_rssi_valid=%s",
                    this->extaddr_to_string_(this->observed_target_extaddr_).c_str(), this->best_target_rloc16_,
-                   this->best_target_rssi_, YESNO(this->best_target_rssi_valid_),
-                   YESNO(this->target_response_grace_pending_));
+                   this->best_target_rssi_, YESNO(this->best_target_rssi_valid_));
           ESP_LOGI(TAG, "Preferred parent %s was observed; starting selected-parent attach", this->target_to_string_().c_str());
           otError attach_error = this->start_selected_parent_attach_(instance);
           if (attach_error == OT_ERROR_NONE) {
@@ -490,7 +475,6 @@ void ThreadPreferredParentComponent::loop() {
             this->phase_ = SwitchPhase::ATTACHING;
             this->attach_start_ms_ = millis();
             this->phase_deadline_ms_ = now + this->selected_attach_timeout_ms_;
-            this->target_response_grace_pending_ = false;
             this->discovery_close_drain_pending_ = false;
             this->set_status_(Status::ATTACHING);
             return;
@@ -512,7 +496,6 @@ void ThreadPreferredParentComponent::loop() {
         }
 
         this->phase_deadline_ms_ = 0;
-        this->target_response_grace_pending_ = false;
         this->discovery_close_drain_pending_ = false;
       }
 
@@ -645,8 +628,7 @@ void ThreadPreferredParentComponent::parent_req_started_callback_(void *context)
   }
 
   auto *self = static_cast<ThreadPreferredParentComponent *>(context);
-  if (!self->active_ || self->phase_ != SwitchPhase::DISCOVERING || self->target_response_grace_pending_ ||
-      self->parent_req_started_this_attempt_) {
+  if (!self->active_ || self->phase_ != SwitchPhase::DISCOVERING || self->parent_req_started_this_attempt_) {
     return;
   }
 
@@ -666,7 +648,7 @@ void ThreadPreferredParentComponent::attacher_state_callback_(uint8_t state, voi
 }
 
 void ThreadPreferredParentComponent::handle_attacher_state_(uint8_t state) {
-  if (!this->active_ || this->phase_ != SwitchPhase::DISCOVERING || this->target_response_grace_pending_) {
+  if (!this->active_ || this->phase_ != SwitchPhase::DISCOVERING) {
     return;
   }
 
@@ -717,9 +699,9 @@ bool ThreadPreferredParentComponent::parent_response_matches_target_(const otThr
  * @param info Parsed Parent Response information from OpenThread.
  */
 void ThreadPreferredParentComponent::handle_parent_response_(const otThreadParentResponseInfo *info) {
-  ESP_LOGI(TAG, "handle_parent_response_ entry: info=%p active=%s phase=%s grace_pending=%s count=%lu",
+  ESP_LOGI(TAG, "handle_parent_response_ entry: info=%p active=%s phase=%s count=%lu",
            reinterpret_cast<const void *>(info), YESNO(this->active_), this->phase_to_string_(this->phase_),
-           YESNO(this->target_response_grace_pending_), static_cast<unsigned long>(this->parent_response_count_));
+           static_cast<unsigned long>(this->parent_response_count_));
 
   if (info == nullptr) {
     ESP_LOGW(TAG, "handle_parent_response_ returning early: null info");
@@ -748,17 +730,16 @@ void ThreadPreferredParentComponent::handle_parent_response_(const otThreadParen
     }
 
     if (first_target_response) {
-      // Once the requested target responds, keep a short bounded grace period
-      // and then continue into selected-parent attach. We do not wait for the
-      // full discovery window after success is already known.
-      const uint32_t observed_ms = millis() - this->current_attempt_start_ms_;
+      const uint32_t now = millis();
+      const uint32_t observed_ms = now - this->current_attempt_start_ms_;
       this->discovery_target_observed_ms_ = observed_ms;
-      if (this->active_ && this->phase_ == SwitchPhase::DISCOVERING && !this->target_response_grace_pending_) {
-        this->target_response_grace_pending_ = true;
-        this->phase_deadline_ms_ = millis() + this->target_response_grace_ms_;
+      if (this->active_ && this->phase_ == SwitchPhase::DISCOVERING) {
+        // Do not attach directly from the Parent Response callback.
+        // Close discovery on the next component loop iteration instead.
+        this->phase_deadline_ms_ = now;
         ESP_LOGI(TAG,
-                 "Target Parent Response observed after %lu ms during discovery; selected-parent attach scheduled after %u ms grace",
-                 static_cast<unsigned long>(observed_ms), this->target_response_grace_ms_);
+                 "Target Parent Response observed after %lu ms during discovery; selected-parent attach scheduled immediately",
+                 static_cast<unsigned long>(observed_ms));
       }
     } else if (this->active_ && this->phase_ == SwitchPhase::DISCOVERING) {
       ESP_LOGI(TAG,
