@@ -18,7 +18,7 @@ The component uses a two-phase flow:
   - `parent_extaddr` is advised (especially in combination with a unicast parent request).
 - Perform non-disruptive preflight discovery before attempting a selected-parent attach.
 - Send Parent Request as multicast *or* unicast.
-  - OpenThread exclusively uses multicast for Parent Requests, whereas this external component also permits unicast Parent Requests. This approach reduces the number of potential Parent Responses.
+  - OpenThread's normal better-parent discovery path uses multicast Parent Requests. This component can additionally force the discovery/preflight Parent Request to be sent directly to the configured target ExtAddr, which reduces the number of potential Parent Responses.
 - Continue directly into selected-parent Child ID Request once the target Parent Response is observed.
   - This avoids waiting for the full discovery window after the target is already known.
 - Retry discovery when the target parent is not visible.
@@ -37,7 +37,7 @@ If the target parent is observed, the component closes discovery immediately and
 
 This makes the component useful for controlled experiments, diagnostics, and repeatable parent-selection tests. It should not be treated as a general-purpose production parent-selection mechanism, because it relies on patched OpenThread internals and intentionally overrides part of the normal Thread parent-selection behavior.
 
-Note, the component does not continuously alter OpenThread's normal parent switching behavior while idle. Normal mechanisms such as periodic parent search, reattach after parent loss, and Child Supervision remain OpenThread-controlled.
+Note: the component does not continuously alter OpenThread's normal parent switching behavior while idle. Normal mechanisms such as periodic parent search, reattach after parent loss, and Child Supervision remain OpenThread-controlled.
 
 The patched behavior is only intended to take effect during an explicit `request_switch()` operation. During that operation, the component temporarily uses OpenThread's parent-search machinery for discovery/preflight and then continues that discovery into Child ID Request using the observed target response. This selected-parent path intentionally bypasses the normal better-parent comparison for that attach attempt.
 
@@ -58,12 +58,18 @@ esphome:
   friendly_name: Thread Preferred Parent Test
 
 esp32:
-  board: esp32c6  # Change to your Thread-capable ESP32 board
+  variant: esp32c6  # ESP32-C6 example; other Thread-capable ESP32 variants may need different settings.
   framework:
     type: esp-idf
+    sdkconfig_options:
+      CONFIG_OPENTHREAD_PARENT_SEARCH_MTD: n  # Recommended for repeatable controlled parent-switch tests.
 
 logger:
   level: VERY_VERBOSE  # Optional, VERY_VERBOSE should not be used in production: https://esphome.io/components/logger/
+  hardware_uart: USB_SERIAL_JTAG
+
+network:
+  enable_ipv6: true
 
 api:
 
@@ -72,13 +78,13 @@ ota:
 
 openthread:
   device_type: MTD  # Necessary (as FTDs do not have a parent), but BE CAREFUL, requires a full wipe of the non-volatile storage to go back to FTD: https://esphome.io/components/openthread/
-  tlv: "<PUT_YOUR_TLV HERE>"
+  tlv: "<PUT_YOUR_THREAD_DATASET_TLV_HERE>"
 
 
 external_components:
   - source:
       type: git
-      url: https://github.com/EwoutBergsma/ESPHome-Thread-ED-Switch-Parent
+      url: https://github.com/EwoutsAgents/ESPHome-Thread-ED-Switch-Parent
       ref: main
     components: [thread_preferred_parent]
     refresh: 0s
@@ -116,7 +122,7 @@ text:
     id: preferred_parent_extaddr
     name: "Thread Preferred Parent ExtAddr"
     optimistic: true
-    min_length: 0
+    min_length: 16
     max_length: 23
     mode: text
     set_action:
@@ -147,7 +153,7 @@ text:
 | `selected_attach_timeout` | `16s` | Maximum time to wait after starting selected-parent attach for the device to become attached to the requested parent. If the current parent does not match the target before this timeout expires, the attach attempt is treated as timed out and the component returns to discovery, subject to `max_attempts`. |
 | `parent_request_unicast` | `false` | When `false`, the preflight Parent Request is sent using normal multicast discovery. When `true`, the component tries to send the Parent Request directly to the target extended address. This is most useful together with `parent_extaddr`; when only an RLOC16 is configured, the component must first resolve it to an extended address. |
 | `require_selected_parent_hook` | `true` | Require the patched OpenThread selected-parent attach hook to be available. Keeping this enabled makes failures explicit if the patch was not applied or is incompatible with the ESP-IDF/OpenThread version. If disabled, the component may try fallback OpenThread APIs where available, but behaviour is less controlled. |
-| `log_parent_responses` | `true` | Enable buffered Parent Response diagnostics. With `logger.level: INFO` or `DEBUG`, the component reports lifecycle events, summaries, and relevant buffered responses on success or failure. With `logger.level: VERY_VERBOSE`, it also logs live Parent Response rows as they arrive. |
+| `log_parent_responses` | `true` | Enable detailed Parent Response diagnostics. When `true`, the component emits live Parent Response rows and replay logs when the ESPHome logger level allows them. When `false`, it still keeps Parent Response counters and buffering for lifecycle decisions and summaries, but suppresses the detailed per-response logs. |
 
 
 `parent_extaddr` accepts these formats:
@@ -182,6 +188,8 @@ A common setup is to expose:
 - a text entity for the target extended address;
 - a text entity for the target RLOC16.
 
+The ExtAddr text entity expects a valid 8-byte / 16-hex-digit extended address. Blank input is not currently treated as a clear operation for ExtAddr.
+
 ## Logging
 
 With `logger.level: INFO` or `DEBUG`, the component logs the switch lifecycle: discovery attempts, target detection, attach start, attach result, and summaries.
@@ -201,7 +209,7 @@ During the selected-parent attach phase, the ESPHome API may briefly disconnect 
 
 Automated stock, unicast and multicast test procedures live under [testing/README.md](testing/README.md).
 
-The current automated `ucast`, `ucast_fastpr`, and `mcast` test runners first detect the child's current parent, then select an eligible target router that is not that current parent, and use that router's observed IEEE 802.15.4 extended address when instructing the child to switch parent. The default router-settling wait before flashing the child is `300s` unless overridden in the selected test configuration.
+The current automated unicast, unicast-fastpr, and multicast runners map observed router extended addresses from the router logs, detect the child's current parent, and select a target router that is not the current parent. The default router-settling delay is currently 300 seconds unless overridden in the TOML configuration.
 
 The current test child configurations also set `CONFIG_OPENTHREAD_PARENT_SEARCH_MTD: n` to disable OpenThread's default MTD periodic parent-search behavior during these experiments.
 

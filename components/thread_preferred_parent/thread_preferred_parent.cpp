@@ -610,9 +610,6 @@ void ThreadPreferredParentComponent::loop() {
  * @param context Opaque pointer to the owning component instance.
  */
 void ThreadPreferredParentComponent::parent_response_callback_(const otThreadParentResponseInfo *info, void *context) {
-  ESP_LOGI(TAG, "Parent Response bridge invoked: info=%p context=%p rloc16=0x%04x",
-           reinterpret_cast<const void *>(info), context, (info != nullptr) ? info->mRloc16 : 0xffff);
-
   // The C callback exported by the patch forwards back into the owning C++
   // component instance. A null context means registration never completed.
   if (context == nullptr) {
@@ -699,9 +696,11 @@ bool ThreadPreferredParentComponent::parent_response_matches_target_(const otThr
  * @param info Parsed Parent Response information from OpenThread.
  */
 void ThreadPreferredParentComponent::handle_parent_response_(const otThreadParentResponseInfo *info) {
-  ESP_LOGI(TAG, "handle_parent_response_ entry: info=%p active=%s phase=%s count=%lu",
-           reinterpret_cast<const void *>(info), YESNO(this->active_), this->phase_to_string_(this->phase_),
-           static_cast<unsigned long>(this->parent_response_count_));
+  if (this->log_parent_responses_) {
+    ESP_LOGVV(TAG, "handle_parent_response_ entry: info=%p active=%s phase=%s count=%lu",
+              reinterpret_cast<const void *>(info), YESNO(this->active_), this->phase_to_string_(this->phase_),
+              static_cast<unsigned long>(this->parent_response_count_));
+  }
 
   if (info == nullptr) {
     ESP_LOGW(TAG, "handle_parent_response_ returning early: null info");
@@ -713,8 +712,8 @@ void ThreadPreferredParentComponent::handle_parent_response_(const otThreadParen
   this->parent_response_count_++;
   const bool target_match = this->parent_response_matches_target_(*info);
 
-  if (this->active_ && this->phase_ == SwitchPhase::DISCOVERING) {
-    ESP_LOGI(TAG, "Component Parent Response callback: extaddr=%s rloc16=0x%04x target_match=%s",
+  if (this->log_parent_responses_ && this->active_ && this->phase_ == SwitchPhase::DISCOVERING) {
+    ESP_LOGV(TAG, "Component Parent Response callback: extaddr=%s rloc16=0x%04x target_match=%s",
              this->extaddr_to_string_(info->mExtAddr).c_str(), info->mRloc16, YESNO(target_match));
   }
 
@@ -741,8 +740,8 @@ void ThreadPreferredParentComponent::handle_parent_response_(const otThreadParen
                  "Target Parent Response observed after %lu ms during discovery; selected-parent attach scheduled immediately",
                  static_cast<unsigned long>(observed_ms));
       }
-    } else if (this->active_ && this->phase_ == SwitchPhase::DISCOVERING) {
-      ESP_LOGI(TAG,
+    } else if (this->log_parent_responses_ && this->active_ && this->phase_ == SwitchPhase::DISCOVERING) {
+      ESP_LOGV(TAG,
                "Additional target Parent Response observed: matches=%lu best_target_rloc16=0x%04x best_target_rssi=%d",
                static_cast<unsigned long>(this->parent_response_target_count_), this->best_target_rloc16_,
                this->best_target_rssi_);
