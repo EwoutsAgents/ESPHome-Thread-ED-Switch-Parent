@@ -735,14 +735,11 @@ def patch_thread_api(root: Path, *, dry_run: bool = False) -> str:
 using thread_preferred_parent_parent_response_callback_t = void (*)(const otThreadParentResponseInfo *aInfo, void *aContext);
 using thread_preferred_parent_parent_req_started_callback_t = void (*)(void *aContext);
 using thread_preferred_parent_attacher_state_callback_t = void (*)(uint8_t aState, void *aContext);
-using thread_preferred_parent_attacher_state_callback_t = void (*)(uint8_t aState, void *aContext);
 
 static thread_preferred_parent_parent_response_callback_t sThreadPreferredParentParentResponseCallback = nullptr;
 static void *sThreadPreferredParentParentResponseCallbackContext = nullptr;
 static thread_preferred_parent_parent_req_started_callback_t sThreadPreferredParentParentReqStartedCallback = nullptr;
 static void *sThreadPreferredParentParentReqStartedCallbackContext = nullptr;
-static thread_preferred_parent_attacher_state_callback_t sThreadPreferredParentAttacherStateCallback = nullptr;
-static void *sThreadPreferredParentAttacherStateCallbackContext = nullptr;
 static thread_preferred_parent_attacher_state_callback_t sThreadPreferredParentAttacherStateCallback = nullptr;
 static void *sThreadPreferredParentAttacherStateCallbackContext = nullptr;
 
@@ -762,15 +759,6 @@ extern "C" void thread_preferred_parent_ot_register_parent_req_started_callback(
     // THREAD_PREFERRED_PARENT_PARENT_REQ_STARTED_HOOK
     sThreadPreferredParentParentReqStartedCallback = aCallback;
     sThreadPreferredParentParentReqStartedCallbackContext = aContext;
-}
-
-extern "C" void thread_preferred_parent_ot_register_attacher_state_callback(
-    thread_preferred_parent_attacher_state_callback_t aCallback,
-    void *aContext)
-{
-    // THREAD_PREFERRED_PARENT_ATTACHER_STATE_HOOK
-    sThreadPreferredParentAttacherStateCallback = aCallback;
-    sThreadPreferredParentAttacherStateCallbackContext = aContext;
 }
 
 extern "C" void thread_preferred_parent_ot_register_attacher_state_callback(
