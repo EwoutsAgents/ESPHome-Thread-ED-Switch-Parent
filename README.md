@@ -7,7 +7,7 @@ This component lets an ESPHome Thread end device attempt to connect to a specifi
 The component uses a two-phase flow:
 
 1. **Discovery / preflight**: send an MLE Parent Request (multicast *or* unicast) while keeping the device attached to its current parent. During this phase, the component collects Parent Responses, logs candidates, checks whether the configured target parent appears, and retries discovery if the target is not visible.
-2. **Selected-parent attach**: when the target parent is observed, invoke the patched OpenThread hook to start an attach attempt toward that selected parent. This bypasses the normal parent-selection step and directs the attach attempt toward the observed target parent.
+2. **Selected-parent attach / discovery continuation**: when the target parent is observed, invoke the patched OpenThread hook to continue the discovery flow into Child ID Request using the cached target Parent Response. This bypasses the normal parent-selection step and directs the attach attempt toward the observed target parent.
 
 > [!WARNING]
 > This is an experimental component. It patches ESP-IDF's vendored OpenThread source during the PlatformIO build. Use it for testing and diagnostics, not as a general-purpose production Thread parent-selection mechanism.
@@ -29,17 +29,17 @@ The component uses a two-phase flow:
 
 ## Parent switching process
 
-In a typical Thread network, an End Device is attached to exactly one parent router. During a normal attach or parent-search process, the End Device sends an multicast MLE Parent Request, receives Parent Responses from nearby routers or REEDs, lets the Thread stack evaluate the available candidates, and then attaches to the parent selected by the stack. This selection is normally based on network and link-quality criteria such as link quality (RSSI based), router connectivity, and child capacity. In other words, the application cannot directly tell the Thread stack: “attach to this exact parent now.”
+In a typical Thread network, an End Device is attached to exactly one parent router. During a normal attach or parent-search process, the End Device sends a multicast MLE Parent Request, receives Parent Responses from nearby routers or REEDs, lets the Thread stack evaluate the available candidates, and then attaches to the parent selected by the stack. This selection is normally based on network and link-quality criteria such as link quality (RSSI based), router connectivity, and child capacity. In other words, the application cannot directly tell the Thread stack: “attach to this exact parent now.”
 
-This component implements a more controlled process for parent switching. Instead of immediately detaching or forcing a blind reattach, it first performs a discovery/preflight phase while the device remains attached to its current parent. During this phase, it sends an MLE Parent Request, either multicast or unicast, records the Parent Response(s) (to check whether the configured target parent is in reach).
+This component implements a more controlled process for parent switching. Instead of immediately detaching or forcing a blind reattach, it first performs a discovery/preflight phase while the device remains attached to its current parent. During this phase, it sends an MLE Parent Request, either multicast or unicast, and records the received Parent Responses so it can determine whether the configured target parent is in reach.
 
-If the target parent is observed, the component starts a selected-parent attach using the patched OpenThread hook. This bypasses the normal candidate-selection step and attempts to attach specifically to the observed target parent, identified by extended address or RLOC16. If the target is not observed, or if the selected-parent attach does not complete within the configured timeout, the component retries according to `max_attempts` and `retry_interval`.
+If the target parent is observed, the component uses the patched OpenThread hook to continue that discovery into Child ID Request using the cached target Parent Response. This bypasses the normal candidate-selection step and attempts to attach specifically to the observed target parent, identified by extended address or RLOC16. If the target is not observed, or if the selected-parent attach does not complete within the configured timeout, the component retries according to `max_attempts` and `retry_interval`.
 
 This makes the component useful for controlled experiments, diagnostics, and repeatable parent-selection tests. It should not be treated as a general-purpose production parent-selection mechanism, because it relies on patched OpenThread internals and intentionally overrides part of the normal Thread parent-selection behavior.
 
 Note, the component does not continuously alter OpenThread's normal parent switching behavior while idle. Normal mechanisms such as periodic parent search, reattach after parent loss, and Child Supervision remain OpenThread-controlled.
 
-The patched behavior is only intended to take effect during an explicit `request_switch()` operation. During that operation, the component temporarily uses OpenThread's parent-search machinery for discovery/preflight and then starts a selected-parent attach toward the configured target. This selected-parent attach intentionally bypasses the normal better-parent comparison for that attach attempt.
+The patched behavior is only intended to take effect during an explicit `request_switch()` operation. During that operation, the component temporarily uses OpenThread's parent-search machinery for discovery/preflight and then continues that discovery into Child ID Request using the observed target response. This selected-parent path intentionally bypasses the normal better-parent comparison for that attach attempt.
 
 
 ## Requirements
@@ -63,7 +63,7 @@ esp32:
     type: esp-idf
 
 logger:
-  level: VERY_VERBOSE  # Optional, VERY_VERBOSE should not be used production: https://esphome.io/components/logger/
+  level: VERY_VERBOSE  # Optional, VERY_VERBOSE should not be used in production: https://esphome.io/components/logger/
 
 api:
 
@@ -71,7 +71,7 @@ ota:
   - platform: esphome
 
 openthread:
-  device_type: MTD  # Necessary (as FTDs do not have a parent), but BE CAREFUL, requires a full wipe of the non-violatile storage to go back to FTD: https://esphome.io/components/openthread/
+  device_type: MTD  # Necessary (as FTDs do not have a parent), but BE CAREFUL, requires a full wipe of the non-volatile storage to go back to FTD: https://esphome.io/components/openthread/
   tlv: "<PUT_YOUR_TLV HERE>"
 
 
@@ -99,7 +99,7 @@ thread_preferred_parent:
 
   # Optional: send the preflight Parent Request directly to the target ExtAddr
   # instead of the all-routers multicast address.
-  parent_request_unicast: false
+  parent_request_unicast: true
 
   # Optional: after the target Parent Response is seen, wait a short grace
   # period and then continue into selected-parent attach.
@@ -206,7 +206,9 @@ During the selected-parent attach phase, the ESPHome API may briefly disconnect 
 
 Automated stock, unicast and multicast test procedures live under [testing/README.md](testing/README.md).
 
-The current automated `ucast` and `mcast` test runners read router 2's observed IEEE 802.15.4 extended address from the `stock_router_2.yaml` logs and use that value automatically when instructing the child to switch parent. The fixed wait after flashing router 2 is currently `90s` in the test harness.
+The current automated `ucast`, `ucast_fastpr`, and `mcast` test runners first detect the child's current parent, then select an eligible target router that is not that current parent, and use that router's observed IEEE 802.15.4 extended address when instructing the child to switch parent. The default router-settling wait before flashing the child is `300s` unless overridden in the selected test configuration.
+
+The current test child configurations also set `CONFIG_OPENTHREAD_PARENT_SEARCH_MTD: n` to disable OpenThread's default MTD periodic parent-search behavior during these experiments.
 
 Post-run child-log analysis is also available for all three variants. The current analyzer emits attach timings from sniffer pcap data only; log timestamps are kept as reference metadata and are not used as fallback timing values.
 
@@ -217,9 +219,12 @@ The component automatically registers `apply-openthread-selected-parent-hook.py`
 The patch adds OpenThread hooks used to:
 
 - report MLE Parent Responses back to the ESPHome component;
+- report attacher-state transitions and ParentReq-start events back to the ESPHome component;
 - start a non-disruptive discovery-only Parent Request cycle;
 - optionally perform unicast Parent Request discovery;
-- start a selected-parent attach attempt toward the observed target parent.
+- provide selected-parent target hinting before attach starts;
+- continue discovery directly into Child ID Request using the cached target Parent Response;
+- filter selected-parent handling so non-target Parent Responses do not take over the attach attempt.
 
 ## Notes and limitations
 
