@@ -57,6 +57,14 @@ Post-run analysis:
 
 Generated logs, manifests, CSV exports, reports, and sniffer captures are written under the variant-specific log directories.
 
+Each child firmware variant uses a distinct `esphome.name`, so ESPHome writes each build into a separate `.esphome/build/<name>/` directory. This avoids race conditions during parallel precompile or test runs.
+
+| Variant | Config | ESPHome name | Build directory |
+| --- | --- | --- | --- |
+| Unicast | `testing/configs/ucast_child.yaml` | `ucast-child` | `.esphome/build/ucast-child/` |
+| Multicast | `testing/configs/mcast_child.yaml` | `mcast-child` | `.esphome/build/mcast-child/` |
+| Unicast fastpr | `testing/configs/ucast_fastpr_child.yaml` | `ucast-fastpr-child` | `.esphome/build/ucast-fastpr-child/` |
+
 ## Compilation policy
 
 All ESPHome compilations should happen before a timed test sequence starts. During the timed sequence, runners should perform only erase, upload, logging, wait, control, validation, and capture operations.

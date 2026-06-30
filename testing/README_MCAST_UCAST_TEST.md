@@ -12,6 +12,14 @@ Use the following child firmware and log directory pattern for each variant:
 | Unicast fastpr  | `ucast_fastpr_child.yaml` | `fastpr_router_<n>`    | `testing/logs/ucast_fastpr-<n_routers>router-<runs>runs-<timestamp>/`   | `<run_timestamp>-run<run_number>/` |
 | Multicast       | `mcast_child.yaml`        | `stock_router_<n>`     | `testing/logs/mcast-<n_routers>router-<runs>runs-<timestamp>/`          | `<run_timestamp>-run<run_number>/` |
 
+Each child firmware variant also uses a distinct `esphome.name`, so ESPHome writes each build into a separate `.esphome/build/<name>/` directory. This avoids race conditions during parallel precompile or test runs.
+
+| Variant | ESPHome name | Build directory |
+| --- | --- | --- |
+| Unicast | `ucast-child` | `.esphome/build/ucast-child/` |
+| Unicast fastpr | `ucast-fastpr-child` | `.esphome/build/ucast-fastpr-child/` |
+| Multicast | `mcast-child` | `.esphome/build/mcast-child/` |
+
 Each variation follows the same setup until the requested router set has been flashed. Variations differ only in the total number of router-capable ESP32-C6 boards included in the run and, for `ucast_fastpr`, in the router firmware prefix. The `n_routers` setting is the total router count and does not include the child. Routers are flashed in order using the variant-appropriate router firmware prefix, where `<n>` starts at `1` and increases sequentially until the requested total router count is reached. The current maximum is four routers total. For a switch to occur, at least two routers must be present.
 
 A run is considered suitable for the timed directed-switch phase only if, after the fixed router-settling delay and the child’s initial attach, the runner can reliably determine the child’s current parent, map that parent to one of the configured router devices, and select a random eligible target parent from the remaining configured routers. The target parent must not be the child’s current parent, and its extended address must be known so that the child can be instructed to switch to it. If the detected current parent is also the current Thread leader, the run continues but retains the explicit `SKIP_PARENT_IS_LEADER` label in the manifest and later analysis. Broader topology effects during the measurement window are handled during post-run outcome classification rather than as pre-switch gates.
