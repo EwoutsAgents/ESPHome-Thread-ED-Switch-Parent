@@ -101,6 +101,22 @@ otError thread_preferred_parent_ot_start_parent_discovery_unicast(
 ) __attribute__((weak));
 
 /**
+ * Start a targeted unicast Parent Request discovery pass immediately.
+ *
+ * This hook enters OpenThread's Attacher ParentReq state directly so the
+ * Parent Request still goes out through the normal Attacher machinery, but
+ * without first waiting in the Start timer state.
+ *
+ * @param aInstance Active OpenThread instance.
+ * @param aPreferredExtAddress Extended address of the preferred parent target.
+ * @return OpenThread status describing whether discovery started successfully.
+ */
+otError thread_preferred_parent_ot_start_parent_discovery_unicast_now(
+    otInstance *aInstance,
+    const otExtAddress *aPreferredExtAddress
+) __attribute__((weak));
+
+/**
  * Continue a discovery-observed selected-parent attach without a new Parent Request.
  *
  * @param aInstance Active OpenThread instance.

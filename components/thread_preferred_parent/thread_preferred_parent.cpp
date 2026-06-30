@@ -940,10 +940,12 @@ bool ThreadPreferredParentComponent::get_current_parent_extaddr_(otInstance *ins
 otError ThreadPreferredParentComponent::start_parent_discovery_(otInstance *instance) {
   if (this->parent_request_unicast_) {
     otExtAddress selected{};
+    bool can_try_immediate_unicast = false;
 
     if (this->target_type_ == TargetType::EXTADDR) {
       // ExtAddr targets can be used directly for unicast Parent Requests.
       selected = this->target_extaddr_;
+      can_try_immediate_unicast = true;
     } else if (this->target_type_ == TargetType::RLOC16) {
       // Unicast discovery still needs an ExtAddr on the wire, so resolve the
       // configured RLOC16 against the current neighbor table first.
@@ -960,6 +962,16 @@ otError ThreadPreferredParentComponent::start_parent_discovery_(otInstance *inst
         !this->extaddr_matches_(selected, otExtAddress{})) {
       if (thread_preferred_parent_ot_set_discovery_target_extaddr != nullptr) {
         (void) thread_preferred_parent_ot_set_discovery_target_extaddr(instance, &selected);
+      }
+      if (can_try_immediate_unicast && thread_preferred_parent_ot_start_parent_discovery_unicast_now != nullptr) {
+        ESP_LOGI(TAG, "Starting immediate unicast ParentReq discovery to ExtAddr %s for %s",
+                 this->extaddr_to_string_(selected).c_str(), this->target_to_string_().c_str());
+        const otError fast_error = thread_preferred_parent_ot_start_parent_discovery_unicast_now(instance, &selected);
+        if (fast_error == OT_ERROR_NONE) {
+          return fast_error;
+        }
+        ESP_LOGW(TAG, "Immediate unicast ParentReq discovery failed: %s; falling back to normal unicast discovery",
+                 ot_error_to_string_(fast_error));
       }
       ESP_LOGI(TAG, "Starting non-disruptive unicast Parent Request discovery to ExtAddr %s for %s",
                this->extaddr_to_string_(selected).c_str(), this->target_to_string_().c_str());

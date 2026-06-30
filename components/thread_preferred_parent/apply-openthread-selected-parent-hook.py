@@ -246,6 +246,49 @@ def patch_mle_hpp(root: Path, *, dry_run: bool = False) -> str:
     )
 
 
+def patch_mle_hpp_unicast_now(root: Path, *, dry_run: bool = False) -> str:
+    """Declare the immediate unicast ParentReq helper in mle.hpp."""
+    path = root / "thread/mle.hpp"
+    text = normalize_newlines(path.read_text())
+    if "StartParentDiscoveryUnicastNow(const Mac::ExtAddress &aExtAddress)" in text:
+        return "already"
+
+    declaration = """    /**
+     * Starts a targeted better-parent discovery by entering ParentReq immediately.
+     *
+     * This is an ESPHome Thread preferred-parent extension. It keeps discovery
+     * inside OpenThread's Attacher machinery, but skips the delayed Start-state
+     * timer when the target extended address is already known.
+     *
+     * @param[in] aExtAddress Extended address of the discovery target parent.
+     *
+     * @retval kErrorNone Successfully started Parent Request discovery.
+     * @retval kErrorInvalidState Thread is not attached as a child.
+     * @retval kErrorBusy An attach process is already in progress.
+     */
+    Error StartParentDiscoveryUnicastNow(const Mac::ExtAddress &aExtAddress); // THREAD_PREFERRED_PARENT_DISCOVERY_UNICAST_NOW_HOOK
+
+"""
+
+    continue_decl = "    Error ContinueSelectedParentAttachFromDiscovery(const Mac::ExtAddress &aExtAddress); // THREAD_PREFERRED_PARENT_DISCOVERY_CONTINUE_HOOK\n"
+    if continue_decl in text:
+        return replace_literal(
+            path,
+            continue_decl,
+            declaration + continue_decl,
+            already="StartParentDiscoveryUnicastNow(const Mac::ExtAddress &aExtAddress)",
+            dry_run=dry_run,
+        )
+
+    return replace_literal(
+        path,
+        "    Error SearchForBetterParent(void);\n",
+        "    Error SearchForBetterParent(void);\n\n" + declaration,
+        already="StartParentDiscoveryUnicastNow(const Mac::ExtAddress &aExtAddress)",
+        dry_run=dry_run,
+    )
+
+
 def patch_mle_hpp_attacher_continue(root: Path, *, dry_run: bool = False) -> str:
     """Declare the attacher continuation helper in mle.hpp."""
     path = root / "thread/mle.hpp"
@@ -255,6 +298,33 @@ def patch_mle_hpp_attacher_continue(root: Path, *, dry_run: bool = False) -> str
         "        void             Attach(AttachMode aMode);\n",
         "        void             Attach(AttachMode aMode);\n" + declaration,
         already="ContinueSelectedParentAttach(const Mac::ExtAddress &aExtAddress)",
+        dry_run=dry_run,
+    )
+
+
+def patch_mle_hpp_attacher_unicast_now(root: Path, *, dry_run: bool = False) -> str:
+    """Declare the immediate ParentReq attacher helper in mle.hpp."""
+    path = root / "thread/mle.hpp"
+    text = normalize_newlines(path.read_text())
+    if "StartParentRequestNow(const Mac::ExtAddress &aExtAddress)" in text:
+        return "already"
+
+    declaration = "        Error StartParentRequestNow(const Mac::ExtAddress &aExtAddress); // THREAD_PREFERRED_PARENT_DISCOVERY_UNICAST_NOW_HOOK\n"
+    continue_decl = "        Error ContinueSelectedParentAttach(const Mac::ExtAddress &aExtAddress); // THREAD_PREFERRED_PARENT_DISCOVERY_CONTINUE_HOOK\n"
+    if continue_decl in text:
+        return replace_literal(
+            path,
+            continue_decl,
+            declaration + continue_decl,
+            already="StartParentRequestNow(const Mac::ExtAddress &aExtAddress)",
+            dry_run=dry_run,
+        )
+
+    return replace_literal(
+        path,
+        "        void             Attach(AttachMode aMode);\n",
+        "        void             Attach(AttachMode aMode);\n" + declaration,
+        already="StartParentRequestNow(const Mac::ExtAddress &aExtAddress)",
         dry_run=dry_run,
     )
 
@@ -361,6 +431,38 @@ exit:
     )
 
 
+def patch_start_parent_discovery_unicast_now_method(root: Path, *, dry_run: bool = False) -> str:
+    """Add Mle::StartParentDiscoveryUnicastNow() to mle.cpp."""
+    path = root / "thread/mle.cpp"
+    text = normalize_newlines(path.read_text())
+    if "Mle::StartParentDiscoveryUnicastNow" in text:
+        return "already"
+
+    method = """
+Error Mle::StartParentDiscoveryUnicastNow(const Mac::ExtAddress &aExtAddress)
+{
+    // THREAD_PREFERRED_PARENT_DISCOVERY_UNICAST_NOW_HOOK
+    Error error = kErrorNone;
+
+    VerifyOrExit(IsChild(), error = kErrorInvalidState);
+    SuccessOrExit(error = mAttacher.StartParentRequestNow(aExtAddress));
+
+exit:
+    return error;
+}
+
+"""
+    pattern = r"(Error\s+Mle::ContinueSelectedParentAttachFromDiscovery\s*\(\s*const\s+Mac::ExtAddress\s*&\s*aExtAddress\s*\)\s*\{.*?\n\}\s*\n)"
+    return replace_regex(
+        path,
+        pattern,
+        lambda m: m.group(1).rstrip() + "\n\n" + method,
+        already="Mle::StartParentDiscoveryUnicastNow",
+        label="Mle::ContinueSelectedParentAttachFromDiscovery insertion point",
+        dry_run=dry_run,
+    )
+
+
 def patch_attacher_continue_selected_parent_method(root: Path, *, dry_run: bool = False) -> str:
     """Continue a discovery-observed selected-parent attach with Child ID Request."""
     path = root / "thread/mle.cpp"
@@ -428,6 +530,79 @@ exit:
         lambda m: m.group(1).rstrip() + "\n\n" + method,
         already="Mle::Attacher::ContinueSelectedParentAttach",
         label="Mle::Attacher::Attach insertion point",
+        dry_run=dry_run,
+    )
+
+
+def patch_attacher_start_parent_request_now_method(root: Path, *, dry_run: bool = False) -> str:
+    """Enter ParentReq immediately for targeted unicast discovery."""
+    path = root / "thread/mle.cpp"
+    text = normalize_newlines(path.read_text())
+    if "Mle::Attacher::StartParentRequestNow" in text:
+        return "already"
+
+    method = """
+Error Mle::Attacher::StartParentRequestNow(const Mac::ExtAddress &aExtAddress)
+{
+    // THREAD_PREFERRED_PARENT_DISCOVERY_UNICAST_NOW_HOOK
+    OT_UNUSED_VARIABLE(aExtAddress);
+
+    Error             error = kErrorNone;
+    ParentRequestType type;
+    uint32_t          delay = 0;
+
+    VerifyOrExit(Get<Mle>().IsChild(), error = kErrorInvalidState);
+    VerifyOrExit(!IsAttaching(), error = kErrorBusy);
+
+#if OPENTHREAD_FTD
+    Get<Mle>().RemoveScheduledParentResponses();
+#endif
+
+    mHasPreferredDiscoveryParentCandidate = false;
+    mParentCandidate.Clear();
+    mMode = kBetterParent;
+    SetState(kStateParentRequest);
+    mParentCandidate.SetState(Neighbor::kStateInvalid);
+    mReceivedResponseFromParent = false;
+    mParentRequestCounter       = 1;
+    Get<MeshForwarder>().SetRxOnWhenIdle(true);
+
+    SuccessOrExit(error = DetermineParentRequestType(type));
+    SendParentRequest(type);
+
+    switch (type)
+    {
+    case kToRouters:
+    case kToSelectedRouter:
+        delay = kParentRequestRouterTimeout;
+        break;
+    case kToRoutersAndReeds:
+        delay = kParentRequestReedTimeout;
+        break;
+    }
+
+    mTimer.Start(delay);
+
+exit:
+    if (error != kErrorNone)
+    {
+        thread_preferred_parent_ot_parent_discovery_active = false;
+        thread_preferred_parent_ot_parent_discovery_unicast = false;
+        mHasPreferredDiscoveryParentCandidate = false;
+        mParentCandidate.Clear();
+        SetState(kStateIdle);
+    }
+    return error;
+}
+
+"""
+    pattern = r"(Error\s+Mle::Attacher::ContinueSelectedParentAttach\s*\(\s*const\s+Mac::ExtAddress\s*&\s*aExtAddress\s*\)\s*\{.*?\n\}\s*\n)"
+    return replace_regex(
+        path,
+        pattern,
+        lambda m: m.group(1).rstrip() + "\n\n" + method,
+        already="Mle::Attacher::StartParentRequestNow",
+        label="Mle::Attacher::ContinueSelectedParentAttach insertion point",
         dry_run=dry_run,
     )
 
@@ -882,6 +1057,29 @@ extern "C" otError thread_preferred_parent_ot_start_parent_discovery_unicast(otI
     return error;
 }
 
+extern "C" otError thread_preferred_parent_ot_start_parent_discovery_unicast_now(otInstance *aInstance,
+                                                                                  const otExtAddress *aPreferredExtAddress)
+{
+    // THREAD_PREFERRED_PARENT_DISCOVERY_UNICAST_NOW_HOOK
+    if ((aInstance == nullptr) || (aPreferredExtAddress == nullptr))
+    {
+        return OT_ERROR_INVALID_ARGS;
+    }
+
+    thread_preferred_parent_ot_parent_discovery_extaddr = *aPreferredExtAddress;
+    thread_preferred_parent_ot_parent_discovery_active = true;
+    thread_preferred_parent_ot_parent_discovery_unicast = true;
+
+    otError error = AsCoreType(aInstance).Get<Mle::Mle>().StartParentDiscoveryUnicastNow(
+        AsCoreType(aPreferredExtAddress));
+    if (error != OT_ERROR_NONE)
+    {
+        thread_preferred_parent_ot_parent_discovery_active = false;
+        thread_preferred_parent_ot_parent_discovery_unicast = false;
+    }
+    return error;
+}
+
 extern "C" otError thread_preferred_parent_ot_continue_selected_parent_attach(otInstance *aInstance,
                                                                                const otExtAddress *aPreferredExtAddress)
 {
@@ -1301,6 +1499,59 @@ extern \"C\" otError thread_preferred_parent_ot_start_parent_discovery_unicast(o
         label="thread_api.cpp discovery-only/unicast bridge",
         dry_run=dry_run,
     )
+
+
+def patch_thread_api_unicast_now_bridge(root: Path, *, dry_run: bool = False) -> str:
+    """Expose the immediate unicast ParentReq bridge from thread_api.cpp."""
+    path = root / "api/thread_api.cpp"
+    text = normalize_newlines(path.read_text())
+    if "thread_preferred_parent_ot_start_parent_discovery_unicast_now" in text:
+        return "already"
+
+    addition = """
+extern "C" otError thread_preferred_parent_ot_start_parent_discovery_unicast_now(otInstance *aInstance,
+                                                                                  const otExtAddress *aPreferredExtAddress)
+{
+    // THREAD_PREFERRED_PARENT_DISCOVERY_UNICAST_NOW_HOOK
+    if ((aInstance == nullptr) || (aPreferredExtAddress == nullptr))
+    {
+        return OT_ERROR_INVALID_ARGS;
+    }
+
+    thread_preferred_parent_ot_parent_discovery_extaddr = *aPreferredExtAddress;
+    thread_preferred_parent_ot_parent_discovery_active = true;
+    thread_preferred_parent_ot_parent_discovery_unicast = true;
+
+    otError error = AsCoreType(aInstance).Get<Mle::Mle>().StartParentDiscoveryUnicastNow(
+        AsCoreType(aPreferredExtAddress));
+    if (error != OT_ERROR_NONE)
+    {
+        thread_preferred_parent_ot_parent_discovery_active = false;
+        thread_preferred_parent_ot_parent_discovery_unicast = false;
+    }
+    return error;
+}
+
+"""
+
+    pattern = (
+        r'(extern\s+"C"\s+otError\s+thread_preferred_parent_ot_start_parent_discovery_unicast\s*\(\s*'
+        r'otInstance\s*\*\s*aInstance\s*,\s*const\s+otExtAddress\s*\*\s*aPreferredExtAddress\s*\)\s*\{.*?\n\})'
+    )
+    new_text, count = re.subn(pattern, lambda m: m.group(1) + addition, text, count=1, flags=re.DOTALL | re.MULTILINE)
+    if count == 1:
+        return write_if_changed(path, text, new_text, dry_run=dry_run)
+
+    for marker in [
+        'extern "C" otError thread_preferred_parent_ot_continue_selected_parent_attach(',
+        'extern "C" bool thread_preferred_parent_ot_request_selected_parent_attach(',
+    ]:
+        inserted = insert_before_marker(text, marker, addition.rstrip())
+        if inserted is not None:
+            return write_if_changed(path, text, inserted, dry_run=dry_run)
+
+    print("[thread_preferred_parent][detail] no insertion point for immediate unicast ParentReq bridge")
+    return "missing"
 
 
 def patch_thread_api_continue_bridge(root: Path, *, dry_run: bool = False) -> str:
@@ -2292,11 +2543,15 @@ def apply_patches(root: Path, *, dry_run: bool = False) -> int:
 
     patches = [
         ("mle.hpp declaration", root / "thread/mle.hpp", patch_mle_hpp, True),
+        ("mle.hpp immediate unicast ParentReq declaration", root / "thread/mle.hpp", patch_mle_hpp_unicast_now, True),
         ("mle.hpp attacher continuation declaration", root / "thread/mle.hpp", patch_mle_hpp_attacher_continue, True),
+        ("mle.hpp attacher immediate ParentReq declaration", root / "thread/mle.hpp", patch_mle_hpp_attacher_unicast_now, True),
         ("mle.hpp attacher discovery snapshot fields", root / "thread/mle.hpp", patch_mle_hpp_attacher_snapshot_fields, True),
         ("mle.cpp AttachToSelectedParent", root / "thread/mle.cpp", patch_attach_method, True),
         ("mle.cpp Mle discovery continuation", root / "thread/mle.cpp", patch_continue_selected_parent_method, True),
+        ("mle.cpp Mle immediate unicast ParentReq", root / "thread/mle.cpp", patch_start_parent_discovery_unicast_now_method, True),
         ("mle.cpp attacher discovery continuation", root / "thread/mle.cpp", patch_attacher_continue_selected_parent_method, True),
+        ("mle.cpp attacher immediate ParentReq", root / "thread/mle.cpp", patch_attacher_start_parent_request_now_method, True),
         ("mle.cpp attacher discovery snapshot init", root / "thread/mle.cpp", patch_attacher_snapshot_init, True),
         ("mle.cpp attacher discovery snapshot clear", root / "thread/mle.cpp", patch_attacher_snapshot_clear_on_attach, True),
         ("mle.cpp remove old force-detach selected-parent block", root / "thread/mle.cpp", patch_remove_force_detach_before_attach, True),
@@ -2315,6 +2570,7 @@ def apply_patches(root: Path, *, dry_run: bool = False) -> int:
         ("thread_api.cpp discovery target hint bridge", root / "api/thread_api.cpp", patch_thread_api_target_hint_bridge, True),
         ("mle.cpp parent-response reporting declaration", root / "thread/mle.cpp", patch_mle_parent_response_reporting_declaration, True),
         ("thread_api.cpp discovery-only bridge", root / "api/thread_api.cpp", patch_thread_api_discovery_bridge, True),
+        ("thread_api.cpp immediate unicast ParentReq bridge", root / "api/thread_api.cpp", patch_thread_api_unicast_now_bridge, True),
         ("mle.cpp discovery-only declaration", root / "thread/mle.cpp", patch_mle_discovery_declaration, True),
         ("mle.cpp selected-parent interrupt discovery", root / "thread/mle.cpp", patch_attach_method_interrupt_discovery, True),
         ("mle.cpp discovery-only cancel", root / "thread/mle.cpp", patch_mle_discovery_cancel, True),
