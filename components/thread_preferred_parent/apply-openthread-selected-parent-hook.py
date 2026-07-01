@@ -333,7 +333,7 @@ def patch_mle_hpp_attacher_snapshot_fields(root: Path, *, dry_run: bool = False)
     """Store a discovery-snapshotted target candidate in mle.hpp."""
     path = root / "thread/mle.hpp"
     text = normalize_newlines(path.read_text())
-    if "THREAD_PREFERRED_PARENT_DISCOVERY_TARGET_SNAPSHOT_HOOK" in text:
+    if "mThreadPreferredParentFastDiscoveryForcedRxOn" in text:
         return "already"
 
     old = "        TxChallenge             mParentRequestChallenge;\n        ParentCandidate         mParentCandidate;\n        AttachTimer             mTimer;\n"
@@ -341,15 +341,20 @@ def patch_mle_hpp_attacher_snapshot_fields(root: Path, *, dry_run: bool = False)
         ParentCandidate         mParentCandidate;
         ParentCandidate         mPreferredDiscoveryParentCandidate; // THREAD_PREFERRED_PARENT_DISCOVERY_TARGET_SNAPSHOT_HOOK
         bool                    mHasPreferredDiscoveryParentCandidate : 1; // THREAD_PREFERRED_PARENT_DISCOVERY_TARGET_SNAPSHOT_HOOK
+        bool                    mThreadPreferredParentFastDiscoveryForcedRxOn : 1; // THREAD_PREFERRED_PARENT_DISCOVERY_UNICAST_NOW_HOOK
+        bool                    mThreadPreferredParentFastDiscoveryWasRxOn : 1; // THREAD_PREFERRED_PARENT_DISCOVERY_UNICAST_NOW_HOOK
         AttachTimer             mTimer;
 """
-    return replace_literal(
-        path,
-        old,
-        new,
-        already="THREAD_PREFERRED_PARENT_DISCOVERY_TARGET_SNAPSHOT_HOOK",
-        dry_run=dry_run,
-    )
+    if "THREAD_PREFERRED_PARENT_DISCOVERY_TARGET_SNAPSHOT_HOOK" in text:
+        old_existing = """        TxChallenge             mParentRequestChallenge;
+        ParentCandidate         mParentCandidate;
+        ParentCandidate         mPreferredDiscoveryParentCandidate; // THREAD_PREFERRED_PARENT_DISCOVERY_TARGET_SNAPSHOT_HOOK
+        bool                    mHasPreferredDiscoveryParentCandidate : 1; // THREAD_PREFERRED_PARENT_DISCOVERY_TARGET_SNAPSHOT_HOOK
+        AttachTimer             mTimer;
+"""
+        return replace_literal(path, old_existing, new, already="mThreadPreferredParentFastDiscoveryForcedRxOn", dry_run=dry_run)
+
+    return replace_literal(path, old, new, already="mThreadPreferredParentFastDiscoveryForcedRxOn", dry_run=dry_run)
 
 
 def patch_attach_method(root: Path, *, dry_run: bool = False) -> str:
@@ -538,15 +543,16 @@ def patch_attacher_start_parent_request_now_method(root: Path, *, dry_run: bool 
     """Enter ParentReq immediately for targeted unicast discovery."""
     path = root / "thread/mle.cpp"
     text = normalize_newlines(path.read_text())
-    if "Mle::Attacher::StartParentRequestNow" in text:
+    if ("Mle::Attacher::StartParentRequestNow" in text and
+            "aExtAddress.CopyTo(thread_preferred_parent_ot_parent_discovery_extaddr.m8);" in text and
+            "mThreadPreferredParentFastDiscoveryForcedRxOn = false;" in text and
+            "mThreadPreferredParentFastDiscoveryWasRxOn = false;" in text):
         return "already"
 
     method = """
 Error Mle::Attacher::StartParentRequestNow(const Mac::ExtAddress &aExtAddress)
 {
     // THREAD_PREFERRED_PARENT_DISCOVERY_UNICAST_NOW_HOOK
-    OT_UNUSED_VARIABLE(aExtAddress);
-
     Error             error = kErrorNone;
     ParentRequestType type;
     uint32_t          delay = 0;
@@ -558,6 +564,12 @@ Error Mle::Attacher::StartParentRequestNow(const Mac::ExtAddress &aExtAddress)
     Get<Mle>().RemoveScheduledParentResponses();
 #endif
 
+    aExtAddress.CopyTo(thread_preferred_parent_ot_parent_discovery_extaddr.m8);
+    thread_preferred_parent_ot_parent_discovery_active = true;
+    thread_preferred_parent_ot_parent_discovery_unicast = true;
+
+    mThreadPreferredParentFastDiscoveryWasRxOn = Get<Mle>().IsRxOnWhenIdle();
+    mThreadPreferredParentFastDiscoveryForcedRxOn = false;
     mHasPreferredDiscoveryParentCandidate = false;
     mParentCandidate.Clear();
     mMode = kBetterParent;
@@ -565,7 +577,11 @@ Error Mle::Attacher::StartParentRequestNow(const Mac::ExtAddress &aExtAddress)
     mParentCandidate.SetState(Neighbor::kStateInvalid);
     mReceivedResponseFromParent = false;
     mParentRequestCounter       = 1;
-    Get<MeshForwarder>().SetRxOnWhenIdle(true);
+    if (!mThreadPreferredParentFastDiscoveryWasRxOn)
+    {
+        Get<MeshForwarder>().SetRxOnWhenIdle(true);
+        mThreadPreferredParentFastDiscoveryForcedRxOn = true;
+    }
 
     SuccessOrExit(error = DetermineParentRequestType(type));
     SendParentRequest(type);
@@ -588,6 +604,12 @@ exit:
     {
         thread_preferred_parent_ot_parent_discovery_active = false;
         thread_preferred_parent_ot_parent_discovery_unicast = false;
+        if (mThreadPreferredParentFastDiscoveryForcedRxOn && !mThreadPreferredParentFastDiscoveryWasRxOn)
+        {
+            Get<MeshForwarder>().SetRxOnWhenIdle(false);
+        }
+        mThreadPreferredParentFastDiscoveryForcedRxOn = false;
+        mThreadPreferredParentFastDiscoveryWasRxOn = false;
         mHasPreferredDiscoveryParentCandidate = false;
         mParentCandidate.Clear();
         SetState(kStateIdle);
@@ -596,6 +618,20 @@ exit:
 }
 
 """
+    if "Mle::Attacher::StartParentRequestNow" in text:
+        pattern = (
+            r"Error\s+Mle::Attacher::StartParentRequestNow\s*\(\s*const\s+Mac::ExtAddress\s*&\s*aExtAddress\s*\)\s*"
+            r"\{.*?\n\}\n"
+        )
+        return replace_regex(
+            path,
+            pattern,
+            lambda _m: method.lstrip("\n"),
+            already="aExtAddress.CopyTo(thread_preferred_parent_ot_parent_discovery_extaddr.m8);",
+            label="Mle::Attacher::StartParentRequestNow upgrade",
+            dry_run=dry_run,
+        )
+
     pattern = r"(Error\s+Mle::Attacher::ContinueSelectedParentAttach\s*\(\s*const\s+Mac::ExtAddress\s*&\s*aExtAddress\s*\)\s*\{.*?\n\}\s*\n)"
     return replace_regex(
         path,
@@ -1720,11 +1756,40 @@ def patch_mle_discovery_cancel(root: Path, *, dry_run: bool = False) -> str:
     path = root / "thread/mle.cpp"
     text = normalize_newlines(path.read_text())
     if "THREAD_PREFERRED_PARENT_DISCOVERY_ONLY_CANCEL" in text:
-        if "mHasPreferredDiscoveryParentCandidate = false;" in text:
+        legacy = """        LogNote(\"ThreadPreferredParent discovery window complete\");
+        thread_preferred_parent_ot_parent_discovery_active = false;
+        thread_preferred_parent_ot_parent_discovery_unicast = false;
+        if (!mHasPreferredDiscoveryParentCandidate)
+        {
+            mParentCandidate.Clear();
+        }
+        SetState(kStateIdle);
+        ExitNow();
+"""
+        upgraded = """        LogNote(\"ThreadPreferredParent discovery window complete\");
+        thread_preferred_parent_ot_parent_discovery_active = false;
+        thread_preferred_parent_ot_parent_discovery_unicast = false;
+        if (mThreadPreferredParentFastDiscoveryForcedRxOn && !mThreadPreferredParentFastDiscoveryWasRxOn)
+        {
+            Get<MeshForwarder>().SetRxOnWhenIdle(false);
+        }
+        mThreadPreferredParentFastDiscoveryForcedRxOn = false;
+        mThreadPreferredParentFastDiscoveryWasRxOn = false;
+        if (!mHasPreferredDiscoveryParentCandidate)
+        {
+            mParentCandidate.Clear();
+        }
+        SetState(kStateIdle);
+        ExitNow();
+"""
+        if legacy in text:
+            return replace_literal(path, legacy, upgraded, already="mThreadPreferredParentFastDiscoveryForcedRxOn = false;", dry_run=dry_run)
+        if ("mThreadPreferredParentFastDiscoveryForcedRxOn = false;" in text and
+                "mThreadPreferredParentFastDiscoveryWasRxOn = false;" in text):
             return "already"
         new = text.replace(
             'thread_preferred_parent_ot_parent_discovery_active = false;\n        thread_preferred_parent_ot_parent_discovery_unicast = false;\n        SetState(kStateIdle);\n        mHasPreferredDiscoveryParentCandidate = false;',
-            'thread_preferred_parent_ot_parent_discovery_active = false;\n        thread_preferred_parent_ot_parent_discovery_unicast = false;\n        if (!mHasPreferredDiscoveryParentCandidate)\n        {\n            mParentCandidate.Clear();\n        }\n        SetState(kStateIdle);',
+            'thread_preferred_parent_ot_parent_discovery_active = false;\n        thread_preferred_parent_ot_parent_discovery_unicast = false;\n        if (mThreadPreferredParentFastDiscoveryForcedRxOn && !mThreadPreferredParentFastDiscoveryWasRxOn)\n        {\n            Get<MeshForwarder>().SetRxOnWhenIdle(false);\n        }\n        mThreadPreferredParentFastDiscoveryForcedRxOn = false;\n        if (!mHasPreferredDiscoveryParentCandidate)\n        {\n            mParentCandidate.Clear();\n        }\n        SetState(kStateIdle);',
             1,
         )
         return write_if_changed(path, text, new, dry_run=dry_run)
@@ -1747,6 +1812,12 @@ def patch_mle_discovery_cancel(root: Path, *, dry_run: bool = False) -> str:
         LogNote(\"ThreadPreferredParent discovery window complete\");
         thread_preferred_parent_ot_parent_discovery_active = false;
         thread_preferred_parent_ot_parent_discovery_unicast = false;
+        if (mThreadPreferredParentFastDiscoveryForcedRxOn && !mThreadPreferredParentFastDiscoveryWasRxOn)
+        {
+            Get<MeshForwarder>().SetRxOnWhenIdle(false);
+        }
+        mThreadPreferredParentFastDiscoveryForcedRxOn = false;
+        mThreadPreferredParentFastDiscoveryWasRxOn = false;
         if (!mHasPreferredDiscoveryParentCandidate)
         {
             mParentCandidate.Clear();
@@ -2310,7 +2381,8 @@ def patch_attacher_snapshot_init(root: Path, *, dry_run: bool = False) -> str:
     """Initialize the saved discovery target candidate."""
     path = root / "thread/mle.cpp"
     text = normalize_newlines(path.read_text())
-    if "mPreferredDiscoveryParentCandidate.Init(aInstance);" in text:
+    if ("mThreadPreferredParentFastDiscoveryForcedRxOn = false;" in text and
+            "mThreadPreferredParentFastDiscoveryWasRxOn = false;" in text):
         return "already"
 
     old = "    mParentCandidate.Init(aInstance);\n    mParentCandidate.Clear();\n"
@@ -2319,12 +2391,22 @@ def patch_attacher_snapshot_init(root: Path, *, dry_run: bool = False) -> str:
     mPreferredDiscoveryParentCandidate.Init(aInstance);
     mPreferredDiscoveryParentCandidate.Clear();
     mHasPreferredDiscoveryParentCandidate = false;
+    mThreadPreferredParentFastDiscoveryForcedRxOn = false;
+    mThreadPreferredParentFastDiscoveryWasRxOn = false;
 """
+    if "mPreferredDiscoveryParentCandidate.Init(aInstance);" in text:
+        old_existing = """    mParentCandidate.Init(aInstance);
+    mParentCandidate.Clear();
+    mPreferredDiscoveryParentCandidate.Init(aInstance);
+    mPreferredDiscoveryParentCandidate.Clear();
+    mHasPreferredDiscoveryParentCandidate = false;
+"""
+        return replace_literal(path, old_existing, new, already="mThreadPreferredParentFastDiscoveryForcedRxOn = false;", dry_run=dry_run)
     return replace_literal(
         path,
         old,
         new,
-        already="mPreferredDiscoveryParentCandidate.Init(aInstance);",
+        already="mThreadPreferredParentFastDiscoveryForcedRxOn = false;",
         dry_run=dry_run,
     )
 
@@ -2333,16 +2415,19 @@ def patch_attacher_snapshot_clear_on_attach(root: Path, *, dry_run: bool = False
     """Clear the saved discovery target candidate at the start of each attach cycle."""
     path = root / "thread/mle.cpp"
     text = normalize_newlines(path.read_text())
-    if "mHasPreferredDiscoveryParentCandidate = false;\n    mParentCandidate.Clear();" in text:
+    if ("mThreadPreferredParentFastDiscoveryForcedRxOn = false;\n    mThreadPreferredParentFastDiscoveryWasRxOn = false;\n    mParentCandidate.Clear();" in text):
         return "already"
 
     old = "    mParentCandidate.Clear();\n    SetState(kStateStart);\n"
-    new = "    mHasPreferredDiscoveryParentCandidate = false;\n    mParentCandidate.Clear();\n    SetState(kStateStart);\n"
+    new = "    mHasPreferredDiscoveryParentCandidate = false;\n    mThreadPreferredParentFastDiscoveryForcedRxOn = false;\n    mThreadPreferredParentFastDiscoveryWasRxOn = false;\n    mParentCandidate.Clear();\n    SetState(kStateStart);\n"
+    if "mHasPreferredDiscoveryParentCandidate = false;\n    mParentCandidate.Clear();" in text:
+        old_existing = "    mHasPreferredDiscoveryParentCandidate = false;\n    mParentCandidate.Clear();\n    SetState(kStateStart);\n"
+        return replace_literal(path, old_existing, new, already="mThreadPreferredParentFastDiscoveryWasRxOn = false;", dry_run=dry_run)
     return replace_literal(
         path,
         old,
         new,
-        already="mHasPreferredDiscoveryParentCandidate = false;\n    mParentCandidate.Clear();",
+        already="mThreadPreferredParentFastDiscoveryWasRxOn = false;",
         dry_run=dry_run,
     )
 
