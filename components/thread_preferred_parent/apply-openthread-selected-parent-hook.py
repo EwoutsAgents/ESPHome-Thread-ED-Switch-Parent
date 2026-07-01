@@ -95,17 +95,40 @@ def restore_truncated_mle_cpp_if_needed(root: Path, *, dry_run: bool = False) ->
         return
 
     text = normalize_newlines(path.read_text())
-    send_parent_idx = text.find("Mle::Attacher::SendParentRequest")
-    send_parent_truncated = False
-    if send_parent_idx >= 0:
-        tail = text[send_parent_idx:]
-        send_parent_truncated = "\nexit:" not in tail or "SendParentRequestDone" not in tail
+    marker = "THREAD_PREFERRED_PARENT_DISCOVERY_UNICAST_HOOK"
+    signature_pattern = r"void\s+Mle::Attacher::SendParentRequest\s*\(\s*ParentRequestType\s+aType\s*\)"
+    span = find_function_span(text, signature_pattern)
 
-    brace_delta = text.count("{") - text.count("}")
-    missing_namespace_close = "} // namespace ot" not in text[-2000:]
+    if span is None:
+        if marker not in text:
+            return
 
-    if send_parent_truncated or brace_delta > 2 or missing_namespace_close:
-        print(f"[thread_preferred_parent][restore] restoring truncated mle.cpp from backup: {backup}")
+        brace_delta = text.count("{") - text.count("}")
+        missing_namespace_close = "} // namespace ot" not in text[-2000:]
+        print(
+            "[thread_preferred_parent][restore] restoring mle.cpp from backup: "
+            "known old SendParentRequest patch marker present but function span is unparseable "
+            f"(brace_delta={brace_delta}, missing_namespace_close={missing_namespace_close})"
+        )
+        if not dry_run:
+            shutil.copy2(backup, path)
+        return
+
+    _, _, _, body_end = span
+    function_text = text[span[0]:body_end]
+    has_preferred_parent_unicast_hook = marker in function_text
+    if not has_preferred_parent_unicast_hook:
+        return
+
+    missing_send_to = "SuccessOrExit(error = message->SendTo(destination));" not in function_text
+    missing_exit_label = "\nexit:" not in function_text
+
+    if missing_send_to or missing_exit_label:
+        print(
+            "[thread_preferred_parent][restore] restoring mle.cpp from backup: "
+            "known old SendParentRequest patch appears truncated "
+            f"(missing_send_to={missing_send_to}, missing_exit_label={missing_exit_label})"
+        )
         if not dry_run:
             shutil.copy2(backup, path)
 
