@@ -1275,36 +1275,106 @@ def parse_radio_extaddr(log_path: Path) -> str | None:
     return None
 
 
+def find_last_extaddr_match_in_lines(
+    text: str,
+    patterns: list[str],
+    *,
+    reject_extaddr: str | None = None,
+    source: str,
+) -> tuple[str | None, str | None]:
+    rejected_child_extaddr = False
+    reject_key = extaddr_key(reject_extaddr)
+
+    for line in reversed(text.splitlines()):
+        for pattern in patterns:
+            match = re.search(pattern, line, flags=re.IGNORECASE)
+            if match is None:
+                continue
+            norm = normalize_extaddr(match.group(1))
+            if norm is None:
+                continue
+            if reject_key is not None and extaddr_key(norm) == reject_key:
+                rejected_child_extaddr = True
+                continue
+            return norm, source
+
+    if rejected_child_extaddr:
+        return None, "child_log_rejected_child_radio_extaddr"
+    return None, None
+
+
+def find_last_link_local_match_in_lines(
+    text: str,
+    patterns: list[str],
+    *,
+    reject_extaddr: str | None = None,
+    source: str,
+) -> tuple[str | None, str | None]:
+    rejected_child_extaddr = False
+    reject_key = extaddr_key(reject_extaddr)
+
+    for line in reversed(text.splitlines()):
+        for pattern in patterns:
+            match = re.search(pattern, line, flags=re.IGNORECASE)
+            if match is None:
+                continue
+            extaddr = ipv6_link_local_to_extaddr(match.group(1))
+            if extaddr is None:
+                continue
+            if reject_key is not None and extaddr_key(extaddr) == reject_key:
+                rejected_child_extaddr = True
+                continue
+            return extaddr, source
+
+    if rejected_child_extaddr:
+        return None, "child_log_rejected_child_radio_extaddr"
+    return None, None
+
+
 def parse_child_parent_extaddr(child_log: Path) -> tuple[str | None, str | None]:
     """Return (parent_extaddr, source). Conservative: skip if unclear."""
     if not child_log.exists():
         return None, None
     text = child_log.read_text(encoding="utf-8", errors="replace")
+    child_radio_extaddr = parse_radio_extaddr(child_log)
 
     explicit_patterns = [
-        r"Saved ParentInfo.*?(?:ExtAddr|ExtAddress|Ext Address)[:= ]+([0-9a-fA-F:]{16,23})",
-        r"ParentInfo.*?(?:ExtAddr|ExtAddress|Ext Address)[:= ]+([0-9a-fA-F:]{16,23})",
-        r"parent.*?(?:ExtAddr|ExtAddress|Ext Address)[:= ]+([0-9a-fA-F:]{16,23})",
+        r"\bSaved ParentInfo\b.*?\b(?:ExtAddr|ExtAddress|Ext Address)\b[:= ]+([0-9a-fA-F:]{16,23})",
+        r"\bParentInfo\b.*?\b(?:ExtAddr|ExtAddress|Ext Address)\b[:= ]+([0-9a-fA-F:]{16,23})",
+        r"\bCurrent parent(?: before discovery)?\b.*?\b(?:ExtAddr|ExtAddress|Ext Address)\b[:= ]+([0-9a-fA-F:]{16,23})",
+        r"\bparent\b[^\r\n]{0,80}\b(?:ExtAddr|ExtAddress|Ext Address)\b[:= ]+([0-9a-fA-F:]{16,23})",
     ]
-    for pattern in explicit_patterns:
-        matches = re.findall(pattern, text, flags=re.IGNORECASE | re.DOTALL)
-        for match in reversed(matches):
-            norm = normalize_extaddr(match)
-            if norm:
-                return norm, "child_log_explicit_parent_extaddr"
+    parent_extaddr, parent_source = find_last_extaddr_match_in_lines(
+        text,
+        explicit_patterns,
+        reject_extaddr=child_radio_extaddr,
+        source="child_log_explicit_parent_extaddr",
+    )
+    if parent_extaddr is not None:
+        return parent_extaddr, parent_source
 
     link_local_patterns = [
-        r"Saved ParentInfo.*?(fe80:[0-9a-fA-F:%]+)",
-        r"ParentInfo.*?(fe80:[0-9a-fA-F:%]+)",
-        r"parent.*?(fe80:[0-9a-fA-F:%]+)",
+        r"\bSaved ParentInfo\b.*?(fe80:[0-9a-fA-F:%]+)",
+        r"\bParentInfo\b.*?(fe80:[0-9a-fA-F:%]+)",
+        r"\bCurrent parent(?: before discovery)?\b.*?(fe80:[0-9a-fA-F:%]+)",
+        r"\bparent\b[^\r\n]{0,80}(fe80:[0-9a-fA-F:%]+)",
+        r"Send Child ID Request\s*\((fe80:[0-9a-fA-F:%]+)\)",
+        r"Receive Child ID Response\s*\((fe80:[0-9a-fA-F:%]+)",
         r"Send Child Update Request as child\s*\((fe80:[0-9a-fA-F:%]+)\)",
     ]
-    for pattern in link_local_patterns:
-        matches = re.findall(pattern, text, flags=re.IGNORECASE)
-        for match in reversed(matches):
-            ext = ipv6_link_local_to_extaddr(match)
-            if ext:
-                return ext, "child_log_parent_link_local"
+    link_local_candidate, link_local_source = find_last_link_local_match_in_lines(
+        text,
+        link_local_patterns,
+        reject_extaddr=child_radio_extaddr,
+        source="child_log_parent_link_local",
+    )
+    if link_local_candidate is not None:
+        return link_local_candidate, link_local_source
+
+    if parent_source is not None:
+        return None, parent_source
+    if link_local_source is not None:
+        return None, link_local_source
     return None, None
 
 
