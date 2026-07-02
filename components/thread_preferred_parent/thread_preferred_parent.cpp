@@ -38,14 +38,8 @@ void ThreadPreferredParentComponent::setup() {
   }
 
   if (thread_preferred_parent_ot_register_attacher_state_callback != nullptr) {
-    thread_preferred_parent_ot_register_attacher_state_callback(
-        [](uint8_t state, void *context) {
-          if (context == nullptr) {
-            return;
-          }
-          static_cast<ThreadPreferredParentComponent *>(context)->handle_attacher_state_(state);
-        },
-        this);
+    thread_preferred_parent_ot_register_attacher_state_callback(&ThreadPreferredParentComponent::attacher_state_callback_,
+                                                                this);
     this->attacher_state_callback_registered_ = true;
     ESP_LOGI(TAG, "OpenThread attacher-state hook registered");
   } else {
@@ -54,23 +48,7 @@ void ThreadPreferredParentComponent::setup() {
 
   if (thread_preferred_parent_ot_register_parent_req_started_callback != nullptr) {
     thread_preferred_parent_ot_register_parent_req_started_callback(
-        [](void *context) {
-          if (context == nullptr) {
-            return;
-          }
-
-          auto *self = static_cast<ThreadPreferredParentComponent *>(context);
-          if (!self->active_ || self->phase_ != SwitchPhase::DISCOVERING || self->parent_req_started_this_attempt_) {
-            return;
-          }
-
-          const uint32_t now = millis();
-          self->parent_req_started_this_attempt_ = true;
-          self->current_attempt_start_ms_ = now;
-          self->phase_deadline_ms_ = now + self->retry_interval_ms_;
-          ESP_LOGI(TAG, "OpenThread entered ParentReq; discovery deadline armed for %u ms", self->retry_interval_ms_);
-        },
-        this);
+        &ThreadPreferredParentComponent::parent_req_started_callback_, this);
     this->parent_req_started_callback_registered_ = true;
     ESP_LOGI(TAG, "OpenThread ParentReq-start hook registered");
   } else {
@@ -278,6 +256,7 @@ std::string ThreadPreferredParentComponent::current_parent_extaddr() const {
  */
 void ThreadPreferredParentComponent::reset_parent_response_tracking_() {
   // Reset per-attempt observation state before each discovery cycle.
+  this->discovery_attempt_generation_++;
   this->parent_response_count_ = 0;
   this->parent_response_last_dumped_count_ = 0;
   this->parent_response_target_count_ = 0;
@@ -363,6 +342,11 @@ void ThreadPreferredParentComponent::loop() {
   }
 
   otInstance *instance = lock->get_instance();
+
+  // Drain all callback-side observations before making any loop-owned
+  // discovery or attach decisions. This prevents callback/loop races from
+  // advancing the state machine on stale local snapshots.
+  this->drain_callback_events_(now);
 
   // Success is defined by the device's actual current parent, not merely by
   // whether an attach request was accepted. This keeps the component grounded
@@ -466,6 +450,8 @@ void ThreadPreferredParentComponent::loop() {
                    "Discovery-to-attach state: observed_target=%s best_target_rloc16=0x%04x best_target_rssi=%d best_target_rssi_valid=%s",
                    this->extaddr_to_string_(this->observed_target_extaddr_).c_str(), this->best_target_rloc16_,
                    this->best_target_rssi_, YESNO(this->best_target_rssi_valid_));
+          ESP_LOGI(TAG, "Loop entering target-observed attach branch for generation %lu",
+                   static_cast<unsigned long>(this->discovery_attempt_generation_));
           ESP_LOGI(TAG, "Preferred parent %s was observed; starting selected-parent attach", this->target_to_string_().c_str());
           otError attach_error = this->start_selected_parent_attach_(instance);
           if (attach_error == OT_ERROR_NONE) {
@@ -616,7 +602,21 @@ void ThreadPreferredParentComponent::parent_response_callback_(const otThreadPar
     ESP_LOGW(TAG, "Parent Response bridge dropping callback: null context");
     return;
   }
-  static_cast<ThreadPreferredParentComponent *>(context)->handle_parent_response_(info);
+  if (info == nullptr) {
+    ESP_LOGW(TAG, "Parent Response bridge dropping callback: null info");
+    return;
+  }
+
+  auto *self = static_cast<ThreadPreferredParentComponent *>(context);
+  CallbackEvent event{};
+  event.type = CallbackEventType::PARENT_RESPONSE;
+  event.timestamp_ms = millis();
+  event.parent_response = *info;
+  if (self->enqueue_callback_event_(&event)) {
+    ESP_LOGV(TAG, "Callback enqueued %s event for generation %lu",
+             self->callback_event_type_to_string_(event.type),
+             static_cast<unsigned long>(event.generation));
+  }
 }
 
 void ThreadPreferredParentComponent::parent_req_started_callback_(void *context) {
@@ -625,15 +625,14 @@ void ThreadPreferredParentComponent::parent_req_started_callback_(void *context)
   }
 
   auto *self = static_cast<ThreadPreferredParentComponent *>(context);
-  if (!self->active_ || self->phase_ != SwitchPhase::DISCOVERING || self->parent_req_started_this_attempt_) {
-    return;
+  CallbackEvent event{};
+  event.type = CallbackEventType::PARENT_REQ_STARTED;
+  event.timestamp_ms = millis();
+  if (self->enqueue_callback_event_(&event)) {
+    ESP_LOGV(TAG, "Callback enqueued %s event for generation %lu",
+             self->callback_event_type_to_string_(event.type),
+             static_cast<unsigned long>(event.generation));
   }
-
-  const uint32_t now = millis();
-  self->parent_req_started_this_attempt_ = true;
-  self->current_attempt_start_ms_ = now;
-  self->phase_deadline_ms_ = now + self->retry_interval_ms_;
-  ESP_LOGI(TAG, "OpenThread entered ParentReq; discovery deadline armed for %u ms", self->retry_interval_ms_);
 }
 
 void ThreadPreferredParentComponent::attacher_state_callback_(uint8_t state, void *context) {
@@ -641,32 +640,95 @@ void ThreadPreferredParentComponent::attacher_state_callback_(uint8_t state, voi
     return;
   }
 
-  static_cast<ThreadPreferredParentComponent *>(context)->handle_attacher_state_(state);
+  auto *self = static_cast<ThreadPreferredParentComponent *>(context);
+  CallbackEvent event{};
+  event.type = CallbackEventType::ATTACHER_STATE;
+  event.timestamp_ms = millis();
+  event.attacher_state = state;
+  if (self->enqueue_callback_event_(&event)) {
+    ESP_LOGV(TAG, "Callback enqueued %s event for generation %lu state=%u",
+             self->callback_event_type_to_string_(event.type),
+             static_cast<unsigned long>(event.generation), state);
+  }
 }
 
-void ThreadPreferredParentComponent::handle_attacher_state_(uint8_t state) {
-  if (!this->active_ || this->phase_ != SwitchPhase::DISCOVERING) {
+bool ThreadPreferredParentComponent::enqueue_callback_event_(CallbackEvent *event) {
+  if (event == nullptr) {
+    return false;
+  }
+  bool enqueued = false;
+  portENTER_CRITICAL(&this->callback_event_queue_mux_);
+  CallbackEvent queued = *event;
+  queued.generation = this->discovery_attempt_generation_;
+  event->generation = queued.generation;
+  if (this->callback_event_queue_size_ == CALLBACK_EVENT_QUEUE_SIZE) {
+    this->callback_event_queue_tail_ = (this->callback_event_queue_tail_ + 1) % CALLBACK_EVENT_QUEUE_SIZE;
+    this->callback_event_queue_size_--;
+    this->callback_event_queue_dropped_++;
+  }
+  this->callback_event_queue_[this->callback_event_queue_head_] = queued;
+  this->callback_event_queue_head_ = (this->callback_event_queue_head_ + 1) % CALLBACK_EVENT_QUEUE_SIZE;
+  this->callback_event_queue_size_++;
+  enqueued = true;
+  portEXIT_CRITICAL(&this->callback_event_queue_mux_);
+  return enqueued;
+}
+
+void ThreadPreferredParentComponent::drain_callback_events_(uint32_t now) {
+  uint32_t dropped = 0;
+  while (true) {
+    CallbackEvent event{};
+    bool have_event = false;
+
+    portENTER_CRITICAL(&this->callback_event_queue_mux_);
+    if (this->callback_event_queue_dropped_ != 0) {
+      dropped = this->callback_event_queue_dropped_;
+      this->callback_event_queue_dropped_ = 0;
+    }
+    if (this->callback_event_queue_size_ != 0) {
+      event = this->callback_event_queue_[this->callback_event_queue_tail_];
+      this->callback_event_queue_tail_ = (this->callback_event_queue_tail_ + 1) % CALLBACK_EVENT_QUEUE_SIZE;
+      this->callback_event_queue_size_--;
+      have_event = true;
+    }
+    portEXIT_CRITICAL(&this->callback_event_queue_mux_);
+
+    if (dropped != 0) {
+      ESP_LOGW(TAG, "Callback event mailbox dropped %lu older event(s) due to overflow",
+               static_cast<unsigned long>(dropped));
+      dropped = 0;
+    }
+
+    if (!have_event) {
+      return;
+    }
+
+    ESP_LOGV(TAG, "Loop drained %s event for generation %lu",
+             this->callback_event_type_to_string_(event.type),
+             static_cast<unsigned long>(event.generation));
+    this->handle_callback_event_(event, now);
+  }
+}
+
+void ThreadPreferredParentComponent::handle_callback_event_(const CallbackEvent &event, uint32_t now) {
+  if (event.generation != this->discovery_attempt_generation_) {
+    ESP_LOGI(TAG, "Ignoring stale %s event: generation %lu != current %lu",
+             this->callback_event_type_to_string_(event.type),
+             static_cast<unsigned long>(event.generation),
+             static_cast<unsigned long>(this->discovery_attempt_generation_));
     return;
   }
 
-  const uint32_t now = millis();
-
-  if (state == OT_ATTACHER_STATE_START && !this->attacher_start_seen_this_attempt_) {
-    this->attacher_start_seen_this_attempt_ = true;
-    this->parent_req_launch_timed_out_this_attempt_ = false;
-    this->parent_req_launch_deadline_ms_ = now + this->parent_req_launch_timeout_ms_;
-    ESP_LOGI(TAG, "OpenThread entered Start; waiting up to %u ms for ParentReq", this->parent_req_launch_timeout_ms_);
-    return;
-  }
-
-  if (state == OT_ATTACHER_STATE_PARENT_REQ && !this->parent_req_started_this_attempt_) {
-    this->attacher_start_seen_this_attempt_ = true;
-    this->parent_req_started_this_attempt_ = true;
-    this->parent_req_launch_timed_out_this_attempt_ = false;
-    this->parent_req_launch_deadline_ms_ = 0;
-    this->current_attempt_start_ms_ = now;
-    this->phase_deadline_ms_ = now + this->retry_interval_ms_;
-    ESP_LOGI(TAG, "OpenThread entered ParentReq; discovery deadline armed for %u ms", this->retry_interval_ms_);
+  switch (event.type) {
+    case CallbackEventType::PARENT_RESPONSE:
+      this->handle_parent_response_event_(event, now);
+      return;
+    case CallbackEventType::PARENT_REQ_STARTED:
+      this->handle_parent_req_started_event_(event);
+      return;
+    case CallbackEventType::ATTACHER_STATE:
+      this->handle_attacher_state_event_(event);
+      return;
   }
 }
 
@@ -695,52 +757,51 @@ bool ThreadPreferredParentComponent::parent_response_matches_target_(const otThr
  *
  * @param info Parsed Parent Response information from OpenThread.
  */
-void ThreadPreferredParentComponent::handle_parent_response_(const otThreadParentResponseInfo *info) {
+void ThreadPreferredParentComponent::handle_parent_response_event_(const CallbackEvent &event, uint32_t now) {
   if (this->log_parent_responses_) {
-    ESP_LOGVV(TAG, "handle_parent_response_ entry: info=%p active=%s phase=%s count=%lu",
-              reinterpret_cast<const void *>(info), YESNO(this->active_), this->phase_to_string_(this->phase_),
-              static_cast<unsigned long>(this->parent_response_count_));
+    ESP_LOGVV(TAG, "handle_parent_response_event_ entry: active=%s phase=%s count=%lu generation=%lu",
+              YESNO(this->active_), this->phase_to_string_(this->phase_),
+              static_cast<unsigned long>(this->parent_response_count_),
+              static_cast<unsigned long>(event.generation));
   }
 
-  if (info == nullptr) {
-    ESP_LOGW(TAG, "handle_parent_response_ returning early: null info");
+  if (!this->active_ || this->phase_ != SwitchPhase::DISCOVERING) {
     return;
   }
+
+  const otThreadParentResponseInfo &info = event.parent_response;
 
   // Every Parent Response is tracked so discovery behavior can be summarized
   // even when the live log is running at a lower verbosity.
   this->parent_response_count_++;
-  const bool target_match = this->parent_response_matches_target_(*info);
+  const bool target_match = this->parent_response_matches_target_(info);
 
-  if (this->log_parent_responses_ && this->active_ && this->phase_ == SwitchPhase::DISCOVERING) {
+  if (this->log_parent_responses_) {
     ESP_LOGV(TAG, "Component Parent Response callback: extaddr=%s rloc16=0x%04x target_match=%s",
-             this->extaddr_to_string_(info->mExtAddr).c_str(), info->mRloc16, YESNO(target_match));
+             this->extaddr_to_string_(info.mExtAddr).c_str(), info.mRloc16, YESNO(target_match));
   }
 
   if (target_match) {
     const bool first_target_response = !this->target_observed_this_attempt_;
     this->target_observed_this_attempt_ = true;
-    this->observed_target_extaddr_ = info->mExtAddr;
+    this->observed_target_extaddr_ = info.mExtAddr;
     this->parent_response_target_count_++;
-    if (!this->best_target_rssi_valid_ || info->mRssi > this->best_target_rssi_) {
+    if (!this->best_target_rssi_valid_ || info.mRssi > this->best_target_rssi_) {
       this->best_target_rssi_valid_ = true;
-      this->best_target_rssi_ = info->mRssi;
-      this->best_target_rloc16_ = info->mRloc16;
+      this->best_target_rssi_ = info.mRssi;
+      this->best_target_rloc16_ = info.mRloc16;
     }
 
     if (first_target_response) {
-      const uint32_t now = millis();
-      const uint32_t observed_ms = now - this->current_attempt_start_ms_;
+      const uint32_t observed_ms = event.timestamp_ms - this->current_attempt_start_ms_;
       this->discovery_target_observed_ms_ = observed_ms;
-      if (this->active_ && this->phase_ == SwitchPhase::DISCOVERING) {
-        // Do not attach directly from the Parent Response callback.
-        // Close discovery on the next component loop iteration instead.
-        this->phase_deadline_ms_ = now;
-        ESP_LOGI(TAG,
-                 "Target Parent Response observed after %lu ms during discovery; selected-parent attach scheduled immediately",
-                 static_cast<unsigned long>(observed_ms));
-      }
-    } else if (this->log_parent_responses_ && this->active_ && this->phase_ == SwitchPhase::DISCOVERING) {
+      this->phase_deadline_ms_ = now;
+      ESP_LOGI(TAG, "Loop marked target observed for generation %lu via Parent Response from %s",
+               static_cast<unsigned long>(event.generation),
+               this->extaddr_to_string_(this->observed_target_extaddr_).c_str());
+      ESP_LOGI(TAG, "Loop set discovery deadline to now for immediate close after %lu ms",
+               static_cast<unsigned long>(observed_ms));
+    } else if (this->log_parent_responses_) {
       ESP_LOGV(TAG,
                "Additional target Parent Response observed: matches=%lu best_target_rloc16=0x%04x best_target_rssi=%d",
                static_cast<unsigned long>(this->parent_response_target_count_), this->best_target_rloc16_,
@@ -749,23 +810,72 @@ void ThreadPreferredParentComponent::handle_parent_response_(const otThreadParen
   }
 
   if (!target_match && this->extaddr_matches_(this->probe_non_target_extaddr_, otExtAddress{})) {
-    this->probe_non_target_extaddr_ = info->mExtAddr;
+    this->probe_non_target_extaddr_ = info.mExtAddr;
   }
 
-  const uint32_t now = millis();
   // Preserve the latest responses in sequence order so timeout and failure logs
   // can replay what discovery actually saw, even if the live VV log was off.
   BufferedParentResponse &entry = this->parent_response_buffer_[this->parent_response_buffer_head_];
   entry.valid = true;
   entry.sequence = this->parent_response_count_;
-  entry.timestamp_ms = now - this->current_attempt_start_ms_;
-  entry.info = *info;
+  entry.timestamp_ms = event.timestamp_ms - this->current_attempt_start_ms_;
+  entry.info = info;
   entry.target_match = target_match;
   this->parent_response_buffer_head_ = (this->parent_response_buffer_head_ + 1) % PARENT_RESPONSE_BUFFER_SIZE;
 
   if (this->log_parent_responses_) {
     this->log_parent_response_vv_(entry, "live");
   }
+}
+
+void ThreadPreferredParentComponent::handle_parent_req_started_event_(const CallbackEvent &event) {
+  if (!this->active_ || this->phase_ != SwitchPhase::DISCOVERING || this->parent_req_started_this_attempt_) {
+    return;
+  }
+
+  this->parent_req_started_this_attempt_ = true;
+  this->current_attempt_start_ms_ = event.timestamp_ms;
+  this->phase_deadline_ms_ = event.timestamp_ms + this->retry_interval_ms_;
+  ESP_LOGI(TAG, "Loop consumed ParentReq-start event; discovery deadline armed for %u ms", this->retry_interval_ms_);
+}
+
+void ThreadPreferredParentComponent::handle_attacher_state_event_(const CallbackEvent &event) {
+  if (!this->active_ || this->phase_ != SwitchPhase::DISCOVERING) {
+    return;
+  }
+
+  const uint8_t state = event.attacher_state;
+
+  if (state == OT_ATTACHER_STATE_START && !this->attacher_start_seen_this_attempt_) {
+    this->attacher_start_seen_this_attempt_ = true;
+    this->parent_req_launch_timed_out_this_attempt_ = false;
+    this->parent_req_launch_deadline_ms_ = event.timestamp_ms + this->parent_req_launch_timeout_ms_;
+    ESP_LOGI(TAG, "Loop consumed Start event; waiting up to %u ms for ParentReq", this->parent_req_launch_timeout_ms_);
+    return;
+  }
+
+  if (state == OT_ATTACHER_STATE_PARENT_REQ && !this->parent_req_started_this_attempt_) {
+    this->attacher_start_seen_this_attempt_ = true;
+    this->parent_req_started_this_attempt_ = true;
+    this->parent_req_launch_timed_out_this_attempt_ = false;
+    this->parent_req_launch_deadline_ms_ = 0;
+    this->current_attempt_start_ms_ = event.timestamp_ms;
+    this->phase_deadline_ms_ = event.timestamp_ms + this->retry_interval_ms_;
+    ESP_LOGI(TAG, "Loop consumed ParentReq attacher-state event; discovery deadline armed for %u ms",
+             this->retry_interval_ms_);
+  }
+}
+
+const char *ThreadPreferredParentComponent::callback_event_type_to_string_(CallbackEventType type) const {
+  switch (type) {
+    case CallbackEventType::PARENT_RESPONSE:
+      return "PARENT_RESPONSE";
+    case CallbackEventType::PARENT_REQ_STARTED:
+      return "PARENT_REQ_STARTED";
+    case CallbackEventType::ATTACHER_STATE:
+      return "ATTACHER_STATE";
+  }
+  return "UNKNOWN";
 }
 
 /**
@@ -1035,6 +1145,8 @@ otError ThreadPreferredParentComponent::start_parent_discovery_unicast_(otInstan
  * @return OpenThread status describing whether attach startup succeeded.
  */
 otError ThreadPreferredParentComponent::start_selected_parent_attach_(otInstance *instance) {
+  ESP_LOGI(TAG, "start_selected_parent_attach_ called for generation %lu",
+           static_cast<unsigned long>(this->discovery_attempt_generation_));
   otExtAddress selected{};
   const char *selection_source = "unset";
 

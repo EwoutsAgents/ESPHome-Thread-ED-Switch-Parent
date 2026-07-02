@@ -9,6 +9,8 @@
 #include <openthread/instance.h>
 #include <openthread/thread.h>
 
+#include <freertos/FreeRTOS.h>
+
 #include <cstdio>
 #include <cstdint>
 #include <cstring>
@@ -455,6 +457,20 @@ class ThreadPreferredParentComponent : public Component {
     bool target_match{false};
   };
 
+  enum class CallbackEventType : uint8_t {
+    PARENT_RESPONSE,
+    PARENT_REQ_STARTED,
+    ATTACHER_STATE,
+  };
+
+  struct CallbackEvent {
+    CallbackEventType type{CallbackEventType::PARENT_RESPONSE};
+    uint32_t generation{0};
+    uint32_t timestamp_ms{0};
+    otThreadParentResponseInfo parent_response{};
+    uint8_t attacher_state{0};
+  };
+
   /**
    * Convert a component status to a log-friendly string.
    *
@@ -683,8 +699,13 @@ class ThreadPreferredParentComponent : public Component {
    *
    * @param info Parsed Parent Response information from OpenThread.
    */
-  void handle_parent_response_(const otThreadParentResponseInfo *info);
-  void handle_attacher_state_(uint8_t state);
+  bool enqueue_callback_event_(CallbackEvent *event);
+  void drain_callback_events_(uint32_t now);
+  void handle_callback_event_(const CallbackEvent &event, uint32_t now);
+  void handle_parent_response_event_(const CallbackEvent &event, uint32_t now);
+  void handle_parent_req_started_event_(const CallbackEvent &event);
+  void handle_attacher_state_event_(const CallbackEvent &event);
+  const char *callback_event_type_to_string_(CallbackEventType type) const;
 
   /**
    * Log one buffered Parent Response at INFO level.
@@ -720,6 +741,7 @@ class ThreadPreferredParentComponent : public Component {
   // Keep a short history so failures can still be explained without spamming
   // the live log at INFO level for every response.
   static constexpr uint8_t PARENT_RESPONSE_BUFFER_SIZE = 16;
+  static constexpr uint8_t CALLBACK_EVENT_QUEUE_SIZE = 24;
 
   TargetType target_type_{TargetType::NONE};
   SwitchPhase phase_{SwitchPhase::IDLE};
@@ -740,6 +762,7 @@ class ThreadPreferredParentComponent : public Component {
   bool parent_response_callback_registered_{false};
   bool attacher_state_callback_registered_{false};
   bool parent_req_started_callback_registered_{false};
+  uint32_t discovery_attempt_generation_{0};
   uint32_t parent_response_count_{0};
   uint32_t parent_response_last_dumped_count_{0};
   uint32_t parent_response_target_count_{0};
@@ -772,6 +795,12 @@ class ThreadPreferredParentComponent : public Component {
   std::string branch_replay_message_{};
   uint8_t parent_response_buffer_head_{0};
   BufferedParentResponse parent_response_buffer_[PARENT_RESPONSE_BUFFER_SIZE]{};
+  portMUX_TYPE callback_event_queue_mux_ = portMUX_INITIALIZER_UNLOCKED;
+  uint8_t callback_event_queue_head_{0};
+  uint8_t callback_event_queue_tail_{0};
+  uint8_t callback_event_queue_size_{0};
+  uint32_t callback_event_queue_dropped_{0};
+  CallbackEvent callback_event_queue_[CALLBACK_EVENT_QUEUE_SIZE]{};
   Status status_{Status::IDLE};
 };
 
