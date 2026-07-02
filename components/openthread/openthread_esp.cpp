@@ -255,6 +255,8 @@ void OpenThreadComponent::ot_main() {
            TRUEFALSE(link_mode_config.mRxOnWhenIdle));
 #endif
 
+  otSetStateChangedCallback(instance, OpenThreadComponent::on_state_changed_, this);
+
   otError thread_enable_err = otThreadSetEnabled(instance, true);
   if (thread_enable_err != OT_ERROR_NONE) {
     ESP_LOGE(TAG, "Failed to enable Thread: %s (%d)", otThreadErrorToString(thread_enable_err),
@@ -268,8 +270,6 @@ void OpenThreadComponent::ot_main() {
       ESP_LOGE(TAG, "Failed to set power: %s", otThreadErrorToString(err));
     }
   }
-
-  otSetStateChangedCallback(instance, OpenThreadComponent::on_state_changed_, this);
   esp_openthread_lock_release();
 
 #if CONFIG_OPENTHREAD_CLI

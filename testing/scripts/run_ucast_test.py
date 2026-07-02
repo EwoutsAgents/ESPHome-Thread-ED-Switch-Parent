@@ -608,9 +608,10 @@ def parse_radio_extaddr(log_path: Path) -> str | None:
         return None
     text = log_path.read_text(encoding="utf-8", errors="replace")
     patterns = [
+        r"Self Thread ExtAddr:\s*([0-9a-fA-F:]{16,23})",
         r"RadioExtAddress:\s*([0-9a-fA-F:]{16,23})",
-        r"Ext(?:ended)?\s*Address:\s*([0-9a-fA-F:]{16,23})",
-        r"ExtAddr:\s*([0-9a-fA-F:]{16,23})",
+        r"\bMAC:\s*([0-9a-fA-F:]{16,23})",
+        r"\bSaved NetworkInfo\s*\{[^}\n\r]*\bextaddr:([0-9a-fA-F:]{16,23})\b",
     ]
     for pattern in patterns:
         for match in reversed(re.findall(pattern, text, flags=re.IGNORECASE)):

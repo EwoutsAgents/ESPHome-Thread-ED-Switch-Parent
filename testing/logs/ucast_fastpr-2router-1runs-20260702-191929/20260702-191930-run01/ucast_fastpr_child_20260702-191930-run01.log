@@ -1,0 +1,210 @@
+# Command: /home/ewout/.openclaw/workspace-softwaredeveloper/ESPHome-Thread-ED-Switch-Parent/.venv/bin/esphome logs /home/ewout/.openclaw/workspace-softwaredeveloper/ESPHome-Thread-ED-Switch-Parent/testing/configs/ucast_fastpr_child.yaml --device /dev/serial/by-id/usb-Espressif_USB_JTAG_serial_debug_unit_58:8C:81:5D:B0:E0-if00
+# Started UTC: 2026-07-02T17:25:09+00:00
+INFO ESPHome 2026.4.5
+INFO Reading configuration /home/ewout/.openclaw/workspace-softwaredeveloper/ESPHome-Thread-ED-Switch-Parent/testing/configs/ucast_fastpr_child.yaml...
+INFO Starting log output from /dev/serial/by-id/usb-Espressif_USB_JTAG_serial_debug_unit_58:8C:81:5D:B0:E0-if00 with baud rate 115200
+[19:25:10.029][I][openthread:153][ot_main]: Activating dataset...
+[19:25:10.034][I][esp-idf:000][ot_main]: I(437) OPENTHREAD:
+[19:25:10.035][I][esp-idf:000][ot_main]: [N] Mle-----------: Role disabled -> detached
+[19:25:10.035][I][esp-idf:000][ot_main]: 
+[19:25:10.042][I][esp-idf:000][ot_main]: I (446) OT_STATE: netif up
+
+[19:25:10.048]Thread parent USB CLI ready.
+[19:25:10.048]Commands:
+[19:25:10.048]  extaddr 00124b0001abcdef
+[19:25:10.049]  extaddr 00:12:4b:00:01:ab:cd:ef
+[19:25:10.049]  00124b0001abcdef
+[19:25:10.049]  switch
+[19:25:10.049]  help
+
+[19:25:10.050][I][app:123]: setup() finished successfully!
+[19:25:10.051][I][esp-idf:000][main]: I (346) main_task: Returned from app_main()
+[19:25:10.052][I][esp-idf:000][ot_main]: I (367) OPENTHREAD: Host connection mode none
+[19:25:10.053][I][esp-idf:000][ot_main]: I (367) phy_init: phy_version 343,b513b46,Nov 14 2025,16:34:12
+[19:25:10.055][I][esp-idf:000][ot_main]: W (367) phy_init: failed to load RF calibration data (0x1102), falling back to full calibration
+[19:25:10.056][I][esp-idf:000][ot_main]: I (415) phy_init: Saving new calibration data due to checksum failure or outdated calibration data, mode(2)
+[19:25:10.058][I][esp-idf:000][ot_main]: I (423) phy: libbtbb version: c493933, Nov 14 2025, 16:34:25
+[19:25:10.059][I][esp-idf:000][ot_main]: I (432) OPENTHREAD: OpenThread attached to netif
+[19:25:10.060][I][app:154]: ESPHome version 2026.4.5 compiled on 2026-07-02 19:19:30 +0200
+[19:25:10.060][I][app:161]: ESP32 Chip: ESP32-C6 rev0.2, 1 core(s)
+[19:25:10.640][I][esp-idf:000][ot_main]: I(1040) OPENTHREAD:
+[19:25:10.642][I][esp-idf:000][ot_main]: [N] Mle-----------: Attach attempt 1, AnyPartition reattaching with Active Dataset
+[19:25:10.642][I][esp-idf:000][ot_main]: 
+[19:25:11.077]TPP notify parent response cb=0x42001e82 ctx=0x4080fe98 info=0x40821d84 rloc16=0x8c00
+[19:25:11.146]TPP notify parent response cb=0x42001e82 ctx=0x4080fe98 info=0x40821d84 rloc16=0xf400
+[19:25:11.469][I][esp-idf:000][ot_main]: I(1865) OPENTHREAD:
+[19:25:11.470][I][esp-idf:000][ot_main]: [N] Mle-----------: RLOC16 fffe -> 8c01
+[19:25:11.471][I][esp-idf:000][ot_main]: 
+[19:25:11.472][I][esp-idf:000][ot_main]: I(1866) OPENTHREAD:
+[19:25:11.473][I][esp-idf:000][ot_main]: [N] Mle-----------: Role detached -> child
+[19:25:11.473][I][esp-idf:000][ot_main]: 
+[19:25:11.474][I][esp-idf:000][ot_main]: I(1866) OPENTHREAD:
+[19:25:11.475][I][esp-idf:000][ot_main]: [N] Mle-----------: Current parent ExtAddr: fa420e4432e3eae7
+[19:25:11.476][I][esp-idf:000][ot_main]: 
+[19:25:14.763]Requested Thread parent switch to ExtAddr 869251203c779c5a
+[19:25:14.764][I][thread_preferred_parent:714]: Ignoring stale ATTACHER_STATE event: generation 0 != current 1
+[19:25:14.765][I][thread_preferred_parent:714]: Ignoring stale ATTACHER_STATE event: generation 0 != current 1
+[19:25:14.766][I][thread_preferred_parent:714]: Ignoring stale PARENT_REQ_STARTED event: generation 0 != current 1
+[19:25:14.768][I][thread_preferred_parent:714]: Ignoring stale PARENT_RESPONSE event: generation 0 != current 1
+[19:25:14.769][I][thread_preferred_parent:714]: Ignoring stale PARENT_RESPONSE event: generation 0 != current 1
+[19:25:14.770][I][thread_preferred_parent:714]: Ignoring stale ATTACHER_STATE event: generation 0 != current 1
+[19:25:14.771][I][thread_preferred_parent:714]: Ignoring stale ATTACHER_STATE event: generation 0 != current 1
+[19:25:14.772][I][thread_preferred_parent:518]: Thread role before discovery: child
+[19:25:14.773][I][thread_preferred_parent:521]: Current parent before discovery: RLOC16 0x8c00 ExtAddr fa420e4432e3eae7
+[19:25:14.774][I][thread_preferred_parent:526]: Parent discovery attempt 1/1 for ExtAddr 869251203c779c5a
+[19:25:14.776][I][thread_preferred_parent:1076]: Starting immediate unicast ParentReq discovery to ExtAddr 869251203c779c5a for ExtAddr 869251203c779c5a
+[19:25:14.781][I][thread_preferred_parent:144][usb_parent_cli]: Configured preferred parent by extended address: 869251203c779c5a
+[19:25:14.783][I][thread_preferred_parent:179][usb_parent_cli]: V_initial_parent_extaddr=fa420e4432e3eae7
+[19:25:14.784][I][thread_preferred_parent:184][usb_parent_cli]: Requested Thread parent switch to ExtAddr 869251203c779c5a
+[19:25:14.786][I][thread_preferred_parent:863]: Loop consumed ParentReq attacher-state event; discovery deadline armed for 8000 ms
+[19:25:14.827]TPP notify parent response cb=0x42001e82 ctx=0x4080fe98 info=0x40821d84 rloc16=0xf400
+[19:25:14.830][I][thread_preferred_parent:798]: Loop marked target observed for generation 2 via Parent Response from 869251203c779c5a
+[19:25:14.831][I][thread_preferred_parent:801]: Loop set discovery deadline to now for immediate close after 51 ms
+[19:25:14.833][I][thread_preferred_parent:923]: Discovery summary (target observed): 1 Parent Responses, 1 target match(es), best target RLOC16 0xf400 RSSI -12
+[19:25:14.835][I][thread_preferred_parent:440]: Discovery result: target observed after 51 ms; starting selected-parent attach after 52 ms total discovery time
+[19:25:14.837][I][thread_preferred_parent:444]: Discovery-to-attach handoff: closing discovery attempt after 52 ms; buffered=1 target_matches=1; in-flight Parent Responses may still be logged
+[19:25:14.839][I][thread_preferred_parent:449]: Discovery-to-attach state: observed_target=869251203c779c5a best_target_rloc16=0xf400 best_target_rssi=-12 best_target_rssi_valid=YES
+[19:25:14.840][I][thread_preferred_parent:453]: Loop entering target-observed attach branch for generation 2
+[19:25:14.841][I][thread_preferred_parent:455]: Preferred parent ExtAddr 869251203c779c5a was observed; starting selected-parent attach
+[19:25:14.842][I][thread_preferred_parent:1147]: start_selected_parent_attach_ called for generation 2
+[19:25:14.845][I][thread_preferred_parent:1168]: Selected-parent attach candidate: source=observed-target-response selected=869251203c779c5a configured_target=ExtAddr 869251203c779c5a target_observed=YES buffered=1 target_matches=1 best_target_rloc16=0xf400 best_target_rssi=-12 valid_rssi=YES
+[19:25:14.847][I][thread_preferred_parent:1272]: Selected-parent handoff branch: trying direct discovery continuation to 869251203c779c5a
+[19:25:14.848][I][thread_preferred_parent:1179]: T3 selected-parent discovery continuation; target=869251203c779c5a
+[19:25:14.850][I][thread_preferred_parent:1180]: Continuing discovery directly into Child ID Request for ExtAddr 869251203c779c5a
+[19:25:14.850][I][esp-idf:000]: I(5255) OPENTHREAD:
+[19:25:14.852][I][esp-idf:000]: [N] Mle-----------: SelectedParent continue start cached=1 mode=4 state=2 discovery=1 candState=1 cand=0xf400 target=869251203c779c5a
+[19:25:14.852][I][esp-idf:000]: 
+[19:25:14.853][I][esp-idf:000]: I(5257) OPENTHREAD:
+[19:25:14.854][I][esp-idf:000]: [N] Mle-----------: SelectedParent continue using cached candidate extaddr=869251203c779c5a rloc16=0xf400
+[19:25:14.855][I][esp-idf:000]: 
+[19:25:14.855][I][esp-idf:000]: I(5260) OPENTHREAD:
+[19:25:14.857][I][esp-idf:000]: [N] Mle-----------: SelectedParent ChildIdRequest armed-before-send cand=0xf400 state=4 timeout=1250
+[19:25:14.857][I][esp-idf:000]: 
+[19:25:14.861][I][esp-idf:000]: I(5265) OPENTHREAD:
+[19:25:14.863][I][esp-idf:000]: [N] Mle-----------: SelectedParent ChildIdRequest continued-from-discovery cand=0xf400 timeout=1250
+[19:25:14.863][I][esp-idf:000]: 
+[19:25:14.864][I][thread_preferred_parent:1183]: Selected-parent discovery continuation returned OT_ERROR_NONE
+[19:25:14.866][I][thread_preferred_parent:1272]: Selected-parent handoff branch: direct discovery continuation accepted for 869251203c779c5a
+[19:25:14.868][I][esp-idf:000][ot_main]: I(5233) OPENTHREAD:
+[19:25:14.869][I][esp-idf:000][ot_main]: [N] Mle-----------: SelectedParent discovery snapshot extaddr=869251203c779c5a rloc16=0xf400
+[19:25:14.870][I][esp-idf:000][ot_main]: 
+[19:25:14.934][I][esp-idf:000][ot_main]: I(5338) OPENTHREAD:
+[19:25:14.935][I][esp-idf:000][ot_main]: [N] Mle-----------: Current parent ExtAddr: 869251203c779c5a
+[19:25:14.936][I][esp-idf:000][ot_main]: 
+[19:25:14.937][I][esp-idf:000][ot_main]: I(5341) OPENTHREAD:
+[19:25:14.938][I][esp-idf:000][ot_main]: [N] Mle-----------: SelectedParent ChildIdResponse accepted parent=0xf400 child=0xf402
+[19:25:14.939][I][esp-idf:000][ot_main]: 
+[19:25:14.948][I][esp-idf:000][ot_main]: I(5336) OPENTHREAD:
+[19:25:14.950][I][esp-idf:000][ot_main]: [N] Mle-----------: Role child -> detached
+[19:25:14.951][I][esp-idf:000][ot_main]: 
+[19:25:14.952][I][esp-idf:000][ot_main]: I(5337) OPENTHREAD:
+[19:25:14.953][I][esp-idf:000][ot_main]: [N] Mle-----------: RLOC16 8c01 -> f402
+[19:25:14.954][I][esp-idf:000][ot_main]: 
+[19:25:14.955][I][esp-idf:000][ot_main]: I(5337) OPENTHREAD:
+[19:25:14.956][I][esp-idf:000][ot_main]: [N] Mle-----------: Role detached -> child
+[19:25:14.956][I][esp-idf:000][ot_main]: 
+[19:25:14.957][I][esp-idf:000][ot_main]: I(5337) OPENTHREAD:
+[19:25:14.958][I][esp-idf:000][ot_main]: [N] Mle-----------: Sending message to inform previous parent 0x8c00
+[19:25:14.959][I][esp-idf:000][ot_main]: 
+[19:25:14.960][I][thread_preferred_parent:359]: Thread parent switch succeeded; current parent is ExtAddr 869251203c779c5a
+[19:25:14.963][I][thread_preferred_parent:360]: Attach result: success after 93 ms; ExtAddr 869251203c779c5a selected
+[19:25:34.935][I][esp-idf:000][ot_main]: I(25338) OPENTHREAD:
+[19:25:34.936][I][esp-idf:000][ot_main]: [N] Mle-----------: SelectedParent timer state=0 cand_state=0 has_candidate=0 got_parent_rsp=0
+[19:25:34.937][I][esp-idf:000][ot_main]: 
+[19:29:11.060][I][esp-idf:000][ot_main]: I(241462) OPENTHREAD:
+[19:29:11.062][I][esp-idf:000][ot_main]: [N] MeshForwarder-: Failed to send IPv6 UDP msg, len:98, chksum:5fa4, ecn:no, to:869251203c779c5a, sec:no, error:NoAck, prio:net
+[19:29:11.062][I][esp-idf:000][ot_main]: 
+[19:29:11.063][I][esp-idf:000][ot_main]: I(241462) OPENTHREAD:
+[19:29:11.064][I][esp-idf:000][ot_main]: [N] MeshForwarder-:     src:[fe80:0:0:0:446a:48c2:b0eb:b03a]:19788
+[19:29:11.065][I][esp-idf:000][ot_main]: 
+[19:29:11.066][I][esp-idf:000][ot_main]: I(241462) OPENTHREAD:
+[19:29:11.067][I][esp-idf:000][ot_main]: [N] MeshForwarder-:     dst:[fe80:0:0:0:8492:5120:3c77:9c5a]:19788
+[19:29:11.067][I][esp-idf:000][ot_main]: 
+[19:29:12.079][I][esp-idf:000][ot_main]: I(242481) OPENTHREAD:
+[19:29:12.080][I][esp-idf:000][ot_main]: [N] MeshForwarder-: Failed to send IPv6 UDP msg, len:98, chksum:4ef0, ecn:no, to:869251203c779c5a, sec:no, error:NoAck, prio:net
+[19:29:12.081][I][esp-idf:000][ot_main]: 
+[19:29:12.082][I][esp-idf:000][ot_main]: I(242481) OPENTHREAD:
+[19:29:12.083][I][esp-idf:000][ot_main]: [N] MeshForwarder-:     src:[fe80:0:0:0:446a:48c2:b0eb:b03a]:19788
+[19:29:12.084][I][esp-idf:000][ot_main]: 
+[19:29:12.084][I][esp-idf:000][ot_main]: I(242481) OPENTHREAD:
+[19:29:12.086][I][esp-idf:000][ot_main]: [N] MeshForwarder-:     dst:[fe80:0:0:0:8492:5120:3c77:9c5a]:19788
+[19:29:12.086][I][esp-idf:000][ot_main]: 
+[19:29:13.076][I][esp-idf:000][ot_main]: I(243478) OPENTHREAD:
+[19:29:13.078][I][esp-idf:000][ot_main]: [N] MeshForwarder-: Failed to send IPv6 UDP msg, len:98, chksum:be42, ecn:no, to:869251203c779c5a, sec:no, error:NoAck, prio:net
+[19:29:13.078][I][esp-idf:000][ot_main]: 
+[19:29:13.079][I][esp-idf:000][ot_main]: I(243478) OPENTHREAD:
+[19:29:13.080][I][esp-idf:000][ot_main]: [N] MeshForwarder-:     src:[fe80:0:0:0:446a:48c2:b0eb:b03a]:19788
+[19:29:13.081][I][esp-idf:000][ot_main]: 
+[19:29:13.081][I][esp-idf:000][ot_main]: I(243478) OPENTHREAD:
+[19:29:13.083][I][esp-idf:000][ot_main]: [N] MeshForwarder-:     dst:[fe80:0:0:0:8492:5120:3c77:9c5a]:19788
+[19:29:13.083][I][esp-idf:000][ot_main]: 
+[19:29:14.094][I][esp-idf:000][ot_main]: [N] MeshForwarder-:     src:[fe80:0:0:0:446a:48c2:b0eb:b03a]:19788
+[19:29:14.095][I][esp-idf:000][ot_main]: I(244498) OPENTHREAD:
+[19:29:14.096][I][esp-idf:000][ot_main]: [N] MeshForwarder-:     dst:[fe80:0:0:0:8492:5120:3c77:9c5a]:19788
+[19:29:14.096][I][esp-idf:000][ot_main]: 
+[19:29:14.098][I][esp-idf:000][ot_main]: I(244495) OPENTHREAD:
+[19:29:14.099][I][esp-idf:000][ot_main]: [N] Mle-----------: Role child -> detached
+[19:29:14.100][I][esp-idf:000][ot_main]: 
+[19:29:14.101][I][esp-idf:000][ot_main]: I(244496) OPENTHREAD:
+[19:29:14.102][I][esp-idf:000][ot_main]: [N] Mle-----------: RLOC16 f402 -> fffe
+[19:29:14.102][I][esp-idf:000][ot_main]: 
+[19:29:14.103][I][esp-idf:000][ot_main]: I(244496) OPENTHREAD:
+[19:29:14.105][I][esp-idf:000][ot_main]: [N] MeshForwarder-: Failed to send IPv6 UDP msg, len:98, chksum:b894, ecn:no, to:869251203c779c5a, sec:no, error:NoAck, prio:net
+[19:29:14.106][I][esp-idf:000][ot_main]: 
+[19:29:14.106][I][esp-idf:000][ot_main]: I(244497) OPENTHREAD:
+[19:29:14.107][I][esp-idf:000][ot_main]: 
+[19:29:14.318][I][esp-idf:000][ot_main]: I(244718) OPENTHREAD:
+[19:29:14.319][I][esp-idf:000][ot_main]: [N] Mle-----------: Attach attempt 1, AnyPartition 
+[19:29:14.320][I][esp-idf:000][ot_main]: 
+[19:29:22.256][I][esp-idf:000][ot_main]: I(252659) OPENTHREAD:
+[19:29:22.258][I][esp-idf:000][ot_main]: [N] Mle-----------: Attach attempt 1 unsuccessful, will try again in 0.293 seconds
+[19:29:22.258][I][esp-idf:000][ot_main]: 
+[19:29:22.554][I][esp-idf:000][ot_main]: I(252954) OPENTHREAD:
+[19:29:22.555][I][esp-idf:000][ot_main]: [N] Mle-----------: Attach attempt 2, AnyPartition 
+[19:29:22.556][I][esp-idf:000][ot_main]: 
+[19:29:25.986][I][esp-idf:000][ot_main]: I(256388) OPENTHREAD:
+[19:29:25.987][I][esp-idf:000][ot_main]: [N] Mle-----------: Attach attempt 2 unsuccessful, will try again in 0.514 seconds
+[19:29:25.988][I][esp-idf:000][ot_main]: 
+[19:29:26.504][I][esp-idf:000][ot_main]: I(256904) OPENTHREAD:
+[19:29:26.505][I][esp-idf:000][ot_main]: [N] Mle-----------: Attach attempt 3, AnyPartition 
+[19:29:26.506][I][esp-idf:000][ot_main]: 
+[19:29:29.937][I][esp-idf:000][ot_main]: I(260339) OPENTHREAD:
+[19:29:29.938][I][esp-idf:000][ot_main]: [N] Mle-----------: Attach attempt 3 unsuccessful, will try again in 1.018 seconds
+[19:29:29.938][I][esp-idf:000][ot_main]: 
+[19:29:30.959][I][esp-idf:000][ot_main]: I(261359) OPENTHREAD:
+[19:29:30.960][I][esp-idf:000][ot_main]: [N] Mle-----------: Attach attempt 4, AnyPartition 
+[19:29:30.961][I][esp-idf:000][ot_main]: 
+[19:29:34.390][I][esp-idf:000][ot_main]: I(264793) OPENTHREAD:
+[19:29:34.392][I][esp-idf:000][ot_main]: [N] Mle-----------: Attach attempt 4 unsuccessful, will try again in 2.049 seconds
+[19:29:34.392][I][esp-idf:000][ot_main]: 
+[19:29:36.444][I][esp-idf:000][ot_main]: I(266844) OPENTHREAD:
+[19:29:36.445][I][esp-idf:000][ot_main]: [N] Mle-----------: Attach attempt 5, AnyPartition 
+[19:29:36.446][I][esp-idf:000][ot_main]: 
+[19:29:39.876][I][esp-idf:000][ot_main]: I(270279) OPENTHREAD:
+[19:29:39.878][I][esp-idf:000][ot_main]: [N] Mle-----------: Attach attempt 5 unsuccessful, will try again in 4.025 seconds
+[19:29:39.878][I][esp-idf:000][ot_main]: 
+[19:29:43.906][I][esp-idf:000][ot_main]: I(274306) OPENTHREAD:
+[19:29:43.907][I][esp-idf:000][ot_main]: [N] Mle-----------: Attach attempt 6, AnyPartition 
+[19:29:43.908][I][esp-idf:000][ot_main]: 
+[19:29:47.339][I][esp-idf:000][ot_main]: I(277741) OPENTHREAD:
+[19:29:47.340][I][esp-idf:000][ot_main]: [N] Mle-----------: Attach attempt 6 unsuccessful, will try again in 8.073 seconds
+[19:29:47.341][I][esp-idf:000][ot_main]: 
+[19:29:55.416][I][esp-idf:000][ot_main]: I(285816) OPENTHREAD:
+[19:29:55.417][I][esp-idf:000][ot_main]: [N] Mle-----------: Attach attempt 7, AnyPartition 
+[19:29:55.418][I][esp-idf:000][ot_main]: 
+[19:29:58.849][I][esp-idf:000][ot_main]: I(289251) OPENTHREAD:
+[19:29:58.850][I][esp-idf:000][ot_main]: [N] Mle-----------: Attach attempt 7 unsuccessful, will try again in 16.088 seconds
+[19:29:58.851][I][esp-idf:000][ot_main]: 
+[19:30:14.941][I][esp-idf:000][ot_main]: I(305341) OPENTHREAD:
+[19:30:14.942][I][esp-idf:000][ot_main]: [N] Mle-----------: Attach attempt 8, AnyPartition 
+[19:30:14.944][I][esp-idf:000][ot_main]: 
+[19:30:18.374][I][esp-idf:000][ot_main]: I(308776) OPENTHREAD:
+[19:30:18.375][I][esp-idf:000][ot_main]: [N] Mle-----------: Attach attempt 8 unsuccessful, will try again in 32.164 seconds
+[19:30:18.376][I][esp-idf:000][ot_main]: 
+[19:30:50.542][I][esp-idf:000][ot_main]: I(340942) OPENTHREAD:
+[19:30:50.543][I][esp-idf:000][ot_main]: [N] Mle-----------: Attach attempt 9, AnyPartition 
+[19:30:50.544][I][esp-idf:000][ot_main]: 
+[19:30:53.975][I][esp-idf:000][ot_main]: I(344377) OPENTHREAD:
+[19:30:53.976][I][esp-idf:000][ot_main]: [N] Mle-----------: Attach attempt 9 unsuccessful, will try again in 64.275 seconds
+[19:30:53.977][I][esp-idf:000][ot_main]: 
+# Log reader stopped UTC: 2026-07-02T17:31:17+00:00

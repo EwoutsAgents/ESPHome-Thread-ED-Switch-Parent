@@ -57,6 +57,7 @@ class OpenThreadComponent : public Component {
   bool teardown_started_{false};
   bool teardown_complete_{false};
   bool connected_{false};
+  bool self_extaddr_logged_{false};
 
  private:
   const char *use_address_{""};

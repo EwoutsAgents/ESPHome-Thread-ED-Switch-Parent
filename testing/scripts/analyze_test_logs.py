@@ -42,7 +42,7 @@ MESH_FROM_RE = re.compile(r"MeshForwarder-: Received IPv6 UDP msg, .* from:([0-9
 MESH_TO_RE = re.compile(r"MeshForwarder-: Sent IPv6 UDP msg, .* to:([0-9a-f]+),?")
 IP_SRC_DST_RE = re.compile(r"MeshForwarder-:\s+(src|dst):\[([^\]]+)\]")
 PARENT_INFO_RE = re.compile(r"Saved ParentInfo \{extaddr:([0-9a-f]+), version:\d+\}")
-RADIO_EXTADDR_RE = re.compile(r"RadioExtAddress:\s*([0-9a-f]+)")
+RADIO_EXTADDR_RE = re.compile(r"(?:Self Thread ExtAddr|RadioExtAddress):\s*([0-9a-f]+)", re.I)
 SWITCH_TARGET_RE = re.compile(
     r"(?:Thread parent switch to ExtAddr|Parent discovery attempt \d+/\d+ for ExtAddr)\s+([0-9a-f:]{16,23})",
     re.I,

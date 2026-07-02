@@ -657,6 +657,15 @@ class ThreadPreferredParentComponent : public Component {
    * Start a targeted selected-parent attach for the configured target.
    *
    * @param instance Active OpenThread instance.
+   * @param now Current loop timestamp in milliseconds.
+   * @return `true` when the caller should return immediately after this helper.
+   */
+  bool launch_selected_parent_attach_from_discovery_(otInstance *instance, uint32_t now);
+
+  /**
+   * Start a targeted selected-parent attach for the configured target.
+   *
+   * @param instance Active OpenThread instance.
    * @return OpenThread status describing whether attach startup succeeded.
    */
   otError start_selected_parent_attach_(otInstance *instance);
@@ -755,6 +764,7 @@ class ThreadPreferredParentComponent : public Component {
   uint32_t selected_attach_timeout_ms_{16000};
   uint32_t phase_deadline_ms_{0};
   bool discovery_close_drain_pending_{false};
+  bool target_observed_handoff_logged_{false};
   bool active_{false};
   bool require_selected_parent_hook_{true};
   bool log_parent_responses_{true};

@@ -2303,15 +2303,30 @@ def patch_child_id_response_accept_log(root: Path, *, dry_run: bool = False) -> 
         Patch state string such as "already", "missing", or "patched".
     """
     path = root / "thread/mle.cpp"
-    old = """    Get().SetStateChild(shortAddress);
-"""
-    new = """    Get().SetStateChild(shortAddress);
+    text = normalize_newlines(path.read_text())
+    if "Current parent ExtAddr:" in text and "SelectedParent ChildIdResponse accepted" in text:
+        return "already"
+
+    old_with_selected = """    Get().SetStateChild(shortAddress);
     if (mMode == kSelectedParent)
     {
         LogNote(\"SelectedParent ChildIdResponse accepted parent=0x%04x child=0x%04x\", sourceAddress, shortAddress);
     }
 """
-    return replace_literal(path, old, new, already="SelectedParent ChildIdResponse accepted", dry_run=dry_run)
+    new = """    Get().SetStateChild(shortAddress);
+    LogNote(\"Current parent ExtAddr: %s\", Get<Mle>().mParent.GetExtAddress().ToString().AsCString());
+    if (mMode == kSelectedParent)
+    {
+        LogNote(\"SelectedParent ChildIdResponse accepted parent=0x%04x child=0x%04x\", sourceAddress, shortAddress);
+    }
+"""
+    state = replace_literal(path, old_with_selected, new, already="Current parent ExtAddr:", dry_run=dry_run)
+    if state != "missing":
+        return state
+
+    old = """    Get().SetStateChild(shortAddress);
+"""
+    return replace_literal(path, old, new, already="Current parent ExtAddr:", dry_run=dry_run)
 
 
 def patch_child_id_response_reject_log(root: Path, *, dry_run: bool = False) -> str:
@@ -2636,11 +2651,18 @@ def patch_child_id_response_accept_log_regex(root: Path, *, dry_run: bool = Fals
     """Fallback accepted-log patch for both Get().SetStateChild and Get<Mle>().SetStateChild."""
     path = root / "thread/mle.cpp"
     text = normalize_newlines(path.read_text())
-    if "SelectedParent ChildIdResponse accepted" in text:
+    if "Current parent ExtAddr:" in text and "SelectedParent ChildIdResponse accepted" in text:
         return "already"
 
-    pattern = r"((?:Get\s*(?:<\s*Mle\s*>)?\s*\(\s*\)\s*\.\s*)?SetStateChild\s*\(\s*shortAddress\s*\)\s*;)"
+    pattern = (
+        r"((?:Get\s*(?:<\s*Mle\s*>)?\s*\(\s*\)\s*\.\s*)?SetStateChild\s*\(\s*shortAddress\s*\)\s*;)"
+        r"(?:\s*if\s*\(\s*mMode\s*==\s*kSelectedParent\s*\)\s*\{\s*"
+        r"LogNote\(\"SelectedParent ChildIdResponse accepted parent=0x%04x child=0x%04x\",\s*sourceAddress,\s*shortAddress\);\s*"
+        r"\})?"
+        r"(?:\s*LogNote\(\"Current parent ExtAddr: %s\",\s*[^;]+\);\s*)?"
+    )
     block = """
+    LogNote(\"Current parent ExtAddr: %s\", Get<Mle>().mParent.GetExtAddress().ToString().AsCString());
     if (mMode == kSelectedParent)
     {
         LogNote(\"SelectedParent ChildIdResponse accepted parent=0x%04x child=0x%04x\", sourceAddress, shortAddress);
@@ -2649,7 +2671,7 @@ def patch_child_id_response_accept_log_regex(root: Path, *, dry_run: bool = Fals
         path,
         pattern,
         lambda m: m.group(1) + block,
-        already="SelectedParent ChildIdResponse accepted",
+        already="Current parent ExtAddr:",
         label="selected-parent ChildIdResponse accepted diagnostics regex",
         dry_run=dry_run,
     )

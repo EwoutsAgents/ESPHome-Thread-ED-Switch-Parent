@@ -9,6 +9,7 @@
 #include <openthread/logging.h>
 #include <openthread/netdata.h>
 #include <openthread/tasklet.h>
+#include <openthread/link.h>
 
 #include <cstring>
 
@@ -19,6 +20,16 @@
 static const char *const TAG = "openthread";
 
 namespace esphome::openthread {
+
+static std::string extaddr_to_string(const otExtAddress &addr) {
+  char buffer[sizeof("0011223344556677")] = {};
+  size_t offset = 0;
+  for (uint8_t byte : addr.m8) {
+    snprintf(buffer + offset, sizeof(buffer) - offset, "%02x", byte);
+    offset += 2;
+  }
+  return std::string(buffer);
+}
 
 OpenThreadComponent *global_openthread_component = nullptr;
 
@@ -44,9 +55,16 @@ void OpenThreadComponent::dump_config() {
 }
 
 void OpenThreadComponent::on_state_changed_(otChangedFlags flags, void *context) {
+  auto *self = static_cast<OpenThreadComponent *>(context);
+  otInstance *instance = self->get_openthread_instance_();
+  if (!self->self_extaddr_logged_ && (flags & (OT_CHANGED_THREAD_ROLE | OT_CHANGED_THREAD_PARTITION_ID))) {
+    const otExtAddress *extaddr = otLinkGetExtendedAddress(instance);
+    if (extaddr != nullptr) {
+      ESP_LOGI(TAG, "Self Thread ExtAddr: %s", extaddr_to_string(*extaddr).c_str());
+      self->self_extaddr_logged_ = true;
+    }
+  }
   if (flags & OT_CHANGED_THREAD_ROLE) {
-    auto *self = static_cast<OpenThreadComponent *>(context);
-    otInstance *instance = self->get_openthread_instance_();
     otDeviceRole role = otThreadGetDeviceRole(instance);
     self->connected_ = role >= OT_DEVICE_ROLE_CHILD;
   }
