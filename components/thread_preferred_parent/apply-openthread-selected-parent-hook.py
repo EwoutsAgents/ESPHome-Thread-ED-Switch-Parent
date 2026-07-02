@@ -495,9 +495,6 @@ def patch_attacher_continue_selected_parent_method(root: Path, *, dry_run: bool 
     """Continue a discovery-observed selected-parent attach with Child ID Request."""
     path = root / "thread/mle.cpp"
     text = normalize_newlines(path.read_text())
-    if "Mle::Attacher::ContinueSelectedParentAttach" in text:
-        return "already"
-
     method = """
 Error Mle::Attacher::ContinueSelectedParentAttach(const Mac::ExtAddress &aExtAddress)
 {
@@ -533,15 +530,19 @@ Error Mle::Attacher::ContinueSelectedParentAttach(const Mac::ExtAddress &aExtAdd
     mMode = kSelectedParent;
 
     SetState(kStateIdle);
+    SetState(kStateChildIdRequest);
+    mTimer.Start(kChildIdResponseTimeout);
+    LogNote("SelectedParent ChildIdRequest armed-before-send cand=0x%04x state=%d timeout=%lu",
+            mParentCandidate.GetRloc16(), mState, ToUlong(kChildIdResponseTimeout));
     SuccessOrExit(error = SendChildIdRequest());
     LogNote("SelectedParent ChildIdRequest continued-from-discovery cand=0x%04x timeout=%lu",
             mParentCandidate.GetRloc16(), ToUlong(kChildIdResponseTimeout));
-    SetState(kStateChildIdRequest);
-    mTimer.Start(kChildIdResponseTimeout);
 
 exit:
     if (error != kErrorNone)
     {
+        mTimer.Stop();
+        SetState(kStateIdle);
         LogWarn("SelectedParent continue failed err=%s cached=%d mode=%d state=%d discovery=%d candState=%d cand=0x%04x target=%s",
                 ErrorToString(error), mHasPreferredDiscoveryParentCandidate, mMode, mState,
                 thread_preferred_parent_ot_parent_discovery_active, mParentCandidate.IsStateParentResponse(),
@@ -551,6 +552,21 @@ exit:
 }
 
 """
+    existing_pattern = (
+        r"Error\s+Mle::Attacher::ContinueSelectedParentAttach\s*"
+        r"\(\s*const\s+Mac::ExtAddress\s*&\s*aExtAddress\s*\)\s*"
+        r"\{.*?\n\}\s*\n"
+    )
+    if re.search(existing_pattern, text, flags=re.DOTALL | re.MULTILINE):
+        return replace_regex(
+            path,
+            existing_pattern,
+            lambda _m: method.lstrip("\n"),
+            already="SelectedParent ChildIdRequest armed-before-send",
+            label="Mle::Attacher::ContinueSelectedParentAttach upgrade",
+            dry_run=dry_run,
+        )
+
     pattern = r"(void\s+Mle::Attacher::Attach\s*\(\s*AttachMode\s+aMode\s*\)\s*\{.*?\n\}\s*\n\s*)"
     return replace_regex(
         path,
