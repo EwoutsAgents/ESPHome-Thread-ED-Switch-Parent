@@ -1275,6 +1275,18 @@ def parse_radio_extaddr(log_path: Path) -> str | None:
     return None
 
 
+def parse_own_thread_extaddr(log_path: Path) -> str | None:
+    if not log_path.exists():
+        return None
+    text = log_path.read_text(encoding="utf-8", errors="replace")
+    matches = re.findall(r"Own Thread ExtAddr:\s*([0-9a-fA-F]{16})\b", text, flags=re.IGNORECASE)
+    for match in reversed(matches):
+        norm = normalize_extaddr(match)
+        if norm:
+            return norm
+    return None
+
+
 def find_last_extaddr_match_in_lines(
     text: str,
     patterns: list[str],
@@ -1383,12 +1395,38 @@ def map_router_extaddrs(device_logs: dict[str, Path]) -> dict[str, dict[str, str
     for logical_name, log_path in device_logs.items():
         if logical_name == "child" or not logical_name.startswith("router"):
             continue
-        extaddr = parse_radio_extaddr(log_path)
+        extaddr = parse_own_thread_extaddr(log_path)
+        if extaddr is None:
+            raise RuntimeError(f"Missing Own Thread ExtAddr in router log for {logical_name}: {log_path}")
         key = extaddr_key(extaddr)
-        if not key or not extaddr:
-            continue
-        mapped[key] = {"extaddr": extaddr, "logical_name": logical_name}
+        if key is None:
+            raise RuntimeError(f"Invalid Own Thread ExtAddr in router log for {logical_name}: {log_path}")
+        role, role_source = parse_latest_thread_role(log_path)
+        rloc16, rloc16_source = parse_latest_rloc16(log_path)
+        mapped[key] = {
+            "logical_name": logical_name,
+            "extaddr": extaddr,
+            "own_extaddr": key,
+            "role": role or "",
+            "role_source": role_source or "",
+            "rloc16": rloc16 or "",
+            "rloc16_source": rloc16_source or "",
+            "log_path": str(log_path),
+        }
     return mapped
+
+
+def format_router_identity_map(router_extaddrs: dict[str, dict[str, str]]) -> str:
+    entries: list[str] = []
+    for entry in sorted(router_extaddrs.values(), key=lambda item: item["logical_name"]):
+        suffix_parts = []
+        if entry.get("rloc16"):
+            suffix_parts.append(f"rloc16={entry['rloc16']}")
+        if entry.get("role"):
+            suffix_parts.append(f"role={entry['role']}")
+        suffix = f" ({', '.join(suffix_parts)})" if suffix_parts else ""
+        entries.append(f"{entry['logical_name']} -> {entry['own_extaddr']}{suffix}")
+    return "; ".join(entries)
 
 
 def parse_latest_thread_role(log_path: Path | None) -> tuple[str | None, str | None]:
@@ -1404,6 +1442,7 @@ def parse_latest_thread_role(log_path: Path | None) -> tuple[str | None, str | N
         re.compile(rf"\b(?:OpenThread|Thread)\b.*\b(?:role|state)\b\s*[:=]\s*({role_values})\b", re.I),
         re.compile(rf"\b(?:role|state)\b\s*[:=]\s*({role_values})\b", re.I),
         re.compile(rf"\b(?:role|state)\b\s*(?:changed|change)?\s*(?:from\s+\w+\s*)?(?:to|->)\s*({role_values})\b", re.I),
+        re.compile(rf"\b(?:role|state)\b\s+\w+\s*(?:to|->)\s*({role_values})\b", re.I),
         re.compile(rf"\b(?:become|became)\s+({role_values})\b", re.I),
     ]
 
@@ -1412,6 +1451,22 @@ def parse_latest_thread_role(log_path: Path | None) -> tuple[str | None, str | N
             match = pattern.search(line)
             if match:
                 return match.group(1).lower(), line.strip()
+    return None, None
+
+
+def parse_latest_rloc16(log_path: Path | None) -> tuple[str | None, str | None]:
+    if log_path is None or not log_path.exists():
+        return None, None
+    try:
+        lines = log_path.read_text(encoding="utf-8", errors="replace").splitlines()
+    except OSError:
+        return None, None
+
+    pattern = re.compile(r"\bRLOC16\s+(?:0x)?([0-9a-fA-F]{4})\s*->\s*(?:0x)?([0-9a-fA-F]{4})\b")
+    for line in reversed(lines):
+        match = pattern.search(line)
+        if match:
+            return match.group(2).lower(), line.strip()
     return None, None
 
 
@@ -1567,6 +1622,7 @@ def run_timed_sequence(
         tracker.set_step("detect_child_parent")
         parent_extaddr, parent_source = parse_child_parent_extaddr(child_log_path)
         router_extaddrs = map_router_extaddrs(device_log_paths)
+        log(f"Router identity map: {format_router_identity_map(router_extaddrs)}")
         parent_key = extaddr_key(parent_extaddr)
         parent_match = router_extaddrs.get(parent_key or "")
 
