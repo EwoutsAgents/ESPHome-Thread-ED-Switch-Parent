@@ -158,6 +158,17 @@ logger:
 network:
   enable_ipv6: true
 
+text_sensor:
+  - platform: openthread_info
+    ext_addr:
+      name: "Thread Extended Address"
+      on_value:
+        then:
+          - logger.log:
+              level: INFO
+              format: "Own Thread ExtAddr: %s"
+              args: ["x.c_str()"]
+
 openthread:
   device_type: MTD
   channel: 20
