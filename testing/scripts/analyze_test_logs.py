@@ -38,6 +38,19 @@ PARENT_REQ_RE = re.compile(r"Send Parent Request to routers")
 PARENT_RESP_RE = re.compile(r"Receive Parent Response \(([^,]+),(0x[0-9a-fA-F]+)\)")
 CHILD_ID_REQ_RE = re.compile(r"Send Child ID Request \(([^)]+)\)")
 CHILD_ID_RESP_RE = re.compile(r"Receive Child ID Response \(([^,]+),(0x[0-9a-fA-F]+)\)")
+QUIET_PARENT_REQ_RE = re.compile(r"Requested Thread parent switch to ExtAddr\s+([0-9a-f:]{16,23})", re.I)
+QUIET_PARENT_RESP_RE = re.compile(
+    r"Loop marked target observed .* Parent Response from ([0-9a-f:]{16,23})",
+    re.I,
+)
+QUIET_CHILD_ID_REQ_RE = re.compile(
+    r"SelectedParent ChildIdRequest (?:armed-before-send|continued-from-discovery) cand=(0x[0-9a-fA-F]+)",
+    re.I,
+)
+QUIET_CHILD_ID_RESP_RE = re.compile(
+    r"SelectedParent ChildIdResponse accepted parent=(0x[0-9a-fA-F]+) child=(0x[0-9a-fA-F]+)",
+    re.I,
+)
 MESH_FROM_RE = re.compile(r"MeshForwarder-: Received IPv6 UDP msg, .* from:([0-9a-f]+),?")
 MESH_TO_RE = re.compile(r"MeshForwarder-: Sent IPv6 UDP msg, .* to:([0-9a-f]+),?")
 IP_SRC_DST_RE = re.compile(r"MeshForwarder-:\s+(src|dst):\[([^\]]+)\]")
@@ -940,6 +953,17 @@ def analyze_log(
             failed.max_attempt_seen = max(failed.max_attempt_seen, int(attempt))
             failed.max_attempt_limit_seen = max(failed.max_attempt_limit_seen, int(limit))
             continue
+        if match := QUIET_PARENT_REQ_RE.search(line):
+            if current is not None:
+                current.parent_extaddr = resolve_parent_extaddr(
+                    current,
+                    mesh_events=mesh_events,
+                    parent_info_events=parent_info_events,
+                )
+                raw_sequences.append(current)
+            current = AttachSequence(send_parent_request_ms=timestamp_ms, line_no=line_no, child_extaddr=child_extaddr)
+            current.parent_extaddr = compact_extaddr(match.group(1))
+            continue
         if PARENT_REQ_RE.search(line):
             if current is not None:
                 current.parent_extaddr = resolve_parent_extaddr(
@@ -950,6 +974,14 @@ def analyze_log(
                 raw_sequences.append(current)
             current = AttachSequence(send_parent_request_ms=timestamp_ms, line_no=line_no, child_extaddr=child_extaddr)
             continue
+        if match := QUIET_CHILD_ID_REQ_RE.search(line):
+            if current is None:
+                current = AttachSequence(send_parent_request_ms=None, line_no=line_no, child_extaddr=child_extaddr)
+            if current.send_child_id_request_ms is None:
+                current.send_child_id_request_ms = timestamp_ms
+            if current.parent_rloc16 is None:
+                current.parent_rloc16 = match.group(1)
+            continue
         if match := CHILD_ID_REQ_RE.search(line):
             if current is None:
                 current = AttachSequence(send_parent_request_ms=None, line_no=line_no, child_extaddr=child_extaddr)
@@ -958,6 +990,12 @@ def analyze_log(
             continue
         if current is None:
             continue
+        if match := QUIET_PARENT_RESP_RE.search(line):
+            if current.receive_parent_response_ms is None:
+                current.receive_parent_response_ms = timestamp_ms
+            if current.parent_extaddr is None:
+                current.parent_extaddr = compact_extaddr(match.group(1))
+            continue
         if match := PARENT_RESP_RE.search(line):
             if current.receive_parent_response_ms is None:
                 current.receive_parent_response_ms = timestamp_ms
@@ -965,6 +1003,18 @@ def analyze_log(
                 current.parent_ipv6 = match.group(1)
             if current.parent_rloc16 is None:
                 current.parent_rloc16 = match.group(2)
+            continue
+        if match := QUIET_CHILD_ID_RESP_RE.search(line):
+            current.receive_child_id_response_ms = timestamp_ms
+            if current.parent_rloc16 is None:
+                current.parent_rloc16 = match.group(1)
+            current.parent_extaddr = resolve_parent_extaddr(
+                current,
+                mesh_events=mesh_events,
+                parent_info_events=parent_info_events,
+            ) or current.parent_extaddr
+            raw_sequences.append(current)
+            current = None
             continue
         if match := CHILD_ID_RESP_RE.search(line):
             current.receive_child_id_response_ms = timestamp_ms
