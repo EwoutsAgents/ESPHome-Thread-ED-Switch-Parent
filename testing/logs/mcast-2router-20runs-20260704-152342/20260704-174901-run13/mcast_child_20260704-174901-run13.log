@@ -1,0 +1,111 @@
+# Command: /home/ewout/.openclaw/workspace-softwaredeveloper/ESPHome-Thread-ED-Switch-Parent/.venv/bin/esphome logs /home/ewout/.openclaw/workspace-softwaredeveloper/ESPHome-Thread-ED-Switch-Parent/testing/configs/mcast_child.yaml --device /dev/serial/by-id/usb-Espressif_USB_JTAG_serial_debug_unit_58:8C:81:5D:B0:E0-if00
+# Started UTC: 2026-07-04T15:54:40+00:00
+INFO ESPHome 2026.4.5
+INFO Reading configuration /home/ewout/.openclaw/workspace-softwaredeveloper/ESPHome-Thread-ED-Switch-Parent/testing/configs/mcast_child.yaml...
+INFO Starting log output from /dev/serial/by-id/usb-Espressif_USB_JTAG_serial_debug_unit_58:8C:81:5D:B0:E0-if00 with baud rate 115200
+[17:54:41.166][I][openthread:153][ot_main]: Activating dataset...
+[17:54:41.170][I][esp-idf:000][ot_main]: I(454) OPENTHREAD:
+[17:54:41.171][I][esp-idf:000][ot_main]: [N] Mle-----------: Role disabled -> detached
+[17:54:41.172][I][esp-idf:000][ot_main]: 
+[17:54:41.179][I][esp-idf:000][ot_main]: I (463) OT_STATE: netif up
+
+[17:54:41.185]Thread parent USB CLI ready.
+[17:54:41.185]Commands:
+[17:54:41.185]  extaddr 00124b0001abcdef
+[17:54:41.186]  extaddr 00:12:4b:00:01:ab:cd:ef
+[17:54:41.186]  00124b0001abcdef
+[17:54:41.186]  switch
+[17:54:41.186]  help
+
+[17:54:41.187][I][app:123]: setup() finished successfully!
+[17:54:41.188][I][esp-idf:000][main]: I (346) main_task: Returned from app_main()
+[17:54:41.189][I][esp-idf:000][ot_main]: I (385) OPENTHREAD: Host connection mode none
+[17:54:41.190][I][esp-idf:000][ot_main]: I (385) phy_init: phy_version 343,b513b46,Nov 14 2025,16:34:12
+[17:54:41.192][I][esp-idf:000][ot_main]: W (385) phy_init: failed to load RF calibration data (0x1102), falling back to full calibration
+[17:54:41.194][I][esp-idf:000][ot_main]: I (431) phy_init: Saving new calibration data due to checksum failure or outdated calibration data, mode(2)
+[17:54:41.195][I][esp-idf:000][ot_main]: I (440) phy: libbtbb version: c493933, Nov 14 2025, 16:34:25
+[17:54:41.196][I][esp-idf:000][ot_main]: I (449) OPENTHREAD: OpenThread attached to netif
+[17:54:41.197][I][app:154]: ESPHome version 2026.4.5 compiled on 2026-07-03 23:55:03 +0200
+[17:54:41.198][I][app:161]: ESP32 Chip: ESP32-C6 rev0.2, 1 core(s)
+[17:54:41.366][I][main:341]: Own Thread ExtAddr: fe586735b1522be8
+[17:54:41.807][I][esp-idf:000][ot_main]: I(1087) OPENTHREAD:
+[17:54:41.809][I][esp-idf:000][ot_main]: [N] Mle-----------: Attach attempt 1, AnyPartition reattaching with Active Dataset
+[17:54:41.810][I][esp-idf:000][ot_main]: 
+[17:54:41.919]TPP notify parent response cb=0x420020f6 ctx=0x4080fea4 info=0x40821e14 rloc16=0x6c00
+[17:54:41.925]TPP notify parent response cb=0x420020f6 ctx=0x4080fea4 info=0x40821e14 rloc16=0x8800
+[17:54:42.589][I][esp-idf:000][ot_main]: I(1865) OPENTHREAD:
+[17:54:42.590][I][esp-idf:000][ot_main]: [N] Mle-----------: RLOC16 fffe -> 6c01
+[17:54:42.590][I][esp-idf:000][ot_main]: 
+[17:54:42.591][I][esp-idf:000][ot_main]: I(1865) OPENTHREAD:
+[17:54:42.592][I][esp-idf:000][ot_main]: [N] Mle-----------: Role detached -> child
+[17:54:42.593][I][esp-idf:000][ot_main]: 
+[17:54:42.593][I][esp-idf:000][ot_main]: I(1865) OPENTHREAD:
+[17:54:42.595][I][esp-idf:000][ot_main]: [N] Mle-----------: Current parent ExtAddr: 864b6c064f48dded
+[17:54:42.595][I][esp-idf:000][ot_main]: 
+[17:54:45.846]Requested Thread parent switch to ExtAddr 7a15b05bcf039567
+[17:54:45.847][I][thread_preferred_parent:694]: Ignoring stale ATTACHER_STATE event: generation 0 != current 1
+[17:54:45.848][I][thread_preferred_parent:694]: Ignoring stale ATTACHER_STATE event: generation 0 != current 1
+[17:54:45.850][I][thread_preferred_parent:694]: Ignoring stale PARENT_REQ_STARTED event: generation 0 != current 1
+[17:54:45.851][I][thread_preferred_parent:694]: Ignoring stale PARENT_RESPONSE event: generation 0 != current 1
+[17:54:45.852][I][thread_preferred_parent:694]: Ignoring stale PARENT_RESPONSE event: generation 0 != current 1
+[17:54:45.853][I][thread_preferred_parent:694]: Ignoring stale ATTACHER_STATE event: generation 0 != current 1
+[17:54:45.854][I][thread_preferred_parent:694]: Ignoring stale ATTACHER_STATE event: generation 0 != current 1
+[17:54:45.856][I][thread_preferred_parent:496]: Parent discovery attempt 1/1 for ExtAddr 7a15b05bcf039567; role=child current_parent=0x6c00/864b6c064f48dded
+[17:54:45.858][I][thread_preferred_parent:144][usb_parent_cli]: Configured preferred parent by extended address: 7a15b05bcf039567
+[17:54:45.859][I][thread_preferred_parent:179][usb_parent_cli]: V_initial_parent_extaddr=864b6c064f48dded
+[17:54:45.860][I][thread_preferred_parent:184][usb_parent_cli]: Requested Thread parent switch to ExtAddr 7a15b05bcf039567
+[17:54:45.862][I][thread_preferred_parent:832]: Loop consumed Start event; waiting up to 15000 ms for ParentReq
+[17:54:46.106][I][thread_preferred_parent:843]: Loop consumed ParentReq attacher-state event; discovery deadline armed for 8000 ms
+[17:54:46.107][I][esp-idf:000][ot_main]: I(5385) OPENTHREAD:
+[17:54:46.109][I][esp-idf:000][ot_main]: [N] Mle-----------: Attach attempt 0, BetterParent 
+[17:54:46.109][I][esp-idf:000][ot_main]: 
+[17:54:46.236]TPP notify parent response cb=0x420020f6 ctx=0x4080fea4 info=0x40821e14 rloc16=0x8800
+[17:54:46.239][I][thread_preferred_parent:778]: Loop marked target observed for generation 2 via Parent Response from 7a15b05bcf039567
+[17:54:46.240][I][thread_preferred_parent:781]: Loop set discovery deadline to now for immediate close after 135 ms
+[17:54:46.242][I][thread_preferred_parent:994]: Discovery result: target observed after 135 ms; closing discovery at 136 ms and starting selected-parent attach (matches=1 best_rloc16=0x8800 rssi=-12)
+[17:54:46.243][I][thread_preferred_parent:1164]: start_selected_parent_attach_ called for generation 2
+[17:54:46.246][I][thread_preferred_parent:1185]: Selected-parent attach candidate: source=observed-target-response selected=7a15b05bcf039567 configured_target=ExtAddr 7a15b05bcf039567 target_observed=YES buffered=1 target_matches=1 best_target_rloc16=0x8800 best_target_rssi=-12 valid_rssi=YES
+[17:54:46.248][I][thread_preferred_parent:1289]: Selected-parent handoff branch: trying direct discovery continuation to 7a15b05bcf039567
+[17:54:46.249][I][thread_preferred_parent:1196]: T3 selected-parent discovery continuation; target=7a15b05bcf039567
+[17:54:46.250][I][thread_preferred_parent:1197]: Continuing discovery directly into Child ID Request for ExtAddr 7a15b05bcf039567
+[17:54:46.251][I][esp-idf:000]: I(5535) OPENTHREAD:
+[17:54:46.253][I][esp-idf:000]: [N] Mle-----------: SelectedParent continue start cached=1 mode=4 state=2 discovery=1 candState=1 cand=0x8800 target=7a15b05bcf039567
+[17:54:46.253][I][esp-idf:000]: 
+[17:54:46.254][I][esp-idf:000]: I(5538) OPENTHREAD:
+[17:54:46.255][I][esp-idf:000]: [N] Mle-----------: SelectedParent continue using cached candidate extaddr=7a15b05bcf039567 rloc16=0x8800
+[17:54:46.256][I][esp-idf:000]: 
+[17:54:46.256][I][esp-idf:000]: I(5540) OPENTHREAD:
+[17:54:46.258][I][esp-idf:000]: [N] Mle-----------: SelectedParent ChildIdRequest armed-before-send cand=0x8800 state=4 timeout=1250
+[17:54:46.258][I][esp-idf:000]: 
+[17:54:46.262][I][esp-idf:000]: I(5546) OPENTHREAD:
+[17:54:46.263][I][esp-idf:000]: [N] Mle-----------: SelectedParent ChildIdRequest continued-from-discovery cand=0x8800 timeout=1250
+[17:54:46.264][I][esp-idf:000]: 
+[17:54:46.265][I][thread_preferred_parent:1200]: Selected-parent discovery continuation returned OT_ERROR_NONE
+[17:54:46.267][I][thread_preferred_parent:1289]: Selected-parent handoff branch: direct discovery continuation accepted for 7a15b05bcf039567
+[17:54:46.268][I][esp-idf:000][ot_main]: I(5521) OPENTHREAD:
+[17:54:46.270][I][esp-idf:000][ot_main]: [N] Mle-----------: SelectedParent discovery snapshot extaddr=7a15b05bcf039567 rloc16=0x8800
+[17:54:46.270][I][esp-idf:000][ot_main]: 
+[17:54:46.284][I][esp-idf:000][ot_main]: I(5568) OPENTHREAD:
+[17:54:46.286][I][esp-idf:000][ot_main]: [N] Mle-----------: Current parent ExtAddr: 7a15b05bcf039567
+[17:54:46.286][I][esp-idf:000][ot_main]: 
+[17:54:46.287][I][esp-idf:000][ot_main]: I(5571) OPENTHREAD:
+[17:54:46.289][I][esp-idf:000][ot_main]: [N] Mle-----------: SelectedParent ChildIdResponse accepted parent=0x8800 child=0x8802
+[17:54:46.289][I][esp-idf:000][ot_main]: 
+[17:54:46.299][I][esp-idf:000][ot_main]: I(5567) OPENTHREAD:
+[17:54:46.300][I][esp-idf:000][ot_main]: [N] Mle-----------: Role child -> detached
+[17:54:46.301][I][esp-idf:000][ot_main]: 
+[17:54:46.303][I][esp-idf:000][ot_main]: I(5567) OPENTHREAD:
+[17:54:46.304][I][esp-idf:000][ot_main]: [N] Mle-----------: RLOC16 6c01 -> 8802
+[17:54:46.304][I][esp-idf:000][ot_main]: 
+[17:54:46.305][I][esp-idf:000][ot_main]: I(5567) OPENTHREAD:
+[17:54:46.306][I][esp-idf:000][ot_main]: [N] Mle-----------: Role detached -> child
+[17:54:46.307][I][esp-idf:000][ot_main]: 
+[17:54:46.308][I][esp-idf:000][ot_main]: I(5568) OPENTHREAD:
+[17:54:46.309][I][esp-idf:000][ot_main]: [N] Mle-----------: Sending message to inform previous parent 0x6c00
+[17:54:46.309][I][esp-idf:000][ot_main]: 
+[17:54:46.311][I][thread_preferred_parent:373]: Thread parent switch succeeded; current parent is ExtAddr 7a15b05bcf039567
+[17:54:46.312][I][thread_preferred_parent:374]: Attach result: success after 73 ms; ExtAddr 7a15b05bcf039567 selected
+[17:55:06.286][I][esp-idf:000][ot_main]: I(25569) OPENTHREAD:
+[17:55:06.287][I][esp-idf:000][ot_main]: [N] Mle-----------: SelectedParent timer state=0 cand_state=0 has_candidate=0 got_parent_rsp=0
+[17:55:06.288][I][esp-idf:000][ot_main]: 
+# Log reader stopped UTC: 2026-07-04T16:00:48+00:00
