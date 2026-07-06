@@ -2,15 +2,22 @@
 
 ESPHome external component for experimenting with controlled parent switching on Thread end devices.
 
+> [!WARNING]
+> This is an experimental component. It patches ESP-IDF's vendored OpenThread source during the PlatformIO build. Use it for testing and diagnostics, not as a general-purpose production Thread parent-selection mechanism. Which means that after the patch is applied, the local verison of OpenThread is modified. To return to an unpatched baseline, remove the shared PlatformIO ESP-IDF package and rebuild:
+> ```bash
+> rm -rf ~/.platformio/packages/framework-espidf
+> rm -rf .esphome/build
+> ```
+>
+> You can also use separate `PLATFORMIO_PACKAGES_DIR` values for patched and unpatched builds.
+
+
 This component lets an ESPHome Thread end device attempt to connect to a specific Thread parent, identified either by the parent router's IEEE 802.15.4 extended address or by its RLOC16. It is mainly intended for testing, diagnostics, and controlled experiments with Thread parent selection behavior.
 
 The component uses a two-phase flow:
 
 1. **Discovery / preflight**: send an MLE Parent Request (multicast *or* unicast) while keeping the device attached to its current parent. During this phase, the component collects Parent Responses, logs candidates, checks whether the configured target parent appears, and retries discovery if the target is not visible.
 2. **Selected-parent attach / discovery continuation**: when the target parent is observed, invoke the patched OpenThread hook to continue the discovery flow into Child ID Request using the cached target Parent Response. This bypasses the normal parent-selection step and directs the attach attempt toward the observed target parent.
-
-> [!WARNING]
-> This is an experimental component. It patches ESP-IDF's vendored OpenThread source during the PlatformIO build. Use it for testing and diagnostics, not as a general-purpose production Thread parent-selection mechanism.
 
 ## Features
 
