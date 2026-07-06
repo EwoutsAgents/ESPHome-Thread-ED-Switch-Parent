@@ -869,12 +869,10 @@ def enrich_sequences_with_pcap(
         fill_sequence_from_pcap(seq, matched, source=source)
 
     child = compact_extaddr(child_extaddr)
-    if child is None:
-        return warnings
     for index, matched in enumerate(pcap_sequences):
         if index in used_indexes:
             continue
-        if pcap_sequence_child_extaddr(matched) != child:
+        if child is not None and pcap_sequence_child_extaddr(matched) != child:
             continue
         sequences.append(attach_sequence_from_pcap(matched, source=source))
     return warnings
