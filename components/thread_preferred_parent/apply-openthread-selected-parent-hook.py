@@ -823,7 +823,7 @@ def patch_selected_parent_destination(root: Path, *, dry_run: bool = False) -> s
         TxMessage *messageToCurParent = static_cast<TxMessage *>(message->Clone());
         VerifyOrExit(messageToCurParent != nullptr, error = kErrorNoBufs);
 
-        destination.SetToLinkLocalAddress(Get().mParent.GetExtAddress());
+        destination.SetToLinkLocalAddress(Get<Mle>().mParent.GetExtAddress());
         error = messageToCurParent->SendTo(destination);
         if (error != kErrorNone)
         {
@@ -832,7 +832,7 @@ def patch_selected_parent_destination(root: Path, *, dry_run: bool = False) -> s
         }
         Log(kMessageSend, kTypeParentRequestToRouters, destination);
 
-        destination.SetToLinkLocalAddress(Get().mParentSearch.GetSelectedParent().GetExtAddress());
+        destination.SetToLinkLocalAddress(Get<Mle>().mParentSearch.GetSelectedParent().GetExtAddress());
 #else
         // THREAD_PREFERRED_PARENT_SELECTED_PARENT_HOOK
         // MTD builds do not have ParentSearch, but selected-parent attach still
@@ -2723,7 +2723,7 @@ def apply_patches(root: Path, *, dry_run: bool = False) -> int:
         ("mle.cpp parent-response reporting call", root / "thread/mle.cpp", patch_mle_parent_response_reporting_call, True),
         ("mle.cpp parent-response reporting IsAttached fix", root / "thread/mle.cpp", patch_mle_parent_response_reporting_is_attached_fix, True),
         ("mle.cpp selected-parent bypass better-parent gate", root / "thread/mle.cpp", patch_selected_parent_target_bypass_better_parent_gate, True),
-        ("mle.cpp preferred discovery target snapshot", root / "thread/mle.cpp", patch_parent_response_target_snapshot, True),
+        ("mle.cpp preferred discovery target snapshot", root / "thread/mle.cpp", patch_parent_response_target_snapshot, False),
         ("mle_ftd.cpp provisional child timeout for discovery continuation", root / "thread/mle_ftd.cpp", patch_parent_request_child_timeout, True),
         ("mle.cpp selected-parent non-target Parent Response filter", root / "thread/mle.cpp", patch_selected_parent_parent_response_filter, True),
         ("diag ParentResponse challenge", root / "thread/mle.cpp", patch_parent_response_challenge_log, False),

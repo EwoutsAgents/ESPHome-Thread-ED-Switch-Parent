@@ -10,6 +10,7 @@ from __future__ import annotations
 
 import argparse
 import datetime as dt
+import hashlib
 import json
 import os
 import re
@@ -67,6 +68,10 @@ SKIP_PARENT_IS_LEADER_NOTE = (
     "The detected child parent is the current Thread leader. The run continues, but it keeps "
     "the SKIP_PARENT_IS_LEADER label because parent removal also disrupts the current leader."
 )
+FASTPR_MARKER = "THREAD_FAST_UNICAST_PARENT_RESPONSE_COMPONENT"
+OPENTHREAD_CORE_REL = Path("framework-espidf/components/openthread/openthread/src/core")
+MLE_FTD_REL = OPENTHREAD_CORE_REL / "thread/mle_ftd.cpp"
+BUILD_ENV_MARKER_NAME = ".openclaw_platformio_env.json"
 
 
 _SUPERVISOR_LOG_PATH: Path | None = None
@@ -101,6 +106,9 @@ class Settings:
     upload_speed: str | None = None
     precompile: bool = True
     clean_before_compile: bool = False
+    platformio_core_dir: Path = Path()
+    platformio_packages_dir: Path = Path()
+    reset_platformio_packages: bool = False
     devices: dict[str, str] = field(default_factory=dict)
     timing: Timing = field(default_factory=Timing)
     sniffer: SnifferSettings = field(default_factory=SnifferSettings)
@@ -110,6 +118,107 @@ class Settings:
 
 def now_utc_iso() -> str:
     return dt.datetime.now(dt.timezone.utc).isoformat(timespec="seconds")
+
+
+def default_platformio_packages_dir(testing_dir: Path, variant: str) -> Path:
+    return (testing_dir / ".pio-packages" / variant).resolve()
+
+
+def default_platformio_core_dir(testing_dir: Path, variant: str) -> Path:
+    return (testing_dir / ".platformio-core" / variant).resolve()
+
+
+def expected_fastpr_marker_present(variant: str) -> bool:
+    return variant == "ucast_fastpr"
+
+
+def openthread_mle_ftd_path(settings: Settings) -> Path:
+    return settings.platformio_packages_dir / MLE_FTD_REL
+
+
+def sha256_file(path: Path) -> str | None:
+    if not path.exists():
+        return None
+    h = hashlib.sha256()
+    with path.open("rb") as fh:
+        for chunk in iter(lambda: fh.read(1024 * 1024), b""):
+            h.update(chunk)
+    return h.hexdigest()
+
+
+def fastpr_marker_present(settings: Settings) -> bool | None:
+    path = openthread_mle_ftd_path(settings)
+    if not path.exists():
+        return None
+    return FASTPR_MARKER in path.read_text(encoding="utf-8", errors="replace")
+
+
+def command_env_overrides(settings: Settings) -> dict[str, str]:
+    return {
+        "PLATFORMIO_CORE_DIR": str(settings.platformio_core_dir),
+        "PLATFORMIO_PACKAGES_DIR": str(settings.platformio_packages_dir),
+    }
+
+
+def subprocess_env(settings: Settings) -> dict[str, str]:
+    env = os.environ.copy()
+    env.update(command_env_overrides(settings))
+    return env
+
+
+def contamination_check_status(marker_present: bool | None, expected_present: bool, *, phase: str) -> str:
+    if marker_present is None:
+        return "PENDING_INSTALL" if phase == "preflight" else "MISSING_FRAMEWORK"
+    if marker_present == expected_present:
+        return "PASS"
+    return "FAIL"
+
+
+def firmware_environment(settings: Settings, *, phase: str) -> dict[str, Any]:
+    mle_path = openthread_mle_ftd_path(settings)
+    marker_present = fastpr_marker_present(settings)
+    expected_present = expected_fastpr_marker_present("stock")
+    return {
+        "phase": phase,
+        "variant": "stock",
+        "platformio_core_dir": str(settings.platformio_core_dir),
+        "platformio_packages_dir": str(settings.platformio_packages_dir),
+        "framework_espidf_openthread_core": str(settings.platformio_packages_dir / OPENTHREAD_CORE_REL),
+        "mle_ftd_cpp": str(mle_path),
+        "mle_ftd_cpp_exists": mle_path.exists(),
+        "mle_ftd_cpp_sha256": sha256_file(mle_path),
+        "fastpr_marker_present": marker_present,
+        "expected_fastpr_marker_present": expected_present,
+        "contamination_check": contamination_check_status(marker_present, expected_present, phase=phase),
+    }
+
+
+def validate_firmware_environment(settings: Settings, *, phase: str) -> dict[str, Any]:
+    info = firmware_environment(settings, phase=phase)
+    marker_present = info["fastpr_marker_present"]
+    expected_present = info["expected_fastpr_marker_present"]
+    path = info["mle_ftd_cpp"]
+    if phase == "preflight":
+        if marker_present is True:
+            raise SystemExit(
+                "Refusing to run baseline variant with patched OpenThread source.\n"
+                f"Detected {FASTPR_MARKER} in:\n{path}\n\n"
+                "Use --reset-platformio-packages or choose a clean PLATFORMIO_PACKAGES_DIR."
+            )
+        return info
+    if marker_present is None:
+        raise SystemExit(
+            "Post-compile firmware-state verification failed.\n"
+            f"Expected OpenThread source file does not exist:\n{path}"
+        )
+    if marker_present != expected_present:
+        expected_text = "present" if expected_present else "absent"
+        observed_text = "present" if marker_present else "absent"
+        raise SystemExit(
+            "Post-compile firmware-state verification failed.\n"
+            f"Expected fast unicast marker to be {expected_text}, but it was {observed_text} in:\n{path}"
+        )
+    return info
 
 
 def build_run_logs_dir(logs_dir: Path, *, run_index: int | None = None) -> Path:
@@ -142,6 +251,13 @@ def log(msg: str) -> None:
         path.parent.mkdir(parents=True, exist_ok=True)
         with path.open("a", encoding="utf-8", errors="replace") as fh:
             fh.write(formatted + "\n")
+
+
+def latest_parent_removal_decision(events: list[dict[str, Any]]) -> dict[str, Any] | None:
+    for event in reversed(events):
+        if event.get("type") == "parent_removal_decision":
+            return event
+    return None
 
 
 def set_supervisor_log(path: Path | None) -> None:
@@ -210,6 +326,7 @@ class RunTracker:
         self.flush_manifest()
 
     def snapshot_payload(self) -> dict[str, Any]:
+        parent_decision = latest_parent_removal_decision(self.events)
         return {
             "created_utc": now_utc_iso(),
             "dry_run": self.dry_run,
@@ -228,11 +345,19 @@ class RunTracker:
             "esptool_bin": self.settings.esptool_bin,
             "precompile": self.settings.precompile,
             "clean_before_compile": self.settings.clean_before_compile,
+            "platformio_packages_dir": str(self.settings.platformio_packages_dir),
+            "reset_platformio_packages": self.settings.reset_platformio_packages,
             "devices": self.settings.devices,
             "timing": self.settings.timing.__dict__,
             "max_router_number": self.settings.max_router_number,
+            "firmware_environment": firmware_environment(self.settings, phase="runtime"),
             "additional_router_assignments": additional_router_assignments(self.settings),
             "device_assignments": device_assignments(self.settings),
+            "detected_parent_extaddr": parent_decision.get("detected_parent_extaddr") if parent_decision else None,
+            "detected_parent_source": parent_decision.get("detected_parent_source") if parent_decision else None,
+            "removed_parent_logical_name": parent_decision.get("parent_logical_name") if parent_decision else None,
+            "removed_parent_role": parent_decision.get("parent_device_role") if parent_decision else None,
+            "parent_removal_decision": parent_decision,
             "child_log": str(self.child_log) if self.child_log else None,
             "router1_log": str(self.router1_log) if self.router1_log else None,
             "router2_log": str(self.router2_log) if self.router2_log else None,
@@ -516,6 +641,8 @@ def load_settings(args: argparse.Namespace) -> Settings:
     configs_dir = resolve_relative(config_dir, raw.get("paths", {}).get("configs_dir"), "configs")
     logs_dir = resolve_relative(config_dir, raw.get("paths", {}).get("logs_dir"), "logs")
     run_logs_dir = build_run_logs_dir(logs_dir)
+    platformio_core_dir = default_platformio_core_dir(testing_dir, "stock")
+    platformio_packages_dir = platformio_core_dir / "packages"
 
     devices = dict(raw.get("devices", {}))
     required = {"router1", "child", "router2"}
@@ -533,6 +660,7 @@ def load_settings(args: argparse.Namespace) -> Settings:
             raise SystemExit(f"Each test role should use a different serial port. Collisions: {details}")
 
     esphome_raw = raw.get("esphome", {})
+    platformio_raw = raw.get("platformio", {})
     timing_raw = raw.get("timing", {})
     timing = Timing(
         sniffer_lead_in_seconds=int(timing_raw.get("sniffer_lead_in_seconds", 5)),
@@ -594,6 +722,23 @@ def load_settings(args: argparse.Namespace) -> Settings:
         )
         run_logs_dir = build_run_logs_dir(logs_dir)
 
+    platformio_core_value = (
+        getattr(args, "platformio_core_dir", None)
+        or platformio_raw.get("core_dir")
+        or raw.get("paths", {}).get("platformio_core_dir")
+    )
+    if platformio_core_value:
+        platformio_core_dir = resolve_relative(config_dir, str(platformio_core_value), ".")
+        platformio_packages_dir = platformio_core_dir / "packages"
+
+    platformio_packages_value = (
+        args.platformio_packages_dir
+        or platformio_raw.get("packages_dir")
+        or raw.get("paths", {}).get("platformio_packages_dir")
+    )
+    if platformio_packages_value:
+        platformio_packages_dir = resolve_relative(config_dir, str(platformio_packages_value), ".")
+
     return Settings(
         config_file=config_file,
         testing_dir=testing_dir,
@@ -612,6 +757,9 @@ def load_settings(args: argparse.Namespace) -> Settings:
         upload_speed=str(esphome_raw.get("upload_speed")) if esphome_raw.get("upload_speed") else None,
         precompile=precompile,
         clean_before_compile=clean_before_compile,
+        platformio_core_dir=platformio_core_dir,
+        platformio_packages_dir=platformio_packages_dir,
+        reset_platformio_packages=bool(args.reset_platformio_packages),
         devices={key: str(value) for key, value in devices.items()},
         timing=timing,
         sniffer=SnifferSettings(
@@ -625,13 +773,117 @@ def load_settings(args: argparse.Namespace) -> Settings:
 
 
 def config_path(settings: Settings, name: str) -> Path:
-    path = settings.configs_dir / CONFIG_NAMES[name]
+    runtime_dir = ensure_runtime_configs_dir(settings)
+    path = runtime_dir / CONFIG_NAMES[name]
     if not path.exists():
         raise SystemExit(f"Missing ESPHome config: {path}")
     return path
 
 
+def runtime_configs_dir(settings: Settings) -> Path:
+    return settings.platformio_core_dir / "esphome-configs"
+
+
+def ensure_runtime_configs_dir(settings: Settings) -> Path:
+    source_dir = settings.configs_dir
+    target_dir = runtime_configs_dir(settings)
+    repo_components_dir = settings.testing_dir.parent / "components"
+    shared_components_link = settings.platformio_core_dir.parent / "components"
+    target_dir.mkdir(parents=True, exist_ok=True)
+    if repo_components_dir.exists() and not (shared_components_link.exists() or shared_components_link.is_symlink()):
+        try:
+            shared_components_link.symlink_to(repo_components_dir.resolve(), target_is_directory=True)
+        except OSError:
+            if not shared_components_link.exists():
+                shutil.copytree(repo_components_dir, shared_components_link, dirs_exist_ok=True)
+    for source_path in source_dir.iterdir():
+        if source_path.name == ".esphome":
+            continue
+        target_path = target_dir / source_path.name
+        if target_path.exists() or target_path.is_symlink():
+            continue
+        try:
+            target_path.symlink_to(source_path.resolve())
+        except OSError:
+            shutil.copy2(source_path, target_path)
+    return target_dir
+
+
+def esphome_build_dir_for_yaml(yaml_path: Path) -> Path:
+    return yaml_path.parent / ".esphome" / "build" / yaml_path.stem
+
+
+def esphome_build_env_marker_path(yaml_path: Path) -> Path:
+    return esphome_build_dir_for_yaml(yaml_path) / BUILD_ENV_MARKER_NAME
+
+
+def clear_stale_esphome_build(
+    settings: Settings,
+    yaml_path: Path,
+    *,
+    dry_run: bool,
+    manifest: list[dict[str, Any]],
+    tracker: RunTracker | None = None,
+) -> None:
+    build_dir = esphome_build_dir_for_yaml(yaml_path)
+    if not build_dir.exists():
+        return
+    marker_path = esphome_build_env_marker_path(yaml_path)
+    expected_core_dir = str(settings.platformio_core_dir)
+    expected_packages_dir = str(settings.platformio_packages_dir)
+    recorded_core_dir = None
+    recorded_packages_dir = None
+    if marker_path.exists():
+        try:
+            recorded_env = json.loads(marker_path.read_text(encoding="utf-8"))
+            recorded_core_dir = recorded_env.get("platformio_core_dir")
+            recorded_packages_dir = recorded_env.get("platformio_packages_dir")
+        except json.JSONDecodeError:
+            pass
+    if settings.reset_platformio_packages:
+        reason = "platformio_environment_reset"
+    elif recorded_core_dir == expected_core_dir and recorded_packages_dir == expected_packages_dir:
+        return
+    else:
+        reason = "platformio_environment_changed" if (recorded_core_dir or recorded_packages_dir) else "missing_platformio_env_marker"
+    entry = {
+        "time_utc": now_utc_iso(),
+        "type": "esphome_build_reset",
+        "yaml": str(yaml_path),
+        "build_dir": str(build_dir),
+        "reason": reason,
+        "recorded_platformio_core_dir": recorded_core_dir,
+        "recorded_platformio_packages_dir": recorded_packages_dir,
+        "expected_platformio_core_dir": expected_core_dir,
+        "expected_platformio_packages_dir": expected_packages_dir,
+        "dry_run": dry_run,
+    }
+    manifest.append(entry)
+    if tracker is not None:
+        tracker.append_event(entry)
+    log(("DRY-RUN RESET " if dry_run else "RESET BUILD ") + str(build_dir))
+    if not dry_run:
+        shutil.rmtree(build_dir, ignore_errors=True)
+
+
+def record_esphome_build_provenance(settings: Settings, yaml_path: Path) -> None:
+    marker_path = esphome_build_env_marker_path(yaml_path)
+    marker_path.parent.mkdir(parents=True, exist_ok=True)
+    marker_path.write_text(
+        json.dumps(
+            {
+                "platformio_core_dir": str(settings.platformio_core_dir),
+                "platformio_packages_dir": str(settings.platformio_packages_dir),
+            },
+            indent=2,
+        )
+        + "\n",
+        encoding="utf-8",
+    )
+
+
 def run_command(
+    settings: Settings,
     cmd: list[str],
     *,
     dry_run: bool,
@@ -640,7 +892,8 @@ def run_command(
     tracker: RunTracker | None = None,
     check: bool = True,
 ) -> subprocess.CompletedProcess[str] | None:
-    entry = {"time_utc": now_utc_iso(), "cmd": cmd, "cwd": str(cwd or Path.cwd()), "dry_run": dry_run}
+    env_overrides = command_env_overrides(settings) if cmd and Path(cmd[0]) == Path(settings.esphome_bin) else {}
+    entry = {"time_utc": now_utc_iso(), "cmd": cmd, "cwd": str(cwd or Path.cwd()), "dry_run": dry_run, "env": env_overrides}
     if manifest is not None:
         manifest.append(entry)
     if tracker is not None:
@@ -655,6 +908,7 @@ def run_command(
             check=check,
             text=True,
             capture_output=True,
+            env=subprocess_env(settings) if env_overrides else None,
         )
     except subprocess.CalledProcessError as exc:
         if tracker is not None:
@@ -694,7 +948,7 @@ def erase_flash(
     tracker: RunTracker | None = None,
 ) -> None:
     cmd = [settings.esptool_bin, "--chip", "esp32c6", "--port", settings.devices[role], "erase_flash"]
-    run_command(cmd, dry_run=dry_run, manifest=manifest, tracker=tracker)
+    run_command(settings, cmd, dry_run=dry_run, manifest=manifest, tracker=tracker)
 
 
 def precompile_all(
@@ -704,23 +958,64 @@ def precompile_all(
     manifest: list[dict[str, Any]],
     tracker: RunTracker | None = None,
 ) -> None:
+    if settings.reset_platformio_packages:
+        entry = {
+            "time_utc": now_utc_iso(),
+            "type": "platformio_environment_reset",
+            "platformio_core_dir": str(settings.platformio_core_dir),
+            "platformio_packages_dir": str(settings.platformio_packages_dir),
+            "dry_run": dry_run,
+        }
+        manifest.append(entry)
+        if tracker is not None:
+            tracker.append_event(entry)
+        log(("DRY-RUN " if dry_run else "RESET ") + str(settings.platformio_core_dir))
+        if not dry_run:
+            shutil.rmtree(settings.platformio_core_dir, ignore_errors=True)
+            shutil.rmtree(settings.platformio_packages_dir, ignore_errors=True)
+    if dry_run and settings.reset_platformio_packages:
+        preflight_info = firmware_environment(settings, phase="preflight")
+        preflight_info["fastpr_marker_present"] = None
+        preflight_info["mle_ftd_cpp_exists"] = False
+        preflight_info["mle_ftd_cpp_sha256"] = None
+        preflight_info["contamination_check"] = "PENDING_RESET"
+    else:
+        preflight_info = validate_firmware_environment(settings, phase="preflight")
+    manifest.append({"time_utc": now_utc_iso(), "type": "firmware_environment", **preflight_info})
+    if tracker is not None:
+        tracker.append_event({"time_utc": now_utc_iso(), "type": "firmware_environment", **preflight_info})
     log("Precompiling firmware before timed test sequence.")
     compile_order = [*CORE_COMPILE_ORDER, *additional_router_firmware_names(settings)]
     for name in compile_order:
         yaml_path = config_path(settings, name)
+        clear_stale_esphome_build(
+            settings,
+            yaml_path,
+            dry_run=dry_run,
+            manifest=manifest,
+            tracker=tracker,
+        )
         if settings.clean_before_compile:
             run_command(
+                settings,
                 esphome_base(settings) + ["clean", str(yaml_path)],
                 dry_run=dry_run,
                 manifest=manifest,
                 tracker=tracker,
             )
         run_command(
+            settings,
             esphome_base(settings) + ["compile", str(yaml_path)],
             dry_run=dry_run,
             manifest=manifest,
             tracker=tracker,
         )
+        if not dry_run:
+            record_esphome_build_provenance(settings, yaml_path)
+    postcompile_info = firmware_environment(settings, phase="postcompile") if dry_run else validate_firmware_environment(settings, phase="postcompile")
+    manifest.append({"time_utc": now_utc_iso(), "type": "firmware_environment", **postcompile_info})
+    if tracker is not None:
+        tracker.append_event({"time_utc": now_utc_iso(), "type": "firmware_environment", **postcompile_info})
     log("Precompile phase complete. No compile commands will be run in the timed sequence.")
 
 
@@ -737,7 +1032,7 @@ def upload(
     cmd = esphome_base(settings) + ["upload", str(yaml_path), "--device", settings.devices[role]]
     if settings.upload_speed:
         cmd += ["--upload_speed", settings.upload_speed]
-    run_command(cmd, dry_run=dry_run, manifest=manifest, tracker=tracker)
+    run_command(settings, cmd, dry_run=dry_run, manifest=manifest, tracker=tracker)
 
 
 def sleep_step(
@@ -1047,6 +1342,7 @@ def start_device_log(
         {
             "time_utc": now_utc_iso(),
             "cmd": cmd,
+            "env": command_env_overrides(settings),
             "log_path": str(log_path),
             "logical_name": logical_name,
             "config_name": config_name,
@@ -1080,6 +1376,7 @@ def start_device_log(
         encoding="utf-8",
         errors="replace",
         bufsize=1,
+        env=subprocess_env(settings),
     )
 
     def pump() -> None:
@@ -1287,6 +1584,39 @@ def parse_own_thread_extaddr(log_path: Path) -> str | None:
     return None
 
 
+def parse_self_link_local_extaddr(log_path: Path) -> str | None:
+    if not log_path.exists():
+        return None
+    text = log_path.read_text(encoding="utf-8", errors="replace")
+    patterns = [
+        r"\bsrc:\[(fe80:[0-9a-fA-F:]+)\]",
+        r"\bsource:\s*\[(fe80:[0-9a-fA-F:]+)\]",
+        r"\bLocal(?:\s+|-)Addr(?:ess)?\b[:= ]+\[?(fe80:[0-9a-fA-F:]+)\]?",
+    ]
+    for pattern in patterns:
+        for match in reversed(re.findall(pattern, text, flags=re.IGNORECASE)):
+            norm = ipv6_link_local_to_extaddr(match)
+            if norm:
+                return norm
+    return None
+
+
+def parse_router_self_extaddr(log_path: Path) -> tuple[str | None, str | None]:
+    own_extaddr = parse_own_thread_extaddr(log_path)
+    if own_extaddr is not None:
+        return own_extaddr, "own_thread_extaddr"
+
+    radio_extaddr = parse_radio_extaddr(log_path)
+    if radio_extaddr is not None:
+        return radio_extaddr, "radio_extaddr"
+
+    link_local_extaddr = parse_self_link_local_extaddr(log_path)
+    if link_local_extaddr is not None:
+        return link_local_extaddr, "self_link_local"
+
+    return None, None
+
+
 def find_last_extaddr_match_in_lines(
     text: str,
     patterns: list[str],
@@ -1348,7 +1678,11 @@ def parse_child_parent_extaddr(child_log: Path) -> tuple[str | None, str | None]
     if not child_log.exists():
         return None, None
     text = child_log.read_text(encoding="utf-8", errors="replace")
-    child_radio_extaddr = parse_radio_extaddr(child_log)
+    # Prefer the explicit self-identity line over generic ExtAddr parsing.
+    # At INFO level, logs also contain lines such as "Current parent ExtAddr: ...";
+    # using a generic ExtAddr parser here can misclassify the parent as the
+    # child's own address and incorrectly reject it.
+    child_radio_extaddr = parse_own_thread_extaddr(child_log) or parse_radio_extaddr(child_log)
 
     explicit_patterns = [
         r"\bSaved ParentInfo\b.*?\b(?:ExtAddr|ExtAddress|Ext Address)\b[:= ]+([0-9a-fA-F:]{16,23})",
@@ -1395,18 +1729,19 @@ def map_router_extaddrs(device_logs: dict[str, Path]) -> dict[str, dict[str, str
     for logical_name, log_path in device_logs.items():
         if logical_name == "child" or not logical_name.startswith("router"):
             continue
-        extaddr = parse_own_thread_extaddr(log_path)
+        extaddr, extaddr_source = parse_router_self_extaddr(log_path)
         if extaddr is None:
-            raise RuntimeError(f"Missing Own Thread ExtAddr in router log for {logical_name}: {log_path}")
+            raise RuntimeError(f"Missing router self ExtAddr in log for {logical_name}: {log_path}")
         key = extaddr_key(extaddr)
         if key is None:
-            raise RuntimeError(f"Invalid Own Thread ExtAddr in router log for {logical_name}: {log_path}")
+            raise RuntimeError(f"Invalid router self ExtAddr in log for {logical_name}: {log_path}")
         role, role_source = parse_latest_thread_role(log_path)
         rloc16, rloc16_source = parse_latest_rloc16(log_path)
         mapped[key] = {
             "logical_name": logical_name,
             "extaddr": extaddr,
             "own_extaddr": key,
+            "own_extaddr_source": extaddr_source or "",
             "role": role or "",
             "role_source": role_source or "",
             "rloc16": rloc16 or "",
@@ -1619,6 +1954,9 @@ def run_timed_sequence(
             tracker=tracker,
         )
 
+        if dry_run:
+            return child_log_path, router1_log_path, router2_log_path, sniffer_log_path, None, None
+
         tracker.set_step("detect_child_parent")
         parent_extaddr, parent_source = parse_child_parent_extaddr(child_log_path)
         router_extaddrs = map_router_extaddrs(device_log_paths)
@@ -1830,9 +2168,13 @@ def write_manifest(
         "esptool_bin": settings.esptool_bin,
         "precompile": settings.precompile,
         "clean_before_compile": settings.clean_before_compile,
+        "platformio_core_dir": str(settings.platformio_core_dir),
+        "platformio_packages_dir": str(settings.platformio_packages_dir),
+        "reset_platformio_packages": settings.reset_platformio_packages,
         "devices": settings.devices,
         "timing": settings.timing.__dict__,
         "max_router_number": settings.max_router_number,
+        "firmware_environment": firmware_environment(settings, phase="final"),
         "additional_router_assignments": additional_router_assignments(settings),
         "device_assignments": device_assignments(settings),
         "child_log": str(child_log) if child_log else None,
@@ -1863,6 +2205,9 @@ def parse_args(argv: list[str]) -> argparse.Namespace:
     parser.add_argument("--skip-precompile", action="store_true", help="Skip precompile phase. Not recommended for measurement runs.")
     parser.add_argument("--force-precompile", action="store_true", help="Force precompile phase even if disabled in TOML.")
     parser.add_argument("--clean-before-compile", action="store_true", help="Run `esphome clean` before each compile.")
+    parser.add_argument("--platformio-core-dir", help="Override isolated PLATFORMIO_CORE_DIR for this variant.")
+    parser.add_argument("--platformio-packages-dir", help="Override isolated PLATFORMIO_PACKAGES_DIR for this variant.")
+    parser.add_argument("--reset-platformio-packages", action="store_true", help="Delete the selected PLATFORMIO_PACKAGES_DIR before precompile.")
     parser.add_argument("--allow-same-port", action="store_true", help="Permit multiple roles to use the same serial port.")
     return parser.parse_args(argv)
 
@@ -1904,6 +2249,8 @@ def main(argv: list[str]) -> int:
         log(f"Using esptool: {settings.esptool_bin}")
         log(f"Using configs: {settings.configs_dir}")
         log(f"Using logs base: {settings.logs_dir}")
+        log(f"Using PLATFORMIO_CORE_DIR: {settings.platformio_core_dir}")
+        log(f"Using PLATFORMIO_PACKAGES_DIR: {settings.platformio_packages_dir}")
         log(f"Requested timed runs: {args.runs}")
         log(f"Initial run logs dir: {settings.run_logs_dir}")
 

@@ -1056,6 +1056,7 @@ def analyze_log(
         "log_file": str(path),
         "manifest_status": manifest.get("status") if manifest else None,
         "manifest_path": manifest.get("_manifest_path") if manifest else None,
+        "firmware_environment": manifest.get("firmware_environment") if manifest else None,
         "labels": manifest_labels(manifest),
         "child_extaddr": child_extaddr,
         "switch_targets": switch_targets,
@@ -1147,6 +1148,26 @@ def render_sequence_lines(seq: dict[str, Any], *, include_pcap: bool) -> list[st
     return out
 
 
+def render_firmware_provenance_lines(info: dict[str, Any] | None) -> list[str]:
+    if not info:
+        return ["not recorded"]
+    def fmt(value: Any) -> str:
+        return "not recorded" if value is None else str(value)
+    marker = info.get("fastpr_marker_present")
+    expected = info.get("expected_fastpr_marker_present")
+    return [
+        "| Field | Value |",
+        "| --- | --- |",
+        f"| PLATFORMIO_CORE_DIR | `{fmt(info.get('platformio_core_dir'))}` |",
+        f"| PLATFORMIO_PACKAGES_DIR | `{fmt(info.get('platformio_packages_dir'))}` |",
+        f"| OpenThread core | `{fmt(info.get('framework_espidf_openthread_core'))}` |",
+        f"| mle_ftd.cpp SHA-256 | `{fmt(info.get('mle_ftd_cpp_sha256'))}` |",
+        f"| fast unicast Parent Response marker | `{fmt(marker)}` |",
+        f"| expected for variant | `{fmt(expected)}` |",
+        f"| contamination check | `{fmt(info.get('contamination_check'))}` |",
+    ]
+
+
 def render_markdown_report(
     results: list[dict[str, Any]],
     *,
@@ -1196,6 +1217,9 @@ def render_markdown_report(
             out.append(f"- child extaddr: `{format_optional(result.get('child_extaddr'))}`")
             if result.get("switch_targets"):
                 out.append(f"- switch target extaddr(s): `{', '.join(result['switch_targets'])}`")
+            out.append("")
+            out.extend(["#### Firmware Provenance", ""])
+            out.extend(render_firmware_provenance_lines(result.get("firmware_environment")))
             out.append("")
             warnings = result.get("warnings", [])
             if warnings:

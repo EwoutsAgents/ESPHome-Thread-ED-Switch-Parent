@@ -27,6 +27,42 @@ text_sensor:
               level: INFO
               format: "Own Thread ExtAddr: %s"
               args: ["x.c_str()"]
+
+globals:
+  - id: stock_parent_extaddr_logged
+    type: bool
+    restore_value: no
+    initial_value: "false"
+
+interval:
+  - interval: 500ms
+    then:
+      - lambda: |-
+          if (id(stock_parent_extaddr_logged)) {
+            return;
+          }
+
+          auto lock = esphome::openthread::InstanceLock::try_acquire(0);
+          if (!lock.has_value()) {
+            return;
+          }
+
+          if (otThreadGetDeviceRole(lock->get_instance()) < OT_DEVICE_ROLE_CHILD) {
+            return;
+          }
+
+          otRouterInfo parent_info{};
+          if (otThreadGetParentInfo(lock->get_instance(), &parent_info) != OT_ERROR_NONE) {
+            return;
+          }
+
+          char parent_extaddr[17] = {};
+          for (size_t i = 0; i < OT_EXT_ADDRESS_SIZE; i++) {
+            snprintf(parent_extaddr + (i * 2), sizeof(parent_extaddr) - (i * 2), "%02x", parent_info.mExtAddress.m8[i]);
+          }
+
+          ESP_LOGI("stock_child_parent", "Current parent ExtAddr: %s", parent_extaddr);
+          id(stock_parent_extaddr_logged) = true;
               
 openthread:
   device_type: MTD

@@ -14,11 +14,27 @@ Use the following child firmware and log directory pattern for each variant:
 
 Each child firmware variant also uses a distinct `esphome.name`, so ESPHome writes each build into a separate `.esphome/build/<name>/` directory. This avoids race conditions during parallel precompile or test runs.
 
+This does not isolate framework source mutation by itself. The `ucast_fastpr` router firmware uses a PlatformIO pre-build patch that modifies the active `framework-espidf` OpenThread tree inside `PLATFORMIO_PACKAGES_DIR`. ESP-IDF bootloader setup can also leak through a shared `PLATFORMIO_CORE_DIR`. Reusing that state for `ucast` or `mcast` would invalidate the baseline because the routers would no longer be built from a clean environment.
+
 | Variant | ESPHome name | Build directory |
 | --- | --- | --- |
 | Unicast | `ucast-child` | `.esphome/build/ucast-child/` |
 | Unicast fastpr | `ucast-fastpr-child` | `.esphome/build/ucast-fastpr-child/` |
 | Multicast | `mcast-child` | `.esphome/build/mcast-child/` |
+
+The runners therefore default to per-variant package directories under:
+
+```text
+testing/.pio-packages/<variant>/
+```
+
+Expected fastpr patch state:
+
+* `ucast`: absent
+* `mcast`: absent
+* `ucast_fastpr`: present after compile
+
+Baseline variants refuse to continue if the fastpr marker is already present in the selected OpenThread source tree. The strongest operating mode is to use one isolated PlatformIO core per variant, with packages inside that core, and `--reset-platformio-packages` for each batch.
 
 Each variation follows the same setup until the requested router set has been flashed. Variations differ only in the total number of router-capable ESP32-C6 boards included in the run and, for `ucast_fastpr`, in the router firmware prefix. The `n_routers` setting is the total router count and does not include the child. Routers are flashed in order using the variant-appropriate router firmware prefix, where `<n>` starts at `1` and increases sequentially until the requested total router count is reached. The current maximum is four routers total. For a switch to occur, at least two routers must be present.
 
@@ -46,3 +62,21 @@ A run is considered suitable for the timed directed-switch phase only if, after 
 16. Stop the `IEEE 802.15.4` sniffer recording.
 17. Copy the resulting sniffer `.pcapng` into the current run folder for the selected variant as `<variant>_sniffer_<timestamp>.pcapng`.
 18. Classify the run outcome. A valid directed parent-switch measurement requires the target child to lose its initial parent and complete a new MLE attach to the randomly selected target parent. Runs in which the child does not switch to the selected target parent, router-capable devices reattach, downgrade, change RLOC16, elect a new leader unexpectedly, or otherwise repair the router topology during the measurement window should be classified separately during analysis rather than treated as clean directed parent-switch measurements. Runs labeled `SKIP_PARENT_IS_LEADER` should keep that label even though they continue through the timed switch/removal phase.
+
+Recommended commands:
+
+```bash
+python testing/scripts/run_ucast_test.py \
+  --variant ucast \
+  --config testing/ucast_test_devices_2routers.toml \
+  --reset-platformio-packages \
+  --runs 20
+```
+
+```bash
+python testing/scripts/run_ucast_test.py \
+  --variant ucast_fastpr \
+  --config testing/ucast_fastpr_test_devices_2routers.toml \
+  --reset-platformio-packages \
+  --runs 20
+```

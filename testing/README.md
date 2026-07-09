@@ -59,11 +59,44 @@ Generated logs, manifests, CSV exports, reports, and sniffer captures are writte
 
 Each child firmware variant uses a distinct `esphome.name`, so ESPHome writes each build into a separate `.esphome/build/<name>/` directory. This avoids race conditions during parallel precompile or test runs.
 
+That build-directory separation is not sufficient to isolate ESP-IDF/OpenThread source mutations. The `ucast_fastpr` router firmware uses a PlatformIO pre-build patch step that modifies the active `framework-espidf` package tree under `PLATFORMIO_PACKAGES_DIR`. Also, ESP-IDF bootloader setup can still reuse global PlatformIO core state unless `PLATFORMIO_CORE_DIR` is isolated too. If a later baseline run reuses that state, the baseline firmware can be contaminated even though the `.esphome/build/...` directory is different.
+
 | Variant | Config | ESPHome name | Build directory |
 | --- | --- | --- | --- |
 | Unicast | `testing/configs/ucast_child.yaml` | `ucast-child` | `.esphome/build/ucast-child/` |
 | Multicast | `testing/configs/mcast_child.yaml` | `mcast-child` | `.esphome/build/mcast-child/` |
 | Unicast fastpr | `testing/configs/ucast_fastpr_child.yaml` | `ucast-fastpr-child` | `.esphome/build/ucast-fastpr-child/` |
+
+## PlatformIO package isolation
+
+The runners now treat OpenThread patch state as a first-class invariant and default to variant-specific PlatformIO package directories:
+
+```text
+testing/.pio-packages/stock/
+testing/.pio-packages/ucast/
+testing/.pio-packages/mcast/
+testing/.pio-packages/ucast_fastpr/
+```
+
+Every ESPHome command launched by the runners sets both `PLATFORMIO_CORE_DIR` and `PLATFORMIO_PACKAGES_DIR` explicitly. By default, `PLATFORMIO_PACKAGES_DIR` lives inside the selected core directory as `<PLATFORMIO_CORE_DIR>/packages`, so each variant uses one self-contained PlatformIO environment. You do not need to export them in the shell for normal use.
+
+Variant expectations:
+
+* `stock`, `ucast`, `mcast`: fast unicast Parent Response patch must be absent.
+* `ucast_fastpr`: fast unicast Parent Response patch must be present after compile.
+
+Baseline variants refuse to continue if they detect the fastpr marker in the selected OpenThread source tree. Use `--reset-platformio-packages` to delete only the selected variant PlatformIO core/package directories before precompile.
+
+Safe run order without resets is:
+
+```text
+stock -> ucast -> mcast -> ucast_fastpr
+```
+
+Preferred method:
+
+* use the default per-variant package directories; or
+* pass `--reset-platformio-packages` for each batch.
 
 ## Compilation policy
 
@@ -242,6 +275,12 @@ Use `--precompile-only` to compile the required firmware artifacts and exit befo
 ./run_mcast_test.sh --config mcast_test_devices.toml --precompile-only
 ```
 
+The precompile phase now performs:
+
+* preflight contamination detection before compile;
+* post-compile marker verification after compile;
+* manifest provenance recording for the selected `PLATFORMIO_CORE_DIR` and `PLATFORMIO_PACKAGES_DIR`.
+
 ## Clean build before compiling
 
 Use `--clean-before-compile` when firmware artifacts should be rebuilt from scratch before the upload-only timed sequence, where supported:
@@ -254,6 +293,22 @@ Use `--clean-before-compile` when firmware artifacts should be rebuilt from scra
 ```
 
 This is recommended after changing `sdkconfig_options`, so the generated ESP-IDF configuration is rebuilt from scratch.
+
+Use `--reset-platformio-packages` when the selected variant package directory should be deleted before precompile:
+
+```bash
+./run_stock_test.sh --config stock_test_devices_4routers.toml --reset-platformio-packages
+./run_ucast_test.sh --config ucast_test_devices_4routers.toml --reset-platformio-packages
+./run_ucast_fastpr_test.sh --config ucast_fastpr_test_devices_4routers.toml --reset-platformio-packages
+./run_mcast_test.sh --config mcast_test_devices.toml --reset-platformio-packages
+```
+
+You can also override the package directory explicitly:
+
+```bash
+./run_ucast_test.sh --config ucast_test_devices_4routers.toml \
+  --platformio-packages-dir ./testing/.pio-packages/ucast
+```
 
 ## Output files
 
