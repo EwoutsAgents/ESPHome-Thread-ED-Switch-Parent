@@ -1,0 +1,104 @@
+{
+  "schema_version": 1,
+  "experiment_date": "2026-07-13",
+  "phase": 8,
+  "status": "complete",
+  "architecture": "x86_64",
+  "base_openthread_commit": "a12ff0d0f54fd41954b45047fcdd08f302731c5f",
+  "otns_rfsim_commit": "099a6c26cb1d2b8749d3171d5cdd8597fc71049c",
+  "otns_binary_sha256": "0d9020612d861e2e2cd7cccc8d76e6becce230fbf2cec427273723a030241384",
+  "submodules": {
+    "mbedtls": "e185d7fd85499c8ce5ca2a54f5cf8fe7dbe3f8df",
+    "mbedtls_framework": "457996474728cb8e968ed21953b72f74d2f536b2"
+  },
+  "build_driver": {
+    "path": "scripts/build_otns_native_variants.sh",
+    "sha256": "a3fe4170bc802c303f88bb6b859fa8927737fee9d69c955819ab6d679724a571",
+    "fresh_output_root_required": true,
+    "source_clone_no_hardlinks": true,
+    "recursive_submodules": true,
+    "ninja_targets": ["ot-cli-mtd", "ot-cli-ftd"]
+  },
+  "toolchain": {
+    "cc": "cc (Ubuntu 13.3.0-6ubuntu2~24.04.1) 13.3.0",
+    "cmake": "3.28.3",
+    "ninja": "1.13.1",
+    "build_type": "Debug",
+    "warnings_as_errors": true
+  },
+  "common_configuration": {
+    "OPENTHREAD_CONFIG_PARENT_SEARCH_ENABLE": 0,
+    "pps_enabled": false,
+    "parent_rank_instrumentation": false
+  },
+  "patches": {
+    "selected_parent_core": {
+      "path": "patches/otns/selected-parent-core.patch",
+      "sha256": "9ac91535050180910552e12e4e0e13c35705108405d2ca2de9fd103ae13cf0e2"
+    },
+    "preferred_parent_cli": {
+      "path": "patches/otns/preferred-parent-cli-controller.patch",
+      "sha256": "6ef066387cbf2f37c9a91996aa4306c947e67020cbaf36c26ce656d2a8033720"
+    },
+    "fast_unicast_parent_response": {
+      "path": "patches/otns/fast-unicast-parent-response.patch",
+      "sha256": "783990f9ba10968ff5bbd12eb71465409af8f435873e5ec6168748cb3cda8a29"
+    }
+  },
+  "profiles": [
+    {
+      "name": "stock-mtd-pps-off",
+      "artifact": "artifacts/stock-mtd-pps-off/ot-cli-mtd",
+      "source_profile": "stock",
+      "patches": [],
+      "source_checkout_clean": true,
+      "fast_response_enabled": false,
+      "sha256": "a088b7da5647607e712f5c79fa022d6f428b327ef5de66bc218b55f88d137e85",
+      "size_bytes": 33447576,
+      "elf_build_id_sha1": "15e8868f2831f890bf1ce70dc56f259224049f46"
+    },
+    {
+      "name": "preferred-parent-mtd-pps-off",
+      "artifact": "artifacts/preferred-parent-mtd-pps-off/ot-cli-mtd",
+      "source_profile": "preferred-parent",
+      "patches": ["selected_parent_core", "preferred_parent_cli"],
+      "source_checkout_clean": false,
+      "fast_response_enabled": false,
+      "sha256": "d780450640cc79657b00811cb289842b829a2d131a1e8fef062dd047d0adfb1b",
+      "size_bytes": 33512416,
+      "elf_build_id_sha1": "75c36ec92852823c2fcee6739520c0cb985c7c91"
+    },
+    {
+      "name": "stock-ftd",
+      "artifact": "artifacts/stock-ftd/ot-cli-ftd",
+      "source_profile": "stock",
+      "patches": [],
+      "source_checkout_clean": true,
+      "fast_response_enabled": false,
+      "sha256": "a0955043e842d1c75b679d50d93a4a2870e6ed3fefafefafc8b9a5370c7832e2",
+      "size_bytes": 46964400,
+      "elf_build_id_sha1": "9685e3f55334b767a0846ffccc6f0c849be9d6ae"
+    },
+    {
+      "name": "fastpr-ftd",
+      "artifact": "artifacts/fastpr-ftd/ot-cli-ftd",
+      "source_profile": "preferred-parent-fastpr",
+      "patches": ["selected_parent_core", "preferred_parent_cli", "fast_unicast_parent_response"],
+      "source_checkout_clean": false,
+      "fast_response_enabled": true,
+      "sha256": "391b2837e893878d8b3e3cfbf70880c2ef3a569a675aaad19c9407e03b380f5d",
+      "size_bytes": 47041328,
+      "elf_build_id_sha1": "14afb481b9fe493fc097b0987c5b0631a7faa396"
+    }
+  ],
+  "concurrent_smoke_test": {
+    "seed": 2802,
+    "per_node_executable_override": true,
+    "nodes_created": 4,
+    "stock_prefparent_command": "rejected_invalid_command",
+    "patched_prefparent_command": "accepted_idle_status",
+    "passed": true
+  },
+  "binaries_committed": false,
+  "exit_criterion_met": true
+}

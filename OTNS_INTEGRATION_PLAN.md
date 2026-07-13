@@ -432,6 +432,10 @@ were identical between profiles.
 
 ### Phase 8: Produce the native binary matrix
 
+**Status: completed on 2026-07-13.** The isolated build procedure, binary
+fingerprints, and concurrent-execution smoke test are recorded in
+[phase-8-native-binary-matrix.md](patches/phase-8-native-binary-matrix.md).
+
 Build at least:
 
 - `stock-mtd-pps-off/ot-cli-mtd`;
@@ -501,6 +505,11 @@ Exit criterion: all four profiles build from isolated clean source trees, their
 manifests uniquely identify the resulting executable, and a smoke scenario
 proves that stock and patched binaries can run concurrently as separate OTNS
 node processes.
+
+The exit criterion is met. Three independent OpenThread clones produced the
+four logical artifacts, stock sources remained unmodified, and OTNS seed `2802`
+ran all four executables concurrently using per-node overrides. Runtime command
+probing confirmed that only the patched profiles expose `prefparent`.
 
 ### Phase 9: Extend OTNS-MAPS scenarios and runner
 
@@ -680,7 +689,7 @@ deterministic and agrees with hardware at the semantic event level.
 7. ~~Add and validate the native CLI controller.~~ Completed in Phase 5.
 8. ~~Add and validate unicast Parent Requests.~~ Completed in Phase 6.
 9. ~~Add and validate fast unicast Parent Responses.~~ Completed in Phase 7.
-10. Produce and fingerprint the four binary profiles.
+10. ~~Produce and fingerprint the four binary profiles.~~ Completed in Phase 8.
 11. Add deterministic two-router OTNS-MAPS scenarios.
 12. Add event-level timing and classification.
 13. Expand to three and four routers.

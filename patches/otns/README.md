@@ -101,3 +101,35 @@ behavior from the same patched source, which isolates the feature under test.
 
 Phase 7 validates both settings. Phase 8 remains responsible for producing the
 final isolated matrix, including a truly unpatched stock source profile.
+
+## Isolated native binary matrix
+
+Phase 8 provides a reproducible build driver:
+
+```bash
+OPENTHREAD_REPOSITORY=/path/to/full/openthread-repository \
+OTNS_RFSIM_DIR=/path/to/ot-ns/ot-rfsim \
+OTNS_VARIANT_ROOT=/new/path/to/openthread-variants \
+NINJA_BIN=/path/to/ninja \
+./scripts/build_otns_native_variants.sh
+```
+
+`NINJA_BIN` may be omitted when `ninja` is already on `PATH`. The output root
+must not exist; this prevents an interrupted or previously patched source tree
+from being mistaken for a clean build.
+
+The script creates three independent Git clones, initializes their pinned
+submodules, applies the appropriate patch series, and uses separate CMake build
+directories. It publishes the required executables as:
+
+```text
+artifacts/stock-mtd-pps-off/ot-cli-mtd
+artifacts/preferred-parent-mtd-pps-off/ot-cli-mtd
+artifacts/stock-ftd/ot-cli-ftd
+artifacts/fastpr-ftd/ot-cli-ftd
+```
+
+Only `ot-cli-mtd` and `ot-cli-ftd` are built. Building the default all-target
+RFSIM graph on this Track A revision also attempts unrelated radio/RCP targets
+that fail to link against the newer RFSIM platform; those targets are outside
+the native firmware matrix.
