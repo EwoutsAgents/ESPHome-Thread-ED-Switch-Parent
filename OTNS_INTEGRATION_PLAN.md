@@ -355,6 +355,50 @@ One preferred-parent MTD binary should support multicast and unicast at runtime.
 Stock binaries must be built without the selected-parent or fast-response
 features, not merely with those features left unused.
 
+#### Variant isolation and executable assignment
+
+OpenThread variants must use isolated source and build trees. This mirrors the
+separate PlatformIO package directories used by the hardware campaign and
+prevents a source-mutating patch for one variant from contaminating another.
+A suitable layout is:
+
+```text
+openthread-variants/
+├── stock/
+│   └── build/
+├── preferred-parent/
+│   └── build/
+└── preferred-parent-fastpr/
+    └── build/
+```
+
+Every OTNS node runs as a separate native process, so binaries produced from
+these trees can coexist in one simulation without sharing OpenThread globals or
+patch state. OTNS supports both family-wide executable selection:
+
+```text
+exe mtd "/path/preferred-parent/bin/ot-cli-mtd"
+exe ftd "/path/stock/bin/ot-cli-ftd"
+```
+
+and a node-specific executable on `add`:
+
+```text
+add router id 1 exe "/path/stock/bin/ot-cli-ftd"
+add router id 2 exe "/path/fastpr/bin/ot-cli-ftd"
+add med id 10 exe "/path/preferred-parent/bin/ot-cli-mtd"
+```
+
+Use family-wide selection for the initial homogeneous experiment variants. Keep
+node-specific selection available for mixed stock/fast-response router tests
+and other variants with contradictory compile-time requirements.
+
+The existing ESPHome isolation applies patches to a package shared by all
+firmware compiled for that variant. The first OTNS builds should reproduce that
+variant-level patch composition exactly. Role-specific child/router patch
+composition may be introduced later as a separately labeled refinement, rather
+than changing patch scope during the first hardware/simulation comparison.
+
 Record for every binary:
 
 - OpenThread base commit;
@@ -365,8 +409,10 @@ Record for every binary:
 - binary SHA-256;
 - whether `ParentRank` instrumentation is present.
 
-Exit criterion: all four profiles build from clean source and their manifests
-uniquely identify the resulting executable.
+Exit criterion: all four profiles build from isolated clean source trees, their
+manifests uniquely identify the resulting executable, and a smoke scenario
+proves that stock and patched binaries can run concurrently as separate OTNS
+node processes.
 
 ### Phase 9: Extend OTNS-MAPS scenarios and runner
 
@@ -389,6 +435,11 @@ directed_switch:
 The runner must reject invalid binary/scenario combinations and record the
 initial parent, target router, target extended address, target RLOC16, random
 seed, command acknowledgement, deletion time, and final parent.
+
+Scenario and runner configuration must support both a default MTD/FTD binary
+for homogeneous runs and an optional executable override per node. The runner
+should emit OTNS `add ... exe "<path>"` commands for per-node overrides and
+record the resolved executable path and SHA-256 for every node in the manifest.
 
 Retain or align hardware runner classifications where meaningful:
 
