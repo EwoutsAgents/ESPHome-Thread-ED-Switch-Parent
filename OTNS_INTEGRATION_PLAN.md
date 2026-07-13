@@ -556,6 +556,13 @@ run unless the scenario contract says so.
 Exit criterion: one deterministic run for every two-router variant produces a
 complete result and provenance manifest.
 
+The exit criterion is met. OTNS-MAPS now has nine directed scenarios, validates
+binary/profile compatibility, supports per-node executable overrides, records
+per-node SHA-256 provenance, and emits hardware-aligned classifications. The
+final two-router multicast, unicast, and fast-response unicast runs all
+acknowledged the command and ended attached to the selected target. See
+[`patches/phase-9-otns-maps-directed-runner.md`](patches/phase-9-otns-maps-directed-runner.md).
+
 ### Phase 10: Add comparable measurements
 
 Record native simulation timestamps for:
