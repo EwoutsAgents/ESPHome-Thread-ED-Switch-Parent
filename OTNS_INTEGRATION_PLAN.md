@@ -263,6 +263,27 @@ smoke test. **Met.**
 
 ### Phase 4: Port selected-parent OpenThread behavior
 
+**Status: in progress.** The first native core unit is recorded in
+[phase-4-selected-parent-core.md](patches/phase-4-selected-parent-core.md). The
+reproducible patch is
+[selected-parent-core.patch](patches/otns/selected-parent-core.patch).
+
+Completed in the first unit:
+
+- ported the functional hardware delta to the selected Track A base;
+- added a declared native C API header and internal declarations;
+- initialized and populated the selected-parent candidate snapshot;
+- added explicit clear, active-query, and operation-generation APIs;
+- corrected C-linkage definitions rejected by native warning-as-error builds;
+- built native MTD and FTD executables;
+- verified ordinary stock behavior when no selected-parent operation is active.
+
+Still required for the Phase 4 exit criterion:
+
+- invoke the bridge through the deferred native controller from Phase 5;
+- prove a two-router multicast operation attaches to the requested target;
+- verify target cleanup on active success, failure, timeout, and reset paths.
+
 Implement the port in small, reviewable units.
 
 #### Bridge API
