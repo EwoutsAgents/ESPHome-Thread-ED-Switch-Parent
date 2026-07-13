@@ -1,5 +1,5 @@
 diff --git a/examples/apps/cli/ftd.cmake b/examples/apps/cli/ftd.cmake
-index 6cbe17ef8b0004fc955a8b8f59897541b6f3ce9f..99dcb54c583cae4258ab7eb842029d885758895c 100644
+index 6cbe17ef8..99dcb54c5 100644
 --- a/examples/apps/cli/ftd.cmake
 +++ b/examples/apps/cli/ftd.cmake
 @@ -29,6 +29,7 @@
@@ -11,7 +11,7 @@ index 6cbe17ef8b0004fc955a8b8f59897541b6f3ce9f..99dcb54c583cae4258ab7eb842029d88
  
  target_include_directories(ot-cli-ftd PRIVATE ${COMMON_INCLUDES})
 diff --git a/examples/apps/cli/main.c b/examples/apps/cli/main.c
-index 2ede597cd38f3a8570040391e59a33436f5475fc..31452fa3c3879a15b95146abe978ed8dc2b9e74e 100644
+index 2ede597cd..31452fa3c 100644
 --- a/examples/apps/cli/main.c
 +++ b/examples/apps/cli/main.c
 @@ -46,6 +46,7 @@
@@ -47,7 +47,7 @@ index 2ede597cd38f3a8570040391e59a33436f5475fc..31452fa3c3879a15b95146abe978ed8d
  
      otInstanceFinalize(instance);
 diff --git a/examples/apps/cli/mtd.cmake b/examples/apps/cli/mtd.cmake
-index df15ac713c2b195c58da3521a40ae580f9c303da..091e6338f4431e89a32ce45b52b80d0645bf0c13 100644
+index df15ac713..091e6338f 100644
 --- a/examples/apps/cli/mtd.cmake
 +++ b/examples/apps/cli/mtd.cmake
 @@ -29,6 +29,7 @@
@@ -60,10 +60,10 @@ index df15ac713c2b195c58da3521a40ae580f9c303da..091e6338f4431e89a32ce45b52b80d06
  target_include_directories(ot-cli-mtd PRIVATE ${COMMON_INCLUDES})
 diff --git a/examples/apps/cli/selected_parent_cli.cpp b/examples/apps/cli/selected_parent_cli.cpp
 new file mode 100644
-index 0000000000000000000000000000000000000000..510de28541e45c959106c1ca5cf0b097d41e8af6
+index 000000000..15fc28b15
 --- /dev/null
 +++ b/examples/apps/cli/selected_parent_cli.cpp
-@@ -0,0 +1,357 @@
+@@ -0,0 +1,416 @@
 +/*
 + * Copyright (c) 2026, The OpenThread Authors.
 + * All rights reserved.
@@ -76,6 +76,7 @@ index 0000000000000000000000000000000000000000..510de28541e45c959106c1ca5cf0b097
 +#include <string.h>
 +
 +#include <openthread/cli.h>
++#include <openthread/platform/alarm-micro.h>
 +#include <openthread/platform/alarm-milli.h>
 +#include <openthread/selected_parent.h>
 +
@@ -105,9 +106,15 @@ index 0000000000000000000000000000000000000000..510de28541e45c959106c1ca5cf0b097
 +    uint32_t        mGeneration;
 +    uint32_t        mStartedAt;
 +    bool            mParentRequestPending;
++    uint32_t        mParentRequestAtUs;
 +    bool            mTargetResponsePending;
++    uint32_t        mTargetResponseAtUs;
 +    uint16_t        mTargetRloc16;
 +    int8_t          mTargetRssi;
++    bool            mChildIdRequestPending;
++    uint32_t        mChildIdRequestAtUs;
++    bool            mChildIdResponsePending;
++    uint32_t        mChildIdResponseAtUs;
 +    bool            mAttacherStatePending;
 +    uint8_t         mAttacherState;
 +};
@@ -208,12 +215,20 @@ index 0000000000000000000000000000000000000000..510de28541e45c959106c1ca5cf0b097
 +
 +void OutputTarget(void) { OutputExtAddress(sController.mTarget); }
 +
++void OutputTiming(uint32_t aTimeUs)
++{
++    otCliOutputFormat(" time_us=%lu timing_source=otns_openthread_event resolution_us=1",
++                      static_cast<unsigned long>(aTimeUs));
++}
++
 +void ClearOperation(bool aEmitEvent)
 +{
 +    thread_preferred_parent_ot_clear(sController.mInstance);
 +    sController.mState = kStateIdle;
 +    sController.mParentRequestPending = false;
 +    sController.mTargetResponsePending = false;
++    sController.mChildIdRequestPending = false;
++    sController.mChildIdResponsePending = false;
 +    sController.mAttacherStatePending = false;
 +
 +    if (aEmitEvent)
@@ -230,6 +245,8 @@ index 0000000000000000000000000000000000000000..510de28541e45c959106c1ca5cf0b097
 +    sController.mState = kStateFailed;
 +    sController.mParentRequestPending = false;
 +    sController.mTargetResponsePending = false;
++    sController.mChildIdRequestPending = false;
++    sController.mChildIdResponsePending = false;
 +    sController.mAttacherStatePending = false;
 +}
 +
@@ -240,11 +257,28 @@ index 0000000000000000000000000000000000000000..510de28541e45c959106c1ca5cf0b097
 +    {
 +        sController.mTargetRloc16 = aInfo->mRloc16;
 +        sController.mTargetRssi = aInfo->mRssi;
++        sController.mTargetResponseAtUs = otPlatAlarmMicroGetNow();
 +        sController.mTargetResponsePending = true;
 +    }
 +}
 +
-+void HandleParentRequestStarted(void *) { sController.mParentRequestPending = true; }
++void HandleParentRequestStarted(void *)
++{
++    sController.mParentRequestAtUs = otPlatAlarmMicroGetNow();
++    sController.mParentRequestPending = true;
++}
++
++void HandleChildIdRequest(void *)
++{
++    sController.mChildIdRequestAtUs = otPlatAlarmMicroGetNow();
++    sController.mChildIdRequestPending = true;
++}
++
++void HandleChildIdResponse(void *)
++{
++    sController.mChildIdResponseAtUs = otPlatAlarmMicroGetNow();
++    sController.mChildIdResponsePending = true;
++}
 +
 +void HandleAttacherState(uint8_t aState, void *)
 +{
@@ -292,6 +326,8 @@ index 0000000000000000000000000000000000000000..510de28541e45c959106c1ca5cf0b097
 +    sController.mStartedAt = otPlatAlarmMilliGetNow();
 +    sController.mParentRequestPending = false;
 +    sController.mTargetResponsePending = false;
++    sController.mChildIdRequestPending = false;
++    sController.mChildIdResponsePending = false;
 +    sController.mAttacherStatePending = false;
 +
 +    if (sController.mMode == kModeMulticast)
@@ -340,6 +376,8 @@ index 0000000000000000000000000000000000000000..510de28541e45c959106c1ca5cf0b097
 +    thread_preferred_parent_ot_register_parent_response_callback(HandleParentResponse, nullptr);
 +    thread_preferred_parent_ot_register_parent_req_started_callback(HandleParentRequestStarted, nullptr);
 +    thread_preferred_parent_ot_register_attacher_state_callback(HandleAttacherState, nullptr);
++    thread_preferred_parent_ot_register_child_id_request_callback(HandleChildIdRequest, nullptr);
++    thread_preferred_parent_ot_register_child_id_response_callback(HandleChildIdResponse, nullptr);
 +}
 +
 +extern "C" otError otSelectedParentCliCommand(void *, uint8_t aArgsLength, char *aArgs[])
@@ -367,8 +405,10 @@ index 0000000000000000000000000000000000000000..510de28541e45c959106c1ca5cf0b097
 +    if (sController.mParentRequestPending)
 +    {
 +        sController.mParentRequestPending = false;
-+        otCliOutputFormat("PREFPARENT event=parent_request_started generation=%lu\r\n",
++        otCliOutputFormat("PREFPARENT event=parent_request_started generation=%lu",
 +                          static_cast<unsigned long>(sController.mGeneration));
++        OutputTiming(sController.mParentRequestAtUs);
++        otCliOutputFormat("\r\n");
 +    }
 +
 +    if (sController.mAttacherStatePending)
@@ -386,7 +426,9 @@ index 0000000000000000000000000000000000000000..510de28541e45c959106c1ca5cf0b097
 +        otCliOutputFormat("PREFPARENT event=target_response generation=%lu target=",
 +                          static_cast<unsigned long>(sController.mGeneration));
 +        OutputTarget();
-+        otCliOutputFormat(" rloc16=%04x rssi=%d\r\n", sController.mTargetRloc16, sController.mTargetRssi);
++        otCliOutputFormat(" rloc16=%04x rssi=%d", sController.mTargetRloc16, sController.mTargetRssi);
++        OutputTiming(sController.mTargetResponseAtUs);
++        otCliOutputFormat("\r\n");
 +
 +        error = thread_preferred_parent_ot_continue_selected_parent_attach(sController.mInstance, &sController.mTarget);
 +        if (error != OT_ERROR_NONE)
@@ -396,9 +438,25 @@ index 0000000000000000000000000000000000000000..510de28541e45c959106c1ca5cf0b097
 +        }
 +
 +        sController.mState = kStateWaitingChildIdResponse;
++    }
++
++    if (sController.mChildIdRequestPending)
++    {
++        sController.mChildIdRequestPending = false;
 +        otCliOutputFormat("PREFPARENT event=child_id_request_started generation=%lu target=",
 +                          static_cast<unsigned long>(sController.mGeneration));
 +        OutputTarget();
++        OutputTiming(sController.mChildIdRequestAtUs);
++        otCliOutputFormat("\r\n");
++    }
++
++    if (sController.mChildIdResponsePending)
++    {
++        sController.mChildIdResponsePending = false;
++        otCliOutputFormat("PREFPARENT event=child_id_response_received generation=%lu parent=",
++                          static_cast<unsigned long>(sController.mGeneration));
++        OutputTarget();
++        OutputTiming(sController.mChildIdResponseAtUs);
 +        otCliOutputFormat("\r\n");
 +    }
 +
@@ -409,6 +467,7 @@ index 0000000000000000000000000000000000000000..510de28541e45c959106c1ca5cf0b097
 +        otCliOutputFormat("PREFPARENT event=succeeded generation=%lu parent=",
 +                          static_cast<unsigned long>(sController.mGeneration));
 +        OutputTarget();
++        OutputTiming(sController.mChildIdResponseAtUs);
 +        otCliOutputFormat("\r\n");
 +        thread_preferred_parent_ot_clear(sController.mInstance);
 +        sController.mState = kStateSucceeded;
@@ -423,7 +482,7 @@ index 0000000000000000000000000000000000000000..510de28541e45c959106c1ca5cf0b097
 +}
 diff --git a/examples/apps/cli/selected_parent_cli.h b/examples/apps/cli/selected_parent_cli.h
 new file mode 100644
-index 0000000000000000000000000000000000000000..eea28162f028b8fb1b0b52d68b45cb5ffe97dea9
+index 000000000..eea28162f
 --- /dev/null
 +++ b/examples/apps/cli/selected_parent_cli.h
 @@ -0,0 +1,28 @@

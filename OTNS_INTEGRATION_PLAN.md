@@ -597,6 +597,12 @@ state confirmation.
 Exit criterion: hardware and simulation reports use the same semantic interval
 definitions and disclose their timing source and resolution.
 
+The exit criterion is met. Native OpenThread callbacks now timestamp all four
+protocol boundaries with the child node's one-microsecond RFSIM clock.
+OTNS-MAPS exports the events and derives the hardware-aligned interval sequence,
+while deletion and one-second parent-poll timing remain explicitly separate.
+See [`patches/phase-10-comparable-timing.md`](patches/phase-10-comparable-timing.md).
+
 ### Phase 11: Validation ladder
 
 Run validation in increasing scope.

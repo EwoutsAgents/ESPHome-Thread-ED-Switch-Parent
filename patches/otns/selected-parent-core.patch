@@ -1,9 +1,9 @@
 diff --git a/include/openthread/selected_parent.h b/include/openthread/selected_parent.h
 new file mode 100644
-index 0000000000000000000000000000000000000000..3c796083d9949d3c61714dc062531a5539a6520c
+index 000000000..f16962d8d
 --- /dev/null
 +++ b/include/openthread/selected_parent.h
-@@ -0,0 +1,62 @@
+@@ -0,0 +1,70 @@
 +/*
 + * Copyright (c) 2026, The OpenThread Authors.
 + * All rights reserved.
@@ -34,6 +34,8 @@ index 0000000000000000000000000000000000000000..3c796083d9949d3c61714dc062531a55
 +                                                                    void                             *aContext);
 +typedef void (*thread_preferred_parent_parent_req_started_callback_t)(void *aContext);
 +typedef void (*thread_preferred_parent_attacher_state_callback_t)(uint8_t aState, void *aContext);
++typedef void (*thread_preferred_parent_child_id_request_callback_t)(void *aContext);
++typedef void (*thread_preferred_parent_child_id_response_callback_t)(void *aContext);
 +
 +void thread_preferred_parent_ot_register_parent_response_callback(
 +    thread_preferred_parent_parent_response_callback_t aCallback,
@@ -44,6 +46,12 @@ index 0000000000000000000000000000000000000000..3c796083d9949d3c61714dc062531a55
 +void thread_preferred_parent_ot_register_attacher_state_callback(
 +    thread_preferred_parent_attacher_state_callback_t aCallback,
 +    void                                               *aContext);
++void thread_preferred_parent_ot_register_child_id_request_callback(
++    thread_preferred_parent_child_id_request_callback_t aCallback,
++    void                                                *aContext);
++void thread_preferred_parent_ot_register_child_id_response_callback(
++    thread_preferred_parent_child_id_response_callback_t aCallback,
++    void                                                 *aContext);
 +
 +otError thread_preferred_parent_ot_set_discovery_target_extaddr(otInstance         *aInstance,
 +                                                                 const otExtAddress *aPreferredExtAddress);
@@ -67,7 +75,7 @@ index 0000000000000000000000000000000000000000..3c796083d9949d3c61714dc062531a55
 +
 +#endif // OPENTHREAD_SELECTED_PARENT_H_
 diff --git a/src/core/api/thread_api.cpp b/src/core/api/thread_api.cpp
-index 568b7e39075b9a634d52ca4aa6524c94434eba6d..e59fee82ae4349c1642794593d8a25c1d98ced99 100644
+index 568b7e390..c3d7d4228 100644
 --- a/src/core/api/thread_api.cpp
 +++ b/src/core/api/thread_api.cpp
 @@ -37,6 +37,8 @@
@@ -79,7 +87,7 @@ index 568b7e39075b9a634d52ca4aa6524c94434eba6d..e59fee82ae4349c1642794593d8a25c1
  using namespace ot;
  
  uint32_t otThreadGetChildTimeout(otInstance *aInstance) { return AsCoreType(aInstance).Get<Mle::Mle>().GetTimeout(); }
-@@ -375,6 +377,206 @@ otError otThreadSearchForBetterParent(otInstance *aInstance)
+@@ -375,6 +377,242 @@ otError otThreadSearchForBetterParent(otInstance *aInstance)
      return AsCoreType(aInstance).Get<Mle::Mle>().SearchForBetterParent();
  }
  
@@ -90,6 +98,10 @@ index 568b7e39075b9a634d52ca4aa6524c94434eba6d..e59fee82ae4349c1642794593d8a25c1
 +static void *sThreadPreferredParentParentReqStartedCallbackContext = nullptr;
 +static thread_preferred_parent_attacher_state_callback_t sThreadPreferredParentAttacherStateCallback = nullptr;
 +static void *sThreadPreferredParentAttacherStateCallbackContext = nullptr;
++static thread_preferred_parent_child_id_request_callback_t sThreadPreferredParentChildIdRequestCallback = nullptr;
++static void *sThreadPreferredParentChildIdRequestCallbackContext = nullptr;
++static thread_preferred_parent_child_id_response_callback_t sThreadPreferredParentChildIdResponseCallback = nullptr;
++static void *sThreadPreferredParentChildIdResponseCallbackContext = nullptr;
 +
 +extern "C" void thread_preferred_parent_ot_register_parent_response_callback(
 +    thread_preferred_parent_parent_response_callback_t aCallback,
@@ -118,6 +130,22 @@ index 568b7e39075b9a634d52ca4aa6524c94434eba6d..e59fee82ae4349c1642794593d8a25c1
 +    sThreadPreferredParentAttacherStateCallbackContext = aContext;
 +}
 +
++extern "C" void thread_preferred_parent_ot_register_child_id_request_callback(
++    thread_preferred_parent_child_id_request_callback_t aCallback,
++    void *aContext)
++{
++    sThreadPreferredParentChildIdRequestCallback = aCallback;
++    sThreadPreferredParentChildIdRequestCallbackContext = aContext;
++}
++
++extern "C" void thread_preferred_parent_ot_register_child_id_response_callback(
++    thread_preferred_parent_child_id_response_callback_t aCallback,
++    void *aContext)
++{
++    sThreadPreferredParentChildIdResponseCallback = aCallback;
++    sThreadPreferredParentChildIdResponseCallbackContext = aContext;
++}
++
 +extern "C" void thread_preferred_parent_ot_notify_parent_response(const otThreadParentResponseInfo *aInfo)
 +{
 +    // THREAD_PREFERRED_PARENT_PARENT_RESPONSE_REPORTING_HOOK
@@ -142,6 +170,22 @@ index 568b7e39075b9a634d52ca4aa6524c94434eba6d..e59fee82ae4349c1642794593d8a25c1
 +    if (sThreadPreferredParentAttacherStateCallback != nullptr)
 +    {
 +        sThreadPreferredParentAttacherStateCallback(aState, sThreadPreferredParentAttacherStateCallbackContext);
++    }
++}
++
++extern "C" void thread_preferred_parent_ot_notify_child_id_request(void)
++{
++    if (sThreadPreferredParentChildIdRequestCallback != nullptr)
++    {
++        sThreadPreferredParentChildIdRequestCallback(sThreadPreferredParentChildIdRequestCallbackContext);
++    }
++}
++
++extern "C" void thread_preferred_parent_ot_notify_child_id_response(void)
++{
++    if (sThreadPreferredParentChildIdResponseCallback != nullptr)
++    {
++        sThreadPreferredParentChildIdResponseCallback(sThreadPreferredParentChildIdResponseCallbackContext);
 +    }
 +}
 +
@@ -287,7 +331,7 @@ index 568b7e39075b9a634d52ca4aa6524c94434eba6d..e59fee82ae4349c1642794593d8a25c1
  {
      Error error = kErrorNone;
 diff --git a/src/core/thread/mle.cpp b/src/core/thread/mle.cpp
-index ab0f9ef6fb5a60a9710e15afb5901ee8c595f07c..2778dd07fdd6999b2f20bc596eeddb2808f732b8 100644
+index ab0f9ef6f..94c047948 100644
 --- a/src/core/thread/mle.cpp
 +++ b/src/core/thread/mle.cpp
 @@ -36,8 +36,17 @@
@@ -426,7 +470,7 @@ index ab0f9ef6fb5a60a9710e15afb5901ee8c595f07c..2778dd07fdd6999b2f20bc596eeddb28
      SetState(kStateStart);
      mMode = aMode;
  
-@@ -4537,6 +4623,130 @@ exit:
+@@ -4537,6 +4623,131 @@ exit:
      return;
  }
  
@@ -470,6 +514,7 @@ index ab0f9ef6fb5a60a9710e15afb5901ee8c595f07c..2778dd07fdd6999b2f20bc596eeddb28
 +    LogNote("SelectedParent ChildIdRequest armed-before-send cand=0x%04x state=%d timeout=%lu",
 +            mParentCandidate.GetRloc16(), mState, ToUlong(kChildIdResponseTimeout));
 +    SuccessOrExit(error = SendChildIdRequest());
++    thread_preferred_parent_ot_notify_child_id_request();
 +    LogNote("SelectedParent ChildIdRequest continued-from-discovery cand=0x%04x timeout=%lu",
 +            mParentCandidate.GetRloc16(), ToUlong(kChildIdResponseTimeout));
 +
@@ -557,7 +602,7 @@ index ab0f9ef6fb5a60a9710e15afb5901ee8c595f07c..2778dd07fdd6999b2f20bc596eeddb28
  uint32_t Mle::Attacher::GetStartDelay(void) const
  {
      uint32_t delay = 1;
-@@ -4682,13 +4892,20 @@ bool Mle::Attacher::HasAcceptableParentCandidate(void) const
+@@ -4682,13 +4893,20 @@ bool Mle::Attacher::HasAcceptableParentCandidate(void) const
          case kSamePartition:
          case kDowngradeToReed:
          case kBetterParent:
@@ -579,7 +624,7 @@ index ab0f9ef6fb5a60a9710e15afb5901ee8c595f07c..2778dd07fdd6999b2f20bc596eeddb28
          }
      }
  
-@@ -4704,9 +4921,56 @@ void Mle::Attacher::HandleTimer(void)
+@@ -4704,9 +4922,56 @@ void Mle::Attacher::HandleTimer(void)
      bool              shouldAnnounce = true;
      ParentRequestType type;
  
@@ -637,7 +682,7 @@ index ab0f9ef6fb5a60a9710e15afb5901ee8c595f07c..2778dd07fdd6999b2f20bc596eeddb28
      if (HasAcceptableParentCandidate() && (SendChildIdRequest() == kErrorNone))
      {
          SetState(kStateChildIdRequest);
-@@ -4932,35 +5196,43 @@ void Mle::Attacher::SendParentRequest(ParentRequestType aType)
+@@ -4932,35 +5197,43 @@ void Mle::Attacher::SendParentRequest(ParentRequestType aType)
      SuccessOrExit(error = message->AppendTimeRequestTlv());
  #endif
  
@@ -682,15 +727,15 @@ index ab0f9ef6fb5a60a9710e15afb5901ee8c595f07c..2778dd07fdd6999b2f20bc596eeddb28
          destination.SetToLinkLocalAllRoutersMulticast();
      }
 -
-+    thread_preferred_parent_ot_notify_parent_req_started();
      SuccessOrExit(error = message->SendTo(destination));
 -
 -    switch (aType)
++    thread_preferred_parent_ot_notify_parent_req_started();
 +switch (aType)
      {
      case kToRouters:
      case kToSelectedRouter:
-@@ -5231,7 +5503,40 @@ void Mle::Attacher::HandleParentResponse(RxInfo &aRxInfo)
+@@ -5231,7 +5504,40 @@ void Mle::Attacher::HandleParentResponse(RxInfo &aRxInfo)
      }
  #endif
  
@@ -732,7 +777,7 @@ index ab0f9ef6fb5a60a9710e15afb5901ee8c595f07c..2778dd07fdd6999b2f20bc596eeddb28
  
  #if OPENTHREAD_FTD
      if (Get<Mle>().IsFullThreadDevice() && !Get<Mle>().IsDetached())
-@@ -5275,24 +5580,37 @@ void Mle::Attacher::HandleParentResponse(RxInfo &aRxInfo)
+@@ -5275,24 +5581,37 @@ void Mle::Attacher::HandleParentResponse(RxInfo &aRxInfo)
      if (mParentCandidate.IsStateParentResponse() && (mParentCandidate.GetExtAddress() != extAddress))
      {
          // If already have a candidate parent, only seek a better parent
@@ -781,7 +826,7 @@ index ab0f9ef6fb5a60a9710e15afb5901ee8c595f07c..2778dd07fdd6999b2f20bc596eeddb28
          }
      }
  
-@@ -5346,6 +5664,14 @@ void Mle::Attacher::HandleParentResponse(RxInfo &aRxInfo)
+@@ -5346,6 +5665,14 @@ void Mle::Attacher::HandleParentResponse(RxInfo &aRxInfo)
      mParentCandidate.mIsSingleton      = connectivityTlv.IsSingleton();
      mParentCandidate.mLinkMargin       = twoWayLinkMargin;
  
@@ -796,8 +841,10 @@ index ab0f9ef6fb5a60a9710e15afb5901ee8c595f07c..2778dd07fdd6999b2f20bc596eeddb28
  exit:
      LogProcessError(kTypeParentResponse, error);
  }
+@@ -5450,0 +5778 @@ void Mle::Attacher::HandleChildIdResponse(RxInfo &aRxInfo)
++    thread_preferred_parent_ot_notify_child_id_response();
 diff --git a/src/core/thread/mle.hpp b/src/core/thread/mle.hpp
-index 0b1f31ff01b1153f0ea7e794f38e0a474a547ef2..ab5cda9585e97d10334b9d77550ec21eb991dcfc 100644
+index 0b1f31ff0..ab5cda958 100644
 --- a/src/core/thread/mle.hpp
 +++ b/src/core/thread/mle.hpp
 @@ -451,6 +451,50 @@ public:
@@ -871,25 +918,12 @@ index 0b1f31ff01b1153f0ea7e794f38e0a474a547ef2..ab5cda9585e97d10334b9d77550ec21e
          AttachTimer             mTimer;
      };
  
-diff --git a/src/core/thread/mle_ftd.cpp b/src/core/thread/mle_ftd.cpp
-index 49be27f46e2d877cdf2dd5570afa6786f308d53d..abb573cb422a17e3d1b6cb95c2ba2888639fc270 100644
---- a/src/core/thread/mle_ftd.cpp
-+++ b/src/core/thread/mle_ftd.cpp
-@@ -1480,7 +1480,7 @@ void Mle::HandleParentRequest(RxInfo &aRxInfo)
-     if (!child->IsStateValidOrRestoring())
-     {
-         child->SetLastHeard(TimerMilli::GetNow());
--        child->SetTimeout(Time::MsecToSec(kChildIdRequestTimeout));
-+        child->SetTimeout(Time::MsecToSec(kChildIdRequestTimeout + 10000)); // THREAD_PREFERRED_PARENT_DISCOVERY_CONTINUE_HOOK
-     }
- 
-     aRxInfo.mClass = RxInfo::kPeerMessage;
 diff --git a/src/core/thread/selected_parent.hpp b/src/core/thread/selected_parent.hpp
 new file mode 100644
-index 0000000000000000000000000000000000000000..1b9d5ba72d0de5523b93b5aa93ff4fa4b6286a27
+index 000000000..eefca6ca2
 --- /dev/null
 +++ b/src/core/thread/selected_parent.hpp
-@@ -0,0 +1,23 @@
+@@ -0,0 +1,25 @@
 +/*
 + * Copyright (c) 2026, The OpenThread Authors.
 + * All rights reserved.
@@ -905,6 +939,8 @@ index 0000000000000000000000000000000000000000..1b9d5ba72d0de5523b93b5aa93ff4fa4
 +extern "C" void thread_preferred_parent_ot_notify_parent_response(const otThreadParentResponseInfo *aInfo);
 +extern "C" void thread_preferred_parent_ot_notify_parent_req_started(void);
 +extern "C" void thread_preferred_parent_ot_notify_attacher_state(uint8_t aState);
++extern "C" void thread_preferred_parent_ot_notify_child_id_request(void);
++extern "C" void thread_preferred_parent_ot_notify_child_id_response(void);
 +
 +extern "C" bool         thread_preferred_parent_ot_parent_discovery_active;
 +extern "C" bool         thread_preferred_parent_ot_parent_discovery_unicast;
