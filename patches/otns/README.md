@@ -71,3 +71,33 @@ SHA-256:
 Phase 5 validates the controller and multicast mode. Although the command
 accepts `unicast`, its radio and protocol behavior remains a Phase 6 acceptance
 gate.
+
+## Fast unicast Parent Response
+
+Apply after the core and controller patches:
+
+```bash
+git -C /path/to/openthread apply \
+  /path/to/patches/otns/fast-unicast-parent-response.patch
+```
+
+SHA-256:
+
+```text
+783990f9ba10968ff5bbd12eb71465409af8f435873e5ec6168748cb3cda8a29
+```
+
+The patch adds this compile-time option, disabled by default:
+
+```text
+OPENTHREAD_CONFIG_EXPERIMENTAL_UNICAST_PARENT_RESPONSE_FASTPATH_ENABLE
+```
+
+Set it to `1` only for the fast-response FTD build. An IPv6-unicast Parent
+Request is then answered immediately and exits the handler without scheduling
+the ordinary delayed response. Multicast Parent Requests retain the stock
+randomized delay. Leaving the option unset produces the ordinary-response
+behavior from the same patched source, which isolates the feature under test.
+
+Phase 7 validates both settings. Phase 8 remains responsible for producing the
+final isolated matrix, including a truly unpatched stock source profile.

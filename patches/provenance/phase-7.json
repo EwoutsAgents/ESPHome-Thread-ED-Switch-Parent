@@ -1,0 +1,71 @@
+{
+  "schema_version": 1,
+  "experiment_date": "2026-07-13",
+  "phase": 7,
+  "status": "complete",
+  "base_openthread_commit": "a12ff0d0f54fd41954b45047fcdd08f302731c5f",
+  "patch": {
+    "path": "patches/otns/fast-unicast-parent-response.patch",
+    "sha256": "783990f9ba10968ff5bbd12eb71465409af8f435873e5ec6168748cb3cda8a29",
+    "applied_after": [
+      "patches/otns/selected-parent-core.patch",
+      "patches/otns/preferred-parent-cli-controller.patch"
+    ]
+  },
+  "configuration": {
+    "macro": "OPENTHREAD_CONFIG_EXPERIMENTAL_UNICAST_PARENT_RESPONSE_FASTPATH_ENABLE",
+    "default": 0,
+    "fast_profile": 1,
+    "parent_search": 0
+  },
+  "build_environment": {
+    "compiler": "g++ (Ubuntu 13.3.0-6ubuntu2~24.04.1) 13.3.0",
+    "cmake": "3.28.3",
+    "warnings_as_errors": true
+  },
+  "validation_binaries": {
+    "ordinary_ftd": {
+      "sha256": "88afb87e3bc87ac7db55fc5056e34b19bc8fd011013f85d0c7a9f3e0dfc36d3e",
+      "size_bytes": 47034992,
+      "fast_path": false
+    },
+    "fast_ftd": {
+      "sha256": "295b0249ec3ba7c2daa7dcf32c261bb1a1c7836b5a39ff286cf99bd6c7dd5205",
+      "size_bytes": 47035024,
+      "fast_path": true
+    }
+  },
+  "unicast": {
+    "seeds": [2701, 2702, 2703, 2704, 2705],
+    "runs_per_profile": 5,
+    "ordinary_response_delay_ms": {
+      "mean": 272.240,
+      "median": 251.160,
+      "minimum": 48.760,
+      "maximum": 478.440
+    },
+    "fast_response_delay_ms": {
+      "mean": 4.072,
+      "median": 4.136,
+      "minimum": 3.816,
+      "maximum": 4.456
+    },
+    "target_parent_matches": 10,
+    "runs": 10,
+    "delayed_duplicates_observed": 0
+  },
+  "multicast_control": {
+    "seeds": [2711, 2712, 2713],
+    "runs_per_profile": 3,
+    "response_delays_ms": [302.696, 437.656, 133.376],
+    "matched_capture_sha256_equal": true,
+    "target_parent_matches": 6,
+    "runs": 6,
+    "delayed_duplicates_observed": 0
+  },
+  "scratch_results": {
+    "sha256": "585dfcd8130c494f3fc90c1341f6003c01991f8e0a616499ccc47f59daf3fc01",
+    "committed": false
+  },
+  "exit_criterion_met": true
+}

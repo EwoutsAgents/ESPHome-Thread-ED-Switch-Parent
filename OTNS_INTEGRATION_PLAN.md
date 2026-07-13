@@ -405,6 +405,10 @@ multicast path remains unchanged.
 
 ### Phase 7: Add fast unicast Parent Responses
 
+**Status: completed on 2026-07-13.** The implementation and validation evidence
+are recorded in
+[phase-7-fast-parent-response.md](patches/phase-7-fast-parent-response.md).
+
 Implement the FTD behavior behind a compile-time option such as:
 
 ```text
@@ -419,6 +423,12 @@ response follows the immediate response.
 Exit criterion: controlled tests show the expected unicast response-latency
 difference between stock and fast-response FTD binaries, with no statistically
 or functionally detectable change to multicast behavior.
+
+The exit criterion is met. Across five matched seeds, the ordinary-response
+profile averaged 272.240 ms from Parent Request to Parent Response and the fast
+profile averaged 4.072 ms. All selected-parent operations succeeded, no delayed
+duplicate followed an immediate response, and three matched multicast captures
+were identical between profiles.
 
 ### Phase 8: Produce the native binary matrix
 
@@ -669,7 +679,7 @@ deterministic and agrees with hardware at the semantic event level.
    Phase 4.
 7. ~~Add and validate the native CLI controller.~~ Completed in Phase 5.
 8. ~~Add and validate unicast Parent Requests.~~ Completed in Phase 6.
-9. Add and validate fast unicast Parent Responses.
+9. ~~Add and validate fast unicast Parent Responses.~~ Completed in Phase 7.
 10. Produce and fingerprint the four binary profiles.
 11. Add deterministic two-router OTNS-MAPS scenarios.
 12. Add event-level timing and classification.

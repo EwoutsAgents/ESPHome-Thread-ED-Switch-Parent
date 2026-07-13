@@ -1,0 +1,45 @@
+diff --git a/src/core/config/mle.h b/src/core/config/mle.h
+index ac74e6ee453e118410a578dbb059c7fc7ec61ac7..22fbb96eec8926150df885cf1b64ec9f211e5a16 100644
+--- a/src/core/config/mle.h
++++ b/src/core/config/mle.h
+@@ -302,6 +302,19 @@
+ #define OPENTHREAD_CONFIG_MLE_PARENT_RESPONSE_CALLBACK_API_ENABLE 0
+ #endif
+ 
++/**
++ * @def OPENTHREAD_CONFIG_EXPERIMENTAL_UNICAST_PARENT_RESPONSE_FASTPATH_ENABLE
++ *
++ * Define as 1 for an FTD to send a Parent Response immediately after receiving
++ * an IPv6-unicast Parent Request. Multicast Parent Requests retain the normal
++ * randomized response delay.
++ *
++ * This option is experimental and disabled by default.
++ */
++#ifndef OPENTHREAD_CONFIG_EXPERIMENTAL_UNICAST_PARENT_RESPONSE_FASTPATH_ENABLE
++#define OPENTHREAD_CONFIG_EXPERIMENTAL_UNICAST_PARENT_RESPONSE_FASTPATH_ENABLE 0
++#endif
++
+ /**
+  * @def OPENTHREAD_CONFIG_MLE_LINK_METRICS_INITIATOR_ENABLE
+  *
+diff --git a/src/core/thread/mle_ftd.cpp b/src/core/thread/mle_ftd.cpp
+index abb573cb422a17e3d1b6cb95c2ba2888639fc270..f442d447fce502868c5c28fbcb377b830d1bee9c 100644
+--- a/src/core/thread/mle_ftd.cpp
++++ b/src/core/thread/mle_ftd.cpp
+@@ -1486,6 +1486,16 @@ void Mle::HandleParentRequest(RxInfo &aRxInfo)
+     aRxInfo.mClass = RxInfo::kPeerMessage;
+     ProcessKeySequence(aRxInfo);
+ 
++#if OPENTHREAD_CONFIG_EXPERIMENTAL_UNICAST_PARENT_RESPONSE_FASTPATH_ENABLE
++    if (!aRxInfo.mMessageInfo.GetSockAddr().IsMulticast())
++    {
++        // Respond immediately only to a Parent Request addressed to this
++        // router at the IPv6 layer. Do not also schedule a delayed response.
++        SendParentResponse(info);
++        ExitNow();
++    }
++#endif
++
+     delay = GenerateRandomDelay(!ScanMaskTlv::IsEndDeviceFlagSet(scanMask) ? kParentResponseMaxDelayRouters
+                                                                            : kParentResponseMaxDelayAll);
+     mDelayedSender.ScheduleParentResponse(info, delay);
