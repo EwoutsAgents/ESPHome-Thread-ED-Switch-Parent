@@ -140,6 +140,17 @@ The OTNS-MAPS runner will:
 
 ## Work plan
 
+Phase 1 is complete on this branch. Its audited outputs are:
+
+- [`patches/phase-1-behavior-contract.md`](patches/phase-1-behavior-contract.md);
+- [`patches/phase-1-hardware-profile.md`](patches/phase-1-hardware-profile.md);
+- [`patches/canonical/`](patches/canonical/) with reproducible functional,
+  diagnostic, and fast-response source deltas.
+
+The audit found that the intended discovery-candidate snapshot is not populated
+in the generated ESP-IDF 5.5.4 source. That mismatch is documented in the
+behavior contract and must be resolved explicitly during the native port.
+
 ### Phase 1: Freeze the reference behavior
 
 Document the exact semantics implemented by the current hardware firmware:
