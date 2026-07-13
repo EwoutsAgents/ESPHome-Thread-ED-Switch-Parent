@@ -263,7 +263,7 @@ smoke test. **Met.**
 
 ### Phase 4: Port selected-parent OpenThread behavior
 
-**Status: in progress.** The first native core unit is recorded in
+**Status: complete.** The native core unit is recorded in
 [phase-4-selected-parent-core.md](patches/phase-4-selected-parent-core.md). The
 reproducible patch is
 [selected-parent-core.patch](patches/otns/selected-parent-core.patch).
@@ -278,11 +278,12 @@ Completed in the first unit:
 - built native MTD and FTD executables;
 - verified ordinary stock behavior when no selected-parent operation is active.
 
-Still required for the Phase 4 exit criterion:
-
-- invoke the bridge through the deferred native controller from Phase 5;
-- prove a two-router multicast operation attaches to the requested target;
-- verify target cleanup on active success, failure, timeout, and reset paths.
+The Phase 5 controller completed the active validation gate. In a two-router
+run, the MED targeted the non-current router with multicast discovery, its
+initial parent was removed immediately after command acceptance, and it attached
+to the requested target within the first one-second observation interval. Core
+activity returned to zero on success. Timeout, explicit reset, and fresh-start
+tests also passed.
 
 Implement the port in small, reviewable units.
 
@@ -351,6 +352,12 @@ target via multicast and leaves ordinary stock attachment behavior unchanged
 when no selected-parent operation is active.
 
 ### Phase 5: Add the native CLI controller
+
+**Status: complete.** The controller, command tests, and directed multicast
+result are recorded in
+[phase-5-native-cli-controller.md](patches/phase-5-native-cli-controller.md).
+Apply [preferred-parent-cli-controller.patch](patches/otns/preferred-parent-cli-controller.patch)
+after the Phase 4 core patch.
 
 Implement command parsing, state transitions, deferred callback processing,
 timeouts, reset, and status reporting.
@@ -646,9 +653,10 @@ deterministic and agrees with hardware at the semantic event level.
 3. ~~Test the ESP-IDF OpenThread revision with native RFSIM.~~ Completed in
    Phase 3.
 4. ~~Select the OpenThread base revision.~~ Track A selected.
-5. Preserve `ParentRank` independently.
-6. Port the minimal selected-parent bridge and multicast path.
-7. Add and validate the native CLI controller.
+5. ~~Preserve `ParentRank` independently.~~ Completed in Phase 2.
+6. ~~Port the minimal selected-parent bridge and multicast path.~~ Completed in
+   Phase 4.
+7. ~~Add and validate the native CLI controller.~~ Completed in Phase 5.
 8. Add and validate unicast Parent Requests.
 9. Add and validate fast unicast Parent Responses.
 10. Produce and fingerprint the four binary profiles.

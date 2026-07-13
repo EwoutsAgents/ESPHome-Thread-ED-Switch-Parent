@@ -2,9 +2,8 @@
 
 ## Status
 
-**In progress.** The native core compiles and its inactive path is validated.
-The active multicast attach gate remains pending until the Phase 5 controller
-can invoke the bridge outside Parent Response callback context.
+**Complete.** The native core compiles, its inactive path is validated, and the
+Phase 5 deferred controller completed the active multicast attach gate.
 
 ## Implemented unit
 
@@ -117,13 +116,28 @@ Observed result:
 This matches the Phase 3 stock result and shows that merely using the patched
 binary does not alter ordinary attachment behavior.
 
-## Remaining Phase 4 gate
+## Active multicast validation
 
-The core API is not exposed through the standard OpenThread CLI yet. Calling
-continuation directly from the Parent Response callback would risk attacher
-reentrancy, so the active-path test should not use a temporary unsafe callback.
+The Phase 5 controller exposed the bridge through the native CLI and deferred
+continuation until after OpenThread tasklets and platform drivers returned to
+the application mainloop.
 
-The next unit is the deferred native controller in Phase 5. It will queue the
-target-response event, invoke continuation from the mainloop/tasklet context,
-and enable the required two-router multicast target-attach test. Phase 4 must
-remain marked in progress until that test and terminal cleanup tests pass.
+A deterministic two-router test using OTNS seed `2405` observed:
+
+- initial parent Router A;
+- selected target Router B by extended address;
+- multicast command accepted at generation 2;
+- Router A deleted immediately after acceptance;
+- Parent Request started;
+- target Parent Response accepted from Router B;
+- Child ID Request started using the captured target candidate;
+- selected-parent success with Router B as the reported parent;
+- the MED in `child` state;
+- core active state zero after success;
+- attachment observed within the first one-second polling interval.
+
+A separate timeout run used an unreachable target. It emitted
+`reason=timeout`, returned core activity to zero, accepted a fresh generation,
+and then cleared successfully. Together with the constructor, ordinary-attach,
+role-change, success, timeout, and explicit-reset cleanup paths, this meets the
+Phase 4 terminal-state requirement.

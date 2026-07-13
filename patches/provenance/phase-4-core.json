@@ -2,7 +2,7 @@
   "schema_version": 1,
   "experiment_date": "2026-07-13",
   "phase": 4,
-  "status": "in_progress",
+  "status": "complete",
   "base_openthread_commit": "a12ff0d0f54fd41954b45047fcdd08f302731c5f",
   "patch": {
     "path": "patches/otns/selected-parent-core.patch",
@@ -46,9 +46,16 @@
     "post_removal_recovery_s": 237.0,
     "packet_delivery_ratio": 1.0
   },
-  "remaining_exit_gates": [
-    "deferred native controller invokes the bridge",
-    "two-router multicast operation attaches to the requested target",
-    "terminal paths clear target and candidate state"
-  ]
+  "active_multicast_validation": {
+    "status": "passed",
+    "otns_seed": 2405,
+    "initial_parent": "router_a",
+    "selected_target": "router_b",
+    "initial_parent_removed_after_command": true,
+    "final_parent": "router_b",
+    "final_mobile_state": "child",
+    "observed_reattach_upper_bound_s": 1,
+    "core_active_after_success": false
+  },
+  "remaining_exit_gates": []
 }

@@ -42,3 +42,32 @@ The operation state is process-global. This matches OTNS's current execution
 model, where each simulated node is a separate native process with one
 OpenThread instance. It is not suitable for a multiple-instance OpenThread
 process without further refactoring.
+
+## Native CLI controller
+
+Apply after `selected-parent-core.patch`:
+
+```bash
+git -C /path/to/openthread apply \
+  /path/to/patches/otns/preferred-parent-cli-controller.patch
+```
+
+The controller patch adds `prefparent` to the native CLI application and defers
+callback work through the application's mainloop. Supported commands are:
+
+```text
+prefparent switch <extaddr> multicast
+prefparent switch <extaddr> unicast
+prefparent status
+prefparent clear
+```
+
+SHA-256:
+
+```text
+6ef066387cbf2f37c9a91996aa4306c947e67020cbaf36c26ce656d2a8033720
+```
+
+Phase 5 validates the controller and multicast mode. Although the command
+accepts `unicast`, its radio and protocol behavior remains a Phase 6 acceptance
+gate.
