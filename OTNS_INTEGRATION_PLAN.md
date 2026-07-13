@@ -381,6 +381,17 @@ without parsing unstable human-oriented OpenThread log messages.
 
 ### Phase 6: Add unicast discovery
 
+**Status: complete.** Repeated directed tests and matched packet captures are
+recorded in
+[phase-6-unicast-discovery.md](patches/phase-6-unicast-discovery.md). No source
+change beyond the Phase 4 core and Phase 5 controller patches was required.
+
+Three deterministic two-router runs attached to the requested target within
+the first one-second observation interval. A three-router capture confirmed
+that the Parent Request used the selected router's EUI-64 and IPv6 link-local
+address, while the surviving non-target router did not answer. A matched
+multicast control retained IEEE 802.15.4 broadcast and IPv6 `ff02::2`.
+
 Enable the controller's unicast mode and verify:
 
 - the Parent Request is addressed only to the selected router;
@@ -657,7 +668,7 @@ deterministic and agrees with hardware at the semantic event level.
 6. ~~Port the minimal selected-parent bridge and multicast path.~~ Completed in
    Phase 4.
 7. ~~Add and validate the native CLI controller.~~ Completed in Phase 5.
-8. Add and validate unicast Parent Requests.
+8. ~~Add and validate unicast Parent Requests.~~ Completed in Phase 6.
 9. Add and validate fast unicast Parent Responses.
 10. Produce and fingerprint the four binary profiles.
 11. Add deterministic two-router OTNS-MAPS scenarios.
