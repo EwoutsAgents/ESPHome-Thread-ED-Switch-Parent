@@ -628,6 +628,14 @@ Run validation in increasing scope.
 Each stage is a gate. Do not expand topology size or campaign count while a
 lower-level deterministic test remains unexplained.
 
+The Phase 11 gate is met. The four binary profiles and native CLI paths were
+revalidated; controlled tests cover all setup and terminal classifications; the
+complete stock/multicast/unicast/fast-response matrix passed for two, three,
+and four routers; 30 repeated two-router directed runs reached their targets;
+and the four-router hardware runs were compared using the same semantic timing
+boundaries with distinct timing-source labels. See
+[`patches/phase-11-validation-ladder.md`](patches/phase-11-validation-ladder.md).
+
 ### Phase 12: Reproducibility and documentation
 
 Each result bundle should include:
@@ -703,10 +711,12 @@ deterministic and agrees with hardware at the semantic event level.
 8. ~~Add and validate unicast Parent Requests.~~ Completed in Phase 6.
 9. ~~Add and validate fast unicast Parent Responses.~~ Completed in Phase 7.
 10. ~~Produce and fingerprint the four binary profiles.~~ Completed in Phase 8.
-11. Add deterministic two-router OTNS-MAPS scenarios.
-12. Add event-level timing and classification.
-13. Expand to three and four routers.
-14. Run repeated campaigns and matched hardware comparisons.
+11. ~~Add deterministic two-router OTNS-MAPS scenarios.~~ Completed in Phase 9.
+12. ~~Add event-level timing and classification.~~ Completed in Phases 9–10.
+13. ~~Expand to three and four routers.~~ Completed in Phase 11.
+14. ~~Run repeated campaigns and matched hardware comparisons.~~ Initial
+    validation scope completed in Phase 11; larger paired campaigns remain
+    experimental follow-up work.
 15. Consider shared state-machine extraction only if evidence requires it.
 16. Add mobility experiments after static equivalence is established.
 
