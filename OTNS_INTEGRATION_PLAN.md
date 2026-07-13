@@ -654,6 +654,14 @@ Each result bundle should include:
 Document clean build commands, scenario commands, artifact layout, timing-source
 policy, and known hardware/simulation differences.
 
+The Phase 12 exit criterion is met. OTNS-MAPS exports checksum-verified run and
+repeated-experiment bundles with packaged scenarios, event/state data, logs,
+replays, source revisions, binary hashes, explicit simulator seeds, exact
+commands, and normalized internal references. A fresh clone verified the
+committed collection and exactly reproduced the four-router fast-response
+target, classification, binary fingerprints, and timing decomposition. See
+[`patches/phase-12-reproducibility.md`](patches/phase-12-reproducibility.md).
+
 ## Decision gates
 
 ### Gate 1: OpenThread base revision
