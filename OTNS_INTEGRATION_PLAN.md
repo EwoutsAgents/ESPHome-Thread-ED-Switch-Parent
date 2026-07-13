@@ -210,6 +210,11 @@ show exactly which patch set is applied.
 
 ### Phase 3: Select the native OpenThread base
 
+**Status: complete.** Track A was selected on 2026-07-13. The decision record
+is [phase-3-openthread-base-selection.md](patches/phase-3-openthread-base-selection.md),
+with machine-readable evidence in
+[phase-3.json](patches/provenance/phase-3.json).
+
 Evaluate two tracks.
 
 #### Track A: ESP-IDF's OpenThread revision
@@ -231,8 +236,30 @@ Decision procedure:
 4. choose Track A if it works without substantial compatibility patches;
 5. otherwise choose Track B and document the behavioral/version delta.
 
+Decision: use Track A, commit `a12ff0d0f54fd41954b45047fcdd08f302731c5f`,
+as the native OpenThread base. The unmodified revision built both MTD and FTD
+executables against OTNS commit `099a6c26...` without source or compatibility
+patches. Two stock two-router runs formed a network, attached the MED, removed
+its observed parent, and reattached it to the surviving router. Track B remains
+a documented fallback if a later required OTNS feature cannot be backported
+reasonably.
+
+#### Source and build isolation decision
+
+All variants will start from separate clean worktrees at the selected Track A
+commit and use separate CMake output directories. Patches will be applied only
+inside the worktree for the variant that requires them. This is the native
+equivalent of the separate ESPHome/PlatformIO package instances used by the
+hardware campaign and permits stock, selected-parent, and fast-response source
+trees to coexist without contradictory patches contaminating one another.
+
+The isolated worktrees may still use one shared Git object store to avoid
+duplicating repository history; isolation applies to checked-out files and
+build output. The definitive layout and executable assignment are specified in
+Phase 8.
+
 Exit criterion: the selected unmodified base passes a repeatable stock RFSIM
-smoke test.
+smoke test. **Met.**
 
 ### Phase 4: Port selected-parent OpenThread behavior
 
@@ -552,9 +579,9 @@ policy, and known hardware/simulation differences.
 
 ### Gate 1: OpenThread base revision
 
-Prefer the ESP-IDF OpenThread revision if it runs under RFSIM without extensive
-compatibility work. Otherwise port to OTNS's current revision and record the
-version difference.
+**Resolved:** use the ESP-IDF OpenThread revision `a12ff0d0...`. It runs under
+the current RFSIM platform without source compatibility changes. Keep the OTNS
+revision `7874555e...` as the Track B fallback, not as the initial port target.
 
 ### Gate 2: Controller equivalence
 
@@ -595,8 +622,9 @@ deterministic and agrees with hardware at the semantic event level.
 
 1. Freeze the hardware behavior and produce canonical diffs.
 2. Recover and record OpenThread provenance.
-3. Test the ESP-IDF OpenThread revision with native RFSIM.
-4. Select the OpenThread base revision.
+3. ~~Test the ESP-IDF OpenThread revision with native RFSIM.~~ Completed in
+   Phase 3.
+4. ~~Select the OpenThread base revision.~~ Track A selected.
 5. Preserve `ParentRank` independently.
 6. Port the minimal selected-parent bridge and multicast path.
 7. Add and validate the native CLI controller.
