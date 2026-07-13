@@ -181,6 +181,18 @@ behavior or explicitly classified as diagnostics-only.
 
 ### Phase 2: Establish source provenance
 
+Phase 2 is complete. Its outputs are:
+
+- [`patches/phase-2-source-provenance.md`](patches/phase-2-source-provenance.md);
+- [`patches/provenance/phase-2.json`](patches/provenance/phase-2.json);
+- [`patches/canonical/otns-parent-rank.patch`](patches/canonical/otns-parent-rank.patch).
+
+The hardware OpenThread base is `a12ff0d0f54fd41954b45047fcdd08f302731c5f`.
+The current OTNS OpenThread base is
+`7874555efb1772bad66049ab06a78a2ce0c925f3`, 830 commits later on the same
+history. The existing `ParentRank` modification is now preserved independently
+and reproducible against the OTNS base.
+
 Recover and record:
 
 - the ESP-IDF 5.5.4 release used by the ESPHome builds;

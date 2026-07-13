@@ -70,6 +70,27 @@ SHA-256:
 5f371f803e77fcaf86c2e0f6971fc651ef5a08b3329fc9ab149ec38693591ea8
 ```
 
+### `otns-parent-rank.patch`
+
+Preserves the existing OTNS OpenThread `ParentRank` instrumentation separately
+from the preferred-parent port. Its base is OpenThread commit
+`7874555efb1772bad66049ab06a78a2ce0c925f3`.
+
+SHA-256:
+
+```text
+2c3858be0dd519877ec38e2bb48ba4c5a3ac0dbd1bf4fd2da8b83a362d73818b
+```
+
+Apply it only to the OTNS OpenThread tree:
+
+```bash
+patch -p1 < otns-parent-rank.patch
+```
+
+The patch was verified against a clean base checkout and reproduced the working
+OTNS `src/core/thread/mle.cpp` byte-for-byte.
+
 ## Generation and verification
 
 1. Copy the relevant files from the isolated stock OpenThread package tree.
