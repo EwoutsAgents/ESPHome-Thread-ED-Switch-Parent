@@ -21,8 +21,9 @@ elif ! command -v ninja >/dev/null 2>&1; then
     exit 1
 fi
 
-readonly COMMON_DEFINES="-DOPENTHREAD_CONFIG_PARENT_SEARCH_ENABLE=0"
-readonly FASTPR_DEFINES="${COMMON_DEFINES} -DOPENTHREAD_CONFIG_EXPERIMENTAL_UNICAST_PARENT_RESPONSE_FASTPATH_ENABLE=1"
+readonly STOCK_DEFINES="-DOPENTHREAD_CONFIG_PARENT_SEARCH_ENABLE=0 -DOPENTHREAD_CONFIG_EXPERIMENTAL_PREFERRED_PARENT_ENABLE=0 -DOPENTHREAD_CONFIG_EXPERIMENTAL_UNICAST_PARENT_RESPONSE_FASTPATH_ENABLE=0"
+readonly PREFERRED_DEFINES="-DOPENTHREAD_CONFIG_PARENT_SEARCH_ENABLE=0 -DOPENTHREAD_CONFIG_EXPERIMENTAL_PREFERRED_PARENT_ENABLE=1 -DOPENTHREAD_CONFIG_EXPERIMENTAL_UNICAST_PARENT_RESPONSE_FASTPATH_ENABLE=0"
+readonly FASTPR_DEFINES="-DOPENTHREAD_CONFIG_PARENT_SEARCH_ENABLE=0 -DOPENTHREAD_CONFIG_EXPERIMENTAL_PREFERRED_PARENT_ENABLE=0 -DOPENTHREAD_CONFIG_EXPERIMENTAL_UNICAST_PARENT_RESPONSE_FASTPATH_ENABLE=1"
 
 if [[ -e "${OTNS_VARIANT_ROOT}" ]]; then
     echo "Refusing to reuse existing variant root: ${OTNS_VARIANT_ROOT}" >&2
@@ -53,6 +54,7 @@ build_variant()
 {
     local profile="$1"
     local defines="$2"
+    local targets="$3"
     local source_dir="${OTNS_VARIANT_ROOT}/${profile}/source"
     local build_dir="${OTNS_VARIANT_ROOT}/${profile}/build"
 
@@ -60,7 +62,7 @@ build_variant()
         cd "${OTNS_RFSIM_DIR}"
         OT_DIR="${source_dir}" \
         OT_CMAKE_BUILD_DIR="${build_dir}" \
-        OT_CMAKE_NINJA_TARGET="ot-cli-mtd ot-cli-ftd" \
+        OT_CMAKE_NINJA_TARGET="${targets}" \
         ./script/build \
             "-DCMAKE_C_FLAGS=${defines}" \
             "-DCMAKE_CXX_FLAGS=${defines}"
@@ -69,16 +71,14 @@ build_variant()
 
 create_source_variant stock
 create_source_variant preferred-parent \
-    patches/otns/selected-parent-core.patch \
-    patches/otns/preferred-parent-cli-controller.patch
-create_source_variant preferred-parent-fastpr \
-    patches/otns/selected-parent-core.patch \
-    patches/otns/preferred-parent-cli-controller.patch \
+    patches/canonical/openthread-preferred-parent-controller.patch \
+    patches/otns/preferred-parent-cli-adapter.patch
+create_source_variant fastpr-router \
     patches/otns/fast-unicast-parent-response.patch
 
-build_variant stock "${COMMON_DEFINES}"
-build_variant preferred-parent "${COMMON_DEFINES}"
-build_variant preferred-parent-fastpr "${FASTPR_DEFINES}"
+build_variant stock "${STOCK_DEFINES}" "ot-cli-mtd ot-cli-ftd"
+build_variant preferred-parent "${PREFERRED_DEFINES}" "ot-cli-mtd"
+build_variant fastpr-router "${FASTPR_DEFINES}" "ot-cli-ftd"
 
 install -D -m 0755 \
     "${OTNS_VARIANT_ROOT}/stock/build/bin/ot-cli-mtd" \
@@ -90,11 +90,31 @@ install -D -m 0755 \
     "${OTNS_VARIANT_ROOT}/stock/build/bin/ot-cli-ftd" \
     "${OTNS_VARIANT_ROOT}/artifacts/stock-ftd/ot-cli-ftd"
 install -D -m 0755 \
-    "${OTNS_VARIANT_ROOT}/preferred-parent-fastpr/build/bin/ot-cli-ftd" \
+    "${OTNS_VARIANT_ROOT}/fastpr-router/build/bin/ot-cli-ftd" \
     "${OTNS_VARIANT_ROOT}/artifacts/fastpr-ftd/ot-cli-ftd"
 
+readonly HASHES_FILE="${OTNS_VARIANT_ROOT}/artifacts/SHA256SUMS"
 sha256sum \
     "${OTNS_VARIANT_ROOT}/artifacts/stock-mtd-pps-off/ot-cli-mtd" \
     "${OTNS_VARIANT_ROOT}/artifacts/preferred-parent-mtd-pps-off/ot-cli-mtd" \
     "${OTNS_VARIANT_ROOT}/artifacts/stock-ftd/ot-cli-ftd" \
-    "${OTNS_VARIANT_ROOT}/artifacts/fastpr-ftd/ot-cli-ftd"
+    "${OTNS_VARIANT_ROOT}/artifacts/fastpr-ftd/ot-cli-ftd" | tee "${HASHES_FILE}"
+
+readonly COMPILER_PATH="$(sed -n 's/^CMAKE_C_COMPILER:FILEPATH=//p' "${OTNS_VARIANT_ROOT}/stock/build/CMakeCache.txt" | head -n 1)"
+readonly COMPILER_VERSION="$(${COMPILER_PATH} --version | head -n 1)"
+readonly PROVENANCE_FILE="${OTNS_VARIANT_ROOT}/artifacts/PROVENANCE.txt"
+{
+    echo "openthread_commit=${BASE_OPENTHREAD_COMMIT}"
+    echo "compiler=${COMPILER_VERSION}"
+    echo "parent_rank_instrumentation=disabled"
+    echo "profile=stock-mtd-pps-off pps=0 preferred_parent=0 fastpr=0 defines=${STOCK_DEFINES}"
+    echo "profile=preferred-parent-mtd-pps-off pps=0 preferred_parent=1 fastpr=0 defines=${PREFERRED_DEFINES}"
+    echo "profile=stock-ftd pps=n/a preferred_parent=0 fastpr=0 defines=${STOCK_DEFINES}"
+    echo "profile=fastpr-ftd pps=n/a preferred_parent=0 fastpr=1 defines=${FASTPR_DEFINES}"
+    sha256sum \
+        "${REPO_ROOT}/patches/canonical/openthread-preferred-parent-controller.patch" \
+        "${REPO_ROOT}/patches/otns/preferred-parent-cli-adapter.patch" \
+        "${REPO_ROOT}/patches/otns/fast-unicast-parent-response.patch"
+} > "${PROVENANCE_FILE}"
+
+cat "${PROVENANCE_FILE}"
