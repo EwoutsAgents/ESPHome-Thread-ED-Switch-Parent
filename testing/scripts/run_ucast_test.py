@@ -1081,6 +1081,30 @@ def parse_latest_rloc16(log_path: Path | None) -> tuple[str | None, str | None]:
     return None, None
 
 
+def infer_parent_from_child_rloc16(
+    child_log: Path | None, router_extaddrs: dict[str, dict[str, str]]
+) -> tuple[str | None, str | None]:
+    child_rloc16, child_rloc16_source = parse_latest_rloc16(child_log)
+    if child_rloc16 is None:
+        return None, None
+
+    parent_rloc16 = int(child_rloc16, 16) & 0xFC00
+    matches = [
+        entry
+        for entry in router_extaddrs.values()
+        if entry.get("rloc16")
+        and int(entry["rloc16"], 16) == parent_rloc16
+    ]
+    if len(matches) != 1:
+        return None, None
+
+    source = (
+        f"child_rloc16_parent_id child=0x{child_rloc16} "
+        f"parent=0x{parent_rloc16:04x}; {child_rloc16_source or 'source unavailable'}"
+    )
+    return matches[0]["extaddr"], source
+
+
 def select_target(router_extaddrs: dict[str, dict[str, str]], parent_key: str, *, seed: int | None, run_index: int) -> dict[str, str] | None:
     candidates = [entry for key, entry in sorted(router_extaddrs.items()) if key != parent_key]
     if not candidates:
@@ -1155,9 +1179,13 @@ def run_timed_sequence(settings: Settings, *, dry_run: bool, manifest: list[dict
         if dry_run:
             return child_log_path, device_log_paths, sniffer_log_path, None, None, "dry-run"
 
-        parent_extaddr, parent_source = parse_child_parent_extaddr(child_log_path)
         router_extaddrs = map_router_extaddrs(device_log_paths)
         log(f"Router identity map: {format_router_identity_map(router_extaddrs)}")
+        parent_extaddr, parent_source = parse_child_parent_extaddr(child_log_path)
+        if parent_extaddr is None:
+            parent_extaddr, parent_source = infer_parent_from_child_rloc16(
+                child_log_path, router_extaddrs
+            )
         parent_key = extaddr_key(parent_extaddr)
         parent_match = router_extaddrs.get(parent_key or "")
         details: dict[str, Any] = {
