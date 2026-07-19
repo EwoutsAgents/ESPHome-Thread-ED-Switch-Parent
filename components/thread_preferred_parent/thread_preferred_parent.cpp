@@ -165,12 +165,36 @@ void ThreadPreferredParentComponent::preferred_parent_callback_(const otThreadPr
                                                                 void *context) {
   auto *self = static_cast<ThreadPreferredParentComponent *>(context);
   if (info == nullptr || self == nullptr) return;
-  ESP_LOGI(TAG, "PREFPARENT event=%s state=%s result=%s target=%s mode=%s attempt=%u/%u rloc16=0x%04x rssi=%d error=%s",
-           event_to_string_(info->mEvent), state_to_string_(info->mStatus.mState),
-           result_to_string_(info->mStatus.mResult), extaddr_to_string_(info->mStatus.mExtAddress).c_str(),
-           info->mStatus.mMode == OT_THREAD_PREFERRED_PARENT_MODE_UNICAST ? "unicast" : "multicast",
-           info->mStatus.mAttempt, info->mStatus.mMaxAttempts, info->mParentRloc16, info->mParentRssi,
-           otThreadErrorToString(info->mStatus.mError));
+  const std::string target = extaddr_to_string_(info->mStatus.mExtAddress);
+  switch (info->mEvent) {
+    case OT_THREAD_PREFERRED_PARENT_EVENT_REQUESTED:
+      ESP_LOGI(TAG, "PREFPARENT event=requested target=%s mode=%s", target.c_str(),
+               info->mStatus.mMode == OT_THREAD_PREFERRED_PARENT_MODE_UNICAST ? "unicast" : "multicast");
+      break;
+    case OT_THREAD_PREFERRED_PARENT_EVENT_PARENT_REQUEST_STARTED:
+      ESP_LOGI(TAG, "PREFPARENT event=parent_request_started attempt=%u/%u", info->mStatus.mAttempt,
+               info->mStatus.mMaxAttempts);
+      break;
+    case OT_THREAD_PREFERRED_PARENT_EVENT_TARGET_RESPONSE:
+      ESP_LOGI(TAG, "PREFPARENT event=target_response parent=%s rloc16=%04x rssi=%d", target.c_str(),
+               info->mParentRloc16, info->mParentRssi);
+      break;
+    case OT_THREAD_PREFERRED_PARENT_EVENT_CHILD_ID_REQUEST_STARTED:
+      ESP_LOGI(TAG, "PREFPARENT event=child_id_request_started parent=%s", target.c_str());
+      break;
+    case OT_THREAD_PREFERRED_PARENT_EVENT_SUCCEEDED:
+      ESP_LOGI(TAG, "PREFPARENT event=succeeded parent=%s", target.c_str());
+      break;
+    case OT_THREAD_PREFERRED_PARENT_EVENT_FAILED:
+    case OT_THREAD_PREFERRED_PARENT_EVENT_TIMED_OUT:
+      ESP_LOGI(TAG, "PREFPARENT event=%s reason=%s error=%s", event_to_string_(info->mEvent),
+               result_to_string_(info->mStatus.mResult), otThreadErrorToString(info->mStatus.mError));
+      break;
+    case OT_THREAD_PREFERRED_PARENT_EVENT_CANCELLED:
+    case OT_THREAD_PREFERRED_PARENT_EVENT_CLEARED:
+      ESP_LOGI(TAG, "PREFPARENT event=%s", event_to_string_(info->mEvent));
+      break;
+  }
 }
 
 bool ThreadPreferredParentComponent::parse_extaddr_(const std::string &text, otExtAddress *extaddr) {
