@@ -72,9 +72,16 @@ def apply_patch(openthread_root: Path, patch_path: Path) -> None:
         print(f"preferred-parent OpenThread patch already present: {marker}")
         return
 
+    git_env = os.environ.copy()
+    # Vendored ESP-IDF sources can live below the user's Git checkout without
+    # being a Git repository themselves. Prevent `git apply` from discovering
+    # that outer repository and interpreting patch paths relative to it.
+    git_env["GIT_CEILING_DIRECTORIES"] = str(openthread_root.parent.resolve())
+
     check = subprocess.run(
-        ["git", "apply", "--check", str(patch_path)],
+        ["git", "apply", "--check", "--unsafe-paths", str(patch_path)],
         cwd=openthread_root,
+        env=git_env,
         text=True,
         stdout=subprocess.PIPE,
         stderr=subprocess.STDOUT,
@@ -86,8 +93,13 @@ def apply_patch(openthread_root: Path, patch_path: Path) -> None:
         )
 
     subprocess.run(
-        ["git", "apply", str(patch_path)], cwd=openthread_root, check=True
+        ["git", "apply", "--unsafe-paths", str(patch_path)],
+        cwd=openthread_root,
+        env=git_env,
+        check=True,
     )
+    if not marker.is_file():
+        raise RuntimeError("git apply succeeded but the OpenThread marker is missing")
     print(f"applied canonical preferred-parent controller patch to {openthread_root}")
 
 
