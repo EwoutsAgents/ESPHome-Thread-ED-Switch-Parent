@@ -366,6 +366,13 @@ At a high level, these tests measure explicit preferred-parent switching behavio
 
 Use `scripts/analyze_test_logs.py` for post-run analysis across `stock`, `ucast`, `ucast_fastpr`, and `mcast` runs. The analyzer is variant-agnostic and discovers the matching `*_test_manifest_*.json` file from each run directory.
 
+The same analyzer accepts an OTNS repeated-results directory. In OTNS mode it
+discovers `run_*/baseline_summary_*.json` and
+`run_*/otns_runtime/current.pcap`, matches the selected target recorded in the
+summary, and reports the selected Parent Request through Child ID Response
+sequence. OTNS captures use the OpenThread test network key by default; pass
+`--network-key` when a scenario uses a different key.
+
 Examples:
 
 ```bash
@@ -382,6 +389,11 @@ python3 scripts/analyze_test_logs.py \
   --markdown \
   --group-by batch-family \
   --summary-only
+
+python3 scripts/analyze_test_logs.py \
+  --otns-results-dir ../../OTNS-MAPS/results/repeated/<experiment-name> \
+  --reuse-pcap-csv \
+  --json
 ```
 
 To write a Markdown report to disk:
@@ -423,6 +435,11 @@ logs/<generated-at>-all-batches-summary-report.md
 ## Timing policy
 
 Reported attach timings come from matched sniffer PCAP events only.
+
+Timing deltas retain the PCAP epoch timestamp's sub-millisecond precision and
+are reported in milliseconds rounded to three decimal places. This is needed
+for native OTNS/RFSIM intervals that are commonly shorter than one millisecond
+or only a few milliseconds.
 
 Log timestamps are retained as reference metadata in the report, but they are not used as fallback timing values.
 

@@ -120,6 +120,7 @@ class AttachSequence:
     timing_source: str = "unavailable"
     pcap_frame_numbers: dict[str, int] = field(default_factory=dict)
     pcap_event_times: dict[str, str | None] = field(default_factory=dict)
+    pcap_event_epochs: dict[str, float] = field(default_factory=dict)
 
     def has_complete_log_attach(self) -> bool:
         return (
@@ -133,15 +134,25 @@ class AttachSequence:
         return all(self.pcap_event_times.get(key) is not None for key in PCAP_EVENT_KEYS)
 
     def to_summary(self) -> dict[str, Any]:
-        pcap_start = parse_formatted_ms(self.pcap_event_times.get("send_parent_request"))
-        pcap_parent_resp = parse_formatted_ms(self.pcap_event_times.get("receive_parent_response"))
-        pcap_child_req = parse_formatted_ms(self.pcap_event_times.get("send_child_id_request"))
-        pcap_child_resp = parse_formatted_ms(self.pcap_event_times.get("receive_child_id_response"))
+        def precise_delta_ms(start: str, end: str) -> float | int | None:
+            if start in self.pcap_event_epochs and end in self.pcap_event_epochs:
+                return round((self.pcap_event_epochs[end] - self.pcap_event_epochs[start]) * 1000.0, 3)
+            return delta_ms(
+                parse_formatted_ms(self.pcap_event_times.get(start)),
+                parse_formatted_ms(self.pcap_event_times.get(end)),
+            )
+
         timing_ms = {
-            "parent_request_to_response": delta_ms(pcap_start, pcap_parent_resp),
-            "parent_response_to_child_id_request": delta_ms(pcap_parent_resp, pcap_child_req),
-            "child_id_request_to_response": delta_ms(pcap_child_req, pcap_child_resp),
-            "parent_request_to_child_id_response": delta_ms(pcap_start, pcap_child_resp),
+            "parent_request_to_response": precise_delta_ms("send_parent_request", "receive_parent_response"),
+            "parent_response_to_child_id_request": precise_delta_ms(
+                "receive_parent_response", "send_child_id_request"
+            ),
+            "child_id_request_to_response": precise_delta_ms(
+                "send_child_id_request", "receive_child_id_response"
+            ),
+            "parent_request_to_child_id_response": precise_delta_ms(
+                "send_parent_request", "receive_child_id_response"
+            ),
         }
         return {
             "send_parent_request": format_ms(self.send_parent_request_ms),
@@ -768,6 +779,7 @@ def fill_sequence_from_pcap(seq: AttachSequence, matched: dict[str, PcapEvent], 
     seq.timing_source = source
     seq.pcap_frame_numbers = {key: value.frame_number for key, value in matched.items()}
     seq.pcap_event_times = {key: format_ms(value.local_ms) for key, value in matched.items()}
+    seq.pcap_event_epochs = {key: value.epoch for key, value in matched.items()}
     if seq.child_extaddr is None:
         seq.child_extaddr = compact_extaddr(matched["send_parent_request"].src64)
     if seq.parent_extaddr is None:
@@ -785,6 +797,7 @@ def attach_sequence_from_pcap(matched: dict[str, PcapEvent], *, source: str) -> 
         timing_source=source,
         pcap_frame_numbers={key: value.frame_number for key, value in matched.items()},
         pcap_event_times={key: format_ms(value.local_ms) for key, value in matched.items()},
+        pcap_event_epochs={key: value.epoch for key, value in matched.items()},
     )
 
 
@@ -1067,6 +1080,102 @@ def analyze_log(
     }
 
 
+def analyze_otns_run(
+    run_dir: Path,
+    *,
+    network_key: str,
+    reuse_pcap_csv: bool = False,
+    generate_pcap_csv: bool = True,
+) -> dict[str, Any]:
+    warnings: list[str] = []
+    summary_paths = sorted(run_dir.glob("baseline_summary_*.json"))
+    if not summary_paths:
+        raise FileNotFoundError(f"No baseline_summary_*.json found in {run_dir}")
+    summary_path = summary_paths[-1]
+    summary = json.loads(summary_path.read_text(encoding="utf-8"))
+    pcap_path = run_dir / "otns_runtime" / "current.pcap"
+    source = "otns-pcap-csv-tlv-existing"
+    sequences: list[dict[str, PcapEvent]] = []
+
+    if not pcap_path.is_file():
+        warnings.append(f"Could not locate OTNS packet capture: {pcap_path}")
+    else:
+        try:
+            attach_csv = attach_csv_path_for_pcap(pcap_path)
+            if attach_csv is None:
+                if not generate_pcap_csv:
+                    warnings.append("No existing attach-MLE CSV found and CSV generation is disabled.")
+                else:
+                    attach_csv = generate_attach_csv(pcap_path, network_key)
+                    source = "otns-pcap-csv-tlv-generated"
+            elif not reuse_pcap_csv and generate_pcap_csv:
+                attach_csv = generate_attach_csv(pcap_path, network_key)
+                source = "otns-pcap-csv-tlv-generated"
+            if attach_csv is not None:
+                sequences = pcap_sequences_from_csv_rows(load_attach_csv_rows(attach_csv, offset_ms=0))
+        except (FileNotFoundError, OSError, subprocess.CalledProcessError) as exc:
+            warnings.append(f"Could not decode OTNS PCAP: {exc}")
+
+    target = compact_extaddr(summary.get("target_parent_extaddr"))
+    target_sequences = [sequence for sequence in sequences if pcap_sequence_parent_extaddr(sequence) == target]
+    # The directed switch occurs after ordinary router and child attachment. The
+    # last complete child attach to the selected target is therefore the
+    # selected operation, while Challenge/Response matching still validates all
+    # four MLE boundaries.
+    selected = max(
+        target_sequences,
+        key=lambda sequence: sequence["send_parent_request"].epoch,
+        default=None,
+    )
+    if selected is None:
+        warnings.append("No complete selected-target attach sequence was found in the OTNS PCAP.")
+
+    selected_summary = attach_sequence_from_pcap(selected, source=source).to_summary() if selected else None
+    terminal_event = next(
+        (
+            event
+            for event in reversed(summary.get("preferred_parent_events") or [])
+            if event.get("event") in {"succeeded", "failed", "timed_out", "cancelled"}
+        ),
+        None,
+    )
+    experiment_dir = run_dir.parent
+    return {
+        "group": summary.get("firmware_variant") or experiment_dir.name,
+        "batch_dir": experiment_dir.name,
+        "batch_family": summary.get("directed_mode") or experiment_dir.name,
+        "log_file": str(summary_path),
+        "manifest_status": "completed",
+        "manifest_path": str(summary_path),
+        "firmware_environment": {
+            "platform": "otns-rfsim",
+            "openthread_commit": summary.get("openthread_commit"),
+            "otns_commit": summary.get("otns_commit"),
+            "node_binary_path": summary.get("node_binary_path"),
+            "ftd_node_binary_path": summary.get("ftd_node_binary_path"),
+        },
+        "labels": summary.get("labels") or [],
+        "child_extaddr": selected_summary.get("child_extaddr") if selected_summary else None,
+        "switch_targets": [target] if target else [],
+        "attach_sequences": [selected_summary] if selected_summary else [],
+        "log_only_or_partial_sequences": [],
+        "selected_target_matched": bool(
+            selected_summary and target and selected_summary.get("parent_extaddr") == target
+        ),
+        "directed_result_classification": summary.get("directed_result_classification"),
+        "final_parent": summary.get("final_parent"),
+        "terminal_event": terminal_event,
+        "failed_tx": asdict(FailedTxSummary()),
+        "warnings": warnings,
+    }
+
+
+def collect_otns_run_dirs(results_dir: Path) -> list[Path]:
+    if (results_dir / "baseline_summary.json").is_file() or list(results_dir.glob("baseline_summary_*.json")):
+        return [results_dir.resolve()]
+    return sorted(path.resolve() for path in results_dir.glob("run_*") if path.is_dir())
+
+
 GroupByMode = Literal["log-group", "batch-dir", "batch-family"]
 
 
@@ -1217,6 +1326,17 @@ def render_markdown_report(
             out.append(f"- child extaddr: `{format_optional(result.get('child_extaddr'))}`")
             if result.get("switch_targets"):
                 out.append(f"- switch target extaddr(s): `{', '.join(result['switch_targets'])}`")
+            if "selected_target_matched" in result:
+                out.append(f"- selected target attach matched: **{result['selected_target_matched']}**")
+                out.append(
+                    f"- directed result classification: `{format_optional(result.get('directed_result_classification'))}`"
+                )
+                terminal = result.get("terminal_event") or {}
+                if terminal:
+                    out.append(
+                        f"- terminal controller event: `{terminal.get('event')}` "
+                        f"(result `{terminal.get('result')}`, error `{terminal.get('error')}`)"
+                    )
             out.append("")
             out.extend(["#### Firmware Provenance", ""])
             out.extend(render_firmware_provenance_lines(result.get("firmware_environment")))
@@ -1271,6 +1391,16 @@ def parse_args(argv: list[str]) -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Analyze child attach timing. Metrics are pcap-only.")
     parser.add_argument("--logs-dir", type=Path, default=default_logs_dir(Path(__file__)), help="Directory containing *.log files.")
     parser.add_argument("--run-dir", dest="run_dirs", action="append", type=Path, default=[], help="Specific run directory to include. Repeat for multiple runs.")
+    parser.add_argument(
+        "--otns-results-dir",
+        type=Path,
+        help="Analyze an OTNS repeated-results directory containing run_*/otns_runtime/current.pcap.",
+    )
+    parser.add_argument(
+        "--network-key",
+        default="00112233445566778899aabbccddeeff",
+        help="Thread network key used to decode OTNS PCAPs (default: OpenThread test key).",
+    )
     parser.add_argument("--json", action="store_true", help="Emit machine-readable JSON.")
     parser.add_argument("--markdown", action="store_true", help="Emit Markdown instead of plain text.")
     parser.add_argument("--write-markdown", nargs="?", const=Path("__AUTO__"), type=Path, help="Write the Markdown report to this path.")
@@ -1326,18 +1456,31 @@ def default_markdown_path_for_logs_dir(logs_dir: Path, *, group_by: GroupByMode,
 def main(argv: list[str]) -> int:
     args = parse_args(argv)
     logs_dir = args.logs_dir.resolve()
-    log_paths = collect_log_paths(logs_dir, args.run_dirs)
+    if args.otns_results_dir and args.run_dirs:
+        raise SystemExit("Use either --otns-results-dir or --run-dir, not both.")
+    log_paths = [] if args.otns_results_dir else collect_log_paths(logs_dir, args.run_dirs)
     if args.reuse_pcap_csv and args.no_generate_pcap_csv:
         raise SystemExit("Use either --reuse-pcap-csv or --no-generate-pcap-csv, not both.")
 
-    results = [
-        analyze_log(
-            path,
-            reuse_pcap_csv=args.reuse_pcap_csv or args.no_generate_pcap_csv,
-            generate_pcap_csv=not args.no_generate_pcap_csv,
-        )
-        for path in log_paths
-    ]
+    if args.otns_results_dir:
+        results = [
+            analyze_otns_run(
+                run_dir,
+                network_key=args.network_key,
+                reuse_pcap_csv=args.reuse_pcap_csv or args.no_generate_pcap_csv,
+                generate_pcap_csv=not args.no_generate_pcap_csv,
+            )
+            for run_dir in collect_otns_run_dirs(args.otns_results_dir.resolve())
+        ]
+    else:
+        results = [
+            analyze_log(
+                path,
+                reuse_pcap_csv=args.reuse_pcap_csv or args.no_generate_pcap_csv,
+                generate_pcap_csv=not args.no_generate_pcap_csv,
+            )
+            for path in log_paths
+        ]
 
     if args.json:
         output = json.dumps(results, indent=2)
