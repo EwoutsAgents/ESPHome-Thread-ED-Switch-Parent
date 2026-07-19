@@ -23,9 +23,12 @@ def find_repository_root() -> Path:
 
 def candidate_openthread_roots(project_dir: Path) -> list[Path]:
     explicit = os.environ.get("THREAD_PREFERRED_PARENT_OPENTHREAD_ROOT")
+    platformio_packages = os.environ.get("PLATFORMIO_PACKAGES_DIR")
     candidates = []
     if explicit:
         candidates.append(Path(explicit))
+    if platformio_packages:
+        candidates.append(Path(platformio_packages))
     candidates.extend(
         [
             project_dir / ".pio" / "libdeps",
