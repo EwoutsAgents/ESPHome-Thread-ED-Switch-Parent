@@ -18,7 +18,18 @@ MARKER_RELATIVE = Path("src/core/config/preferred_parent.h")
 
 
 def find_repository_root() -> Path:
-    return Path(__file__).resolve().parents[2]
+    script_name = globals().get("__file__")
+    if script_name:
+        return Path(script_name).resolve().parents[2]
+
+    scons_env = globals().get("env")
+    if scons_env is not None:
+        for script in scons_env.GetExtraScripts("pre"):
+            path = Path(str(script)).resolve()
+            if path.name == "apply-openthread-selected-parent-hook.py":
+                return path.parents[2]
+
+    raise RuntimeError("cannot determine preferred-parent component repository root")
 
 
 def candidate_openthread_roots(project_dir: Path) -> list[Path]:
