@@ -36,7 +36,7 @@ class ThreadPreferredParentComponent : public Component {
   void set_retry_interval(uint32_t value) { this->retry_interval_ms_ = value; }
   void set_selected_attach_timeout(uint32_t value) { this->attach_timeout_ms_ = value; }
   void set_require_selected_parent_hook(bool) {}
-  void set_log_parent_responses(bool value) { this->log_events_ = value; }
+  void set_log_parent_responses(bool) {}
   void set_parent_request_unicast(bool value) { this->unicast_ = value; }
 
  protected:
@@ -59,7 +59,6 @@ class ThreadPreferredParentComponent : public Component {
   uint32_t retry_interval_ms_{8000};
   uint32_t attach_timeout_ms_{16000};
   bool unicast_{false};
-  bool log_events_{true};
 };
 
 }  // namespace thread_preferred_parent

@@ -164,7 +164,7 @@ bool ThreadPreferredParentComponent::resolve_target_(otInstance *instance, otExt
 void ThreadPreferredParentComponent::preferred_parent_callback_(const otThreadPreferredParentEventInfo *info,
                                                                 void *context) {
   auto *self = static_cast<ThreadPreferredParentComponent *>(context);
-  if (info == nullptr || (self != nullptr && !self->log_events_)) return;
+  if (info == nullptr || self == nullptr) return;
   ESP_LOGI(TAG, "PREFPARENT event=%s state=%s result=%s target=%s mode=%s attempt=%u/%u rloc16=0x%04x rssi=%d error=%s",
            event_to_string_(info->mEvent), state_to_string_(info->mStatus.mState),
            result_to_string_(info->mStatus.mResult), extaddr_to_string_(info->mStatus.mExtAddress).c_str(),

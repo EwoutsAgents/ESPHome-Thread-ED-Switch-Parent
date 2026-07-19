@@ -66,8 +66,9 @@ fails explicitly if that router is not already present in the table.
 
 `require_selected_parent_hook` remains accepted by ESPHome YAML for migration
 but is now a no-op: the build has a compile-time dependency on the public API.
-`log_parent_responses` now controls structured controller-event logging rather
-than application-side Parent Response buffering.
+`log_parent_responses` remains accepted for configuration compatibility but is
+ignored. Structured controller events are always logged; application-side
+Parent Response logging and buffering no longer exist.
 
 The older functional, diagnostic, and CLI-controller patches remain archived
 as design evidence. They are not used by the new isolated build profiles.

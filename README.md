@@ -163,7 +163,7 @@ text:
 | `selected_attach_timeout` | `16s` | OpenThread Child ID Response timeout before retrying. |
 | `parent_request_unicast` | `false` | Select targeted unicast instead of all-routers multicast Parent Request at runtime. |
 | `require_selected_parent_hook` | `true` | Deprecated compatibility option. The adapter now links directly to the public experimental API, so this value is ignored. |
-| `log_parent_responses` | `true` | Enable structured OpenThread controller-event logging. No Parent Response buffer exists in ESPHome. |
+| `log_parent_responses` | `true` | Legacy compatibility option; accepted but ignored. Structured OpenThread controller events are always logged. No Parent Response buffer exists in ESPHome. |
 
 
 `parent_extaddr` accepts these formats:
