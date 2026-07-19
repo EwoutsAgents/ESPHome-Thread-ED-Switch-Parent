@@ -232,7 +232,7 @@ index 2b8644a82..01971d36f 100644
  #include "config/radio_link.h"
  #include "config/secure_transport.h"
 diff --git a/src/core/thread/mle.cpp b/src/core/thread/mle.cpp
-index ab0f9ef6f..417cc6161 100644
+index ab0f9ef6f..4fe686d67 100644
 --- a/src/core/thread/mle.cpp
 +++ b/src/core/thread/mle.cpp
 @@ -572,6 +572,27 @@ exit:
@@ -263,7 +263,7 @@ index ab0f9ef6f..417cc6161 100644
  bool Mle::IsAttached(void) const { return (IsChild() || IsRouter() || IsLeader()); }
  
  bool Mle::IsRouterOrLeader(void) const { return (IsRouter() || IsLeader()); }
-@@ -4411,11 +4432,194 @@ Mle::Attacher::Attacher(Instance &aInstance)
+@@ -4411,12 +4432,196 @@ Mle::Attacher::Attacher(Instance &aInstance)
      , mAnnounceChannel(0)
      , mAttachCounter(0)
      , mAnnounceDelay(kAnnounceTimeout)
@@ -273,6 +273,7 @@ index ab0f9ef6f..417cc6161 100644
 +    , mPreferredParentCandidateValid(false)
 +    , mPreferredParentForcedRxOn(false)
 +    , mPreferredParentWasRxOn(false)
++    , mPreferredParentCompletingChildIdResponse(false)
 +#endif
      , mTimer(aInstance)
  {
@@ -362,8 +363,8 @@ index ab0f9ef6f..417cc6161 100644
 +    mPreferredParentForcedRxOn = !mPreferredParentWasRxOn;
 +    Attach(kBetterParent);
 +    mPreferredParentStatus.mState = OT_THREAD_PREFERRED_PARENT_STATE_WAITING_PARENT_REQUEST;
-+}
-+
+ }
+ 
 +Error Mle::Attacher::StartPreferredParent(const otThreadPreferredParentConfig &aConfig)
 +{
 +    Error error = kErrorNone;
@@ -453,17 +454,18 @@ index ab0f9ef6f..417cc6161 100644
 +        FinishPreferredParent(OT_THREAD_PREFERRED_PARENT_STATE_TIMED_OUT, aResult, kErrorResponseTimeout,
 +                              OT_THREAD_PREFERRED_PARENT_EVENT_TIMED_OUT);
 +    }
- }
++}
 +#endif
- 
++
  void Mle::Attacher::Start(StartMode aMode)
  {
-@@ -4446,6 +4650,14 @@ exit:
+     mAttachCounter = 0;
+@@ -4446,6 +4651,14 @@ exit:
  
  void Mle::Attacher::CancelAttachOnRoleChange(void)
  {
 +#if OPENTHREAD_CONFIG_EXPERIMENTAL_PREFERRED_PARENT_ENABLE
-+    if (IsPreferredParentActive())
++    if (IsPreferredParentActive() && !mPreferredParentCompletingChildIdResponse)
 +    {
 +        FinishPreferredParent(OT_THREAD_PREFERRED_PARENT_STATE_FAILED,
 +                              OT_THREAD_PREFERRED_PARENT_RESULT_ROLE_CHANGED, kErrorInvalidState,
@@ -473,7 +475,7 @@ index ab0f9ef6f..417cc6161 100644
      SetState(kStateIdle);
      mTimer.Stop();
  
-@@ -4497,6 +4709,13 @@ void Mle::Attacher::Attach(AttachMode aMode)
+@@ -4497,6 +4710,13 @@ void Mle::Attacher::Attach(AttachMode aMode)
      }
  
      mParentCandidate.Clear();
@@ -487,7 +489,7 @@ index ab0f9ef6f..417cc6161 100644
      SetState(kStateStart);
      mMode = aMode;
  
-@@ -4704,6 +4923,22 @@ void Mle::Attacher::HandleTimer(void)
+@@ -4704,6 +4924,22 @@ void Mle::Attacher::HandleTimer(void)
      bool              shouldAnnounce = true;
      ParentRequestType type;
  
@@ -510,7 +512,7 @@ index ab0f9ef6f..417cc6161 100644
      // First, check if we are waiting to receive parent responses and
      // found an acceptable parent candidate.
  
-@@ -4738,6 +4973,14 @@ void Mle::Attacher::HandleTimer(void)
+@@ -4738,6 +4974,14 @@ void Mle::Attacher::HandleTimer(void)
          {
              SendParentRequest(type);
  
@@ -525,7 +527,7 @@ index ab0f9ef6f..417cc6161 100644
              switch (type)
              {
              case kToRouters:
-@@ -4932,6 +5175,17 @@ void Mle::Attacher::SendParentRequest(ParentRequestType aType)
+@@ -4932,6 +5176,17 @@ void Mle::Attacher::SendParentRequest(ParentRequestType aType)
      SuccessOrExit(error = message->AppendTimeRequestTlv());
  #endif
  
@@ -543,7 +545,7 @@ index ab0f9ef6f..417cc6161 100644
  #if OPENTHREAD_FTD && OPENTHREAD_CONFIG_PARENT_SEARCH_ENABLE
      if (aType == kToSelectedRouter)
      {
-@@ -4960,6 +5214,14 @@ void Mle::Attacher::SendParentRequest(ParentRequestType aType)
+@@ -4960,6 +5215,14 @@ void Mle::Attacher::SendParentRequest(ParentRequestType aType)
  
      SuccessOrExit(error = message->SendTo(destination));
  
@@ -558,7 +560,7 @@ index ab0f9ef6f..417cc6161 100644
      switch (aType)
      {
      case kToRouters:
-@@ -5213,6 +5475,17 @@ void Mle::Attacher::HandleParentResponse(RxInfo &aRxInfo)
+@@ -5213,6 +5476,17 @@ void Mle::Attacher::HandleParentResponse(RxInfo &aRxInfo)
      cslAccuracy.Init();
  #endif
  
@@ -576,7 +578,7 @@ index ab0f9ef6f..417cc6161 100644
  #if OPENTHREAD_CONFIG_MLE_PARENT_RESPONSE_CALLBACK_API_ENABLE
      if (mParentResponseCallback.IsSet())
      {
-@@ -5346,6 +5619,35 @@ void Mle::Attacher::HandleParentResponse(RxInfo &aRxInfo)
+@@ -5346,6 +5620,35 @@ void Mle::Attacher::HandleParentResponse(RxInfo &aRxInfo)
      mParentCandidate.mIsSingleton      = connectivityTlv.IsSingleton();
      mParentCandidate.mLinkMargin       = twoWayLinkMargin;
  
@@ -612,11 +614,24 @@ index ab0f9ef6f..417cc6161 100644
  exit:
      LogProcessError(kTypeParentResponse, error);
  }
-@@ -5438,6 +5740,21 @@ void Mle::Attacher::HandleChildIdResponse(RxInfo &aRxInfo)
+@@ -5417,6 +5720,11 @@ void Mle::Attacher::HandleChildIdResponse(RxInfo &aRxInfo)
+ 
+     // Parent Attach Success
+ 
++#if OPENTHREAD_CONFIG_EXPERIMENTAL_PREFERRED_PARENT_ENABLE
++    mPreferredParentCompletingChildIdResponse =
++        (mPreferredParentStatus.mState == OT_THREAD_PREFERRED_PARENT_STATE_WAITING_CHILD_ID_RESPONSE);
++#endif
++
+     Get<Mle>().SetStateDetached();
+ 
+     Get<Mle>().SetLeaderData(leaderData);
+@@ -5438,6 +5746,22 @@ void Mle::Attacher::HandleChildIdResponse(RxInfo &aRxInfo)
  
      Get<Mle>().SetStateChild(shortAddress);
  
 +#if OPENTHREAD_CONFIG_EXPERIMENTAL_PREFERRED_PARENT_ENABLE
++    mPreferredParentCompletingChildIdResponse = false;
 +    if (mPreferredParentStatus.mState == OT_THREAD_PREFERRED_PARENT_STATE_WAITING_CHILD_ID_RESPONSE)
 +    {
 +        Mac::ExtAddress target;
@@ -634,8 +649,18 @@ index ab0f9ef6f..417cc6161 100644
      if (!Get<Mle>().IsRxOnWhenIdle())
      {
          Get<DataPollSender>().SetAttachMode(false);
+@@ -5451,6 +5775,9 @@ void Mle::Attacher::HandleChildIdResponse(RxInfo &aRxInfo)
+     aRxInfo.mClass = RxInfo::kPeerMessage;
+ 
+ exit:
++#if OPENTHREAD_CONFIG_EXPERIMENTAL_PREFERRED_PARENT_ENABLE
++    mPreferredParentCompletingChildIdResponse = false;
++#endif
+     LogProcessError(kTypeChildIdResponse, error);
+ }
+ 
 diff --git a/src/core/thread/mle.hpp b/src/core/thread/mle.hpp
-index 0b1f31ff0..b1177b7bb 100644
+index 0b1f31ff0..0a0e78fdb 100644
 --- a/src/core/thread/mle.hpp
 +++ b/src/core/thread/mle.hpp
 @@ -38,6 +38,9 @@
@@ -698,7 +723,7 @@ index 0b1f31ff0..b1177b7bb 100644
  #if OT_SHOULD_LOG_AT(OT_LOG_LEVEL_NOTE)
          static const char *AttachModeToString(AttachMode aMode);
          static const char *ReattachModeToString(ReattachMode aMode);
-@@ -1949,6 +1981,16 @@ private:
+@@ -1949,6 +1981,17 @@ private:
          uint16_t                mAnnounceDelay;
          TxChallenge             mParentRequestChallenge;
          ParentCandidate         mParentCandidate;
@@ -711,6 +736,7 @@ index 0b1f31ff0..b1177b7bb 100644
 +        bool                              mPreferredParentCandidateValid : 1;
 +        bool                              mPreferredParentForcedRxOn : 1;
 +        bool                              mPreferredParentWasRxOn : 1;
++        bool                              mPreferredParentCompletingChildIdResponse : 1;
 +#endif
          AttachTimer             mTimer;
      };
