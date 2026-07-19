@@ -15,6 +15,10 @@ import sys
 
 PATCH_RELATIVE = Path("patches/canonical/openthread-preferred-parent-controller.patch")
 MARKER_RELATIVE = Path("src/core/config/preferred_parent.h")
+ESP_IDF_MTD_CONFIG_RELATIVE = Path(
+    "../private_include/openthread-core-esp32x-mtd-config.h"
+)
+ESP_IDF_CONFIG_MARKER = "THREAD_PREFERRED_PARENT_ESP_IDF_CONFIG"
 
 
 def find_repository_root() -> Path:
@@ -70,37 +74,51 @@ def apply_patch(openthread_root: Path, patch_path: Path) -> None:
     marker = openthread_root / MARKER_RELATIVE
     if marker.is_file():
         print(f"preferred-parent OpenThread patch already present: {marker}")
-        return
+    else:
+        git_env = os.environ.copy()
+        # Vendored ESP-IDF sources can live below the user's Git checkout without
+        # being a Git repository themselves. Prevent `git apply` from discovering
+        # that outer repository and interpreting patch paths relative to it.
+        git_env["GIT_CEILING_DIRECTORIES"] = str(openthread_root.parent.resolve())
 
-    git_env = os.environ.copy()
-    # Vendored ESP-IDF sources can live below the user's Git checkout without
-    # being a Git repository themselves. Prevent `git apply` from discovering
-    # that outer repository and interpreting patch paths relative to it.
-    git_env["GIT_CEILING_DIRECTORIES"] = str(openthread_root.parent.resolve())
-
-    check = subprocess.run(
-        ["git", "apply", "--check", "--unsafe-paths", str(patch_path)],
-        cwd=openthread_root,
-        env=git_env,
-        text=True,
-        stdout=subprocess.PIPE,
-        stderr=subprocess.STDOUT,
-    )
-    if check.returncode != 0:
-        raise RuntimeError(
-            "canonical preferred-parent patch does not apply to this OpenThread revision:\n"
-            + check.stdout
+        check = subprocess.run(
+            ["git", "apply", "--check", "--unsafe-paths", str(patch_path)],
+            cwd=openthread_root,
+            env=git_env,
+            text=True,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT,
         )
+        if check.returncode != 0:
+            raise RuntimeError(
+                "canonical preferred-parent patch does not apply to this OpenThread revision:\n"
+                + check.stdout
+            )
 
-    subprocess.run(
-        ["git", "apply", "--unsafe-paths", str(patch_path)],
-        cwd=openthread_root,
-        env=git_env,
-        check=True,
-    )
-    if not marker.is_file():
-        raise RuntimeError("git apply succeeded but the OpenThread marker is missing")
-    print(f"applied canonical preferred-parent controller patch to {openthread_root}")
+        subprocess.run(
+            ["git", "apply", "--unsafe-paths", str(patch_path)],
+            cwd=openthread_root,
+            env=git_env,
+            check=True,
+        )
+        if not marker.is_file():
+            raise RuntimeError("git apply succeeded but the OpenThread marker is missing")
+        print(f"applied canonical preferred-parent controller patch to {openthread_root}")
+
+    # PlatformIO build flags apply to ESPHome sources but ESP-IDF compiles its
+    # OpenThread component as a separate CMake target. Enable the same option in
+    # ESP-IDF's MTD project config so the API and core are built consistently.
+    esp_idf_config = (openthread_root / ESP_IDF_MTD_CONFIG_RELATIVE).resolve()
+    if esp_idf_config.is_file():
+        contents = esp_idf_config.read_text()
+        if ESP_IDF_CONFIG_MARKER not in contents:
+            with esp_idf_config.open("a") as config_file:
+                config_file.write(
+                    "\n// THREAD_PREFERRED_PARENT_ESP_IDF_CONFIG\n"
+                    "#undef OPENTHREAD_CONFIG_EXPERIMENTAL_PREFERRED_PARENT_ENABLE\n"
+                    "#define OPENTHREAD_CONFIG_EXPERIMENTAL_PREFERRED_PARENT_ENABLE 1\n"
+                )
+            print(f"enabled preferred-parent controller in {esp_idf_config}")
 
 
 def main() -> int:

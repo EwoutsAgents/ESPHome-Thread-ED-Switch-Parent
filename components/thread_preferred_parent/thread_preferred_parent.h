@@ -18,6 +18,7 @@ class ThreadPreferredParentComponent : public Component {
  public:
   void setup() override;
   void dump_config() override;
+  float get_setup_priority() const override { return setup_priority::WIFI - 1.0f; }
 
   void set_parent_rloc16(uint16_t rloc16);
   bool set_parent_rloc16(const std::string &rloc16);
