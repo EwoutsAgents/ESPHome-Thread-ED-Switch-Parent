@@ -24,10 +24,11 @@ def find_repository_root() -> Path:
 
     scons_env = globals().get("env")
     if scons_env is not None:
-        for script in scons_env.GetExtraScripts("pre"):
-            path = Path(str(script)).resolve()
-            if path.name == "apply-openthread-selected-parent-hook.py":
-                return path.parents[2]
+        for phase in ("pre", "post"):
+            for script in scons_env.GetExtraScripts(phase):
+                path = Path(str(script)).resolve()
+                if path.name == "apply-openthread-selected-parent-hook.py":
+                    return path.parents[2]
 
     raise RuntimeError("cannot determine preferred-parent component repository root")
 
