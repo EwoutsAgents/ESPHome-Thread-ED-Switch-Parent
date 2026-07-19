@@ -4,6 +4,11 @@ The unicast, unicast-fastpr, and multicast tests are intended to measure directe
 
 The protocol applies to the unicast, unicast-fastpr, and multicast variants. The child uses unicast Parent Requests in both unicast variants. The `ucast_fastpr` variant additionally flashes the routers with `fastpr_router_<n>.yaml`, enabling the router-side fast unicast Parent Response patch. The multicast variant uses `mcast_child.yaml`, the main difference being that it sends Parent Requests using multicast instead of unicast by setting `parent_request_unicast: false`.
 
+Native-controller runs preserve the initial parent while OpenThread discovers
+and validates the selected replacement. The legacy failure-recovery procedure
+can still be requested with `[selection] remove_initial_parent = true`, but it
+must not be used for controller-handoff timing measurements.
+
 Use the following child firmware and log directory pattern for each variant:
 
 | Variant         | Child firmware            | Router firmware prefix | Batch log directory pattern                                             | Per-run directory pattern          |

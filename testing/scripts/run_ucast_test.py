@@ -8,7 +8,7 @@ This runner follows the updated ucast/mcast method:
 - detect the child's current parent;
 - randomly select a target router that is not the current parent;
 - send `extaddr <target_extaddr>` to the child;
-- immediately remove the child's initial parent by flashing that board with empty.yaml;
+- preserve the child's initial parent while the selected-parent operation runs;
 - keep sniffer/device logs running, then write a manifest.
 """
 
@@ -109,6 +109,7 @@ class SnifferSettings:
 @dataclass
 class SelectionSettings:
     random_seed: int | None = None
+    remove_initial_parent: bool = False
 
 
 @dataclass
@@ -434,6 +435,7 @@ def load_settings(args: argparse.Namespace) -> Settings:
     selection_raw = raw.get("selection", {})
     random_seed_raw = selection_raw.get("random_seed", None)
     random_seed = int(random_seed_raw) if random_seed_raw is not None else None
+    remove_initial_parent = bool(selection_raw.get("remove_initial_parent", False))
 
     if use_batch_layout(variant_raw, args.runs):
         logs_dir = allocate_batch_logs_dir(logs_dir.parent, variant_name=variant_raw, router_count=max_router_number, total_runs=args.runs)
@@ -473,7 +475,7 @@ def load_settings(args: argparse.Namespace) -> Settings:
         devices=devices,
         timing=timing,
         sniffer=SnifferSettings(enabled=sniffer_enabled, command=[str(part) for part in sniffer_command], stop_timeout_seconds=int(sniffer_raw.get("stop_timeout_seconds", 10))),
-        selection=SelectionSettings(random_seed=random_seed),
+        selection=SelectionSettings(random_seed=random_seed, remove_initial_parent=remove_initial_parent),
         variant=variant_raw,
         name_prefix=str(preset["name_prefix"]),
         max_router_number=max_router_number,
@@ -1190,12 +1192,17 @@ def run_timed_sequence(settings: Settings, *, dry_run: bool, manifest: list[dict
             else:
                 parent_plan = {router["logical_name"]: router for router in router_plan}[parent_logical]
                 details.update({"target_parent": target, "target_parent_logical_name": target["logical_name"], "target_parent_extaddr": target["extaddr"], "target_selection": "random_non_current_parent", "random_seed": settings.selection.random_seed, "removed_parent_device_role": parent_plan["device_role"]})
-                manifest.append({"time_utc": now_utc_iso(), "type": "directed_switch_decision", "action": "will_switch_then_remove", "reason": "TARGET_SELECTED", **details})
+                action = "will_switch_then_remove" if settings.selection.remove_initial_parent else "will_switch_preserving_parent"
+                manifest.append({"time_utc": now_utc_iso(), "type": "directed_switch_decision", "action": action, "reason": "TARGET_SELECTED", **details})
                 send_child_switch_command(settings, target["extaddr"], dry_run=dry_run, manifest=manifest)
-                stop_device_log(device_loggers.get(parent_logical), logical_name=parent_logical, dry_run=dry_run)
-                device_loggers[parent_logical] = None
-                upload(settings, parent_plan["device_role"], "empty", dry_run=dry_run, manifest=manifest)
-                sleep_step(settings.timing.after_parent_removed_seconds, "targeted switch requested and initial parent removed; keep recording", dry_run=dry_run, manifest=manifest)
+                if settings.selection.remove_initial_parent:
+                    stop_device_log(device_loggers.get(parent_logical), logical_name=parent_logical, dry_run=dry_run)
+                    device_loggers[parent_logical] = None
+                    upload(settings, parent_plan["device_role"], "empty", dry_run=dry_run, manifest=manifest)
+                    observation = "targeted switch requested and initial parent removed; keep recording"
+                else:
+                    observation = "targeted switch requested with initial parent preserved; keep recording"
+                sleep_step(settings.timing.after_parent_removed_seconds, observation, dry_run=dry_run, manifest=manifest)
 
         stop_sniffer_capture(settings, sniffer_process, dry_run=dry_run)
         sniffer_process = None
