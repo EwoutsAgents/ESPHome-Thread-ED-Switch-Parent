@@ -113,6 +113,7 @@ async def to_code(config):
     # add-on users can consume the external component without manually copying
     # helper scripts into their local ESPHome project.
     cg.add_platformio_option("extra_scripts", [f"pre:{SCRIPT_PATH}"])
+    cg.add_build_flag("-DOPENTHREAD_CONFIG_EXPERIMENTAL_PREFERRED_PARENT_ENABLE=1")
 
     var = cg.new_Pvariable(config[CONF_ID])
     await cg.register_component(var, config)
