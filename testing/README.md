@@ -5,6 +5,8 @@ This folder contains the automated test runners, device configuration files, sni
 The test variants are:
 
 * `stock`: natural OpenThread parent switching without using the preferred-parent switching mechanism.
+* `stock_low_power`: the stock method with routers 3 and 4 transmitting at
+  -15 dBm so router 2 has a stronger second-attach candidate link.
 * `ucast`: preferred-parent switching using unicast control.
 * `ucast_fastpr`: preferred-parent switching using unicast control with fast unicast Parent Responses on routers.
 * `mcast`: preferred-parent switching using multicast control.
@@ -21,6 +23,7 @@ This README covers the shared automation, setup, runner usage, output layout, an
 Runner wrappers:
 
 * `run_stock_test.sh`
+* `run_stock_low_power_test.sh`
 * `run_ucast_test.sh`
 * `run_ucast_fastpr_test.sh`
 * `run_mcast_test.sh`
@@ -35,6 +38,9 @@ Local device configuration files:
 * `stock_test_devices_2routers.toml`
 * `stock_test_devices_3routers.toml`
 * `stock_test_devices_4routers.toml`
+* `stock_low_power_test_devices_2routers.toml`
+* `stock_low_power_test_devices_3routers.toml`
+* `stock_low_power_test_devices_4routers.toml`
 * `ucast_test_devices_2routers.toml`
 * `ucast_test_devices_3routers.toml`
 * `ucast_test_devices_4routers.toml`
@@ -185,6 +191,19 @@ Alternative stock configurations can be used when present:
 ./run_stock_test.sh --config stock_test_devices_4routers.toml
 ```
 
+### Stock with low-power routers 3 and 4
+
+```bash
+./run_stock_low_power_test.sh --config stock_low_power_test_devices_2routers.toml
+./run_stock_low_power_test.sh --config stock_low_power_test_devices_3routers.toml
+./run_stock_low_power_test.sh --config stock_low_power_test_devices_4routers.toml
+```
+
+This variant keeps router 1, router 2, and the child identical to stock.
+Routers 3 and 4 use the ESP32-C6 minimum supported output power of -15 dBm,
+35 dB below router 2. The separate variant name also isolates its PlatformIO
+environment and log batches from ordinary stock tests.
+
 ### Unicast preferred-parent
 
 ```bash
@@ -318,6 +337,7 @@ Typical batch roots:
 
 ```text
 logs/stock-<n_routers>router-<runs>runs-<timestamp>/
+logs/stock_low_power-<n_routers>router-<runs>runs-<timestamp>/
 logs/ucast-<n_routers>router-<runs>runs-<timestamp>/
 logs/ucast_fastpr-<n_routers>router-<runs>runs-<timestamp>/
 logs/mcast-<n_routers>router-<runs>runs-<timestamp>/

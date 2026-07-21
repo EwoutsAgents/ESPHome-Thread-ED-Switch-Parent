@@ -35,7 +35,7 @@ except ModuleNotFoundError:  # pragma: no cover - optional local dependency
         tomllib = None  # type: ignore[assignment]
 
 
-CONFIG_NAMES = {
+DEFAULT_CONFIG_NAMES = {
     "empty": "empty.yaml",
     "router1": "stock_router_1.yaml",
     "child": "stock_child.yaml",
@@ -46,7 +46,7 @@ CONFIG_NAMES = {
 CORE_COMPILE_ORDER = ["empty", "router1", "child", "router2"]
 MAX_ROUTER_COUNT = max(
     int(name.removeprefix("router"))
-    for name in CONFIG_NAMES
+    for name in DEFAULT_CONFIG_NAMES
     if name.startswith("router")
 )
 PCAP_PATH_RE = re.compile(r"Saving (?:test )?capture to (\S+\.pcapng)")
@@ -109,6 +109,8 @@ class Settings:
     platformio_core_dir: Path = Path()
     platformio_packages_dir: Path = Path()
     reset_platformio_packages: bool = False
+    variant_name: str = "stock"
+    config_names: dict[str, str] = field(default_factory=lambda: dict(DEFAULT_CONFIG_NAMES))
     devices: dict[str, str] = field(default_factory=dict)
     timing: Timing = field(default_factory=Timing)
     sniffer: SnifferSettings = field(default_factory=SnifferSettings)
@@ -177,10 +179,10 @@ def contamination_check_status(marker_present: bool | None, expected_present: bo
 def firmware_environment(settings: Settings, *, phase: str) -> dict[str, Any]:
     mle_path = openthread_mle_ftd_path(settings)
     marker_present = fastpr_marker_present(settings)
-    expected_present = expected_fastpr_marker_present("stock")
+    expected_present = expected_fastpr_marker_present(settings.variant_name)
     return {
         "phase": phase,
-        "variant": "stock",
+        "variant": settings.variant_name,
         "platformio_core_dir": str(settings.platformio_core_dir),
         "platformio_packages_dir": str(settings.platformio_packages_dir),
         "framework_espidf_openthread_core": str(settings.platformio_packages_dir / OPENTHREAD_CORE_REL),
@@ -347,6 +349,8 @@ class RunTracker:
             "clean_before_compile": self.settings.clean_before_compile,
             "platformio_packages_dir": str(self.settings.platformio_packages_dir),
             "reset_platformio_packages": self.settings.reset_platformio_packages,
+            "test_variant": self.settings.variant_name,
+            "firmware_configs": self.settings.config_names,
             "devices": self.settings.devices,
             "timing": self.settings.timing.__dict__,
             "max_router_number": self.settings.max_router_number,
@@ -641,7 +645,23 @@ def load_settings(args: argparse.Namespace) -> Settings:
     configs_dir = resolve_relative(config_dir, raw.get("paths", {}).get("configs_dir"), "configs")
     logs_dir = resolve_relative(config_dir, raw.get("paths", {}).get("logs_dir"), "logs")
     run_logs_dir = build_run_logs_dir(logs_dir)
-    platformio_core_dir = default_platformio_core_dir(testing_dir, "stock")
+    variant_raw = raw.get("variant", {})
+    variant_name = str(variant_raw.get("name", "stock")).strip()
+    if not re.fullmatch(r"[a-z0-9_]+", variant_name):
+        raise SystemExit("[variant].name must contain only lowercase letters, digits, and underscores.")
+    firmware_raw = raw.get("firmware", {})
+    if not isinstance(firmware_raw, dict):
+        raise SystemExit("[firmware] must be a TOML table.")
+    unknown_firmware = sorted(set(firmware_raw) - set(DEFAULT_CONFIG_NAMES))
+    if unknown_firmware:
+        raise SystemExit(f"Unknown [firmware] role(s): {', '.join(unknown_firmware)}")
+    config_names = dict(DEFAULT_CONFIG_NAMES)
+    for role, filename in firmware_raw.items():
+        if not isinstance(filename, str) or Path(filename).name != filename or not filename.endswith(".yaml"):
+            raise SystemExit(f"[firmware].{role} must be a YAML filename in the configured configs directory.")
+        config_names[role] = filename
+
+    platformio_core_dir = default_platformio_core_dir(testing_dir, variant_name)
     platformio_packages_dir = platformio_core_dir / "packages"
 
     devices = dict(raw.get("devices", {}))
@@ -704,10 +724,9 @@ def load_settings(args: argparse.Namespace) -> Settings:
     if sniffer_enabled and not sniffer_command:
         raise SystemExit("[sniffer].enabled is true, but [sniffer].command is empty.")
 
-    variant_raw = raw.get("variant", {})
     router_count_raw = variant_raw.get("n_routers", 3)
     max_router_number = int(router_count_raw)
-    if max_router_number < 2 or f"router{max_router_number}" not in CONFIG_NAMES:
+    if max_router_number < 2 or f"router{max_router_number}" not in config_names:
         raise SystemExit(
             f"[variant].n_routers must reference an available stock_router_<n>.yaml variation. "
             f"Supported values are 2..{MAX_ROUTER_COUNT} total routers."
@@ -716,7 +735,7 @@ def load_settings(args: argparse.Namespace) -> Settings:
     if args.runs > 1:
         logs_dir = allocate_batch_logs_dir(
             logs_dir.parent,
-            variant_name="stock",
+            variant_name=variant_name,
             router_count=max_router_number,
             total_runs=args.runs,
         )
@@ -760,6 +779,8 @@ def load_settings(args: argparse.Namespace) -> Settings:
         platformio_core_dir=platformio_core_dir,
         platformio_packages_dir=platformio_packages_dir,
         reset_platformio_packages=bool(args.reset_platformio_packages),
+        variant_name=variant_name,
+        config_names=config_names,
         devices={key: str(value) for key, value in devices.items()},
         timing=timing,
         sniffer=SnifferSettings(
@@ -774,7 +795,7 @@ def load_settings(args: argparse.Namespace) -> Settings:
 
 def config_path(settings: Settings, name: str) -> Path:
     runtime_dir = ensure_runtime_configs_dir(settings)
-    path = runtime_dir / CONFIG_NAMES[name]
+    path = runtime_dir / settings.config_names[name]
     if not path.exists():
         raise SystemExit(f"Missing ESPHome config: {path}")
     return path
@@ -2171,6 +2192,8 @@ def write_manifest(
         "platformio_core_dir": str(settings.platformio_core_dir),
         "platformio_packages_dir": str(settings.platformio_packages_dir),
         "reset_platformio_packages": settings.reset_platformio_packages,
+        "test_variant": settings.variant_name,
+        "firmware_configs": settings.config_names,
         "devices": settings.devices,
         "timing": settings.timing.__dict__,
         "max_router_number": settings.max_router_number,

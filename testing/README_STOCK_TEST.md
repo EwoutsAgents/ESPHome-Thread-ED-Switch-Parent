@@ -4,6 +4,15 @@ The stock test is intended to measure natural OpenThread parent-switch behavior 
 
 Each variation follows the same setup until the requested router set has been flashed. Variations differ only in the total number of router-capable ESP32-C6 boards included in the run. The `n_routers` setting is the total router count and does not include the child. Routers are flashed in order using `stock_router_<n>.yaml`, where `<n>` starts at `1` and increases sequentially until the requested total router count is reached. The current maximum is four routers total. For a switch to occur, at least 2 routers must be present.
 
+The `stock_low_power` variant uses the same procedure, timing, child firmware,
+and router 1/router 2 firmware. Its only radio change is that routers 3 and 4
+use `output_power: -15dB`, versus the ESP32-C6 default +20 dBm used by router
+2. This maximum supported 35 dB separation makes router 2 the stronger
+second-attach candidate while retaining short-range connectivity on the
+closely spaced hardware bench. The 2-router case contains no reduced-power
+router and is therefore a control identical to ordinary stock at the radio
+level.
+
 A run is considered suitable for the timed parent-removal phase only if, after the fixed router-settling delay and the child's initial attach, the runner can reliably identify the child’s current parent and map that parent to one of the configured router devices. If either of those pre-removal checks fails, the run is skipped using an explicit classification. If the detected parent is also the current Thread leader, the run continues but retains the explicit `SKIP_PARENT_IS_LEADER` label in the manifest and later analysis. Broader topology effects, such as router reattachment, downgrading, RLOC16 changes, or other topology repair during the measurement window, are handled during post-run outcome classification rather than as pre-removal skip gates.
 
 1. Erase firmware and non-volatile storage on all connected ESP32-C6 boards, including unused boards, using `esptool.py --chip esp32c6 --port <port> erase_flash`.
