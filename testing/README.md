@@ -6,7 +6,9 @@ The test variants are:
 
 * `stock`: natural OpenThread parent switching without using the preferred-parent switching mechanism.
 * `stock_low_power`: the stock method with routers 3 and 4 transmitting at
-  -15 dBm so router 2 has a stronger second-attach candidate link.
+  -15 dBm so router 2 has a stronger second-attach candidate link. All routers
+  in this variant log the random delay selected before scheduling each Parent
+  Response.
 * `ucast`: preferred-parent switching using unicast control.
 * `ucast_fastpr`: preferred-parent switching using unicast control with fast unicast Parent Responses on routers.
 * `mcast`: preferred-parent switching using multicast control.
@@ -90,6 +92,18 @@ Variant expectations:
 
 * `stock`, `ucast`, `mcast`: fast unicast Parent Response patch must be absent.
 * `ucast_fastpr`: fast unicast Parent Response patch must be present after compile.
+* `stock_low_power`: the fast unicast patch remains absent; the isolated
+  OpenThread tree contains only the Parent Response delay diagnostic patch.
+
+The low-power router logs use this stable diagnostic format:
+
+```text
+ParentResponseDelay delay_ms=<milliseconds> scan_mask=<mask> child=<extended-address>
+```
+
+`delay_ms` is the value returned by OpenThread's `GenerateRandomDelay()` before
+the response is handed to `DelayedSender`. It is therefore the requested
+scheduling delay, not a PCAP-derived over-the-air interval.
 
 Baseline variants refuse to continue if they detect the fastpr marker in the selected OpenThread source tree. Use `--reset-platformio-packages` to delete only the selected variant PlatformIO core/package directories before precompile.
 
