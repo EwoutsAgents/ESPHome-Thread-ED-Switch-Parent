@@ -56,6 +56,10 @@ MESH_TO_RE = re.compile(r"MeshForwarder-: Sent IPv6 UDP msg, .* to:([0-9a-f]+),?
 IP_SRC_DST_RE = re.compile(r"MeshForwarder-:\s+(src|dst):\[([^\]]+)\]")
 PARENT_INFO_RE = re.compile(r"Saved ParentInfo \{extaddr:([0-9a-f]+), version:\d+\}")
 RADIO_EXTADDR_RE = re.compile(r"(?:Own Thread ExtAddr|RadioExtAddress):\s*([0-9a-f]{16})\b", re.I)
+PARENT_RESPONSE_DELAY_RE = re.compile(
+    r"ParentResponseDelay delay_ms=(\d+) scan_mask=0x([0-9a-fA-F]+) child=([0-9a-f]{16})\b",
+    re.I,
+)
 SWITCH_TARGET_RE = re.compile(
     r"(?:Thread parent switch to ExtAddr|Parent discovery attempt \d+/\d+ for ExtAddr)\s+([0-9a-f:]{16,23})",
     re.I,
@@ -72,6 +76,8 @@ TIMING_LABELS = {
     "child_id_request_to_response": "Child ID Request -> Response",
     "parent_request_to_child_id_response": "Full Attach",
 }
+ADJUSTED_PARENT_RESPONSE_TIMING_KEY = "parent_request_to_response_minus_random_delay"
+ADJUSTED_PARENT_RESPONSE_TIMING_LABEL = "Request -> Response minus Random Delay"
 PCAP_EVENT_KEYS = (
     "send_parent_request",
     "receive_parent_response",
@@ -121,6 +127,11 @@ class AttachSequence:
     pcap_frame_numbers: dict[str, int] = field(default_factory=dict)
     pcap_event_times: dict[str, str | None] = field(default_factory=dict)
     pcap_event_epochs: dict[str, float] = field(default_factory=dict)
+    parent_response_random_delay_requested: bool = False
+    parent_response_random_delay_ms: int | None = None
+    parent_response_delay_router: str | None = None
+    parent_response_delay_log: str | None = None
+    parent_response_delay_log_time: str | None = None
 
     def has_complete_log_attach(self) -> bool:
         return (
@@ -154,6 +165,13 @@ class AttachSequence:
                 "send_parent_request", "receive_child_id_response"
             ),
         }
+        if self.parent_response_random_delay_requested:
+            request_to_response = timing_ms["parent_request_to_response"]
+            timing_ms[ADJUSTED_PARENT_RESPONSE_TIMING_KEY] = (
+                round(request_to_response - self.parent_response_random_delay_ms, 3)
+                if request_to_response is not None and self.parent_response_random_delay_ms is not None
+                else None
+            )
         return {
             "send_parent_request": format_ms(self.send_parent_request_ms),
             "receive_parent_response": format_ms(self.receive_parent_response_ms),
@@ -169,7 +187,21 @@ class AttachSequence:
             "pcap_frame_numbers": self.pcap_frame_numbers,
             "complete_log_attach": self.has_complete_log_attach(),
             "complete_pcap_attach": self.has_complete_pcap_attach(),
+            "parent_response_random_delay_ms": self.parent_response_random_delay_ms,
+            "parent_response_delay_router": self.parent_response_delay_router,
+            "parent_response_delay_log": self.parent_response_delay_log,
+            "parent_response_delay_log_time": self.parent_response_delay_log_time,
         }
+
+
+@dataclass
+class ParentResponseDelayEvent:
+    router_extaddr: str
+    router_name: str
+    child_extaddr: str
+    delay_ms: int
+    timestamp_ms: int
+    log_path: Path
 
 
 @dataclass
@@ -336,7 +368,7 @@ def format_mean_sd(mean: float | None, stdev: float | None) -> str:
     return f"{format_stat(mean)} ({format_stat(stdev)})"
 
 
-def mean_and_stdev(values: list[int]) -> tuple[float | None, float | None]:
+def mean_and_stdev(values: list[float | int]) -> tuple[float | None, float | None]:
     if not values:
         return None, None
     if len(values) == 1:
@@ -413,6 +445,116 @@ def manifest_labels(manifest: dict[str, Any] | None) -> list[str]:
         if isinstance(reason, str) and reason not in labels:
             labels.append(reason)
     return labels
+
+
+def parent_response_delay_events(manifest: dict[str, Any]) -> list[ParentResponseDelayEvent]:
+    events: list[ParentResponseDelayEvent] = []
+    manifest_path = Path(manifest.get("_manifest_path", ".")).resolve()
+    device_logs = manifest.get("device_logs") or {}
+    if not isinstance(device_logs, dict):
+        return events
+
+    for router_name, raw_path in device_logs.items():
+        if not str(router_name).startswith("router") or not isinstance(raw_path, str):
+            continue
+        log_path = Path(raw_path)
+        if not log_path.is_absolute():
+            log_path = manifest_path.parent / log_path
+        try:
+            lines = log_path.read_text(encoding="utf-8", errors="replace").splitlines()
+        except OSError:
+            continue
+
+        router_extaddr = next(
+            (
+                compact_extaddr(match.group(1))
+                for line in lines
+                if (match := RADIO_EXTADDR_RE.search(line))
+            ),
+            None,
+        )
+        if router_extaddr is None:
+            continue
+
+        for line in lines:
+            timestamp_ms = parse_timestamp_ms(line)
+            match = PARENT_RESPONSE_DELAY_RE.search(line)
+            if timestamp_ms is None or match is None:
+                continue
+            delay_ms, _scan_mask, child_extaddr = match.groups()
+            events.append(
+                ParentResponseDelayEvent(
+                    router_extaddr=router_extaddr,
+                    router_name=str(router_name),
+                    child_extaddr=compact_extaddr(child_extaddr) or child_extaddr.lower(),
+                    delay_ms=int(delay_ms),
+                    timestamp_ms=timestamp_ms,
+                    log_path=log_path.resolve(),
+                )
+            )
+    return events
+
+
+def annotate_parent_response_random_delays(
+    log_path: Path,
+    sequences: list[AttachSequence],
+    manifest: dict[str, Any] | None,
+) -> list[str]:
+    warnings: list[str] = []
+    for seq in sequences:
+        seq.parent_response_random_delay_requested = True
+
+    if manifest is None:
+        return ["Random-delay subtraction requested, but no matching run manifest was found."]
+
+    events = parent_response_delay_events(manifest)
+    used_event_indexes: set[int] = set()
+    offset_ms = log_utc_offset_ms(log_path)
+
+    for attach_index, seq in enumerate(sequences, start=1):
+        if not seq.has_complete_pcap_attach():
+            continue
+        parent_extaddr = compact_extaddr(seq.parent_extaddr)
+        child_extaddr = compact_extaddr(seq.child_extaddr)
+        request_epoch = seq.pcap_event_epochs.get("send_parent_request")
+        if parent_extaddr is None or child_extaddr is None or request_epoch is None:
+            warnings.append(
+                f"Attach {attach_index}: cannot subtract random delay because PCAP endpoint metadata is incomplete."
+            )
+            continue
+
+        request_local_ms = epoch_to_local_ms(request_epoch, offset_ms)
+        candidates: list[tuple[int, int, ParentResponseDelayEvent]] = []
+        for event_index, event in enumerate(events):
+            if event_index in used_event_indexes:
+                continue
+            if event.router_extaddr != parent_extaddr or event.child_extaddr != child_extaddr:
+                continue
+            distance = abs(delta_ms(event.timestamp_ms, request_local_ms) or 0)
+            candidates.append((distance, event_index, event))
+
+        if not candidates:
+            warnings.append(
+                f"Attach {attach_index}: no ParentResponseDelay entry matched parent {parent_extaddr} "
+                f"and child {child_extaddr}."
+            )
+            continue
+
+        distance, event_index, event = min(candidates, key=lambda item: item[0])
+        if distance > 5000:
+            warnings.append(
+                f"Attach {attach_index}: nearest ParentResponseDelay entry was {distance} ms from "
+                "the PCAP Parent Request and was not used."
+            )
+            continue
+
+        used_event_indexes.add(event_index)
+        seq.parent_response_random_delay_ms = event.delay_ms
+        seq.parent_response_delay_router = event.router_name
+        seq.parent_response_delay_log = str(event.log_path)
+        seq.parent_response_delay_log_time = format_ms(event.timestamp_ms)
+
+    return warnings
 
 
 def sniffer_pcap_path(sniffer_log_path: Path) -> str | None:
@@ -913,6 +1055,7 @@ def analyze_log(
     *,
     reuse_pcap_csv: bool = False,
     generate_pcap_csv: bool = True,
+    subtract_parent_response_random_delay: bool = False,
 ) -> dict[str, Any]:
     lines = path.read_text(encoding="utf-8", errors="replace").splitlines()
 
@@ -1058,6 +1201,8 @@ def analyze_log(
         generate_pcap_csv=generate_pcap_csv,
     )
     raw_sequences.sort(key=sequence_sort_key)
+    if subtract_parent_response_random_delay:
+        warnings.extend(annotate_parent_response_random_delays(path, raw_sequences, manifest))
 
     completed = [seq for seq in raw_sequences if seq.has_complete_pcap_attach()]
     not_counted = [seq for seq in raw_sequences if not seq.has_complete_pcap_attach()]
@@ -1073,6 +1218,7 @@ def analyze_log(
         "labels": manifest_labels(manifest),
         "child_extaddr": child_extaddr,
         "switch_targets": switch_targets,
+        "parent_response_random_delay_subtraction": subtract_parent_response_random_delay,
         "attach_sequences": [seq.to_summary() for seq in completed],
         "log_only_or_partial_sequences": [seq.to_summary() for seq in not_counted],
         "failed_tx": asdict(failed),
@@ -1197,10 +1343,18 @@ def group_results(results: list[dict[str, Any]], *, mode: GroupByMode) -> dict[s
 
 
 def group_summary(group_results: list[dict[str, Any]]) -> dict[str, Any]:
+    include_adjusted = any(
+        result.get("parent_response_random_delay_subtraction") for result in group_results
+    )
+    timing_labels: dict[str, str] = {}
+    for key, label in TIMING_LABELS.items():
+        timing_labels[key] = label
+        if include_adjusted and key == "parent_request_to_response":
+            timing_labels[ADJUSTED_PARENT_RESPONSE_TIMING_KEY] = ADJUSTED_PARENT_RESPONSE_TIMING_LABEL
     attach_summaries: dict[int, dict[str, tuple[float | None, float | None, int]]] = {}
     max_attach_count = max((len(result["attach_sequences"]) for result in group_results), default=0)
     for attach_index in range(max_attach_count):
-        timing_values: dict[str, list[int]] = {key: [] for key in TIMING_LABELS}
+        timing_values: dict[str, list[float]] = {key: [] for key in timing_labels}
         for result in group_results:
             sequences = result["attach_sequences"]
             if attach_index >= len(sequences):
@@ -1222,6 +1376,7 @@ def group_summary(group_results: list[dict[str, Any]]) -> dict[str, Any]:
     partial_mean, partial_stdev = mean_and_stdev(partial_counts)
     return {
         "attaches": attach_summaries,
+        "timing_labels": timing_labels,
         "failed_tx_attempts": (failed_mean, failed_stdev, len(failed_tx_values)),
         "log_only_or_partial_sequences": (partial_mean, partial_stdev, len(partial_counts)),
     }
@@ -1241,10 +1396,24 @@ def render_sequence_lines(seq: dict[str, Any], *, include_pcap: bool) -> list[st
         f"- complete log attach: **{seq.get('complete_log_attach', False)}**",
         f"- complete pcap attach: **{seq.get('complete_pcap_attach', False)}**",
         f"- {TIMING_LABELS['parent_request_to_response']}: **{seq['timing_ms']['parent_request_to_response']} ms**",
-        f"- {TIMING_LABELS['parent_response_to_child_id_request']}: **{seq['timing_ms']['parent_response_to_child_id_request']} ms**",
-        f"- {TIMING_LABELS['child_id_request_to_response']}: **{seq['timing_ms']['child_id_request_to_response']} ms**",
-        f"- {TIMING_LABELS['parent_request_to_child_id_response']}: **{seq['timing_ms']['parent_request_to_child_id_response']} ms**",
     ]
+    if ADJUSTED_PARENT_RESPONSE_TIMING_KEY in seq["timing_ms"]:
+        out.extend(
+            [
+                f"- selected-parent logged random delay: **{format_optional(seq.get('parent_response_random_delay_ms'))} ms**",
+                f"- random-delay source router: `{format_optional(seq.get('parent_response_delay_router'))}`",
+                f"- random-delay source log time: `{format_optional(seq.get('parent_response_delay_log_time'))}`",
+                f"- {ADJUSTED_PARENT_RESPONSE_TIMING_LABEL}: "
+                f"**{format_optional(seq['timing_ms'].get(ADJUSTED_PARENT_RESPONSE_TIMING_KEY))} ms**",
+            ]
+        )
+    out.extend(
+        [
+            f"- {TIMING_LABELS['parent_response_to_child_id_request']}: **{seq['timing_ms']['parent_response_to_child_id_request']} ms**",
+            f"- {TIMING_LABELS['child_id_request_to_response']}: **{seq['timing_ms']['child_id_request_to_response']} ms**",
+            f"- {TIMING_LABELS['parent_request_to_child_id_response']}: **{seq['timing_ms']['parent_request_to_child_id_response']} ms**",
+        ]
+    )
     if include_pcap and seq["complete_pcap_attach"]:
         out.extend(
             [
@@ -1305,7 +1474,7 @@ def render_markdown_report(
         out.extend(["### PCAP-complete child attach summary", "", "| Attach | Metric | M (SD), ms | n |", "| --- | --- | ---: | ---: |"])
         for attach_index in sorted(summary["attaches"]):
             attach = summary["attaches"][attach_index]
-            for key, label in TIMING_LABELS.items():
+            for key, label in summary["timing_labels"].items():
                 mean, stdev, n = attach[key]
                 out.append(f"| {attach_index} | {label} | {format_mean_sd(mean, stdev)} | {n} |")
         out.extend(["", "| Metric | M (SD) | n |", "| --- | ---: | ---: |"])
@@ -1425,6 +1594,14 @@ def parse_args(argv: list[str]) -> argparse.Namespace:
         action="store_true",
         help="Never call pcap_to_csv.py; require an existing attach-MLE CSV next to each PCAP.",
     )
+    parser.add_argument(
+        "--subtract-parent-response-random-delay",
+        action="store_true",
+        help=(
+            "Add Request -> Response minus Random Delay using the selected parent's "
+            "ParentResponseDelay router-log diagnostic."
+        ),
+    )
     return parser.parse_args(argv)
 
 
@@ -1458,6 +1635,10 @@ def main(argv: list[str]) -> int:
     logs_dir = args.logs_dir.resolve()
     if args.otns_results_dir and args.run_dirs:
         raise SystemExit("Use either --otns-results-dir or --run-dir, not both.")
+    if args.otns_results_dir and args.subtract_parent_response_random_delay:
+        raise SystemExit(
+            "--subtract-parent-response-random-delay currently requires hardware run manifests and router logs."
+        )
     log_paths = [] if args.otns_results_dir else collect_log_paths(logs_dir, args.run_dirs)
     if args.reuse_pcap_csv and args.no_generate_pcap_csv:
         raise SystemExit("Use either --reuse-pcap-csv or --no-generate-pcap-csv, not both.")
@@ -1478,6 +1659,7 @@ def main(argv: list[str]) -> int:
                 path,
                 reuse_pcap_csv=args.reuse_pcap_csv or args.no_generate_pcap_csv,
                 generate_pcap_csv=not args.no_generate_pcap_csv,
+                subtract_parent_response_random_delay=args.subtract_parent_response_random_delay,
             )
             for path in log_paths
         ]

@@ -419,6 +419,11 @@ python3 scripts/analyze_test_logs.py \
   --markdown
 
 python3 scripts/analyze_test_logs.py \
+  --logs-dir logs/stock_low_power-4router-50runs-<timestamp> \
+  --subtract-parent-response-random-delay \
+  --markdown
+
+python3 scripts/analyze_test_logs.py \
   --logs-dir logs \
   --markdown \
   --group-by batch-family \
@@ -429,6 +434,15 @@ python3 scripts/analyze_test_logs.py \
   --reuse-pcap-csv \
   --json
 ```
+
+`--subtract-parent-response-random-delay` adds a
+`Request -> Response minus Random Delay` metric. For each complete attach, the
+analyzer matches the PCAP-selected parent and child extended addresses to the
+nearest `ParentResponseDelay` event in that router's log, then subtracts the
+logged OpenThread delay from the PCAP-derived Parent Request to Parent Response
+interval. Unmatched attaches remain `n/a` and generate a warning. Existing
+output is unchanged when the option is omitted. The option currently applies
+to hardware runs with manifests and instrumented router logs, not OTNS results.
 
 To write a Markdown report to disk:
 
