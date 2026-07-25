@@ -60,6 +60,7 @@ PARENT_RESPONSE_DELAY_RE = re.compile(
     r"ParentResponseDelay delay_ms=(\d+) scan_mask=0x([0-9a-fA-F]+) child=([0-9a-f]{16})\b",
     re.I,
 )
+OTNS_SIM_TIME_RE = re.compile(r"^\s*(\d+)\s+\d{2}:\d{2}:\d{2}\.\d{3}\s+")
 SWITCH_TARGET_RE = re.compile(
     r"(?:Thread parent switch to ExtAddr|Parent discovery attempt \d+/\d+ for ExtAddr)\s+([0-9a-f:]{16,23})",
     re.I,
@@ -493,6 +494,79 @@ def parent_response_delay_events(manifest: dict[str, Any]) -> list[ParentRespons
                 )
             )
     return events
+
+
+def otns_parent_response_delay_events(run_dir: Path) -> list[ParentResponseDelayEvent]:
+    events: list[ParentResponseDelayEvent] = []
+    for log_path in sorted((run_dir / "otns_runtime").glob("**/*.log")):
+        try:
+            lines = log_path.read_text(encoding="utf-8", errors="replace").splitlines()
+        except OSError:
+            continue
+
+        router_extaddr = next(
+            (
+                compact_extaddr(match.group(1))
+                for line in lines
+                if (match := RADIO_EXTADDR_RE.search(line))
+            ),
+            None,
+        )
+        if router_extaddr is None:
+            continue
+
+        for line in lines:
+            time_match = OTNS_SIM_TIME_RE.match(line)
+            delay_match = PARENT_RESPONSE_DELAY_RE.search(line)
+            if time_match is None or delay_match is None:
+                continue
+            delay_ms, _scan_mask, child_extaddr = delay_match.groups()
+            events.append(
+                ParentResponseDelayEvent(
+                    router_extaddr=router_extaddr,
+                    router_name=log_path.stem,
+                    child_extaddr=compact_extaddr(child_extaddr) or child_extaddr.lower(),
+                    delay_ms=int(delay_ms),
+                    timestamp_ms=round(int(time_match.group(1)) / 1000),
+                    log_path=log_path.resolve(),
+                )
+            )
+    return events
+
+
+def annotate_otns_parent_response_random_delay(run_dir: Path, sequence: AttachSequence) -> list[str]:
+    sequence.parent_response_random_delay_requested = True
+    parent_extaddr = compact_extaddr(sequence.parent_extaddr)
+    child_extaddr = compact_extaddr(sequence.child_extaddr)
+    request_epoch = sequence.pcap_event_epochs.get("send_parent_request")
+    if parent_extaddr is None or child_extaddr is None or request_epoch is None:
+        return ["Cannot subtract OTNS random delay because PCAP endpoint metadata is incomplete."]
+
+    candidates = [
+        event
+        for event in otns_parent_response_delay_events(run_dir)
+        if event.router_extaddr == parent_extaddr and event.child_extaddr == child_extaddr
+    ]
+    if not candidates:
+        return [
+            f"No OTNS ParentResponseDelay entry matched parent {parent_extaddr} "
+            f"and child {child_extaddr}."
+        ]
+
+    request_ms = round(request_epoch * 1000)
+    event = min(candidates, key=lambda candidate: abs(candidate.timestamp_ms - request_ms))
+    distance = abs(event.timestamp_ms - request_ms)
+    if distance > 5000:
+        return [
+            f"Nearest OTNS ParentResponseDelay entry was {distance} ms from "
+            "the PCAP Parent Request and was not used."
+        ]
+
+    sequence.parent_response_random_delay_ms = event.delay_ms
+    sequence.parent_response_delay_router = event.router_name
+    sequence.parent_response_delay_log = str(event.log_path)
+    sequence.parent_response_delay_log_time = format_ms(event.timestamp_ms)
+    return []
 
 
 def annotate_parent_response_random_delays(
@@ -1232,6 +1306,7 @@ def analyze_otns_run(
     network_key: str,
     reuse_pcap_csv: bool = False,
     generate_pcap_csv: bool = True,
+    subtract_parent_response_random_delay: bool = False,
 ) -> dict[str, Any]:
     warnings: list[str] = []
     summary_paths = sorted(run_dir.glob("baseline_summary_*.json"))
@@ -1263,7 +1338,11 @@ def analyze_otns_run(
             warnings.append(f"Could not decode OTNS PCAP: {exc}")
 
     target = compact_extaddr(summary.get("target_parent_extaddr"))
-    target_sequences = [sequence for sequence in sequences if pcap_sequence_parent_extaddr(sequence) == target]
+    target_sequences = (
+        [sequence for sequence in sequences if pcap_sequence_parent_extaddr(sequence) == target]
+        if target
+        else sequences
+    )
     # The directed switch occurs after ordinary router and child attachment. The
     # last complete child attach to the selected target is therefore the
     # selected operation, while Challenge/Response matching still validates all
@@ -1274,9 +1353,12 @@ def analyze_otns_run(
         default=None,
     )
     if selected is None:
-        warnings.append("No complete selected-target attach sequence was found in the OTNS PCAP.")
+        warnings.append("No complete second-attach sequence was found in the OTNS PCAP.")
 
-    selected_summary = attach_sequence_from_pcap(selected, source=source).to_summary() if selected else None
+    selected_attach = attach_sequence_from_pcap(selected, source=source) if selected else None
+    if selected_attach is not None and subtract_parent_response_random_delay:
+        warnings.extend(annotate_otns_parent_response_random_delay(run_dir, selected_attach))
+    selected_summary = selected_attach.to_summary() if selected_attach else None
     terminal_event = next(
         (
             event
@@ -1303,10 +1385,13 @@ def analyze_otns_run(
         "labels": summary.get("labels") or [],
         "child_extaddr": selected_summary.get("child_extaddr") if selected_summary else None,
         "switch_targets": [target] if target else [],
+        "parent_response_random_delay_subtraction": subtract_parent_response_random_delay,
         "attach_sequences": [selected_summary] if selected_summary else [],
         "log_only_or_partial_sequences": [],
-        "selected_target_matched": bool(
-            selected_summary and target and selected_summary.get("parent_extaddr") == target
+        "selected_target_matched": (
+            bool(selected_summary and selected_summary.get("parent_extaddr") == target)
+            if target
+            else None
         ),
         "directed_result_classification": summary.get("directed_result_classification"),
         "final_parent": summary.get("final_parent"),
@@ -1635,10 +1720,6 @@ def main(argv: list[str]) -> int:
     logs_dir = args.logs_dir.resolve()
     if args.otns_results_dir and args.run_dirs:
         raise SystemExit("Use either --otns-results-dir or --run-dir, not both.")
-    if args.otns_results_dir and args.subtract_parent_response_random_delay:
-        raise SystemExit(
-            "--subtract-parent-response-random-delay currently requires hardware run manifests and router logs."
-        )
     log_paths = [] if args.otns_results_dir else collect_log_paths(logs_dir, args.run_dirs)
     if args.reuse_pcap_csv and args.no_generate_pcap_csv:
         raise SystemExit("Use either --reuse-pcap-csv or --no-generate-pcap-csv, not both.")
@@ -1650,6 +1731,7 @@ def main(argv: list[str]) -> int:
                 network_key=args.network_key,
                 reuse_pcap_csv=args.reuse_pcap_csv or args.no_generate_pcap_csv,
                 generate_pcap_csv=not args.no_generate_pcap_csv,
+                subtract_parent_response_random_delay=args.subtract_parent_response_random_delay,
             )
             for run_dir in collect_otns_run_dirs(args.otns_results_dir.resolve())
         ]

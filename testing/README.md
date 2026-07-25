@@ -105,6 +105,19 @@ ParentResponseDelay delay_ms=<milliseconds> scan_mask=<mask> child=<extended-add
 the response is handed to `DelayedSender`. It is therefore the requested
 scheduling delay, not a PCAP-derived over-the-air interval.
 
+The native OTNS build matrix provides the same diagnostic as the isolated
+`stock-ftd-delay-diagnostic` artifact. Use it with the
+`med_static_parent_removal_low_power_{2,3,4}routers.yaml` scenarios in
+OTNS-MAPS. For repeated OTNS results, the same analyzer option performs exact
+simulator-log/PCAP correlation:
+
+```bash
+python3 testing/scripts/analyze_test_logs.py \
+  --otns-results-dir /path/to/repeated-results \
+  --subtract-parent-response-random-delay \
+  --summary-only
+```
+
 Baseline variants refuse to continue if they detect the fastpr marker in the selected OpenThread source tree. Use `--reset-platformio-packages` to delete only the selected variant PlatformIO core/package directories before precompile.
 
 Safe run order without resets is:
