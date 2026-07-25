@@ -70,6 +70,8 @@ build_variant()
 }
 
 create_source_variant stock
+create_source_variant stock-delay-diagnostic \
+    patches/canonical/parent-response-delay-diagnostic.patch
 create_source_variant preferred-parent \
     patches/canonical/openthread-preferred-parent-controller.patch \
     patches/otns/preferred-parent-cli-adapter.patch
@@ -77,6 +79,7 @@ create_source_variant fastpr-router \
     patches/otns/fast-unicast-parent-response.patch
 
 build_variant stock "${STOCK_DEFINES}" "ot-cli-mtd ot-cli-ftd"
+build_variant stock-delay-diagnostic "${STOCK_DEFINES}" "ot-cli-ftd"
 build_variant preferred-parent "${PREFERRED_DEFINES}" "ot-cli-mtd"
 build_variant fastpr-router "${FASTPR_DEFINES}" "ot-cli-ftd"
 
@@ -90,6 +93,9 @@ install -D -m 0755 \
     "${OTNS_VARIANT_ROOT}/stock/build/bin/ot-cli-ftd" \
     "${OTNS_VARIANT_ROOT}/artifacts/stock-ftd/ot-cli-ftd"
 install -D -m 0755 \
+    "${OTNS_VARIANT_ROOT}/stock-delay-diagnostic/build/bin/ot-cli-ftd" \
+    "${OTNS_VARIANT_ROOT}/artifacts/stock-ftd-delay-diagnostic/ot-cli-ftd"
+install -D -m 0755 \
     "${OTNS_VARIANT_ROOT}/fastpr-router/build/bin/ot-cli-ftd" \
     "${OTNS_VARIANT_ROOT}/artifacts/fastpr-ftd/ot-cli-ftd"
 
@@ -98,6 +104,7 @@ sha256sum \
     "${OTNS_VARIANT_ROOT}/artifacts/stock-mtd-pps-off/ot-cli-mtd" \
     "${OTNS_VARIANT_ROOT}/artifacts/preferred-parent-mtd-pps-off/ot-cli-mtd" \
     "${OTNS_VARIANT_ROOT}/artifacts/stock-ftd/ot-cli-ftd" \
+    "${OTNS_VARIANT_ROOT}/artifacts/stock-ftd-delay-diagnostic/ot-cli-ftd" \
     "${OTNS_VARIANT_ROOT}/artifacts/fastpr-ftd/ot-cli-ftd" | tee "${HASHES_FILE}"
 
 readonly COMPILER_PATH="$(sed -n 's/^CMAKE_C_COMPILER:FILEPATH=//p' "${OTNS_VARIANT_ROOT}/stock/build/CMakeCache.txt" | head -n 1)"
@@ -110,11 +117,13 @@ readonly PROVENANCE_FILE="${OTNS_VARIANT_ROOT}/artifacts/PROVENANCE.txt"
     echo "profile=stock-mtd-pps-off pps=0 preferred_parent=0 fastpr=0 defines=${STOCK_DEFINES}"
     echo "profile=preferred-parent-mtd-pps-off pps=0 preferred_parent=1 fastpr=0 defines=${PREFERRED_DEFINES}"
     echo "profile=stock-ftd pps=n/a preferred_parent=0 fastpr=0 defines=${STOCK_DEFINES}"
+    echo "profile=stock-ftd-delay-diagnostic pps=n/a preferred_parent=0 fastpr=0 parent_response_delay_diagnostic=1 defines=${STOCK_DEFINES}"
     echo "profile=fastpr-ftd pps=n/a preferred_parent=0 fastpr=1 defines=${FASTPR_DEFINES}"
     sha256sum \
         "${REPO_ROOT}/patches/canonical/openthread-preferred-parent-controller.patch" \
         "${REPO_ROOT}/patches/otns/preferred-parent-cli-adapter.patch" \
-        "${REPO_ROOT}/patches/otns/fast-unicast-parent-response.patch"
+        "${REPO_ROOT}/patches/otns/fast-unicast-parent-response.patch" \
+        "${REPO_ROOT}/patches/canonical/parent-response-delay-diagnostic.patch"
 } > "${PROVENANCE_FILE}"
 
 cat "${PROVENANCE_FILE}"
