@@ -105,11 +105,16 @@ ParentResponseDelay delay_ms=<milliseconds> scan_mask=<mask> child=<extended-add
 the response is handed to `DelayedSender`. It is therefore the requested
 scheduling delay, not a PCAP-derived over-the-air interval.
 
+The ordinary `stock_router_{1,2,3,4}.yaml` and low-power router configurations
+enable this logging-only diagnostic. It is therefore available for hardware
+`stock`, `stock_low_power`, `ucast`, and `mcast` results. FastPR unicast bypasses
+the randomized delay and does not use this metric.
+
 The native OTNS build matrix provides the same diagnostic as the isolated
-`stock-ftd-delay-diagnostic` artifact. Use it with the
-`med_static_parent_removal_low_power_{2,3,4}routers.yaml` scenarios in
-OTNS-MAPS. For repeated OTNS results, the same analyzer option performs exact
-simulator-log/PCAP correlation:
+`stock-ftd-delay-diagnostic` artifact. Use it with the static stock scenarios
+and the directed `mcast`/`ucast` scenarios in OTNS-MAPS. For repeated OTNS
+results, the same analyzer option performs exact simulator-log/PCAP
+correlation:
 
 ```bash
 python3 testing/scripts/analyze_test_logs.py \
@@ -437,6 +442,16 @@ python3 scripts/analyze_test_logs.py \
   --markdown
 
 python3 scripts/analyze_test_logs.py \
+  --logs-dir logs/ucast-4router-<runs>runs-<timestamp> \
+  --subtract-parent-response-random-delay \
+  --markdown
+
+python3 scripts/analyze_test_logs.py \
+  --logs-dir logs/mcast-4router-<runs>runs-<timestamp> \
+  --subtract-parent-response-random-delay \
+  --markdown
+
+python3 scripts/analyze_test_logs.py \
   --logs-dir logs \
   --markdown \
   --group-by batch-family \
@@ -454,8 +469,9 @@ analyzer matches the PCAP-selected parent and child extended addresses to the
 nearest `ParentResponseDelay` event in that router's log, then subtracts the
 logged OpenThread delay from the PCAP-derived Parent Request to Parent Response
 interval. Unmatched attaches remain `n/a` and generate a warning. Existing
-output is unchanged when the option is omitted. The option currently applies
-to hardware runs with manifests and instrumented router logs, not OTNS results.
+output is unchanged when the option is omitted. For OTNS repeated results, it
+uses the diagnostic FTD node logs and the selected-parent packet sequence in
+the run PCAP in the same way.
 
 To write a Markdown report to disk:
 
