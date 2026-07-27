@@ -21,6 +21,12 @@ Each child firmware variant also uses a distinct `esphome.name`, so ESPHome writ
 
 This does not isolate framework source mutation by itself. The `ucast_fastpr` router firmware uses a PlatformIO pre-build patch that modifies the active `framework-espidf` OpenThread tree inside `PLATFORMIO_PACKAGES_DIR`. ESP-IDF bootloader setup can also leak through a shared `PLATFORMIO_CORE_DIR`. Reusing that state for `ucast` or `mcast` would invalidate the baseline because the routers would no longer be built from a clean environment.
 
+The runner further separates each variant's packages into `utility`, `routers`,
+and `child` package trees. This is required now that stock routers carry the
+logging-only Parent Response delay patch while the child carries the
+preferred-parent controller patch. The package trees must never be shared:
+both patches modify OpenThread sources during their respective builds.
+
 | Variant | ESPHome name | Build directory |
 | --- | --- | --- |
 | Unicast | `ucast-child` | `.esphome/build/ucast-child/` |

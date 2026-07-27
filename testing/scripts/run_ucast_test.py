@@ -15,6 +15,7 @@ This runner follows the updated ucast/mcast method:
 from __future__ import annotations
 
 import argparse
+import contextlib
 import datetime as dt
 import hashlib
 import json
@@ -125,6 +126,7 @@ class Settings:
     precompile: bool = True
     clean_before_compile: bool = False
     platformio_core_dir: Path = Path()
+    platformio_packages_root_dir: Path = Path()
     platformio_packages_dir: Path = Path()
     reset_platformio_packages: bool = False
     devices: dict[str, str] = field(default_factory=dict)
@@ -148,8 +150,30 @@ def default_platformio_core_dir(testing_dir: Path, variant: str) -> Path:
     return (testing_dir / ".platformio-core" / variant).resolve()
 
 
-def expected_fastpr_marker_present(variant: str) -> bool:
-    return variant == "ucast_fastpr"
+def expected_fastpr_marker_present(settings: Settings) -> bool:
+    return settings.variant == "ucast_fastpr" and settings.platformio_packages_dir.name == "routers"
+
+
+def firmware_package_group(firmware_name: str) -> str:
+    if firmware_name == "child":
+        return "child"
+    if firmware_name.startswith("router"):
+        return "routers"
+    return "utility"
+
+
+def firmware_packages_dir(settings: Settings, firmware_name: str) -> Path:
+    return settings.platformio_packages_root_dir / firmware_package_group(firmware_name)
+
+
+@contextlib.contextmanager
+def use_firmware_packages(settings: Settings, firmware_name: str) -> Iterable[None]:
+    previous = settings.platformio_packages_dir
+    settings.platformio_packages_dir = firmware_packages_dir(settings, firmware_name)
+    try:
+        yield
+    finally:
+        settings.platformio_packages_dir = previous
 
 
 def openthread_mle_ftd_path(settings: Settings) -> Path:
@@ -197,7 +221,7 @@ def contamination_check_status(marker_present: bool | None, expected_present: bo
 def firmware_environment(settings: Settings, *, phase: str) -> dict[str, Any]:
     mle_path = openthread_mle_ftd_path(settings)
     marker_present = fastpr_marker_present(settings)
-    expected_present = expected_fastpr_marker_present(settings.variant)
+    expected_present = expected_fastpr_marker_present(settings)
     return {
         "phase": phase,
         "variant": settings.variant,
@@ -470,6 +494,7 @@ def load_settings(args: argparse.Namespace) -> Settings:
         precompile=precompile,
         clean_before_compile=clean_before_compile,
         platformio_core_dir=platformio_core_dir,
+        platformio_packages_root_dir=platformio_packages_dir,
         platformio_packages_dir=platformio_packages_dir,
         reset_platformio_packages=bool(args.reset_platformio_packages),
         devices=devices,
@@ -618,7 +643,8 @@ def upload(settings: Settings, role: str, firmware_name: str, *, dry_run: bool, 
     cmd = esphome_base(settings) + ["upload", str(config_path(settings, firmware_name)), "--device", settings.devices[role]]
     if settings.upload_speed:
         cmd += ["--upload_speed", settings.upload_speed]
-    run_command(settings, cmd, dry_run=dry_run, manifest=manifest)
+    with use_firmware_packages(settings, firmware_name):
+        run_command(settings, cmd, dry_run=dry_run, manifest=manifest)
 
 
 def sleep_step(seconds: int, reason: str, *, dry_run: bool, manifest: list[dict[str, Any]]) -> None:
@@ -684,14 +710,20 @@ def start_device_log(settings: Settings, *, logical_name: str, config_name: str,
     settings.run_logs_dir.mkdir(parents=True, exist_ok=True)
     log_path = log_file_path(settings, logical_name)
     cmd = esphome_base(settings) + ["logs", str(config_path(settings, config_name)), "--device", settings.devices[device_role]]
-    manifest.append({"time_utc": now_utc_iso(), "cmd": cmd, "env": command_env_overrides(settings), "log_path": str(log_path), "logical_name": logical_name, "config_name": config_name, "device_role": device_role, "dry_run": dry_run})
+    packages_dir = firmware_packages_dir(settings, config_name)
+    previous_packages_dir = settings.platformio_packages_dir
+    settings.platformio_packages_dir = packages_dir
+    env_overrides = command_env_overrides(settings)
+    process_env = subprocess_env(settings)
+    settings.platformio_packages_dir = previous_packages_dir
+    manifest.append({"time_utc": now_utc_iso(), "cmd": cmd, "env": env_overrides, "log_path": str(log_path), "logical_name": logical_name, "config_name": config_name, "device_role": device_role, "dry_run": dry_run})
     log(("DRY-RUN " if dry_run else "START ") + quote_cmd(cmd) + f" > {log_path}")
     if dry_run:
         return None, log_path
     log_file = log_path.open("w", encoding="utf-8", errors="replace")
     log_file.write(f"# Command: {quote_cmd(cmd)}\n# Started UTC: {now_utc_iso()}\n")
     log_file.flush()
-    process = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True, encoding="utf-8", errors="replace", bufsize=1, env=subprocess_env(settings))
+    process = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True, encoding="utf-8", errors="replace", bufsize=1, env=process_env)
 
     def pump() -> None:
         try:
@@ -1245,6 +1277,10 @@ def run_timed_sequence(settings: Settings, *, dry_run: bool, manifest: list[dict
 def write_manifest(settings: Settings, manifest: list[dict[str, Any]], *, dry_run: bool, status: str, child_log: Path | None, device_logs: dict[str, Path], sniffer_log: Path | None, sniffer_remote_pcap: str | None, sniffer_local_pcap: Path | None) -> Path:
     settings.run_logs_dir.mkdir(parents=True, exist_ok=True)
     path = settings.run_logs_dir / f"{settings.name_prefix}_test_manifest_{settings.run_logs_dir.name}.json"
+    firmware_environments: dict[str, dict[str, Any]] = {}
+    for firmware_name in ("empty", "child", *[item["config_name"] for item in router_execution_plan(settings)]):
+        with use_firmware_packages(settings, firmware_name):
+            firmware_environments[firmware_name] = firmware_environment(settings, phase="final")
     payload = {
         "created_utc": now_utc_iso(),
         "status": status,
@@ -1260,13 +1296,18 @@ def write_manifest(settings: Settings, manifest: list[dict[str, Any]], *, dry_ru
         "precompile": settings.precompile,
         "clean_before_compile": settings.clean_before_compile,
         "platformio_core_dir": str(settings.platformio_core_dir),
-        "platformio_packages_dir": str(settings.platformio_packages_dir),
+        "platformio_packages_dir": str(settings.platformio_packages_root_dir),
+        "platformio_packages_dirs": {
+            group: str(settings.platformio_packages_root_dir / group)
+            for group in ("utility", "child", "routers")
+        },
         "reset_platformio_packages": settings.reset_platformio_packages,
         "devices": settings.devices,
         "timing": settings.timing.__dict__,
         "selection": settings.selection.__dict__,
         "n_routers": settings.max_router_number,
-        "firmware_environment": firmware_environment(settings, phase="final"),
+        "firmware_environment": firmware_environments["child"],
+        "firmware_environments": firmware_environments,
         "additional_router_assignments": additional_router_assignments(settings),
         "child_log": str(child_log) if child_log else None,
         "device_logs": {name: str(path) for name, path in sorted(device_logs.items())},
@@ -1284,23 +1325,14 @@ def precompile_all(settings: Settings, *, dry_run: bool, manifest: list[dict[str
                 "time_utc": now_utc_iso(),
                 "type": "platformio_environment_reset",
                 "platformio_core_dir": str(settings.platformio_core_dir),
-                "platformio_packages_dir": str(settings.platformio_packages_dir),
+                "platformio_packages_dir": str(settings.platformio_packages_root_dir),
                 "dry_run": dry_run,
             }
         )
         log(("DRY-RUN " if dry_run else "RESET ") + str(settings.platformio_core_dir))
         if not dry_run:
             shutil.rmtree(settings.platformio_core_dir, ignore_errors=True)
-            shutil.rmtree(settings.platformio_packages_dir, ignore_errors=True)
-    if dry_run and settings.reset_platformio_packages:
-        preflight_info = firmware_environment(settings, phase="preflight")
-        preflight_info["fastpr_marker_present"] = None
-        preflight_info["mle_ftd_cpp_exists"] = False
-        preflight_info["mle_ftd_cpp_sha256"] = None
-        preflight_info["contamination_check"] = "PENDING_RESET"
-    else:
-        preflight_info = validate_firmware_environment(settings, phase="preflight")
-    manifest.append({"time_utc": now_utc_iso(), "type": "firmware_environment", **preflight_info})
+            shutil.rmtree(settings.platformio_packages_root_dir, ignore_errors=True)
     log("Precompiling firmware before timed test sequence.")
     compile_order = [*CORE_COMPILE_ORDER, *additional_router_firmware_names(settings)]
     seen: set[str] = set()
@@ -1308,14 +1340,43 @@ def precompile_all(settings: Settings, *, dry_run: bool, manifest: list[dict[str
         if name in seen:
             continue
         seen.add(name)
-        yaml_path = config_path(settings, name)
-        clear_stale_esphome_build(settings, yaml_path, dry_run=dry_run, manifest=manifest)
-        if settings.clean_before_compile:
-            run_command(settings, esphome_base(settings) + ["clean", str(yaml_path)], dry_run=dry_run, manifest=manifest)
-        run_command(settings, esphome_base(settings) + ["compile", str(yaml_path)], dry_run=dry_run, manifest=manifest)
-        if not dry_run:
-            record_esphome_build_provenance(settings, yaml_path)
-    manifest.append({"time_utc": now_utc_iso(), "type": "firmware_environment", **(firmware_environment(settings, phase="postcompile") if dry_run else validate_firmware_environment(settings, phase="postcompile"))})
+        with use_firmware_packages(settings, name):
+            if dry_run and settings.reset_platformio_packages:
+                preflight_info = firmware_environment(settings, phase="preflight")
+                preflight_info["fastpr_marker_present"] = None
+                preflight_info["mle_ftd_cpp_exists"] = False
+                preflight_info["mle_ftd_cpp_sha256"] = None
+                preflight_info["contamination_check"] = "PENDING_RESET"
+            else:
+                preflight_info = validate_firmware_environment(settings, phase="preflight")
+            manifest.append(
+                {
+                    "time_utc": now_utc_iso(),
+                    "type": "firmware_environment",
+                    "firmware_name": name,
+                    **preflight_info,
+                }
+            )
+            yaml_path = config_path(settings, name)
+            clear_stale_esphome_build(settings, yaml_path, dry_run=dry_run, manifest=manifest)
+            if settings.clean_before_compile:
+                run_command(settings, esphome_base(settings) + ["clean", str(yaml_path)], dry_run=dry_run, manifest=manifest)
+            run_command(settings, esphome_base(settings) + ["compile", str(yaml_path)], dry_run=dry_run, manifest=manifest)
+            if not dry_run:
+                record_esphome_build_provenance(settings, yaml_path)
+            postcompile_info = (
+                firmware_environment(settings, phase="postcompile")
+                if dry_run
+                else validate_firmware_environment(settings, phase="postcompile")
+            )
+            manifest.append(
+                {
+                    "time_utc": now_utc_iso(),
+                    "type": "firmware_environment",
+                    "firmware_name": name,
+                    **postcompile_info,
+                }
+            )
     log("Precompile phase complete. No compile commands will be run in the timed sequence.")
 
 
@@ -1349,7 +1410,7 @@ def main(argv: list[str]) -> int:
     log(f"Using ESPHome: {settings.esphome_bin}")
     log(f"Using esptool: {settings.esptool_bin}")
     log(f"Using PLATFORMIO_CORE_DIR: {settings.platformio_core_dir}")
-    log(f"Using PLATFORMIO_PACKAGES_DIR: {settings.platformio_packages_dir}")
+    log(f"Using isolated PLATFORMIO_PACKAGES_DIR root: {settings.platformio_packages_root_dir}")
     log(f"Using configs: {settings.configs_dir}")
     log(f"Using logs base: {settings.logs_dir}")
     log(f"Variant: {settings.variant}")
