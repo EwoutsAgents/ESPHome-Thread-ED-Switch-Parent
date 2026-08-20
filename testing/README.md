@@ -1,544 +1,110 @@
 # Testing
 
-This folder contains the automated test runners, device configuration files, sniffer integration, generated logs, packet captures, manifests, and post-run analysis tooling for the Thread parent-switch experiments.
+This directory contains the automated hardware tests for the two supported
+parent-switch variants:
 
-The test variants are:
+* `stock`: natural OpenThread recovery after the current parent is removed.
+* `ucast`: directed preferred-parent switching using a unicast Parent Request.
 
-* `stock`: natural OpenThread parent switching without using the preferred-parent switching mechanism.
-* `stock_low_power`: the stock method with routers 3 and 4 transmitting at
-  -15 dBm so router 2 has a stronger second-attach candidate link. All routers
-  in this variant log the random delay selected before scheduling each Parent
-  Response.
-* `ucast`: preferred-parent switching using unicast control.
-* `ucast_fastpr`: preferred-parent switching using unicast control with fast unicast Parent Responses on routers.
-* `mcast`: preferred-parent switching using multicast control.
+The runners support two, three, or four ESP32-C6 routers plus one child. The
+device-specific TOML files map those roles to serial ports and configure test
+timing, logging, and sniffer integration.
 
-Variant-specific methodology is documented separately:
+## Entry points
 
-* `README_STOCK_TEST.md` — stock/reference parent-switching methodology and validity criteria.
-* `README_MCAST_UCAST_TEST.md` — preferred-parent unicast, unicast-fastpr, and multicast methodology.
-
-This README covers the shared automation, setup, runner usage, output layout, and analysis workflow.
-
-## Files
-
-Runner wrappers:
-
-* `run_stock_test.sh`
-* `run_stock_low_power_test.sh`
-* `run_ucast_test.sh`
-* `run_ucast_fastpr_test.sh`
-* `run_mcast_test.sh`
-
-Device configuration examples:
-
-* `stock_test_devices.example.toml`
-* `mcast_test_devices.example.toml`
-
-Local device configuration files:
-
-* `stock_test_devices_2routers.toml`
-* `stock_test_devices_3routers.toml`
-* `stock_test_devices_4routers.toml`
-* `stock_low_power_test_devices_2routers.toml`
-* `stock_low_power_test_devices_3routers.toml`
-* `stock_low_power_test_devices_4routers.toml`
-* `ucast_test_devices_2routers.toml`
-* `ucast_test_devices_3routers.toml`
-* `ucast_test_devices_4routers.toml`
-* `ucast_fastpr_test_devices_2routers.toml`
-* `ucast_fastpr_test_devices_3routers.toml`
-* `ucast_fastpr_test_devices_4routers.toml`
-* `mcast_test_devices_2routers.toml`
-* `mcast_test_devices_3routers.toml`
-* `mcast_test_devices_4routers.toml`
-* `mcast_test_devices.toml`
-
-Test methodology documents:
-
-* `README_STOCK_TEST.md`
-* `README_MCAST_UCAST_TEST.md`
-
-Post-run analysis:
-
-* `scripts/analyze_test_logs.py`
-
-Generated logs, manifests, CSV exports, reports, and sniffer captures are written under the variant-specific log directories.
-
-Each child firmware variant uses a distinct `esphome.name`, so ESPHome writes each build into a separate `.esphome/build/<name>/` directory. This avoids race conditions during parallel precompile or test runs.
-
-That build-directory separation is not sufficient to isolate ESP-IDF/OpenThread source mutations. The `ucast_fastpr` router firmware uses a PlatformIO pre-build patch step that modifies the active `framework-espidf` package tree under `PLATFORMIO_PACKAGES_DIR`. Also, ESP-IDF bootloader setup can still reuse global PlatformIO core state unless `PLATFORMIO_CORE_DIR` is isolated too. If a later baseline run reuses that state, the baseline firmware can be contaminated even though the `.esphome/build/...` directory is different.
-
-| Variant | Config | ESPHome name | Build directory |
-| --- | --- | --- | --- |
-| Unicast | `testing/configs/ucast_child.yaml` | `ucast-child` | `.esphome/build/ucast-child/` |
-| Multicast | `testing/configs/mcast_child.yaml` | `mcast-child` | `.esphome/build/mcast-child/` |
-| Unicast fastpr | `testing/configs/ucast_fastpr_child.yaml` | `ucast-fastpr-child` | `.esphome/build/ucast-fastpr-child/` |
-
-## PlatformIO package isolation
-
-The runners now treat OpenThread patch state as a first-class invariant and default to variant-specific PlatformIO package directories:
-
-```text
-testing/.pio-packages/stock/
-testing/.pio-packages/ucast/
-testing/.pio-packages/mcast/
-testing/.pio-packages/ucast_fastpr/
-```
-
-Every ESPHome command launched by the runners sets both `PLATFORMIO_CORE_DIR` and `PLATFORMIO_PACKAGES_DIR` explicitly. By default, `PLATFORMIO_PACKAGES_DIR` lives inside the selected core directory as `<PLATFORMIO_CORE_DIR>/packages`, so each variant uses one self-contained PlatformIO environment. You do not need to export them in the shell for normal use.
-
-Variant expectations:
-
-* `stock`, `ucast`, `mcast`: fast unicast Parent Response patch must be absent.
-* `ucast_fastpr`: fast unicast Parent Response patch must be present after compile.
-* `stock_low_power`: the fast unicast patch remains absent; the isolated
-  OpenThread tree contains only the Parent Response delay diagnostic patch.
-
-The low-power router logs use this stable diagnostic format:
-
-```text
-ParentResponseDelay delay_ms=<milliseconds> scan_mask=<mask> child=<extended-address>
-```
-
-`delay_ms` is the value returned by OpenThread's `GenerateRandomDelay()` before
-the response is handed to `DelayedSender`. It is therefore the requested
-scheduling delay, not a PCAP-derived over-the-air interval.
-
-The ordinary `stock_router_{1,2,3,4}.yaml` and low-power router configurations
-enable this logging-only diagnostic. It is therefore available for hardware
-`stock`, `stock_low_power`, `ucast`, and `mcast` results. FastPR unicast bypasses
-the randomized delay and does not use this metric.
-
-The native OTNS build matrix provides the same diagnostic as the isolated
-`stock-ftd-delay-diagnostic` artifact. Use it with the static stock scenarios
-and the directed `mcast`/`ucast` scenarios in OTNS-MAPS. For repeated OTNS
-results, the same analyzer option performs exact simulator-log/PCAP
-correlation:
-
-```bash
-python3 testing/scripts/analyze_test_logs.py \
-  --otns-results-dir /path/to/repeated-results \
-  --subtract-parent-response-random-delay \
-  --summary-only
-```
-
-Baseline variants refuse to continue if they detect the fastpr marker in the selected OpenThread source tree. Use `--reset-platformio-packages` to delete only the selected variant PlatformIO core/package directories before precompile.
-
-Safe run order without resets is:
-
-```text
-stock -> ucast -> mcast -> ucast_fastpr
-```
-
-Preferred method:
-
-* use the default per-variant package directories; or
-* pass `--reset-platformio-packages` for each batch.
-
-## Compilation policy
-
-All ESPHome compilations should happen before a timed test sequence starts. During the timed sequence, runners should perform only erase, upload, logging, wait, control, validation, and capture operations.
-
-The timed sequence should not call `esphome run`, because compile-time variation would affect the measured timing.
-
-The intended timed flash/upload operations are:
-
-```bash
-esptool.py --chip esp32c6 --port <port> erase_flash
-esphome upload <yaml> --device <port>
-```
-
-Runner options such as `--precompile-only` and `--clean-before-compile` are used to make the compilation phase explicit and auditable.
-
-## Setup
-
-From the repository root, keep the ESPHome virtual environment as either `.venv/` or `venv/`. The test wrappers auto-detect both.
-
-Create a local device configuration file from the appropriate example:
+Stock:
 
 ```bash
 cd testing
-cp stock_test_devices.example.toml stock_test_devices.toml
-cp mcast_test_devices.example.toml mcast_test_devices.toml
-```
-
-Edit the relevant TOML file and assign each physical ESP32-C6 board to a stable role.
-
-Example stock configuration shape:
-
-```toml
-[devices]
-router1 = "/dev/ttyACM0"
-child = "/dev/ttyACM1"
-router2 = "/dev/ttyACM2"
-unused1 = "/dev/ttyACM3"
-unused2 = "/dev/ttyACM4"
-
-[variant]
-# Total number of stock router-capable devices included in the run.
-# This does not include the child.
-#
-# n_routers = 2 means:
-#   stock_router_1.yaml + stock_router_2.yaml + stock_child.yaml
-#
-# n_routers = 3 means:
-#   stock_router_1.yaml + stock_router_2.yaml + stock_router_3.yaml + stock_child.yaml
-#
-# n_routers = 4 means:
-#   stock_router_1.yaml + stock_router_2.yaml + stock_router_3.yaml + stock_router_4.yaml + stock_child.yaml
-n_routers = 4
-```
-
-Example sniffer and timing configuration shape:
-
-```toml
-[timing]
-sniffer_lead_in_seconds = 5
-
-[sniffer]
-enabled = true
-command = ["ssh", "rpi-802154-sniffer", "~/bin/nrf802154-sniff"]
-```
-
-Variant-specific timing keys are defined by the corresponding runner and TOML example. Keep the TOML keys aligned with the runner implementation.
-
-Do not swap physical device assignments between repeated runs unless the experiment design is intentionally being changed.
-
-## Running tests
-
-Run commands are executed from the `testing/` directory.
-
-### Stock
-
-```bash
-./run_stock_test.sh --config stock_test_devices.toml
-```
-
-Alternative stock configurations can be used when present:
-
-```bash
-./run_stock_test.sh --config stock_test_devices_2routers.toml
-./run_stock_test.sh --config stock_test_devices_3routers.toml
 ./run_stock_test.sh --config stock_test_devices_4routers.toml
 ```
 
-### Stock with low-power routers 3 and 4
+Unicast:
 
 ```bash
-./run_stock_low_power_test.sh --config stock_low_power_test_devices_2routers.toml
-./run_stock_low_power_test.sh --config stock_low_power_test_devices_3routers.toml
-./run_stock_low_power_test.sh --config stock_low_power_test_devices_4routers.toml
+cd testing
+./run_ucast_test.sh --config ucast_test_devices_4routers.toml
 ```
 
-This variant keeps router 1, router 2, and the child identical to stock.
-Routers 3 and 4 use the ESP32-C6 minimum supported output power of -15 dBm,
-35 dB below router 2. The separate variant name also isolates its PlatformIO
-environment and log batches from ordinary stock tests.
-
-### Unicast preferred-parent
-
-```bash
-./run_ucast_test.sh --config ucast_test_devices.toml
-```
-
-### Unicast preferred-parent with fast router Parent Responses
-
-```bash
-./run_ucast_fastpr_test.sh --config ucast_fastpr_test_devices_4routers.toml
-```
-
-### Multicast preferred-parent
-
-```bash
-./run_mcast_test.sh --config mcast_test_devices.toml
-```
-
-
-### Small max-router stock batch
-
-If five ESP32-C6 boards are available, use the 4-router stock configuration for the largest stock topology currently supported:
-
-```bash
-./run_stock_test.sh --config stock_test_devices_4routers.toml --dry-run
-./run_stock_test.sh --config stock_test_devices_4routers.toml --runs 2
-```
-
-`n_routers = 4` means four total router-capable Thread routers plus the child.
-
-## Multiple runs
-
-Repeated runs can be executed with `--runs` where supported by the runner:
-
-```bash
-./run_stock_test.sh --config stock_test_devices.toml --runs 5
-./run_ucast_test.sh --config ucast_test_devices.toml --runs 5
-./run_ucast_fastpr_test.sh --config ucast_fastpr_test_devices_4routers.toml --runs 5
-./run_mcast_test.sh --config mcast_test_devices.toml --runs 5
-```
-
-Each repeated timed run gets its own run folder with a `-runNN` suffix.
-
-Example:
+Common runner options include:
 
 ```text
-logs/stock-4router-50runs-20260624-043022/20260624-054321-run03/
+--runs N
+--dry-run
+--precompile-only
+--skip-precompile
+--force-precompile
+--clean-before-compile
+--reset-platformio-packages
+--platformio-core-dir PATH
+--platformio-packages-dir PATH
 ```
 
-## Detached long-running batches
-
-For long hardware batches, start the runner in a detached session from the `testing/` directory so the job survives after the launching shell exits. In this environment, `setsid` worked reliably, while `nohup` alone did not reliably keep `esphome compile` alive.
-
-Example for a 4-router `ucast_fastpr` batch:
+Equivalent Make targets are available:
 
 ```bash
-ts=$(date +%Y%m%d-%H%M%S)
-setsid bash -lc './run_ucast_fastpr_test.sh --config ucast_fastpr_test_devices_4routers.toml --runs 20' \
-  > "logs/ucast_fastpr-launch-20runs-${ts}.log" 2>&1 < /dev/null &
+make stock-test CONFIG=stock_test_devices_4routers.toml RUNS=5
+make ucast-test UCAST_CONFIG=ucast_test_devices_4routers.toml RUNS=5
+make dry-run CONFIG=stock_test_devices_4routers.toml
+make ucast-dry-run UCAST_CONFIG=ucast_test_devices_4routers.toml
 ```
 
-This creates:
+## Firmware configurations
 
-* a detached launcher log such as `testing/logs/ucast_fastpr-launch-20runs-<timestamp>.log`
-* the normal batch output directory such as `testing/logs/ucast_fastpr-4router-20runs-<timestamp>/`
+Shared utility firmware:
 
-The same pattern can be used for the other runners by replacing the wrapper script, config file, and run count.
+* `configs/empty.yaml`
 
-## Dry run
+Stock firmware:
 
-Use `--dry-run` to print the planned compile, upload, log, wait, control, and capture sequence without touching hardware, where supported:
+* `configs/stock_child.yaml`
+* `configs/stock_router_1.yaml` through `configs/stock_router_4.yaml`
 
-```bash
-./run_stock_test.sh --config stock_test_devices.toml --dry-run
-./run_ucast_test.sh --config ucast_test_devices.toml --dry-run
-./run_ucast_fastpr_test.sh --config ucast_fastpr_test_devices_4routers.toml --dry-run
-./run_mcast_test.sh --config mcast_test_devices.toml --dry-run
-```
+Unicast firmware:
 
-## Precompile only
+* `configs/ucast_child.yaml`
+* `configs/stock_router_1.yaml` through `configs/stock_router_4.yaml`
 
-Use `--precompile-only` to compile the required firmware artifacts and exit before flashing anything, where supported:
+The preferred-parent component always uses targeted unicast discovery. Both
+variants disable OpenThread's default periodic MTD parent search so it cannot
+interfere with the experiment.
 
-```bash
-./run_stock_test.sh --config stock_test_devices.toml --precompile-only
-./run_ucast_test.sh --config ucast_test_devices.toml --precompile-only
-./run_ucast_fastpr_test.sh --config ucast_fastpr_test_devices_4routers.toml --precompile-only
-./run_mcast_test.sh --config mcast_test_devices.toml --precompile-only
-```
+## Isolated build environments
 
-The precompile phase now performs:
-
-* preflight contamination detection before compile;
-* post-compile marker verification after compile;
-* manifest provenance recording for the selected `PLATFORMIO_CORE_DIR` and `PLATFORMIO_PACKAGES_DIR`.
-
-## Clean build before compiling
-
-Use `--clean-before-compile` when firmware artifacts should be rebuilt from scratch before the upload-only timed sequence, where supported:
-
-```bash
-./run_stock_test.sh --config stock_test_devices.toml --clean-before-compile
-./run_ucast_test.sh --config ucast_test_devices.toml --clean-before-compile
-./run_ucast_fastpr_test.sh --config ucast_fastpr_test_devices_4routers.toml --clean-before-compile
-./run_mcast_test.sh --config mcast_test_devices.toml --clean-before-compile
-```
-
-This is recommended after changing `sdkconfig_options`, so the generated ESP-IDF configuration is rebuilt from scratch.
-
-Use `--reset-platformio-packages` when the selected variant package directory should be deleted before precompile:
-
-```bash
-./run_stock_test.sh --config stock_test_devices_4routers.toml --reset-platformio-packages
-./run_ucast_test.sh --config ucast_test_devices_4routers.toml --reset-platformio-packages
-./run_ucast_fastpr_test.sh --config ucast_fastpr_test_devices_4routers.toml --reset-platformio-packages
-./run_mcast_test.sh --config mcast_test_devices.toml --reset-platformio-packages
-```
-
-You can also override the package directory explicitly:
-
-```bash
-./run_ucast_test.sh --config ucast_test_devices_4routers.toml \
-  --platformio-packages-dir ./testing/.pio-packages/ucast
-```
-
-## Output files
-
-Each run writes into its own timestamped folder under the relevant variant log directory.
-
-Typical batch roots:
+Each runner uses a variant-specific PlatformIO core by default:
 
 ```text
-logs/stock-<n_routers>router-<runs>runs-<timestamp>/
-logs/stock_low_power-<n_routers>router-<runs>runs-<timestamp>/
-logs/ucast-<n_routers>router-<runs>runs-<timestamp>/
-logs/ucast_fastpr-<n_routers>router-<runs>runs-<timestamp>/
-logs/mcast-<n_routers>router-<runs>runs-<timestamp>/
+testing/.platformio-core/stock/
+testing/.platformio-core/ucast/
 ```
 
-Typical generated files include:
+Packages are kept inside the selected core. This prevents framework state from
+one variant contaminating the other. Use `--reset-platformio-packages` when a
+clean framework installation is required.
+
+## Results
+
+Repeated runs are written under:
 
 ```text
-<variant>_child_<timestamp>.log
-<variant>_router1_<timestamp>.log
-<variant>_router2_<timestamp>.log
-<variant>_sniffer_<timestamp>.log
-<variant>_sniffer_<timestamp>.pcapng
-<variant>_test_manifest_<timestamp>.json
+logs/stock-<n>router-<runs>runs-<timestamp>/
+logs/ucast-<n>router-<runs>runs-<timestamp>/
 ```
 
-Some variants or runs may include additional router logs, runner supervisor logs, CSV exports, analysis reports, or generated packet summaries.
-
-The JSON manifest records the command sequence, wait events, device-role mapping, sniffer paths, copied `.pcapng` path, and other run metadata needed to audit the run.
-
-## Sniffer capture
-
-When `[sniffer].enabled = true`, the runner starts the configured IEEE 802.15.4 sniffer command before the timed test sequence and stops it after the measurement window.
-
-The resulting `.pcapng` is copied into the run folder using the local naming scheme for that variant and timestamp.
-
-Sniffer packet data is the authoritative source for attach timing in the analysis pipeline. Device logs are retained for context, state interpretation, and debugging.
-
-## Methodology documents
-
-Use the variant-specific methodology documents to understand what each test is intended to measure and how valid runs are classified.
-
-### Stock
-
-`README_STOCK_TEST.md` defines the stock/reference method.
-
-At a high level, the stock test measures natural OpenThread parent switching without using the preferred-parent mechanism. The stock method is opportunistic: it observes which router the child naturally attaches to, checks whether that parent can be removed without destabilizing the remaining router topology, and only treats the run as a valid reference measurement if the child switches parent while the remaining candidate-parent topology stays stable.
-
-### Unicast and multicast
-
-`README_MCAST_UCAST_TEST.md` defines the preferred-parent unicast and multicast methods.
-
-At a high level, these tests measure explicit preferred-parent switching behavior. The child is instructed to switch toward a selected parent using the variant-specific control mechanism, while the runner records logs and sniffer traffic for timing and protocol analysis.
-
-## Log analysis
-
-Use `scripts/analyze_test_logs.py` for post-run analysis across `stock`, `ucast`, `ucast_fastpr`, and `mcast` runs. The analyzer is variant-agnostic and discovers the matching `*_test_manifest_*.json` file from each run directory.
-
-The same analyzer accepts an OTNS repeated-results directory. In OTNS mode it
-discovers `run_*/baseline_summary_*.json` and
-`run_*/otns_runtime/current.pcap`, matches the selected target recorded in the
-summary, and reports the selected Parent Request through Child ID Response
-sequence. OTNS captures use the OpenThread test network key by default; pass
-`--network-key` when a scenario uses a different key.
-
-Examples:
+Each run records device logs, a manifest, packet CSV exports, and a sniffer
+capture when enabled. Analyze a batch with:
 
 ```bash
-python3 scripts/analyze_test_logs.py \
-  --run-dir logs/stock-4router-50runs-20260624-043022/20260624-054321-run03 \
-  --markdown
-
-python3 scripts/analyze_test_logs.py \
-  --logs-dir logs/stock-4router-50runs-20260624-043022 \
-  --markdown
-
-python3 scripts/analyze_test_logs.py \
-  --logs-dir logs/stock_low_power-4router-50runs-<timestamp> \
-  --subtract-parent-response-random-delay \
-  --markdown
-
 python3 scripts/analyze_test_logs.py \
   --logs-dir logs/ucast-4router-<runs>runs-<timestamp> \
-  --subtract-parent-response-random-delay \
   --markdown
-
-python3 scripts/analyze_test_logs.py \
-  --logs-dir logs/mcast-4router-<runs>runs-<timestamp> \
-  --subtract-parent-response-random-delay \
-  --markdown
-
-python3 scripts/analyze_test_logs.py \
-  --logs-dir logs \
-  --markdown \
-  --group-by batch-family \
-  --summary-only
-
-python3 scripts/analyze_test_logs.py \
-  --otns-results-dir ../../OTNS-MAPS/results/repeated/<experiment-name> \
-  --reuse-pcap-csv \
-  --json
 ```
 
-`--subtract-parent-response-random-delay` adds a
-`Request -> Response minus Random Delay` metric. For each complete attach, the
-analyzer matches the PCAP-selected parent and child extended addresses to the
-nearest `ParentResponseDelay` event in that router's log, then subtracts the
-logged OpenThread delay from the PCAP-derived Parent Request to Parent Response
-interval. Unmatched attaches remain `n/a` and generate a warning. Existing
-output is unchanged when the option is omitted. For OTNS repeated results, it
-uses the diagnostic FTD node logs and the selected-parent packet sequence in
-the run PCAP in the same way.
+Use `scripts/pcap_to_csv.py` to regenerate packet exports from a capture.
 
-To write a Markdown report to disk:
+## Methodology
 
-```bash
-python3 scripts/analyze_test_logs.py \
-  --logs-dir logs/stock-4router-50runs-20260624-043022 \
-  --write-markdown
-
-python3 scripts/analyze_test_logs.py \
-  --logs-dir logs \
-  --group-by batch-family \
-  --summary-only \
-  --write-markdown
-
-python3 scripts/analyze_test_logs.py \
-  --run-dir logs/stock-4router-50runs-20260624-043022/20260624-054321-run03 \
-  --write-markdown
-```
-
-With `--logs-dir <batch-root>`, `--write-markdown` writes a batch-scoped report:
-
-```text
-<batch-root>/<generated-at>-<batch-name>-analysis-report.md
-```
-
-With a single `--run-dir`, `--write-markdown` writes a scoped single-run report at the same variant root:
-
-```text
-<batch-root>/<run-timestamp>-<batch-name>-analysis-report.md
-```
-
-With `--logs-dir logs --group-by batch-family --summary-only --write-markdown`, the analyzer writes a combined top-level summary that merges matching variant/router families across multiple batch folders, even when the run counts differ:
-
-```text
-logs/<generated-at>-all-batches-summary-report.md
-```
-
-## Timing policy
-
-Reported attach timings come from matched sniffer PCAP events only.
-
-Timing deltas retain the PCAP epoch timestamp's sub-millisecond precision and
-are reported in milliseconds rounded to three decimal places. This is needed
-for native OTNS/RFSIM intervals that are commonly shorter than one millisecond
-or only a few milliseconds.
-
-Log timestamps are retained as reference metadata in the report, but they are not used as fallback timing values.
-
-If a run does not have a usable manifest, PCAP, network key, or complete matched attach sequence in the PCAP, the timing fields remain unavailable.
-
-This policy applies to all four variants: `stock`, `ucast`, `ucast_fastpr`, and `mcast`.
-
-## CSV and packet exports
-
-When packet CSV exports are generated, the all-packets CSV contains the decoded packet stream and the attach-MLE CSV contains decoded MLE attach-related packets, such as Parent Request, Parent Response, Child ID Request, and Child ID Response.
-
-Attach CSV files may contain MLE attach traffic from multiple devices, not only the target child. Parent-switch metrics should therefore be computed against the target child identity and the matched complete attach sequence, not from global attach traffic alone.
-
-## Recommended cleanup
-
-`README.md` is the shared automation entry point.
-
-Keep variant-specific methodology in:
-
-```text
-README_STOCK_TEST.md
-README_MCAST_UCAST_TEST.md
-```
-
-Avoid duplicating runner usage, output layout, and analyzer instructions in the variant methodology documents unless a variant has genuinely different behavior.
+* [README_STOCK_TEST.md](README_STOCK_TEST.md) defines the stock/reference
+  procedure and validity criteria.
+* [README_UCAST_TEST.md](README_UCAST_TEST.md) defines the directed unicast
+  procedure and target-selection criteria.

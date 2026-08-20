@@ -37,7 +37,6 @@ class ThreadPreferredParentComponent : public Component {
   void set_selected_attach_timeout(uint32_t value) { this->attach_timeout_ms_ = value; }
   void set_require_selected_parent_hook(bool) {}
   void set_log_parent_responses(bool) {}
-  void set_parent_request_unicast(bool value) { this->unicast_ = value; }
 
  protected:
   enum class TargetType : uint8_t { NONE, EXTADDR, RLOC16 };
@@ -58,7 +57,6 @@ class ThreadPreferredParentComponent : public Component {
   uint8_t max_attempts_{5};
   uint32_t retry_interval_ms_{8000};
   uint32_t attach_timeout_ms_{16000};
-  bool unicast_{false};
 };
 
 }  // namespace thread_preferred_parent

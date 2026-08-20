@@ -17,4 +17,4 @@ if [[ -z "$PYTHON_BIN" ]]; then
 fi
 
 cd "$SCRIPT_DIR"
-exec "$PYTHON_BIN" "$SCRIPT_DIR/scripts/run_ucast_test.py" --variant ucast --config ucast_test_devices_4routers.toml "$@"
+exec "$PYTHON_BIN" "$SCRIPT_DIR/scripts/run_ucast_test.py" --config ucast_test_devices_4routers.toml "$@"

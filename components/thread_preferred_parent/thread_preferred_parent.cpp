@@ -37,7 +37,7 @@ void ThreadPreferredParentComponent::dump_config() {
   if (this->target_type_ == TargetType::RLOC16) {
     ESP_LOGCONFIG(TAG, "  Target RLOC16: 0x%04x", this->target_rloc16_);
   }
-  ESP_LOGCONFIG(TAG, "  Mode: %s", this->unicast_ ? "unicast" : "multicast");
+  ESP_LOGCONFIG(TAG, "  Mode: unicast");
   ESP_LOGCONFIG(TAG, "  Max attempts: %u", this->max_attempts_);
   ESP_LOGCONFIG(TAG, "  Retry interval: %u ms", this->retry_interval_ms_);
   ESP_LOGCONFIG(TAG, "  Attach timeout: %u ms", this->attach_timeout_ms_);
@@ -86,17 +86,15 @@ void ThreadPreferredParentComponent::request_switch() {
 
   otThreadPreferredParentConfig config{};
   config.mExtAddress = extaddr;
-  config.mMode = this->unicast_ ? OT_THREAD_PREFERRED_PARENT_MODE_UNICAST
-                               : OT_THREAD_PREFERRED_PARENT_MODE_MULTICAST;
+  config.mMode = OT_THREAD_PREFERRED_PARENT_MODE_UNICAST;
   config.mMaxAttempts = this->max_attempts_;
   config.mRetryInterval = this->retry_interval_ms_;
   config.mAttachTimeout = this->attach_timeout_ms_;
 
   const otError error = otThreadPreferredParentStart(lock->get_instance(), &config);
   if (error != OT_ERROR_NONE) {
-    ESP_LOGW(TAG, "PREFPARENT event=start_rejected target=%s mode=%s error=%s",
-             extaddr_to_string_(extaddr).c_str(), this->unicast_ ? "unicast" : "multicast",
-             otThreadErrorToString(error));
+    ESP_LOGW(TAG, "PREFPARENT event=start_rejected target=%s mode=unicast error=%s",
+             extaddr_to_string_(extaddr).c_str(), otThreadErrorToString(error));
   }
 }
 
@@ -168,8 +166,7 @@ void ThreadPreferredParentComponent::preferred_parent_callback_(const otThreadPr
   const std::string target = extaddr_to_string_(info->mStatus.mExtAddress);
   switch (info->mEvent) {
     case OT_THREAD_PREFERRED_PARENT_EVENT_REQUESTED:
-      ESP_LOGI(TAG, "PREFPARENT event=requested target=%s mode=%s", target.c_str(),
-               info->mStatus.mMode == OT_THREAD_PREFERRED_PARENT_MODE_UNICAST ? "unicast" : "multicast");
+      ESP_LOGI(TAG, "PREFPARENT event=requested target=%s mode=unicast", target.c_str());
       break;
     case OT_THREAD_PREFERRED_PARENT_EVENT_PARENT_REQUEST_STARTED:
       ESP_LOGI(TAG, "PREFPARENT event=parent_request_started attempt=%u/%u", info->mStatus.mAttempt,

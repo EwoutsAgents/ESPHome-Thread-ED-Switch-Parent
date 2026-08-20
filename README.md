@@ -22,7 +22,7 @@ source through a thin native CLI adapter.
 ## Features
 
 - Select a target by stable IEEE 802.15.4 extended address.
-- Choose multicast or targeted unicast Parent Request at runtime.
+- Send the preferred-parent discovery request directly to the target using unicast.
 - Filter non-target Parent Responses while preserving normal MLE validation.
 - Snapshot a fully populated target candidate and continue directly to Child ID
   Request without another Parent Request.
@@ -113,10 +113,6 @@ thread_preferred_parent:
   retry_interval: 8s
   selected_attach_timeout: 16s
 
-  # Optional: send the preflight Parent Request directly to the target ExtAddr
-  # instead of the all-routers multicast address.
-  parent_request_unicast: true
-
   require_selected_parent_hook: true
   log_parent_responses: true
 
@@ -161,7 +157,6 @@ text:
 | `max_attempts` | `5` | Maximum OpenThread-owned discovery/attach attempts. |
 | `retry_interval` | `8s` | OpenThread Parent Response wait interval before retrying. |
 | `selected_attach_timeout` | `16s` | OpenThread Child ID Response timeout before retrying. |
-| `parent_request_unicast` | `false` | Select targeted unicast instead of all-routers multicast Parent Request at runtime. |
 | `require_selected_parent_hook` | `true` | Deprecated compatibility option. The adapter now links directly to the public experimental API, so this value is ignored. |
 | `log_parent_responses` | `true` | Legacy compatibility option; accepted but ignored. Structured OpenThread controller events are always logged. No Parent Response buffer exists in ESPHome. |
 
@@ -217,13 +212,13 @@ During the selected-parent attach phase, the ESPHome API may briefly disconnect 
 
 ## Testing
 
-Automated stock, unicast and multicast test procedures live under [testing/README.md](testing/README.md).
+Automated stock and unicast test procedures live under [testing/README.md](testing/README.md).
 
-The current automated unicast, unicast-fastpr, and multicast runners map observed router extended addresses from the router logs, detect the child's current parent, and select a target router that is not the current parent. The default router-settling delay is currently 300 seconds unless overridden in the TOML configuration.
+The unicast runner maps observed router extended addresses from the router logs, detects the child's current parent, and selects a target router that is not the current parent. The default router-settling delay is currently 300 seconds unless overridden in the TOML configuration.
 
 The current test child configurations also set `CONFIG_OPENTHREAD_PARENT_SEARCH_MTD: n` to disable OpenThread's default MTD periodic parent-search behavior during these experiments.
 
-Post-run child-log analysis is also available for all three variants. The current analyzer emits attach timings from sniffer pcap data only; log timestamps are kept as reference metadata and are not used as fallback timing values.
+Post-run analysis is available for both variants. The analyzer emits attach timings from sniffer pcap data only; log timestamps are kept as reference metadata and are not used as fallback timing values.
 
 ## OpenThread patching
 

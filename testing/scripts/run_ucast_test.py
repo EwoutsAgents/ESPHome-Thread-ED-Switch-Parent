@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
-"""Run directed unicast/multicast ESPHome/OpenThread parent-switching tests.
+"""Run directed unicast ESPHome/OpenThread parent-switching tests.
 
-This runner follows the updated ucast/mcast method:
+This runner follows the directed ucast method:
 - flash all requested routers first, like the stock test;
 - wait for router topology to settle;
 - flash the child and let it attach naturally;
@@ -40,33 +40,13 @@ except ModuleNotFoundError:
     except ModuleNotFoundError:
         tomllib = None  # type: ignore[assignment]
 
-VARIANT_PRESETS = {
-    "ucast": {
-        "child_config": "ucast_child.yaml",
-        "router_prefix": "stock_router",
-        "logs_subdir": "ucast",
-        "name_prefix": "ucast",
-        "default_config": "ucast_test_devices_4routers.toml",
-    },
-    "ucast_fastpr": {
-        "child_config": "ucast_fastpr_child.yaml",
-        "router_prefix": "fastpr_router",
-        "logs_subdir": "ucast_fastpr",
-        "name_prefix": "ucast_fastpr",
-        "default_config": "ucast_fastpr_test_devices_4routers.toml",
-    },
-    "mcast": {
-        "child_config": "mcast_child.yaml",
-        "router_prefix": "stock_router",
-        "logs_subdir": "mcast",
-        "name_prefix": "mcast",
-        "default_config": "mcast_test_devices_4routers.toml",
-    },
-}
+UCAST_CHILD_CONFIG = "ucast_child.yaml"
+UCAST_ROUTER_PREFIX = "stock_router"
+UCAST_DEFAULT_CONFIG = "ucast_test_devices_4routers.toml"
 
 
-def use_batch_layout(variant: str, runs: int) -> bool:
-    return runs > 1 or variant == "ucast_fastpr"
+def use_batch_layout(runs: int) -> bool:
+    return runs > 1
 
 CONFIG_NAMES = {
     "empty": "empty.yaml",
@@ -151,7 +131,7 @@ def default_platformio_core_dir(testing_dir: Path, variant: str) -> Path:
 
 
 def expected_fastpr_marker_present(settings: Settings) -> bool:
-    return settings.variant == "ucast_fastpr" and settings.platformio_packages_dir.name == "routers"
+    return False
 
 
 def firmware_package_group(firmware_name: str) -> str:
@@ -242,9 +222,8 @@ def validate_firmware_environment(settings: Settings, *, phase: str) -> dict[str
     marker_present = info["fastpr_marker_present"]
     expected_present = info["expected_fastpr_marker_present"]
     path = info["mle_ftd_cpp"]
-    is_baseline = settings.variant in {"ucast", "mcast"}
     if phase == "preflight":
-        if is_baseline and marker_present is True:
+        if marker_present is True:
             raise SystemExit(
                 "Refusing to run baseline variant with patched OpenThread source.\n"
                 f"Detected {FASTPR_MARKER} in:\n{path}\n\n"
@@ -395,15 +374,14 @@ def load_settings(args: argparse.Namespace) -> Settings:
     if not config_file.exists():
         raise SystemExit(f"Config file not found: {config_file}")
     raw = load_toml(config_file)
-    variant_raw = str(raw.get("variant", {}).get("name", args.variant)).strip().lower()
-    if variant_raw not in VARIANT_PRESETS:
-        raise SystemExit(f"Unsupported variant `{variant_raw}`. Choose one of: {', '.join(sorted(VARIANT_PRESETS))}")
-    preset = VARIANT_PRESETS[variant_raw]
+    variant_raw = str(raw.get("variant", {}).get("name", "ucast")).strip().lower()
+    if variant_raw != "ucast":
+        raise SystemExit(f"Unsupported variant `{variant_raw}`. Only `ucast` is supported by this runner.")
 
     config_dir = config_file.parent
     testing_dir = resolve_relative(config_dir, raw.get("paths", {}).get("testing_dir"), ".")
     configs_dir = resolve_relative(config_dir, raw.get("paths", {}).get("configs_dir"), "configs")
-    logs_dir = resolve_relative(config_dir, raw.get("paths", {}).get("logs_dir"), f"logs/{preset['logs_subdir']}")
+    logs_dir = resolve_relative(config_dir, raw.get("paths", {}).get("logs_dir"), "logs/ucast")
     run_logs_dir = build_run_logs_dir(logs_dir)
     platformio_core_dir = default_platformio_core_dir(testing_dir, variant_raw)
     platformio_packages_dir = platformio_core_dir / "packages"
@@ -461,7 +439,7 @@ def load_settings(args: argparse.Namespace) -> Settings:
     random_seed = int(random_seed_raw) if random_seed_raw is not None else None
     remove_initial_parent = bool(selection_raw.get("remove_initial_parent", False))
 
-    if use_batch_layout(variant_raw, args.runs):
+    if use_batch_layout(args.runs):
         logs_dir = allocate_batch_logs_dir(logs_dir.parent, variant_name=variant_raw, router_count=max_router_number, total_runs=args.runs)
         run_logs_dir = build_run_logs_dir(logs_dir)
 
@@ -502,7 +480,7 @@ def load_settings(args: argparse.Namespace) -> Settings:
         sniffer=SnifferSettings(enabled=sniffer_enabled, command=[str(part) for part in sniffer_command], stop_timeout_seconds=int(sniffer_raw.get("stop_timeout_seconds", 10))),
         selection=SelectionSettings(random_seed=random_seed, remove_initial_parent=remove_initial_parent),
         variant=variant_raw,
-        name_prefix=str(preset["name_prefix"]),
+        name_prefix="ucast",
         max_router_number=max_router_number,
     )
 
@@ -510,10 +488,10 @@ def load_settings(args: argparse.Namespace) -> Settings:
 def config_path(settings: Settings, name: str) -> Path:
     runtime_dir = ensure_runtime_configs_dir(settings)
     if name == "child":
-        file_name = str(VARIANT_PRESETS[settings.variant]["child_config"])
+        file_name = UCAST_CHILD_CONFIG
     elif name.startswith("router"):
         router_index = name.removeprefix("router")
-        file_name = f"{VARIANT_PRESETS[settings.variant]['router_prefix']}_{router_index}.yaml"
+        file_name = f"{UCAST_ROUTER_PREFIX}_{router_index}.yaml"
     else:
         file_name = CONFIG_NAMES[name]
     path = runtime_dir / file_name
@@ -1382,7 +1360,6 @@ def precompile_all(settings: Settings, *, dry_run: bool, manifest: list[dict[str
 
 def parse_args(argv: list[str]) -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Run directed ESPHome/OpenThread parent-switching test.")
-    parser.add_argument("--variant", choices=sorted(VARIANT_PRESETS), default="ucast", help="Select test variant.")
     parser.add_argument("--config", default=None, help="Path to device/config TOML file.")
     parser.add_argument("--esphome-bin", help="Override ESPHome executable. Overrides ESPHOME_BIN and TOML.")
     parser.add_argument("--dry-run", action="store_true", help="Print commands and write a manifest without executing ESPHome.")
@@ -1403,9 +1380,9 @@ def main(argv: list[str]) -> int:
     if args.runs < 1:
         raise SystemExit("--runs must be at least 1.")
     if args.config is None:
-        args.config = str(VARIANT_PRESETS[args.variant]["default_config"])
+        args.config = UCAST_DEFAULT_CONFIG
     settings = load_settings(args)
-    set_batch_log(settings.logs_dir / f"{settings.logs_dir.name}.log" if use_batch_layout(settings.variant, args.runs) else None)
+    set_batch_log(settings.logs_dir / f"{settings.logs_dir.name}.log" if use_batch_layout(args.runs) else None)
 
     log(f"Using ESPHome: {settings.esphome_bin}")
     log(f"Using esptool: {settings.esptool_bin}")
@@ -1428,7 +1405,7 @@ def main(argv: list[str]) -> int:
     for run_index in range(1, args.runs + 1):
         settings.run_logs_dir = (
             build_run_logs_dir(settings.logs_dir, run_index=run_index)
-            if use_batch_layout(settings.variant, args.runs)
+            if use_batch_layout(args.runs)
             else build_run_logs_dir(settings.logs_dir)
         )
         log(f"Starting run {run_index}/{args.runs}")

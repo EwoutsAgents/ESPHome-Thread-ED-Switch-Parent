@@ -131,7 +131,7 @@ def default_platformio_core_dir(testing_dir: Path, variant: str) -> Path:
 
 
 def expected_fastpr_marker_present(variant: str) -> bool:
-    return variant == "ucast_fastpr"
+    return False
 
 
 def openthread_mle_ftd_path(settings: Settings) -> Path:
@@ -649,6 +649,8 @@ def load_settings(args: argparse.Namespace) -> Settings:
     variant_name = str(variant_raw.get("name", "stock")).strip()
     if not re.fullmatch(r"[a-z0-9_]+", variant_name):
         raise SystemExit("[variant].name must contain only lowercase letters, digits, and underscores.")
+    if variant_name != "stock":
+        raise SystemExit(f"Unsupported variant `{variant_name}`. Only `stock` is supported by this runner.")
     firmware_raw = raw.get("firmware", {})
     if not isinstance(firmware_raw, dict):
         raise SystemExit("[firmware] must be a TOML table.")
