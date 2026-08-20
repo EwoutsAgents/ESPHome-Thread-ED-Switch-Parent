@@ -1,0 +1,15 @@
+packages:
+  stock: !include stock_child.yaml
+
+esphome:
+  name: fast-attach-child
+  friendly_name: fast-attach-child
+
+external_components:
+  - source:
+      type: local
+      path: ../../components
+    components: [thread_fast_attach]
+
+thread_fast_attach:
+  arm_after_parent_loss: true
