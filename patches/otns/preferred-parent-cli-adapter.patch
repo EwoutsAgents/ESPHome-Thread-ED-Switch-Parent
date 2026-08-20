@@ -118,7 +118,7 @@ index 000000000..33fa65e56
 +
 +const char *ModeToString(otThreadPreferredParentMode aMode)
 +{
-+    return (aMode == OT_THREAD_PREFERRED_PARENT_MODE_UNICAST) ? "unicast" : "multicast";
++    (void)aMode; return "unicast";
 +}
 +
 +const char *StateToString(otThreadPreferredParentState aState)
@@ -170,9 +170,9 @@ index 000000000..33fa65e56
 +
 +    memset(&config, 0, sizeof(config));
 +    SuccessOrExit(error = ParseExtAddress(aTarget, config.mExtAddress));
-+    if (strcmp(aMode, "multicast") == 0)
++    if (strcmp(aMode, "unicast") != 0)
 +    {
-+        config.mMode = OT_THREAD_PREFERRED_PARENT_MODE_MULTICAST;
++        ExitNow(error = OT_ERROR_INVALID_ARGS);
 +    }
 +    else if (strcmp(aMode, "unicast") == 0)
 +    {

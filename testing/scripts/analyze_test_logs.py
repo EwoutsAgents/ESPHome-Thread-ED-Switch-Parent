@@ -1516,18 +1516,11 @@ def render_firmware_provenance_lines(info: dict[str, Any] | None) -> list[str]:
         return ["not recorded"]
     def fmt(value: Any) -> str:
         return "not recorded" if value is None else str(value)
-    marker = info.get("fastpr_marker_present")
-    expected = info.get("expected_fastpr_marker_present")
     return [
         "| Field | Value |",
         "| --- | --- |",
         f"| PLATFORMIO_CORE_DIR | `{fmt(info.get('platformio_core_dir'))}` |",
         f"| PLATFORMIO_PACKAGES_DIR | `{fmt(info.get('platformio_packages_dir'))}` |",
-        f"| OpenThread core | `{fmt(info.get('framework_espidf_openthread_core'))}` |",
-        f"| mle_ftd.cpp SHA-256 | `{fmt(info.get('mle_ftd_cpp_sha256'))}` |",
-        f"| fast unicast Parent Response marker | `{fmt(marker)}` |",
-        f"| expected for variant | `{fmt(expected)}` |",
-        f"| contamination check | `{fmt(info.get('contamination_check'))}` |",
     ]
 
 

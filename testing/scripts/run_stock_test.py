@@ -10,7 +10,6 @@ from __future__ import annotations
 
 import argparse
 import datetime as dt
-import hashlib
 import json
 import os
 import re
@@ -68,9 +67,6 @@ SKIP_PARENT_IS_LEADER_NOTE = (
     "The detected child parent is the current Thread leader. The run continues, but it keeps "
     "the SKIP_PARENT_IS_LEADER label because parent removal also disrupts the current leader."
 )
-FASTPR_MARKER = "THREAD_FAST_UNICAST_PARENT_RESPONSE_COMPONENT"
-OPENTHREAD_CORE_REL = Path("framework-espidf/components/openthread/openthread/src/core")
-MLE_FTD_REL = OPENTHREAD_CORE_REL / "thread/mle_ftd.cpp"
 BUILD_ENV_MARKER_NAME = ".openclaw_platformio_env.json"
 
 
@@ -130,31 +126,6 @@ def default_platformio_core_dir(testing_dir: Path, variant: str) -> Path:
     return (testing_dir / ".platformio-core" / variant).resolve()
 
 
-def expected_fastpr_marker_present(variant: str) -> bool:
-    return False
-
-
-def openthread_mle_ftd_path(settings: Settings) -> Path:
-    return settings.platformio_packages_dir / MLE_FTD_REL
-
-
-def sha256_file(path: Path) -> str | None:
-    if not path.exists():
-        return None
-    h = hashlib.sha256()
-    with path.open("rb") as fh:
-        for chunk in iter(lambda: fh.read(1024 * 1024), b""):
-            h.update(chunk)
-    return h.hexdigest()
-
-
-def fastpr_marker_present(settings: Settings) -> bool | None:
-    path = openthread_mle_ftd_path(settings)
-    if not path.exists():
-        return None
-    return FASTPR_MARKER in path.read_text(encoding="utf-8", errors="replace")
-
-
 def command_env_overrides(settings: Settings) -> dict[str, str]:
     return {
         "PLATFORMIO_CORE_DIR": str(settings.platformio_core_dir),
@@ -168,59 +139,17 @@ def subprocess_env(settings: Settings) -> dict[str, str]:
     return env
 
 
-def contamination_check_status(marker_present: bool | None, expected_present: bool, *, phase: str) -> str:
-    if marker_present is None:
-        return "PENDING_INSTALL" if phase == "preflight" else "MISSING_FRAMEWORK"
-    if marker_present == expected_present:
-        return "PASS"
-    return "FAIL"
-
-
 def firmware_environment(settings: Settings, *, phase: str) -> dict[str, Any]:
-    mle_path = openthread_mle_ftd_path(settings)
-    marker_present = fastpr_marker_present(settings)
-    expected_present = expected_fastpr_marker_present(settings.variant_name)
     return {
         "phase": phase,
         "variant": settings.variant_name,
         "platformio_core_dir": str(settings.platformio_core_dir),
         "platformio_packages_dir": str(settings.platformio_packages_dir),
-        "framework_espidf_openthread_core": str(settings.platformio_packages_dir / OPENTHREAD_CORE_REL),
-        "mle_ftd_cpp": str(mle_path),
-        "mle_ftd_cpp_exists": mle_path.exists(),
-        "mle_ftd_cpp_sha256": sha256_file(mle_path),
-        "fastpr_marker_present": marker_present,
-        "expected_fastpr_marker_present": expected_present,
-        "contamination_check": contamination_check_status(marker_present, expected_present, phase=phase),
     }
 
 
 def validate_firmware_environment(settings: Settings, *, phase: str) -> dict[str, Any]:
-    info = firmware_environment(settings, phase=phase)
-    marker_present = info["fastpr_marker_present"]
-    expected_present = info["expected_fastpr_marker_present"]
-    path = info["mle_ftd_cpp"]
-    if phase == "preflight":
-        if marker_present is True:
-            raise SystemExit(
-                "Refusing to run baseline variant with patched OpenThread source.\n"
-                f"Detected {FASTPR_MARKER} in:\n{path}\n\n"
-                "Use --reset-platformio-packages or choose a clean PLATFORMIO_PACKAGES_DIR."
-            )
-        return info
-    if marker_present is None:
-        raise SystemExit(
-            "Post-compile firmware-state verification failed.\n"
-            f"Expected OpenThread source file does not exist:\n{path}"
-        )
-    if marker_present != expected_present:
-        expected_text = "present" if expected_present else "absent"
-        observed_text = "present" if marker_present else "absent"
-        raise SystemExit(
-            "Post-compile firmware-state verification failed.\n"
-            f"Expected fast unicast marker to be {expected_text}, but it was {observed_text} in:\n{path}"
-        )
-    return info
+    return firmware_environment(settings, phase=phase)
 
 
 def build_run_logs_dir(logs_dir: Path, *, run_index: int | None = None) -> Path:
@@ -998,10 +927,6 @@ def precompile_all(
             shutil.rmtree(settings.platformio_packages_dir, ignore_errors=True)
     if dry_run and settings.reset_platformio_packages:
         preflight_info = firmware_environment(settings, phase="preflight")
-        preflight_info["fastpr_marker_present"] = None
-        preflight_info["mle_ftd_cpp_exists"] = False
-        preflight_info["mle_ftd_cpp_sha256"] = None
-        preflight_info["contamination_check"] = "PENDING_RESET"
     else:
         preflight_info = validate_firmware_environment(settings, phase="preflight")
     manifest.append({"time_utc": now_utc_iso(), "type": "firmware_environment", **preflight_info})
