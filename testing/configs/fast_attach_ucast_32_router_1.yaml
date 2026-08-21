@@ -1,0 +1,46 @@
+esphome:
+  name: fast-attach-ucast-32-router-1
+  friendly_name: fast-attach-ucast-32-router-1
+
+esp32:
+  variant: esp32c6
+  framework:
+    type: esp-idf
+    log_level: INFO
+
+logger:
+  level: INFO
+  hardware_uart: USB_SERIAL_JTAG
+
+network:
+  enable_ipv6: true
+
+text_sensor:
+  - platform: openthread_info
+    ext_addr:
+      name: "Thread Extended Address"
+      on_value:
+        then:
+          - logger.log:
+              level: INFO
+              format: "Own Thread ExtAddr: %s"
+              args: ["x.c_str()"]
+
+openthread:
+  device_type: FTD
+  channel: 20
+  network_name: parent-switch
+  network_key: 0xdfd34f0f05cad978ec4e32b0413038ff
+  pan_id: 0x8f28
+  ext_pan_id: 0xd63e8e3e495ebbc3
+  pskc: 0xc23a76e98f1a6483639b1ac1271e2e27
+  mesh_local_prefix: fd53:145f:ed22:ad81::/64
+  force_dataset: true
+
+external_components:
+  - source:
+      type: local
+      path: ../../components
+    components: [thread_fast_attach_ucast_32]
+
+thread_fast_attach_ucast_32: {}

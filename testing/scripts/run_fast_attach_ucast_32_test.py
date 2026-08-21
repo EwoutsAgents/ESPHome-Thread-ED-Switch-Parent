@@ -1,0 +1,1430 @@
+#!/usr/bin/env python3
+"""Run directed unicast ESPHome/OpenThread parent-switching tests.
+
+This runner follows the directed fast_attach_ucast_32 method:
+- flash all requested routers first, like the stock test;
+- wait for router topology to settle;
+- flash the child and let it attach naturally;
+- detect the child's current parent;
+- randomly select a target router that is not the current parent;
+- send `extaddr <target_extaddr>` to the child;
+- preserve the child's initial parent while the selected-parent operation runs;
+- keep sniffer/device logs running, then write a manifest.
+"""
+
+from __future__ import annotations
+
+import argparse
+import contextlib
+import datetime as dt
+import hashlib
+import json
+import os
+import random
+import re
+import shlex
+import shutil
+import subprocess
+import sys
+import threading
+import time
+from dataclasses import dataclass, field
+from pathlib import Path
+from typing import Any, Iterable
+
+try:
+    import tomllib  # Python 3.11+
+except ModuleNotFoundError:
+    try:
+        import tomli as tomllib  # type: ignore[no-redef]
+    except ModuleNotFoundError:
+        tomllib = None  # type: ignore[assignment]
+
+FAST_ATTACH_UCAST_32_CHILD_CONFIG = "fast_attach_ucast_32_child.yaml"
+FAST_ATTACH_UCAST_32_ROUTER_PREFIX = "fast_attach_ucast_32_router"
+FAST_ATTACH_UCAST_32_DEFAULT_CONFIG = "fast_attach_ucast_32_test_devices_4routers.toml"
+FAST_ATTACH_PR_HEAD = "61034b8a7e776695d1afe30338b3f36d24733127"
+VENDORED_OPENTHREAD_REVISION = "a12ff0d0f54fd41954b45047fcdd08f302731c5f"
+PATCH_RELATIVE_PATHS = (
+    "patches/fast-attach-ucast-32/openthread-preferred-parent-controller.patch",
+    "patches/fast-attach-ucast-32/openthread-fast-attach-pr13121.patch",
+    "patches/fast-attach-ucast-32/fast-attach-ucast-32-delta.patch",
+)
+
+
+def use_batch_layout(runs: int) -> bool:
+    return runs > 1
+
+CONFIG_NAMES = {
+    "empty": "empty.yaml",
+    "child": "fast_attach_ucast_32_child.yaml",  # replaced by variant in config_path()
+}
+CORE_COMPILE_ORDER = ["empty", "router1", "child", "router2"]
+MAX_ROUTER_COUNT = 4
+PCAP_PATH_RE = re.compile(r"Saving (?:test )?capture to (\S+\.pcapng)")
+BUILD_ENV_MARKER_NAME = ".openclaw_platformio_env.json"
+
+SKIP_NO_CHILD_PARENT = "SKIP_NO_CHILD_PARENT"
+SKIP_PARENT_NOT_MAPPED_TO_DEVICE = "SKIP_PARENT_NOT_MAPPED_TO_DEVICE"
+SKIP_NO_ELIGIBLE_TARGET_PARENT = "SKIP_NO_ELIGIBLE_TARGET_PARENT"
+SKIP_PARENT_IS_LEADER = "SKIP_PARENT_IS_LEADER"
+SKIP_PARENT_IS_LEADER_NOTE = (
+    "The detected child parent is the current Thread leader. The run continues, but it keeps "
+    "the SKIP_PARENT_IS_LEADER label because removing the initial parent also disrupts the current leader."
+)
+
+_BATCH_LOG_PATH: Path | None = None
+
+
+@dataclass
+class Timing:
+    sniffer_lead_in_seconds: int = 5
+    router_settling_seconds: int = 300
+    child_attach_seconds: int = 30
+    after_parent_removed_seconds: int = 360
+
+
+@dataclass
+class SnifferSettings:
+    enabled: bool = False
+    command: list[str] = field(default_factory=list)
+    stop_timeout_seconds: int = 10
+
+
+@dataclass
+class SelectionSettings:
+    random_seed: int | None = None
+    remove_initial_parent: bool = False
+
+
+@dataclass
+class Settings:
+    config_file: Path
+    testing_dir: Path
+    configs_dir: Path
+    logs_dir: Path
+    run_logs_dir: Path
+    esphome_bin: str
+    esptool_bin: str
+    upload_speed: str | None = None
+    precompile: bool = True
+    clean_before_compile: bool = False
+    platformio_core_dir: Path = Path()
+    platformio_packages_root_dir: Path = Path()
+    platformio_packages_dir: Path = Path()
+    reset_platformio_packages: bool = False
+    devices: dict[str, str] = field(default_factory=dict)
+    timing: Timing = field(default_factory=Timing)
+    sniffer: SnifferSettings = field(default_factory=SnifferSettings)
+    selection: SelectionSettings = field(default_factory=SelectionSettings)
+    variant: str = "fast-attach-ucast-32"
+    name_prefix: str = "fast-attach-ucast-32"
+    max_router_number: int = 4
+
+
+def now_utc_iso() -> str:
+    return dt.datetime.now(dt.timezone.utc).isoformat(timespec="seconds")
+
+
+def patch_provenance(testing_dir: Path) -> dict[str, Any]:
+    repo_root = testing_dir.parent
+    paths = [repo_root / relative for relative in PATCH_RELATIVE_PATHS]
+    combined = hashlib.sha256()
+    files: list[dict[str, str]] = []
+    for path in paths:
+        data = path.read_bytes()
+        combined.update(data)
+        files.append({"path": str(path), "sha256": hashlib.sha256(data).hexdigest()})
+    return {"files": files, "combined_sha256": combined.hexdigest()}
+
+
+def default_platformio_packages_dir(testing_dir: Path, variant: str) -> Path:
+    return (testing_dir / ".pio-packages" / variant).resolve()
+
+
+def default_platformio_core_dir(testing_dir: Path, variant: str) -> Path:
+    return (testing_dir / ".platformio-core" / variant).resolve()
+
+
+def firmware_package_group(firmware_name: str) -> str:
+    if firmware_name == "child":
+        return "child"
+    if firmware_name.startswith("router"):
+        return "routers"
+    return "utility"
+
+
+def firmware_packages_dir(settings: Settings, firmware_name: str) -> Path:
+    return settings.platformio_packages_root_dir / firmware_package_group(firmware_name)
+
+
+@contextlib.contextmanager
+def use_firmware_packages(settings: Settings, firmware_name: str) -> Iterable[None]:
+    previous = settings.platformio_packages_dir
+    settings.platformio_packages_dir = firmware_packages_dir(settings, firmware_name)
+    try:
+        yield
+    finally:
+        settings.platformio_packages_dir = previous
+
+
+def command_env_overrides(settings: Settings) -> dict[str, str]:
+    return {
+        "PLATFORMIO_CORE_DIR": str(settings.platformio_core_dir),
+        "PLATFORMIO_PACKAGES_DIR": str(settings.platformio_packages_dir),
+    }
+
+
+def subprocess_env(settings: Settings) -> dict[str, str]:
+    env = os.environ.copy()
+    env.update(command_env_overrides(settings))
+    return env
+
+
+def firmware_environment(settings: Settings, *, phase: str) -> dict[str, Any]:
+    return {
+        "phase": phase,
+        "variant": settings.variant,
+        "openthread_pr_13121_head": FAST_ATTACH_PR_HEAD,
+        "vendored_openthread_revision": VENDORED_OPENTHREAD_REVISION,
+        "openthread_patch_set": patch_provenance(settings.testing_dir),
+        "compile_configuration": {
+            "OPENTHREAD_CONFIG_MLE_FAST_ATTACH_ENABLE": 1,
+            "OPENTHREAD_CONFIG_EXPERIMENTAL_PREFERRED_PARENT_ENABLE": 1,
+            "fast_attach_jitter_per_effective_responder_ms": 32,
+        },
+        "platformio_core_dir": str(settings.platformio_core_dir),
+        "platformio_packages_dir": str(settings.platformio_packages_dir),
+    }
+
+
+def validate_firmware_environment(settings: Settings, *, phase: str) -> dict[str, Any]:
+    return firmware_environment(settings, phase=phase)
+
+
+def log(msg: str) -> None:
+    formatted = f"[{now_utc_iso()}] {msg}"
+    print(formatted, flush=True)
+    if _BATCH_LOG_PATH is not None:
+        _BATCH_LOG_PATH.parent.mkdir(parents=True, exist_ok=True)
+        with _BATCH_LOG_PATH.open("a", encoding="utf-8", errors="replace") as fh:
+            fh.write(formatted + "\n")
+
+
+def set_batch_log(path: Path | None) -> None:
+    global _BATCH_LOG_PATH
+    _BATCH_LOG_PATH = path
+
+
+def quote_cmd(cmd: Iterable[str | os.PathLike[str]]) -> str:
+    return " ".join(shlex.quote(str(part)) for part in cmd)
+
+
+def build_run_logs_dir(logs_dir: Path, *, run_index: int | None = None) -> Path:
+    stamp = dt.datetime.now().strftime("%Y%m%d-%H%M%S")
+    if run_index is not None:
+        stamp = f"{stamp}-run{run_index:02d}"
+    return logs_dir / stamp
+
+
+def allocate_batch_logs_dir(logs_root: Path, *, variant_name: str, router_count: int, total_runs: int) -> Path:
+    stamp = dt.datetime.now().strftime("%Y%m%d-%H%M%S")
+    base_name = f"{variant_name}-{router_count}router-{total_runs}runs-{stamp}"
+    candidate = logs_root / base_name
+    counter = 2
+    while candidate.exists():
+        candidate = logs_root / f"{base_name}-dup{counter:02d}"
+        counter += 1
+    return candidate
+
+
+def load_toml(path: Path) -> dict[str, Any]:
+    if tomllib is None:
+        raise SystemExit("Unable to read TOML. Use Python 3.11+ or install tomli.")
+    with path.open("rb") as fh:
+        return tomllib.load(fh)
+
+
+def resolve_relative(base: Path, value: str | None, default: str) -> Path:
+    candidate = Path(value or default)
+    if not candidate.is_absolute():
+        candidate = base / candidate
+    return candidate.resolve()
+
+
+def candidate_esphome_bins(config_dir: Path, testing_dir: Path) -> list[Path]:
+    repo_root = testing_dir.parent
+    candidates = [
+        repo_root / ".venv" / "bin" / "esphome",
+        repo_root / "venv" / "bin" / "esphome",
+        testing_dir / ".venv" / "bin" / "esphome",
+        testing_dir / "venv" / "bin" / "esphome",
+        config_dir / ".." / ".venv" / "bin" / "esphome",
+        config_dir / ".." / "venv" / "bin" / "esphome",
+    ]
+    out: list[Path] = []
+    seen: set[Path] = set()
+    for candidate in candidates:
+        resolved = candidate.resolve()
+        if resolved not in seen:
+            out.append(resolved)
+            seen.add(resolved)
+    return out
+
+
+def resolve_esphome_bin(*, cli_value: str | None, env_value: str | None, config_value: str | None, config_dir: Path, testing_dir: Path, dry_run: bool) -> str:
+    explicit = cli_value or env_value
+    if explicit:
+        path = Path(explicit)
+        if not path.is_absolute():
+            path = (Path.cwd() / path).resolve()
+        if dry_run or path.exists():
+            return str(path)
+        raise SystemExit(f"ESPHome binary not found: {path}")
+    if config_value:
+        path = Path(config_value)
+        if not path.is_absolute():
+            path = (config_dir / path).resolve()
+        if path.exists():
+            return str(path)
+        log(f"Configured ESPHome binary does not exist, falling back to auto-detection: {path}")
+    for candidate in candidate_esphome_bins(config_dir, testing_dir):
+        if candidate.exists():
+            return str(candidate)
+    path_bin = shutil.which("esphome")
+    if path_bin:
+        return path_bin
+    if dry_run:
+        return "esphome"
+    searched = "\n  - ".join(str(p) for p in candidate_esphome_bins(config_dir, testing_dir))
+    raise SystemExit(f"Could not find esphome.\nSearched:\n  - {searched}\n  - PATH")
+
+
+def resolve_esptool_bin(*, testing_dir: Path, dry_run: bool) -> str:
+    repo_root = testing_dir.parent
+    candidates = [
+        repo_root / ".venv" / "bin" / "esptool.py",
+        repo_root / ".venv" / "bin" / "esptool",
+        repo_root / "venv" / "bin" / "esptool.py",
+        repo_root / "venv" / "bin" / "esptool",
+        testing_dir / ".venv" / "bin" / "esptool.py",
+        testing_dir / ".venv" / "bin" / "esptool",
+        testing_dir / "venv" / "bin" / "esptool.py",
+        testing_dir / "venv" / "bin" / "esptool",
+    ]
+    for candidate in candidates:
+        resolved = candidate.resolve()
+        if dry_run or resolved.exists():
+            return str(resolved)
+    for name in ("esptool.py", "esptool"):
+        path_bin = shutil.which(name)
+        if path_bin:
+            return path_bin
+    if dry_run:
+        return "esptool.py"
+    searched = "\n  - ".join(str(p.resolve()) for p in candidates)
+    raise SystemExit(f"Could not find esptool.py/esptool.\nSearched:\n  - {searched}\n  - PATH")
+
+
+def load_settings(args: argparse.Namespace) -> Settings:
+    config_file = Path(args.config).expanduser().resolve()
+    if not config_file.exists():
+        raise SystemExit(f"Config file not found: {config_file}")
+    raw = load_toml(config_file)
+    variant_raw = str(raw.get("variant", {}).get("name", "fast-attach-ucast-32")).strip().lower()
+    if variant_raw != "fast-attach-ucast-32":
+        raise SystemExit(f"Unsupported variant `{variant_raw}`. Only `fast_attach_ucast_32` is supported by this runner.")
+
+    config_dir = config_file.parent
+    testing_dir = resolve_relative(config_dir, raw.get("paths", {}).get("testing_dir"), ".")
+    configs_dir = resolve_relative(config_dir, raw.get("paths", {}).get("configs_dir"), "configs")
+    logs_dir = resolve_relative(config_dir, raw.get("paths", {}).get("logs_dir"), "logs/fast_attach_ucast_32")
+    run_logs_dir = build_run_logs_dir(logs_dir)
+    platformio_core_dir = default_platformio_core_dir(testing_dir, variant_raw)
+    platformio_packages_dir = platformio_core_dir / "packages"
+
+    devices = {key: str(value) for key, value in dict(raw.get("devices", {})).items()}
+    required = {"router1", "child", "router2"}
+    missing = sorted(required - devices.keys())
+    if missing:
+        raise SystemExit(f"Missing required [devices] entries: {', '.join(missing)}")
+
+    if not args.allow_same_port:
+        reverse: dict[str, list[str]] = {}
+        for role, port in devices.items():
+            reverse.setdefault(str(port), []).append(role)
+        collisions = {port: roles for port, roles in reverse.items() if len(roles) > 1}
+        if collisions:
+            details = "; ".join(f"{port}: {', '.join(roles)}" for port, roles in collisions.items())
+            raise SystemExit(f"Each test role should use a different serial port. Collisions: {details}")
+
+    timing_raw = raw.get("timing", {})
+    timing = Timing(
+        sniffer_lead_in_seconds=int(timing_raw.get("sniffer_lead_in_seconds", 5)),
+        router_settling_seconds=int(timing_raw.get("router_settling_seconds", 300)),
+        child_attach_seconds=int(timing_raw.get("child_attach_seconds", 30)),
+        after_parent_removed_seconds=int(timing_raw.get("after_parent_removed_seconds", 360)),
+    )
+
+    esphome_raw = raw.get("esphome", {})
+    platformio_raw = raw.get("platformio", {})
+    precompile = bool(esphome_raw.get("precompile", True))
+    if args.skip_precompile:
+        precompile = False
+    if args.force_precompile:
+        precompile = True
+    clean_before_compile = bool(esphome_raw.get("clean_before_compile", False))
+    if args.clean_before_compile:
+        clean_before_compile = True
+
+    sniffer_raw = raw.get("sniffer", {})
+    sniffer_command = sniffer_raw.get("command", [])
+    if sniffer_command and not isinstance(sniffer_command, list):
+        raise SystemExit("[sniffer].command must be a TOML array of strings.")
+    if any(not isinstance(part, str) for part in sniffer_command):
+        raise SystemExit("[sniffer].command must contain only strings.")
+    sniffer_enabled = bool(sniffer_raw.get("enabled", False))
+    if sniffer_enabled and not sniffer_command:
+        raise SystemExit("[sniffer].enabled is true, but [sniffer].command is empty.")
+
+    max_router_number = int(raw.get("variant", {}).get("n_routers", 4))
+    if max_router_number < 2 or max_router_number > MAX_ROUTER_COUNT:
+        raise SystemExit(f"[variant].n_routers must be 2..{MAX_ROUTER_COUNT} total routers.")
+
+    selection_raw = raw.get("selection", {})
+    random_seed_raw = selection_raw.get("random_seed", None)
+    random_seed = int(random_seed_raw) if random_seed_raw is not None else None
+    remove_initial_parent = bool(selection_raw.get("remove_initial_parent", False))
+
+    if use_batch_layout(args.runs):
+        logs_dir = allocate_batch_logs_dir(logs_dir.parent, variant_name=variant_raw, router_count=max_router_number, total_runs=args.runs)
+        run_logs_dir = build_run_logs_dir(logs_dir)
+
+    platformio_core_value = (
+        getattr(args, "platformio_core_dir", None)
+        or platformio_raw.get("core_dir")
+        or raw.get("paths", {}).get("platformio_core_dir")
+    )
+    if platformio_core_value:
+        platformio_core_dir = resolve_relative(config_dir, str(platformio_core_value), ".")
+        platformio_packages_dir = platformio_core_dir / "packages"
+
+    platformio_packages_value = (
+        args.platformio_packages_dir
+        or platformio_raw.get("packages_dir")
+        or raw.get("paths", {}).get("platformio_packages_dir")
+    )
+    if platformio_packages_value:
+        platformio_packages_dir = resolve_relative(config_dir, str(platformio_packages_value), ".")
+
+    return Settings(
+        config_file=config_file,
+        testing_dir=testing_dir,
+        configs_dir=configs_dir,
+        logs_dir=logs_dir,
+        run_logs_dir=run_logs_dir,
+        esphome_bin=resolve_esphome_bin(cli_value=args.esphome_bin, env_value=os.environ.get("ESPHOME_BIN"), config_value=esphome_raw.get("bin"), config_dir=config_dir, testing_dir=testing_dir, dry_run=args.dry_run),
+        esptool_bin=resolve_esptool_bin(testing_dir=testing_dir, dry_run=args.dry_run),
+        upload_speed=str(esphome_raw.get("upload_speed")) if esphome_raw.get("upload_speed") else None,
+        precompile=precompile,
+        clean_before_compile=clean_before_compile,
+        platformio_core_dir=platformio_core_dir,
+        platformio_packages_root_dir=platformio_packages_dir,
+        platformio_packages_dir=platformio_packages_dir,
+        reset_platformio_packages=bool(args.reset_platformio_packages),
+        devices=devices,
+        timing=timing,
+        sniffer=SnifferSettings(enabled=sniffer_enabled, command=[str(part) for part in sniffer_command], stop_timeout_seconds=int(sniffer_raw.get("stop_timeout_seconds", 10))),
+        selection=SelectionSettings(random_seed=random_seed, remove_initial_parent=remove_initial_parent),
+        variant=variant_raw,
+        name_prefix="fast-attach-ucast-32",
+        max_router_number=max_router_number,
+    )
+
+
+def config_path(settings: Settings, name: str) -> Path:
+    runtime_dir = ensure_runtime_configs_dir(settings)
+    if name == "child":
+        file_name = FAST_ATTACH_UCAST_32_CHILD_CONFIG
+    elif name.startswith("router"):
+        router_index = name.removeprefix("router")
+        file_name = f"{FAST_ATTACH_UCAST_32_ROUTER_PREFIX}_{router_index}.yaml"
+    else:
+        file_name = CONFIG_NAMES[name]
+    path = runtime_dir / file_name
+    if not path.exists():
+        raise SystemExit(f"Missing ESPHome config: {path}")
+    return path
+
+
+def runtime_configs_dir(settings: Settings) -> Path:
+    return settings.platformio_core_dir / "esphome-configs"
+
+
+def ensure_runtime_configs_dir(settings: Settings) -> Path:
+    source_dir = settings.configs_dir
+    target_dir = runtime_configs_dir(settings)
+    repo_components_dir = settings.testing_dir.parent / "components"
+    shared_components_link = settings.platformio_core_dir.parent / "components"
+    target_dir.mkdir(parents=True, exist_ok=True)
+    if repo_components_dir.exists() and not (shared_components_link.exists() or shared_components_link.is_symlink()):
+        try:
+            shared_components_link.symlink_to(repo_components_dir.resolve(), target_is_directory=True)
+        except OSError:
+            if not shared_components_link.exists():
+                shutil.copytree(repo_components_dir, shared_components_link, dirs_exist_ok=True)
+    for source_path in source_dir.iterdir():
+        if source_path.name == ".esphome":
+            continue
+        target_path = target_dir / source_path.name
+        if target_path.exists() or target_path.is_symlink():
+            continue
+        try:
+            target_path.symlink_to(source_path.resolve())
+        except OSError:
+            shutil.copy2(source_path, target_path)
+    return target_dir
+
+
+def esphome_build_dir_for_yaml(yaml_path: Path) -> Path:
+    return yaml_path.parent / ".esphome" / "build" / yaml_path.stem
+
+
+def esphome_build_env_marker_path(yaml_path: Path) -> Path:
+    return esphome_build_dir_for_yaml(yaml_path) / BUILD_ENV_MARKER_NAME
+
+
+def clear_stale_esphome_build(
+    settings: Settings,
+    yaml_path: Path,
+    *,
+    dry_run: bool,
+    manifest: list[dict[str, Any]],
+) -> None:
+    build_dir = esphome_build_dir_for_yaml(yaml_path)
+    if not build_dir.exists():
+        return
+    marker_path = esphome_build_env_marker_path(yaml_path)
+    expected_core_dir = str(settings.platformio_core_dir)
+    expected_packages_dir = str(settings.platformio_packages_dir)
+    recorded_core_dir = None
+    recorded_packages_dir = None
+    if marker_path.exists():
+        try:
+            recorded_env = json.loads(marker_path.read_text(encoding="utf-8"))
+            recorded_core_dir = recorded_env.get("platformio_core_dir")
+            recorded_packages_dir = recorded_env.get("platformio_packages_dir")
+        except json.JSONDecodeError:
+            pass
+    if settings.reset_platformio_packages:
+        reason = "platformio_environment_reset"
+    elif recorded_core_dir == expected_core_dir and recorded_packages_dir == expected_packages_dir:
+        return
+    else:
+        reason = "platformio_environment_changed" if (recorded_core_dir or recorded_packages_dir) else "missing_platformio_env_marker"
+    manifest.append(
+        {
+            "time_utc": now_utc_iso(),
+            "type": "esphome_build_reset",
+            "yaml": str(yaml_path),
+            "build_dir": str(build_dir),
+            "reason": reason,
+            "recorded_platformio_core_dir": recorded_core_dir,
+            "recorded_platformio_packages_dir": recorded_packages_dir,
+            "expected_platformio_core_dir": expected_core_dir,
+            "expected_platformio_packages_dir": expected_packages_dir,
+            "dry_run": dry_run,
+        }
+    )
+    log(("DRY-RUN RESET " if dry_run else "RESET BUILD ") + str(build_dir))
+    if not dry_run:
+        shutil.rmtree(build_dir, ignore_errors=True)
+
+
+def record_esphome_build_provenance(settings: Settings, yaml_path: Path) -> None:
+    marker_path = esphome_build_env_marker_path(yaml_path)
+    marker_path.parent.mkdir(parents=True, exist_ok=True)
+    marker_path.write_text(
+        json.dumps(
+            {
+                "platformio_core_dir": str(settings.platformio_core_dir),
+                "platformio_packages_dir": str(settings.platformio_packages_dir),
+            },
+            indent=2,
+        )
+        + "\n",
+        encoding="utf-8",
+    )
+
+
+def run_command(settings: Settings, cmd: list[str], *, dry_run: bool, manifest: list[dict[str, Any]], cwd: Path | None = None, check: bool = True) -> subprocess.CompletedProcess[str] | None:
+    env_overrides = command_env_overrides(settings) if cmd and Path(cmd[0]) == Path(settings.esphome_bin) else {}
+    manifest.append({"time_utc": now_utc_iso(), "cmd": cmd, "cwd": str(cwd or Path.cwd()), "dry_run": dry_run, "env": env_overrides})
+    log(("DRY-RUN " if dry_run else "RUN ") + quote_cmd(cmd))
+    if dry_run:
+        return None
+    return subprocess.run(cmd, cwd=str(cwd) if cwd else None, check=check, text=True, env=subprocess_env(settings) if env_overrides else None)
+
+
+def esphome_base(settings: Settings) -> list[str]:
+    return [settings.esphome_bin]
+
+
+def erase_flash(settings: Settings, role: str, *, dry_run: bool, manifest: list[dict[str, Any]]) -> None:
+    run_command(settings, [settings.esptool_bin, "--chip", "esp32c6", "--port", settings.devices[role], "erase_flash"], dry_run=dry_run, manifest=manifest)
+
+
+def upload(settings: Settings, role: str, firmware_name: str, *, dry_run: bool, manifest: list[dict[str, Any]]) -> None:
+    cmd = esphome_base(settings) + ["upload", str(config_path(settings, firmware_name)), "--device", settings.devices[role]]
+    if settings.upload_speed:
+        cmd += ["--upload_speed", settings.upload_speed]
+    with use_firmware_packages(settings, firmware_name):
+        run_command(settings, cmd, dry_run=dry_run, manifest=manifest)
+
+
+def sleep_step(seconds: int, reason: str, *, dry_run: bool, manifest: list[dict[str, Any]]) -> None:
+    manifest.append({"time_utc": now_utc_iso(), "sleep_seconds": seconds, "reason": reason, "dry_run": dry_run})
+    log(f"WAIT {seconds}s: {reason}")
+    if not dry_run:
+        time.sleep(seconds)
+
+
+def extra_empty_roles(settings: Settings) -> list[str]:
+    return sorted(role for role in settings.devices if role not in {"router1", "child", "router2"})
+
+
+def additional_router_firmware_names(settings: Settings) -> list[str]:
+    return [f"router{number}" for number in range(3, settings.max_router_number + 1)]
+
+
+def additional_router_device_roles(settings: Settings) -> list[str]:
+    extras = extra_empty_roles(settings)
+    selected_roles: list[str] = []
+    remaining_roles = list(extras)
+    for firmware_name in additional_router_firmware_names(settings):
+        if firmware_name in remaining_roles:
+            selected_roles.append(firmware_name)
+            remaining_roles.remove(firmware_name)
+        elif remaining_roles:
+            selected_roles.append(remaining_roles.pop(0))
+    return selected_roles
+
+
+def additional_router_assignments(settings: Settings) -> list[dict[str, str]]:
+    return [
+        {"device_role": role, "firmware_name": firmware}
+        for role, firmware in zip(additional_router_device_roles(settings), additional_router_firmware_names(settings))
+    ]
+
+
+def require_additional_router_assignments(settings: Settings) -> None:
+    required_count = len(additional_router_firmware_names(settings))
+    if len(additional_router_assignments(settings)) < required_count:
+        raise SystemExit(
+            f"n_routers={settings.max_router_number} requires {required_count} extra role(s) for router3..router{settings.max_router_number}. "
+            "Add extra roles such as `unused1`, `unused2`, `router3`, or `router4`."
+        )
+
+
+def router_execution_plan(settings: Settings) -> list[dict[str, str]]:
+    plan = [
+        {"logical_name": "router1", "config_name": "router1", "device_role": "router1"},
+        {"logical_name": "router2", "config_name": "router2", "device_role": "router2"},
+    ]
+    for assignment in additional_router_assignments(settings):
+        firmware = assignment["firmware_name"]
+        plan.append({"logical_name": firmware, "config_name": firmware, "device_role": assignment["device_role"]})
+    return plan
+
+
+def log_file_path(settings: Settings, logical_name: str) -> Path:
+    return settings.run_logs_dir / f"{settings.name_prefix}_{logical_name}_{settings.run_logs_dir.name}.log"
+
+
+def start_device_log(settings: Settings, *, logical_name: str, config_name: str, device_role: str, dry_run: bool, manifest: list[dict[str, Any]]) -> tuple[subprocess.Popen[str] | None, Path]:
+    settings.run_logs_dir.mkdir(parents=True, exist_ok=True)
+    log_path = log_file_path(settings, logical_name)
+    cmd = esphome_base(settings) + ["logs", str(config_path(settings, config_name)), "--device", settings.devices[device_role]]
+    packages_dir = firmware_packages_dir(settings, config_name)
+    previous_packages_dir = settings.platformio_packages_dir
+    settings.platformio_packages_dir = packages_dir
+    env_overrides = command_env_overrides(settings)
+    process_env = subprocess_env(settings)
+    settings.platformio_packages_dir = previous_packages_dir
+    manifest.append({"time_utc": now_utc_iso(), "cmd": cmd, "env": env_overrides, "log_path": str(log_path), "logical_name": logical_name, "config_name": config_name, "device_role": device_role, "dry_run": dry_run})
+    log(("DRY-RUN " if dry_run else "START ") + quote_cmd(cmd) + f" > {log_path}")
+    if dry_run:
+        return None, log_path
+    log_file = log_path.open("w", encoding="utf-8", errors="replace")
+    log_file.write(f"# Command: {quote_cmd(cmd)}\n# Started UTC: {now_utc_iso()}\n")
+    log_file.flush()
+    process = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True, encoding="utf-8", errors="replace", bufsize=1, env=process_env)
+
+    def pump() -> None:
+        try:
+            assert process.stdout is not None
+            for line in process.stdout:
+                log_file.write(line)
+                log_file.flush()
+        finally:
+            log_file.write(f"# Log reader stopped UTC: {now_utc_iso()}\n")
+            log_file.close()
+
+    threading.Thread(target=pump, name=f"{logical_name}-log-pump", daemon=True).start()
+    return process, log_path
+
+
+def stop_device_log(process: subprocess.Popen[str] | None, *, logical_name: str, dry_run: bool) -> None:
+    if dry_run or process is None:
+        return
+    if process.poll() is not None:
+        log(f"{logical_name} log process already exited with code {process.returncode}.")
+        return
+    log(f"Stopping {logical_name} log process.")
+    process.terminate()
+    try:
+        process.wait(timeout=10)
+    except subprocess.TimeoutExpired:
+        process.kill()
+        process.wait(timeout=10)
+
+
+def sniffer_remote_host(settings: Settings) -> str | None:
+    cmd = settings.sniffer.command
+    if len(cmd) >= 2 and cmd[0] == "ssh":
+        return cmd[1]
+    return None
+
+
+def start_sniffer_capture(settings: Settings, *, dry_run: bool, manifest: list[dict[str, Any]]) -> tuple[subprocess.Popen[str] | None, Path | None]:
+    if not settings.sniffer.enabled:
+        return None, None
+    settings.run_logs_dir.mkdir(parents=True, exist_ok=True)
+    log_path = settings.run_logs_dir / f"{settings.name_prefix}_sniffer_{settings.run_logs_dir.name}.log"
+    cmd = settings.sniffer.command
+    manifest.append({"time_utc": now_utc_iso(), "cmd": cmd, "sniffer_log_path": str(log_path), "dry_run": dry_run})
+    host = sniffer_remote_host(settings)
+    if host:
+        cleanup_cmd = ["ssh", host, "pkill -f 'nrf802154_sniffer.py|tshark.*802.15.4' >/dev/null 2>&1 || true; sleep 1"]
+        manifest.append({"time_utc": now_utc_iso(), "cmd": cleanup_cmd, "purpose": "sniffer-pre-clean", "dry_run": dry_run})
+        log(("DRY-RUN " if dry_run else "RUN ") + quote_cmd(cleanup_cmd))
+        if not dry_run:
+            subprocess.run(cleanup_cmd, check=False, text=True)
+    log(("DRY-RUN " if dry_run else "START ") + quote_cmd(cmd) + f" > {log_path}")
+    if dry_run:
+        return None, log_path
+    log_file = log_path.open("w", encoding="utf-8", errors="replace")
+    log_file.write(f"# Command: {quote_cmd(cmd)}\n# Started UTC: {now_utc_iso()}\n")
+    log_file.flush()
+    process = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True, encoding="utf-8", errors="replace", bufsize=1)
+
+    def pump() -> None:
+        try:
+            assert process.stdout is not None
+            for line in process.stdout:
+                print(line, end="")
+                log_file.write(line)
+                log_file.flush()
+        finally:
+            log_file.write(f"# Log reader stopped UTC: {now_utc_iso()}\n")
+            log_file.close()
+
+    threading.Thread(target=pump, name="sniffer-log-pump", daemon=True).start()
+    time.sleep(2)
+    if process.poll() is not None:
+        log(f"WARNING: sniffer exited quickly with code {process.returncode}.")
+    return process, log_path
+
+
+def stop_sniffer_capture(settings: Settings, process: subprocess.Popen[str] | None, *, dry_run: bool) -> None:
+    if dry_run or process is None:
+        return
+    if process.poll() is not None:
+        log(f"Sniffer process already exited with code {process.returncode}.")
+        return
+    log("Stopping sniffer capture process.")
+    process.terminate()
+    try:
+        process.wait(timeout=settings.sniffer.stop_timeout_seconds)
+    except subprocess.TimeoutExpired:
+        process.kill()
+        process.wait(timeout=10)
+
+
+def find_pcap_path_in_sniffer_log(log_path: Path | None) -> str | None:
+    if log_path is None or not log_path.exists():
+        return None
+    matches = PCAP_PATH_RE.findall(log_path.read_text(encoding="utf-8", errors="replace"))
+    return matches[-1] if matches else None
+
+
+def pull_sniffer_pcap(settings: Settings, *, sniffer_log_path: Path | None, dry_run: bool, manifest: list[dict[str, Any]]) -> tuple[str | None, Path | None]:
+    remote_pcap = find_pcap_path_in_sniffer_log(sniffer_log_path)
+    if remote_pcap is None:
+        return None, None
+    local_pcap = settings.run_logs_dir / f"{settings.name_prefix}_sniffer_{settings.run_logs_dir.name}.pcapng"
+    host = sniffer_remote_host(settings)
+    cmd = ["scp", f"{host}:{remote_pcap}", str(local_pcap)] if host else ["cp", remote_pcap, str(local_pcap)]
+    manifest.append({"time_utc": now_utc_iso(), "cmd": cmd, "remote_pcap_path": remote_pcap, "local_pcap_path": str(local_pcap), "dry_run": dry_run})
+    log(("DRY-RUN " if dry_run else "FETCH ") + quote_cmd(cmd))
+    if not dry_run:
+        local_pcap.parent.mkdir(parents=True, exist_ok=True)
+        subprocess.run(cmd, check=True, text=True)
+    return remote_pcap, local_pcap
+
+
+def normalize_extaddr(value: str | None) -> str | None:
+    if not value:
+        return None
+    hexed = re.sub(r"[^0-9a-fA-F]", "", value).lower()
+    if len(hexed) != 16:
+        return None
+    return ":".join(hexed[i:i+2] for i in range(0, 16, 2))
+
+
+def extaddr_key(value: str | None) -> str | None:
+    norm = normalize_extaddr(value)
+    return norm.replace(":", "") if norm else None
+
+
+def iid_to_extaddr(iid_hex: str) -> str | None:
+    iid = re.sub(r"[^0-9a-fA-F]", "", iid_hex).lower()
+    if len(iid) != 16:
+        return None
+    return normalize_extaddr(f"{int(iid[:2], 16) ^ 0x02:02x}" + iid[2:])
+
+
+def ipv6_link_local_to_extaddr(addr: str) -> str | None:
+    if not addr.lower().startswith("fe80"):
+        return None
+    parts = addr.split("%", 1)[0].split(":")
+    if "" in parts:
+        empty_index = parts.index("")
+        missing = 8 - (len(parts) - 1)
+        parts = parts[:empty_index] + ["0"] * missing + parts[empty_index + 1:]
+    if len(parts) < 8:
+        return None
+    return iid_to_extaddr("".join(part.zfill(4) for part in parts[-4:]))
+
+
+def parse_radio_extaddr(log_path: Path) -> str | None:
+    if not log_path.exists():
+        return None
+    text = log_path.read_text(encoding="utf-8", errors="replace")
+    patterns = [
+        r"Self Thread ExtAddr:\s*([0-9a-fA-F:]{16,23})",
+        r"RadioExtAddress:\s*([0-9a-fA-F:]{16,23})",
+        r"\bMAC:\s*([0-9a-fA-F:]{16,23})",
+        r"\bSaved NetworkInfo\s*\{[^}\n\r]*\bextaddr:([0-9a-fA-F:]{16,23})\b",
+    ]
+    for pattern in patterns:
+        for match in reversed(re.findall(pattern, text, flags=re.IGNORECASE)):
+            norm = normalize_extaddr(match)
+            if norm:
+                return norm
+    return None
+
+
+def parse_own_thread_extaddr(log_path: Path) -> str | None:
+    if not log_path.exists():
+        return None
+    text = log_path.read_text(encoding="utf-8", errors="replace")
+    matches = re.findall(r"Own Thread ExtAddr:\s*([0-9a-fA-F]{16})\b", text, flags=re.IGNORECASE)
+    for match in reversed(matches):
+        norm = normalize_extaddr(match)
+        if norm:
+            return norm
+    return None
+
+
+def parse_self_link_local_extaddr(log_path: Path) -> str | None:
+    if not log_path.exists():
+        return None
+    text = log_path.read_text(encoding="utf-8", errors="replace")
+    patterns = [
+        r"\bsrc:\[(fe80:[0-9a-fA-F:]+)\]",
+        r"\bsource:\s*\[(fe80:[0-9a-fA-F:]+)\]",
+        r"\bLocal(?:\s+|-)Addr(?:ess)?\b[:= ]+\[?(fe80:[0-9a-fA-F:]+)\]?",
+    ]
+    for pattern in patterns:
+        for match in reversed(re.findall(pattern, text, flags=re.IGNORECASE)):
+            norm = ipv6_link_local_to_extaddr(match)
+            if norm:
+                return norm
+    return None
+
+
+def parse_router_self_extaddr(log_path: Path) -> tuple[str | None, str | None]:
+    own_extaddr = parse_own_thread_extaddr(log_path)
+    if own_extaddr is not None:
+        return own_extaddr, "own_thread_extaddr"
+
+    radio_extaddr = parse_radio_extaddr(log_path)
+    if radio_extaddr is not None:
+        return radio_extaddr, "radio_extaddr"
+
+    link_local_extaddr = parse_self_link_local_extaddr(log_path)
+    if link_local_extaddr is not None:
+        return link_local_extaddr, "self_link_local"
+
+    return None, None
+
+
+def find_last_extaddr_match_in_lines(
+    text: str,
+    patterns: list[str],
+    *,
+    reject_extaddr: str | None = None,
+    source: str,
+) -> tuple[str | None, str | None]:
+    rejected_child_extaddr = False
+    reject_key = extaddr_key(reject_extaddr)
+
+    for line in reversed(text.splitlines()):
+        for pattern in patterns:
+            match = re.search(pattern, line, flags=re.IGNORECASE)
+            if match is None:
+                continue
+            norm = normalize_extaddr(match.group(1))
+            if norm is None:
+                continue
+            if reject_key is not None and extaddr_key(norm) == reject_key:
+                rejected_child_extaddr = True
+                continue
+            return norm, source
+
+    if rejected_child_extaddr:
+        return None, "child_log_rejected_child_radio_extaddr"
+    return None, None
+
+
+def find_last_link_local_match_in_lines(
+    text: str,
+    patterns: list[str],
+    *,
+    reject_extaddr: str | None = None,
+    source: str,
+) -> tuple[str | None, str | None]:
+    rejected_child_extaddr = False
+    reject_key = extaddr_key(reject_extaddr)
+
+    for line in reversed(text.splitlines()):
+        for pattern in patterns:
+            match = re.search(pattern, line, flags=re.IGNORECASE)
+            if match is None:
+                continue
+            extaddr = ipv6_link_local_to_extaddr(match.group(1))
+            if extaddr is None:
+                continue
+            if reject_key is not None and extaddr_key(extaddr) == reject_key:
+                rejected_child_extaddr = True
+                continue
+            return extaddr, source
+
+    if rejected_child_extaddr:
+        return None, "child_log_rejected_child_radio_extaddr"
+    return None, None
+
+
+def parse_child_parent_extaddr(child_log: Path) -> tuple[str | None, str | None]:
+    if not child_log.exists():
+        return None, None
+    text = child_log.read_text(encoding="utf-8", errors="replace")
+    # Prefer the explicit self-identity line over generic ExtAddr parsing.
+    # At INFO level, logs also contain lines such as "Current parent ExtAddr: ...";
+    # using a generic ExtAddr parser here can misclassify the parent as the
+    # child's own address and incorrectly reject it.
+    child_radio_extaddr = parse_own_thread_extaddr(child_log) or parse_radio_extaddr(child_log)
+
+    explicit_patterns = [
+        r"\bSaved ParentInfo\b.*?\b(?:ExtAddr|ExtAddress|Ext Address)\b[:= ]+([0-9a-fA-F:]{16,23})",
+        r"\bParentInfo\b.*?\b(?:ExtAddr|ExtAddress|Ext Address)\b[:= ]+([0-9a-fA-F:]{16,23})",
+        r"\bCurrent parent(?: before discovery)?\b.*?\b(?:ExtAddr|ExtAddress|Ext Address)\b[:= ]+([0-9a-fA-F:]{16,23})",
+        r"\bparent\b[^\r\n]{0,80}\b(?:ExtAddr|ExtAddress|Ext Address)\b[:= ]+([0-9a-fA-F:]{16,23})",
+    ]
+    parent_extaddr, parent_source = find_last_extaddr_match_in_lines(
+        text,
+        explicit_patterns,
+        reject_extaddr=child_radio_extaddr,
+        source="child_log_explicit_parent_extaddr",
+    )
+    if parent_extaddr is not None:
+        return parent_extaddr, parent_source
+
+    link_local_patterns = [
+        r"\bSaved ParentInfo\b.*?(fe80:[0-9a-fA-F:%]+)",
+        r"\bParentInfo\b.*?(fe80:[0-9a-fA-F:%]+)",
+        r"\bCurrent parent(?: before discovery)?\b.*?(fe80:[0-9a-fA-F:%]+)",
+        r"\bparent\b[^\r\n]{0,80}(fe80:[0-9a-fA-F:%]+)",
+        r"Send Child ID Request\s*\((fe80:[0-9a-fA-F:%]+)\)",
+        r"Receive Child ID Response\s*\((fe80:[0-9a-fA-F:%]+)",
+        r"Send Child Update Request as child\s*\((fe80:[0-9a-fA-F:%]+)\)",
+    ]
+    link_local_candidate, link_local_source = find_last_link_local_match_in_lines(
+        text,
+        link_local_patterns,
+        reject_extaddr=child_radio_extaddr,
+        source="child_log_parent_link_local",
+    )
+    if link_local_candidate is not None:
+        return link_local_candidate, link_local_source
+
+    if parent_source is not None:
+        return None, parent_source
+    if link_local_source is not None:
+        return None, link_local_source
+    return None, None
+
+
+def map_router_extaddrs(device_logs: dict[str, Path]) -> dict[str, dict[str, str]]:
+    mapped: dict[str, dict[str, str]] = {}
+    for logical_name, log_path in device_logs.items():
+        if logical_name == "child" or not logical_name.startswith("router"):
+            continue
+        extaddr, extaddr_source = parse_router_self_extaddr(log_path)
+        if extaddr is None:
+            raise RuntimeError(f"Missing router self ExtAddr in log for {logical_name}: {log_path}")
+        key = extaddr_key(extaddr)
+        if key is None:
+            raise RuntimeError(f"Invalid router self ExtAddr in log for {logical_name}: {log_path}")
+        role, role_source = parse_latest_thread_role(log_path)
+        rloc16, rloc16_source = parse_latest_rloc16(log_path)
+        mapped[key] = {
+            "logical_name": logical_name,
+            "extaddr": extaddr,
+            "own_extaddr": key,
+            "own_extaddr_source": extaddr_source or "",
+            "role": role or "",
+            "role_source": role_source or "",
+            "rloc16": rloc16 or "",
+            "rloc16_source": rloc16_source or "",
+            "log_path": str(log_path),
+        }
+    return mapped
+
+
+def format_router_identity_map(router_extaddrs: dict[str, dict[str, str]]) -> str:
+    entries: list[str] = []
+    for entry in sorted(router_extaddrs.values(), key=lambda item: item["logical_name"]):
+        suffix_parts = []
+        if entry.get("rloc16"):
+            suffix_parts.append(f"rloc16={entry['rloc16']}")
+        if entry.get("role"):
+            suffix_parts.append(f"role={entry['role']}")
+        suffix = f" ({', '.join(suffix_parts)})" if suffix_parts else ""
+        entries.append(f"{entry['logical_name']} -> {entry['own_extaddr']}{suffix}")
+    return "; ".join(entries)
+
+
+def parse_latest_thread_role(log_path: Path | None) -> tuple[str | None, str | None]:
+    if log_path is None or not log_path.exists():
+        return None, None
+    lines = log_path.read_text(encoding="utf-8", errors="replace").splitlines()
+    role_values = "disabled|detached|child|router|leader"
+    patterns = [
+        re.compile(rf"\b(?:OpenThread|Thread)\b.*\b(?:role|state)\b\s*[:=]\s*({role_values})\b", re.I),
+        re.compile(rf"\b(?:role|state)\b\s*[:=]\s*({role_values})\b", re.I),
+        re.compile(rf"\b(?:role|state)\b\s*(?:changed|change)?\s*(?:from\s+\w+\s*)?(?:to|->)\s*({role_values})\b", re.I),
+        re.compile(rf"\b(?:role|state)\b\s+\w+\s*(?:to|->)\s*({role_values})\b", re.I),
+        re.compile(rf"\b(?:become|became)\s+({role_values})\b", re.I),
+    ]
+    for line in reversed(lines):
+        for pattern in patterns:
+            match = pattern.search(line)
+            if match:
+                return match.group(1).lower(), line.strip()
+    return None, None
+
+
+def parse_latest_rloc16(log_path: Path | None) -> tuple[str | None, str | None]:
+    if log_path is None or not log_path.exists():
+        return None, None
+    lines = log_path.read_text(encoding="utf-8", errors="replace").splitlines()
+    pattern = re.compile(r"\bRLOC16\s+(?:0x)?([0-9a-fA-F]{4})\s*->\s*(?:0x)?([0-9a-fA-F]{4})\b")
+    for line in reversed(lines):
+        match = pattern.search(line)
+        if match:
+            return match.group(2).lower(), line.strip()
+    return None, None
+
+
+def infer_parent_from_child_rloc16(
+    child_log: Path | None, router_extaddrs: dict[str, dict[str, str]]
+) -> tuple[str | None, str | None]:
+    child_rloc16, child_rloc16_source = parse_latest_rloc16(child_log)
+    if child_rloc16 is None:
+        return None, None
+
+    parent_rloc16 = int(child_rloc16, 16) & 0xFC00
+    matches = [
+        entry
+        for entry in router_extaddrs.values()
+        if entry.get("rloc16")
+        and int(entry["rloc16"], 16) == parent_rloc16
+    ]
+    if len(matches) != 1:
+        return None, None
+
+    source = (
+        f"child_rloc16_parent_id child=0x{child_rloc16} "
+        f"parent=0x{parent_rloc16:04x}; {child_rloc16_source or 'source unavailable'}"
+    )
+    return matches[0]["extaddr"], source
+
+
+def select_target(router_extaddrs: dict[str, dict[str, str]], parent_key: str, *, seed: int | None, run_index: int) -> dict[str, str] | None:
+    candidates = [entry for key, entry in sorted(router_extaddrs.items()) if key != parent_key]
+    if not candidates:
+        return None
+    if seed is None:
+        return random.SystemRandom().choice(candidates)
+    return random.Random(seed + run_index).choice(candidates)
+
+
+def send_child_switch_command(settings: Settings, target_extaddr: str, *, dry_run: bool, manifest: list[dict[str, Any]]) -> None:
+    command = f"extaddr {extaddr_key(target_extaddr)}\n"
+    port = settings.devices["child"]
+    manifest.append({"time_utc": now_utc_iso(), "event": "send_child_switch_command", "port": port, "command": command.strip(), "target_extaddr": target_extaddr, "dry_run": dry_run})
+    log(f"{'DRY-RUN ' if dry_run else 'SEND '}child switch command `{command.strip()}` to {port}")
+    if dry_run:
+        return
+    with open(port, "wb", buffering=0) as fh:
+        fh.write(command.encode("ascii"))
+        fh.flush()
+
+
+def mark_skip(manifest: list[dict[str, Any]], reason: str, details: dict[str, Any]) -> None:
+    manifest.append({"time_utc": now_utc_iso(), "type": "skip", "reason": reason, **details})
+    log(f"SKIP {reason}: {details}")
+
+
+def add_label(manifest: list[dict[str, Any]], reason: str, details: dict[str, Any]) -> None:
+    manifest.append({"time_utc": now_utc_iso(), "type": "label", "reason": reason, **details})
+    log(f"LABEL {reason}: {details}")
+
+
+def run_timed_sequence(settings: Settings, *, dry_run: bool, manifest: list[dict[str, Any]], run_index: int) -> tuple[Path | None, dict[str, Path], Path | None, str | None, Path | None, str]:
+    child_log_path: Path | None = None
+    device_loggers: dict[str, subprocess.Popen[str] | None] = {}
+    device_log_paths: dict[str, Path] = {}
+    sniffer_process: subprocess.Popen[str] | None = None
+    sniffer_log_path: Path | None = None
+    sniffer_remote_pcap: str | None = None
+    sniffer_local_pcap: Path | None = None
+    status = "completed"
+
+    try:
+        manifest.append({"time_utc": now_utc_iso(), "type": "step", "step": "reset_all_devices"})
+        for role in ["router1", "child", "router2", *extra_empty_roles(settings)]:
+            erase_flash(settings, role, dry_run=dry_run, manifest=manifest)
+            upload(settings, role, "empty", dry_run=dry_run, manifest=manifest)
+
+        require_additional_router_assignments(settings)
+        router_plan = router_execution_plan(settings)
+
+        manifest.append({"time_utc": now_utc_iso(), "type": "step", "step": "start_sniffer"})
+        sniffer_process, sniffer_log_path = start_sniffer_capture(settings, dry_run=dry_run, manifest=manifest)
+        if settings.sniffer.enabled:
+            sleep_step(settings.timing.sniffer_lead_in_seconds, "sniffer started; wait before flashing routers", dry_run=dry_run, manifest=manifest)
+
+        manifest.append({"time_utc": now_utc_iso(), "type": "step", "step": "flash_routers", "router_plan": router_plan})
+        for router in router_plan:
+            upload(settings, router["device_role"], router["config_name"], dry_run=dry_run, manifest=manifest)
+            logger, log_path = start_device_log(settings, logical_name=router["logical_name"], config_name=router["config_name"], device_role=router["device_role"], dry_run=dry_run, manifest=manifest)
+            device_loggers[router["logical_name"]] = logger
+            device_log_paths[router["logical_name"]] = log_path
+
+        sleep_step(settings.timing.router_settling_seconds, "routers flashed; wait before adding child", dry_run=dry_run, manifest=manifest)
+
+        manifest.append({"time_utc": now_utc_iso(), "type": "step", "step": "flash_child"})
+        upload(settings, "child", "child", dry_run=dry_run, manifest=manifest)
+        child_logger, child_log_path = start_device_log(settings, logical_name="child", config_name="child", device_role="child", dry_run=dry_run, manifest=manifest)
+        device_loggers["child"] = child_logger
+        device_log_paths["child"] = child_log_path
+
+        sleep_step(settings.timing.child_attach_seconds, "child flashed; wait for natural attach", dry_run=dry_run, manifest=manifest)
+        if dry_run:
+            return child_log_path, device_log_paths, sniffer_log_path, None, None, "dry-run"
+
+        router_extaddrs = map_router_extaddrs(device_log_paths)
+        log(f"Router identity map: {format_router_identity_map(router_extaddrs)}")
+        parent_extaddr, parent_source = parse_child_parent_extaddr(child_log_path)
+        if parent_extaddr is None:
+            parent_extaddr, parent_source = infer_parent_from_child_rloc16(
+                child_log_path, router_extaddrs
+            )
+        parent_key = extaddr_key(parent_extaddr)
+        parent_match = router_extaddrs.get(parent_key or "")
+        details: dict[str, Any] = {
+            "child_parent_extaddr": parent_extaddr,
+            "child_parent_source": parent_source,
+            "parent_key": parent_key,
+            "parent_match": parent_match,
+            "router_extaddrs": router_extaddrs,
+        }
+
+        if not parent_extaddr or not parent_key:
+            status = "skipped"
+            mark_skip(manifest, SKIP_NO_CHILD_PARENT, details)
+        elif not parent_match:
+            status = "skipped"
+            mark_skip(manifest, SKIP_PARENT_NOT_MAPPED_TO_DEVICE, details)
+        else:
+            parent_logical = parent_match["logical_name"]
+            parent_log_path = device_log_paths.get(parent_logical)
+            parent_role, parent_role_source = parse_latest_thread_role(parent_log_path)
+            details.update({"parent_logical_name": parent_logical, "parent_log_path": str(parent_log_path) if parent_log_path else None, "parent_thread_role": parent_role, "parent_thread_role_source": parent_role_source})
+            if parent_role == "leader":
+                add_label(
+                    manifest,
+                    SKIP_PARENT_IS_LEADER,
+                    {**details, "classification_note": SKIP_PARENT_IS_LEADER_NOTE},
+                )
+            target = select_target(router_extaddrs, parent_key, seed=settings.selection.random_seed, run_index=run_index)
+            if target is None:
+                status = "skipped"
+                mark_skip(manifest, SKIP_NO_ELIGIBLE_TARGET_PARENT, details)
+            else:
+                parent_plan = {router["logical_name"]: router for router in router_plan}[parent_logical]
+                details.update({"target_parent": target, "target_parent_logical_name": target["logical_name"], "target_parent_extaddr": target["extaddr"], "target_selection": "random_non_current_parent", "random_seed": settings.selection.random_seed, "removed_parent_device_role": parent_plan["device_role"]})
+                action = "will_switch_then_remove" if settings.selection.remove_initial_parent else "will_switch_preserving_parent"
+                manifest.append({"time_utc": now_utc_iso(), "type": "directed_switch_decision", "action": action, "reason": "TARGET_SELECTED", **details})
+                send_child_switch_command(settings, target["extaddr"], dry_run=dry_run, manifest=manifest)
+                if settings.selection.remove_initial_parent:
+                    stop_device_log(device_loggers.get(parent_logical), logical_name=parent_logical, dry_run=dry_run)
+                    device_loggers[parent_logical] = None
+                    upload(settings, parent_plan["device_role"], "empty", dry_run=dry_run, manifest=manifest)
+                    observation = "targeted switch requested and initial parent removed; keep recording"
+                else:
+                    observation = "targeted switch requested with initial parent preserved; keep recording"
+                sleep_step(settings.timing.after_parent_removed_seconds, observation, dry_run=dry_run, manifest=manifest)
+
+        stop_sniffer_capture(settings, sniffer_process, dry_run=dry_run)
+        sniffer_process = None
+        sniffer_remote_pcap, sniffer_local_pcap = pull_sniffer_pcap(settings, sniffer_log_path=sniffer_log_path, dry_run=dry_run, manifest=manifest)
+        return child_log_path, device_log_paths, sniffer_log_path, sniffer_remote_pcap, sniffer_local_pcap, status
+    finally:
+        stop_sniffer_capture(settings, sniffer_process, dry_run=dry_run)
+        for logical_name, process in list(device_loggers.items()):
+            stop_device_log(process, logical_name=logical_name, dry_run=dry_run)
+
+
+def write_manifest(settings: Settings, manifest: list[dict[str, Any]], *, dry_run: bool, status: str, child_log: Path | None, device_logs: dict[str, Path], sniffer_log: Path | None, sniffer_remote_pcap: str | None, sniffer_local_pcap: Path | None) -> Path:
+    settings.run_logs_dir.mkdir(parents=True, exist_ok=True)
+    path = settings.run_logs_dir / f"{settings.name_prefix}_test_manifest_{settings.run_logs_dir.name}.json"
+    firmware_environments: dict[str, dict[str, Any]] = {}
+    for firmware_name in ("empty", "child", *[item["config_name"] for item in router_execution_plan(settings)]):
+        with use_firmware_packages(settings, firmware_name):
+            firmware_environments[firmware_name] = firmware_environment(settings, phase="final")
+    payload = {
+        "created_utc": now_utc_iso(),
+        "status": status,
+        "dry_run": dry_run,
+        "variant": settings.variant,
+        "config_file": str(settings.config_file),
+        "testing_dir": str(settings.testing_dir),
+        "configs_dir": str(settings.configs_dir),
+        "logs_dir": str(settings.logs_dir),
+        "run_logs_dir": str(settings.run_logs_dir),
+        "esphome_bin": settings.esphome_bin,
+        "esptool_bin": settings.esptool_bin,
+        "precompile": settings.precompile,
+        "clean_before_compile": settings.clean_before_compile,
+        "platformio_core_dir": str(settings.platformio_core_dir),
+        "platformio_packages_dir": str(settings.platformio_packages_root_dir),
+        "platformio_packages_dirs": {
+            group: str(settings.platformio_packages_root_dir / group)
+            for group in ("utility", "child", "routers")
+        },
+        "reset_platformio_packages": settings.reset_platformio_packages,
+        "devices": settings.devices,
+        "timing": settings.timing.__dict__,
+        "selection": settings.selection.__dict__,
+        "n_routers": settings.max_router_number,
+        "firmware_environment": firmware_environments["child"],
+        "firmware_environments": firmware_environments,
+        "additional_router_assignments": additional_router_assignments(settings),
+        "child_log": str(child_log) if child_log else None,
+        "device_logs": {name: str(path) for name, path in sorted(device_logs.items())},
+        "sniffer": {"enabled": settings.sniffer.enabled, "command": settings.sniffer.command, "stop_timeout_seconds": settings.sniffer.stop_timeout_seconds, "log": str(sniffer_log) if sniffer_log else None, "remote_pcap": sniffer_remote_pcap, "local_pcap": str(sniffer_local_pcap) if sniffer_local_pcap else None},
+        "events": manifest,
+    }
+    path.write_text(json.dumps(payload, indent=2) + "\n", encoding="utf-8")
+    return path
+
+
+def verify_fast_attach_ucast_32_runtime_evidence(
+    manifest: list[dict[str, Any]], child_log: Path | None, device_logs: dict[str, Path]
+) -> tuple[bool, dict[str, Any]]:
+    decision = next(
+        (event for event in reversed(manifest) if event.get("type") == "directed_switch_decision"
+         and event.get("action") in {"will_switch_preserving_parent", "will_switch_then_remove"}),
+        None,
+    )
+    target_log = device_logs.get(str(decision.get("target_parent_logical_name"))) if decision else None
+    child_text = child_log.read_text(encoding="utf-8", errors="replace") if child_log and child_log.exists() else ""
+    router_text = target_log.read_text(encoding="utf-8", errors="replace") if target_log and target_log.exists() else ""
+    diagnostics = [
+        {key: int(value) for key, value in match.groupdict().items()}
+        for match in re.finditer(
+            r"FAST_ATTACH_UCAST_32 unicast=(?P<unicast>\d+) active_routers=(?P<active_routers>\d+) "
+            r"effective_routers=(?P<effective_routers>\d+) max_delay_ms=(?P<max_delay_ms>\d+) "
+            r"delay_ms=(?P<delay_ms>\d+)",
+            router_text,
+        )
+    ]
+    valid_diagnostics = [item for item in diagnostics if item["unicast"] == 1
+                         and item["effective_routers"] == 1 and item["max_delay_ms"] == 32
+                         and 0 <= item["delay_ms"] <= 32]
+    required_child_events = (
+        "FAST_ATTACH_UCAST_32 event=requested",
+        "FAST_ATTACH_UCAST_32 event=parent_request_started",
+        "FAST_ATTACH_UCAST_32 event=target_response",
+        "FAST_ATTACH_UCAST_32 event=child_id_request_started",
+        "FAST_ATTACH_UCAST_32 event=succeeded",
+    )
+    evidence = {
+        "target_selected": decision is not None,
+        "target_log": str(target_log) if target_log else None,
+        "required_child_events": {event: event in child_text for event in required_child_events},
+        "router_diagnostics": diagnostics,
+        "valid_unicast_fast_attach_diagnostic": bool(valid_diagnostics),
+        "pcap_protocol_validation_required": True,
+    }
+    valid = bool(decision) and all(evidence["required_child_events"].values()) and bool(valid_diagnostics)
+    manifest.append({"time_utc": now_utc_iso(), "type": "fast_attach_ucast_32_runtime_evidence",
+                     "valid": valid, **evidence})
+    return valid, evidence
+
+
+def precompile_all(settings: Settings, *, dry_run: bool, manifest: list[dict[str, Any]]) -> None:
+    if settings.reset_platformio_packages:
+        manifest.append(
+            {
+                "time_utc": now_utc_iso(),
+                "type": "platformio_environment_reset",
+                "platformio_core_dir": str(settings.platformio_core_dir),
+                "platformio_packages_dir": str(settings.platformio_packages_root_dir),
+                "dry_run": dry_run,
+            }
+        )
+        log(("DRY-RUN " if dry_run else "RESET ") + str(settings.platformio_core_dir))
+        if not dry_run:
+            shutil.rmtree(settings.platformio_core_dir, ignore_errors=True)
+            shutil.rmtree(settings.platformio_packages_root_dir, ignore_errors=True)
+    log("Precompiling firmware before timed test sequence.")
+    compile_order = [*CORE_COMPILE_ORDER, *additional_router_firmware_names(settings)]
+    seen: set[str] = set()
+    for name in compile_order:
+        if name in seen:
+            continue
+        seen.add(name)
+        with use_firmware_packages(settings, name):
+            if dry_run and settings.reset_platformio_packages:
+                preflight_info = firmware_environment(settings, phase="preflight")
+            else:
+                preflight_info = validate_firmware_environment(settings, phase="preflight")
+            manifest.append(
+                {
+                    "time_utc": now_utc_iso(),
+                    "type": "firmware_environment",
+                    "firmware_name": name,
+                    **preflight_info,
+                }
+            )
+            yaml_path = config_path(settings, name)
+            clear_stale_esphome_build(settings, yaml_path, dry_run=dry_run, manifest=manifest)
+            if settings.clean_before_compile:
+                run_command(settings, esphome_base(settings) + ["clean", str(yaml_path)], dry_run=dry_run, manifest=manifest)
+            run_command(settings, esphome_base(settings) + ["compile", str(yaml_path)], dry_run=dry_run, manifest=manifest)
+            if not dry_run:
+                record_esphome_build_provenance(settings, yaml_path)
+            postcompile_info = (
+                firmware_environment(settings, phase="postcompile")
+                if dry_run
+                else validate_firmware_environment(settings, phase="postcompile")
+            )
+            manifest.append(
+                {
+                    "time_utc": now_utc_iso(),
+                    "type": "firmware_environment",
+                    "firmware_name": name,
+                    **postcompile_info,
+                }
+            )
+    log("Precompile phase complete. No compile commands will be run in the timed sequence.")
+
+
+def parse_args(argv: list[str]) -> argparse.Namespace:
+    parser = argparse.ArgumentParser(description="Run directed ESPHome/OpenThread parent-switching test.")
+    parser.add_argument("--config", default=None, help="Path to device/config TOML file.")
+    parser.add_argument("--esphome-bin", help="Override ESPHome executable. Overrides ESPHOME_BIN and TOML.")
+    parser.add_argument("--dry-run", action="store_true", help="Print commands and write a manifest without executing ESPHome.")
+    parser.add_argument("--precompile-only", action="store_true", help="Compile all firmware and exit before any flashing.")
+    parser.add_argument("--skip-precompile", action="store_true", help="Skip precompile phase. Not recommended for measurement runs.")
+    parser.add_argument("--force-precompile", action="store_true", help="Force precompile phase even if disabled in TOML.")
+    parser.add_argument("--clean-before-compile", action="store_true", help="Run `esphome clean` before each compile.")
+    parser.add_argument("--platformio-core-dir", help="Override isolated PLATFORMIO_CORE_DIR for this variant.")
+    parser.add_argument("--platformio-packages-dir", help="Override isolated PLATFORMIO_PACKAGES_DIR for this variant.")
+    parser.add_argument("--reset-platformio-packages", action="store_true", help="Delete the selected PLATFORMIO_PACKAGES_DIR before precompile.")
+    parser.add_argument("--allow-same-port", action="store_true", help="Permit multiple roles to use the same serial port.")
+    parser.add_argument("--runs", type=int, default=1, help="Number of timed test runs to execute sequentially.")
+    return parser.parse_args(argv)
+
+
+def main(argv: list[str]) -> int:
+    args = parse_args(argv)
+    if args.runs < 1:
+        raise SystemExit("--runs must be at least 1.")
+    if args.config is None:
+        args.config = FAST_ATTACH_UCAST_32_DEFAULT_CONFIG
+    settings = load_settings(args)
+    set_batch_log(settings.logs_dir / f"{settings.logs_dir.name}.log" if use_batch_layout(args.runs) else None)
+
+    log(f"Using ESPHome: {settings.esphome_bin}")
+    log(f"Using esptool: {settings.esptool_bin}")
+    log(f"Using PLATFORMIO_CORE_DIR: {settings.platformio_core_dir}")
+    log(f"Using isolated PLATFORMIO_PACKAGES_DIR root: {settings.platformio_packages_root_dir}")
+    log(f"Using configs: {settings.configs_dir}")
+    log(f"Using logs base: {settings.logs_dir}")
+    log(f"Variant: {settings.variant}")
+    log(f"Requested routers: {settings.max_router_number}")
+    log(f"Requested runs: {args.runs}")
+
+    compile_manifest: list[dict[str, Any]] = []
+    if settings.precompile:
+        precompile_all(settings, dry_run=args.dry_run, manifest=compile_manifest)
+    else:
+        log("WARNING: precompile phase skipped. Uploads may fail if the most recent firmware builds do not exist.")
+    if args.precompile_only:
+        return 0
+
+    for run_index in range(1, args.runs + 1):
+        settings.run_logs_dir = (
+            build_run_logs_dir(settings.logs_dir, run_index=run_index)
+            if use_batch_layout(args.runs)
+            else build_run_logs_dir(settings.logs_dir)
+        )
+        log(f"Starting run {run_index}/{args.runs}")
+        log(f"Using run logs dir: {settings.run_logs_dir}")
+        manifest = list(compile_manifest)
+        status = "failed"
+        child_log = None
+        device_logs: dict[str, Path] = {}
+        sniffer_log = None
+        sniffer_remote_pcap = None
+        sniffer_local_pcap = None
+        try:
+            child_log, device_logs, sniffer_log, sniffer_remote_pcap, sniffer_local_pcap, status = run_timed_sequence(settings, dry_run=args.dry_run, manifest=manifest, run_index=run_index)
+            if status == "completed" and not args.dry_run:
+                valid, _ = verify_fast_attach_ucast_32_runtime_evidence(manifest, child_log, device_logs)
+                if not valid:
+                    status = "failed"
+        finally:
+            manifest_path = write_manifest(settings, manifest, dry_run=args.dry_run, status=status, child_log=child_log, device_logs=device_logs, sniffer_log=sniffer_log, sniffer_remote_pcap=sniffer_remote_pcap, sniffer_local_pcap=sniffer_local_pcap)
+            log(f"Manifest written: {manifest_path}")
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main(sys.argv[1:]))
