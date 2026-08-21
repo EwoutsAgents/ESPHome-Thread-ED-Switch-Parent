@@ -2282,7 +2282,13 @@ def main(argv: list[str]) -> int:
             manifest: list[dict[str, Any]] = []
             try:
                 run_timed_sequence(settings, dry_run=args.dry_run, manifest=manifest, tracker=tracker)
-                verify_fast_attach_runtime_evidence(tracker, dry_run=args.dry_run)
+                parent_decision = latest_parent_removal_decision(tracker.events)
+                if (
+                    tracker.status not in {"skipped", "failed"}
+                    and parent_decision is not None
+                    and parent_decision.get("action") == "removed"
+                ):
+                    verify_fast_attach_runtime_evidence(tracker, dry_run=args.dry_run)
                 if tracker.status not in {"skipped", "failed"}:
                     tracker.mark_completed()
             except BaseException as exc:
