@@ -12,6 +12,20 @@ diff --git a/include/openthread/preferred_parent.h b/include/openthread/preferre
 diff --git a/src/core/thread/mle.cpp b/src/core/thread/mle.cpp
 --- a/src/core/thread/mle.cpp
 +++ b/src/core/thread/mle.cpp
+@@ -4516,6 +4516,13 @@ void Mle::Attacher::FinishPreferredParent(otThreadPreferredParentState  aState,
+                                            Error                         aError,
+                                            otThreadPreferredParentEvent  aEvent)
+ {
++    if ((aState != OT_THREAD_PREFERRED_PARENT_STATE_SUCCEEDED) && Get<Mle>().mFastAttachEnabled)
++    {
++        Get<Mle>().mFastAttachEnabled = false;
++        LogNote("FAST_ATTACH_UCAST_32 terminal_state=%u fast_attach_armed=0",
++                static_cast<unsigned>(aState));
++    }
++
+     mTimer.Stop();
+     SetState(kStateIdle);
+     RestorePreferredParentRxState();
 @@ -4571,6 +4571,7 @@ Error Mle::Attacher::StartPreferredParent(const otThreadPreferredParentConfig &a
      mPreferredParentStatus.mAttempt     = 0;
      mPreferredParentStatus.mMaxAttempts = aConfig.mMaxAttempts;
@@ -30,16 +44,6 @@ diff --git a/src/core/thread/mle.cpp b/src/core/thread/mle.cpp
      {
          scanMask |= ScanMaskTlv::kFastAttachFlag;
      }
-@@ -5642,6 +5644,9 @@ void Mle::Attacher::HandleParentResponse(RxInfo &aRxInfo)
- #if OPENTHREAD_CONFIG_EXPERIMENTAL_PREFERRED_PARENT_ENABLE
-     if (mPreferredParentStatus.mState == OT_THREAD_PREFERRED_PARENT_STATE_WAITING_TARGET_RESPONSE)
-     {
-+        VerifyOrExit(!Get<Mle>().mFastAttachEnabled ||
-+                         mParentCandidate.GetTwoWayLinkQuality() == kLinkQuality3,
-+                     error = kErrorLinkMarginLow);
-         mPreferredParentCandidate      = mParentCandidate;
-         mPreferredParentCandidateValid = true;
-         mPreferredParentStatus.mState  = OT_THREAD_PREFERRED_PARENT_STATE_CONTINUING_SELECTED_ATTACH;
 diff --git a/src/core/thread/mle_ftd.cpp b/src/core/thread/mle_ftd.cpp
 --- a/src/core/thread/mle_ftd.cpp
 +++ b/src/core/thread/mle_ftd.cpp
