@@ -225,7 +225,7 @@ index 49be27f..2d4e363 100644
      ParentResponseInfo info;
 
      Log(kMessageReceive, kTypeParentRequest, aRxInfo.mMessageInfo.GetPeerAddr());
-@@ -1486,8 +1487,14 @@ void Mle::HandleParentRequest(RxInfo &aRxInfo)
+@@ -1486,8 +1487,17 @@ void Mle::HandleParentRequest(RxInfo &aRxInfo)
      aRxInfo.mClass = RxInfo::kPeerMessage;
      ProcessKeySequence(aRxInfo);
 
@@ -239,6 +239,9 @@ index 49be27f..2d4e363 100644
 +    }
 +
 +    delay = GenerateRandomDelay(maxDelay);
++    // FAST_ATTACH_PARENT_RESPONSE_DELAY_DIAGNOSTIC
++    LogNote("ParentResponseDelay delay_ms=%lu scan_mask=0x%02x child=%s", ToUlong(delay), scanMask,
++            info.mChildExtAddress.ToString().AsCString());
      mDelayedSender.ScheduleParentResponse(info, delay);
 
  exit:

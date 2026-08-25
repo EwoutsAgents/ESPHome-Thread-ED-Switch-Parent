@@ -159,7 +159,7 @@ def firmware_environment(settings: Settings, *, phase: str) -> dict[str, Any]:
 
 
 def verify_fast_attach_runtime_evidence(tracker: "RunTracker", *, dry_run: bool) -> None:
-    """Reject hardware runs that did not prove the post-detach API re-arm succeeded."""
+    """Reject runs without post-detach re-arm and router delay diagnostics."""
     if dry_run:
         tracker.append_event({"time_utc": now_utc_iso(), "type": "fast_attach_evidence", "status": "dry_run"})
         return
@@ -168,7 +168,27 @@ def verify_fast_attach_runtime_evidence(tracker: "RunTracker", *, dry_run: bool)
     if log_path and log_path.exists():
         evidence = log_path.read_text(encoding="utf-8", errors="replace")
     marker = "FAST_ATTACH event=arm_after_detach api_error=0 enabled=1"
-    valid = marker in evidence
+    router_diagnostics: list[dict[str, Any]] = []
+    for logical_name, router_log in sorted(tracker.device_logs.items()):
+        if not logical_name.startswith("router") or not router_log.exists():
+            continue
+        router_text = router_log.read_text(encoding="utf-8", errors="replace")
+        for match in re.finditer(
+            r"ParentResponseDelay delay_ms=(?P<delay_ms>\d+) "
+            r"scan_mask=0x(?P<scan_mask>[0-9a-fA-F]+) child=(?P<child_extaddr>[0-9a-fA-F]{16})",
+            router_text,
+        ):
+            router_diagnostics.append(
+                {
+                    "router": logical_name,
+                    "delay_ms": int(match.group("delay_ms")),
+                    "scan_mask": int(match.group("scan_mask"), 16),
+                    "child_extaddr": match.group("child_extaddr").lower(),
+                    "fast_attach_flag": bool(int(match.group("scan_mask"), 16) & 0x20),
+                }
+            )
+    valid_diagnostics = [item for item in router_diagnostics if item["fast_attach_flag"]]
+    valid = marker in evidence and bool(valid_diagnostics)
     tracker.append_event(
         {
             "time_utc": now_utc_iso(),
@@ -176,11 +196,13 @@ def verify_fast_attach_runtime_evidence(tracker: "RunTracker", *, dry_run: bool)
             "status": "valid" if valid else "missing",
             "required_log_marker": marker,
             "child_log": str(log_path) if log_path else None,
+            "router_diagnostics": router_diagnostics,
+            "valid_fast_attach_delay_diagnostic": bool(valid_diagnostics),
         }
     )
     if not valid:
         tracker.set_step("fast_attach_evidence_missing", status="failed")
-        raise RuntimeError("Fast Attach run invalid: successful post-detach re-arm evidence is absent")
+        raise RuntimeError("Fast Attach run invalid: re-arm or Fast Attach Parent Response delay evidence is absent")
 
 
 def validate_firmware_environment(settings: Settings, *, phase: str) -> dict[str, Any]:

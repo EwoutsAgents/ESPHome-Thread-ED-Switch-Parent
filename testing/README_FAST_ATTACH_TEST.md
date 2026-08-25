@@ -37,5 +37,6 @@ Runtime re-arming is application integration: ESPHome's OpenThread component own
 - Build logs must show the dedicated patch SHA-256 and successful application.
 - The manifest records the variant, isolated PlatformIO paths, PR head, vendored revision, patch path/hash, and compile option.
 - The child log must prove successful post-detach API re-arming.
+- Router logs record the selected `ParentResponseDelay` value, Scan Mask, and child ExtAddr; the runner requires at least one diagnostic with the Fast Attach `F` bit set.
 - Packet inspection should confirm `F=1`, reduced randomized router response jitter, and immediate LQ3 candidate selection.
 - Compare recovery timing with stock using the same hardware, router count, dataset, and timing configuration.
