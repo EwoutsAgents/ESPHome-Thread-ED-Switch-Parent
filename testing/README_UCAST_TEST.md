@@ -14,6 +14,12 @@ router and starts selected-parent discovery using a unicast Parent Request.
 The preferred-parent component sends discovery directly to the selected router.
 Routers retain the ordinary randomized Parent Response behavior.
 
+Router firmware records the selected OpenThread Parent Response delay as
+`ParentResponseDelay delay_ms=N scan_mask=0xNN child=EXTADDR`. The runner stores
+matching target-router diagnostics in the manifest and fails a completed run if
+no delay record matches the directed child. This enables exact random-delay
+subtraction during analysis.
+
 ## Procedure
 
 1. Erase all participating ESP32-C6 boards and flash `empty.yaml`.

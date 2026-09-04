@@ -167,6 +167,7 @@ def firmware_environment(settings: Settings, *, phase: str) -> dict[str, Any]:
         "variant": settings.variant,
         "platformio_core_dir": str(settings.platformio_core_dir),
         "platformio_packages_dir": str(settings.platformio_packages_dir),
+        "parent_response_delay_diagnostic": "ParentResponseDelay delay_ms=N scan_mask=0xNN child=EXTADDR",
     }
 
 
@@ -1070,6 +1071,56 @@ def mark_skip(manifest: list[dict[str, Any]], reason: str, details: dict[str, An
     log(f"SKIP {reason}: {details}")
 
 
+def verify_parent_response_delay_evidence(
+    manifest: list[dict[str, Any]], child_log: Path | None, device_logs: dict[str, Path]
+) -> bool:
+    """Require a delay diagnostic from the selected target for this child."""
+    decision = next(
+        (
+            event
+            for event in reversed(manifest)
+            if event.get("type") == "directed_switch_decision"
+            and event.get("action") in {"will_switch_preserving_parent", "will_switch_then_remove"}
+        ),
+        None,
+    )
+    target_name = str(decision.get("target_parent_logical_name")) if decision else None
+    target_log = device_logs.get(target_name) if target_name else None
+    child_extaddr = extaddr_key(parse_own_thread_extaddr(child_log)) if child_log else None
+    diagnostics: list[dict[str, Any]] = []
+
+    if target_log and target_log.exists():
+        text = target_log.read_text(encoding="utf-8", errors="replace")
+        for match in re.finditer(
+            r"ParentResponseDelay delay_ms=(?P<delay_ms>\d+) "
+            r"scan_mask=0x(?P<scan_mask>[0-9a-fA-F]+) child=(?P<child_extaddr>[0-9a-fA-F]{16})",
+            text,
+        ):
+            diagnostics.append(
+                {
+                    "delay_ms": int(match.group("delay_ms")),
+                    "scan_mask": int(match.group("scan_mask"), 16),
+                    "child_extaddr": match.group("child_extaddr").lower(),
+                }
+            )
+
+    matching = [item for item in diagnostics if item["child_extaddr"] == child_extaddr]
+    valid = bool(decision and target_log and child_extaddr and matching)
+    manifest.append(
+        {
+            "time_utc": now_utc_iso(),
+            "type": "ucast_parent_response_delay_evidence",
+            "valid": valid,
+            "target_router": target_name,
+            "target_log": str(target_log) if target_log else None,
+            "child_extaddr": child_extaddr,
+            "target_router_diagnostics": diagnostics,
+            "matching_diagnostics": matching,
+        }
+    )
+    return valid
+
+
 def add_label(manifest: list[dict[str, Any]], reason: str, details: dict[str, Any]) -> None:
     manifest.append({"time_utc": now_utc_iso(), "type": "label", "reason": reason, **details})
     log(f"LABEL {reason}: {details}")
@@ -1344,6 +1395,9 @@ def main(argv: list[str]) -> int:
         sniffer_local_pcap = None
         try:
             child_log, device_logs, sniffer_log, sniffer_remote_pcap, sniffer_local_pcap, status = run_timed_sequence(settings, dry_run=args.dry_run, manifest=manifest, run_index=run_index)
+            if status == "completed" and not args.dry_run:
+                if not verify_parent_response_delay_evidence(manifest, child_log, device_logs):
+                    status = "failed"
         finally:
             manifest_path = write_manifest(settings, manifest, dry_run=args.dry_run, status=status, child_log=child_log, device_logs=device_logs, sniffer_log=sniffer_log, sniffer_remote_pcap=sniffer_remote_pcap, sniffer_local_pcap=sniffer_local_pcap)
             log(f"Manifest written: {manifest_path}")
