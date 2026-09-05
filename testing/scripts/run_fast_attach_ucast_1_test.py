@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Run directed unicast ESPHome/OpenThread parent-switching tests.
 
-This runner follows the directed fast_attach_ucast_32 method:
+This runner follows the directed fast_attach_ucast_1 method:
 - flash all requested routers first, like the stock test;
 - wait for router topology to settle;
 - flash the child and let it attach naturally;
@@ -40,15 +40,15 @@ except ModuleNotFoundError:
     except ModuleNotFoundError:
         tomllib = None  # type: ignore[assignment]
 
-FAST_ATTACH_UCAST_32_CHILD_CONFIG = "fast_attach_ucast_32_child.yaml"
-FAST_ATTACH_UCAST_32_ROUTER_PREFIX = "fast_attach_ucast_32_router"
-FAST_ATTACH_UCAST_32_DEFAULT_CONFIG = "fast_attach_ucast_32_test_devices_4routers.toml"
+FAST_ATTACH_UCAST_1_CHILD_CONFIG = "fast_attach_ucast_1_child.yaml"
+FAST_ATTACH_UCAST_1_ROUTER_PREFIX = "fast_attach_ucast_1_router"
+FAST_ATTACH_UCAST_1_DEFAULT_CONFIG = "fast_attach_ucast_1_test_devices_4routers.toml"
 FAST_ATTACH_PR_HEAD = "61034b8a7e776695d1afe30338b3f36d24733127"
 VENDORED_OPENTHREAD_REVISION = "a12ff0d0f54fd41954b45047fcdd08f302731c5f"
 PATCH_RELATIVE_PATHS = (
-    "patches/fast-attach-ucast-32/openthread-preferred-parent-controller.patch",
-    "patches/fast-attach-ucast-32/openthread-fast-attach-pr13121.patch",
-    "patches/fast-attach-ucast-32/fast-attach-ucast-32-delta.patch",
+    "patches/fast-attach-ucast-1/openthread-preferred-parent-controller.patch",
+    "patches/fast-attach-ucast-1/openthread-fast-attach-pr13121.patch",
+    "patches/fast-attach-ucast-1/fast-attach-ucast-1-delta.patch",
 )
 
 
@@ -57,7 +57,7 @@ def use_batch_layout(runs: int) -> bool:
 
 CONFIG_NAMES = {
     "empty": "empty.yaml",
-    "child": "fast_attach_ucast_32_child.yaml",  # replaced by variant in config_path()
+    "child": "fast_attach_ucast_1_child.yaml",  # replaced by variant in config_path()
 }
 CORE_COMPILE_ORDER = ["empty", "router1", "child", "router2"]
 MAX_ROUTER_COUNT = 4
@@ -117,8 +117,8 @@ class Settings:
     timing: Timing = field(default_factory=Timing)
     sniffer: SnifferSettings = field(default_factory=SnifferSettings)
     selection: SelectionSettings = field(default_factory=SelectionSettings)
-    variant: str = "fast-attach-ucast-32"
-    name_prefix: str = "fast-attach-ucast-32"
+    variant: str = "fast-attach-ucast-1"
+    name_prefix: str = "fast-attach-ucast-1"
     max_router_number: int = 4
 
 
@@ -191,7 +191,8 @@ def firmware_environment(settings: Settings, *, phase: str) -> dict[str, Any]:
         "compile_configuration": {
             "OPENTHREAD_CONFIG_MLE_FAST_ATTACH_ENABLE": 1,
             "OPENTHREAD_CONFIG_EXPERIMENTAL_PREFERRED_PARENT_ENABLE": 1,
-            "fast_attach_jitter_per_effective_responder_ms": 32,
+            "directed_unicast_parent_response_delay_ms": 1,
+            "fast_attach_multicast_jitter_per_router_ms": 32,
         },
         "platformio_core_dir": str(settings.platformio_core_dir),
         "platformio_packages_dir": str(settings.platformio_packages_dir),
@@ -331,14 +332,14 @@ def load_settings(args: argparse.Namespace) -> Settings:
     if not config_file.exists():
         raise SystemExit(f"Config file not found: {config_file}")
     raw = load_toml(config_file)
-    variant_raw = str(raw.get("variant", {}).get("name", "fast-attach-ucast-32")).strip().lower()
-    if variant_raw != "fast-attach-ucast-32":
-        raise SystemExit(f"Unsupported variant `{variant_raw}`. Only `fast_attach_ucast_32` is supported by this runner.")
+    variant_raw = str(raw.get("variant", {}).get("name", "fast-attach-ucast-1")).strip().lower()
+    if variant_raw != "fast-attach-ucast-1":
+        raise SystemExit(f"Unsupported variant `{variant_raw}`. Only `fast_attach_ucast_1` is supported by this runner.")
 
     config_dir = config_file.parent
     testing_dir = resolve_relative(config_dir, raw.get("paths", {}).get("testing_dir"), ".")
     configs_dir = resolve_relative(config_dir, raw.get("paths", {}).get("configs_dir"), "configs")
-    logs_dir = resolve_relative(config_dir, raw.get("paths", {}).get("logs_dir"), "logs/fast_attach_ucast_32")
+    logs_dir = resolve_relative(config_dir, raw.get("paths", {}).get("logs_dir"), "logs/fast_attach_ucast_1")
     run_logs_dir = build_run_logs_dir(logs_dir)
     platformio_core_dir = default_platformio_core_dir(testing_dir, variant_raw)
     platformio_packages_dir = platformio_core_dir / "packages"
@@ -437,7 +438,7 @@ def load_settings(args: argparse.Namespace) -> Settings:
         sniffer=SnifferSettings(enabled=sniffer_enabled, command=[str(part) for part in sniffer_command], stop_timeout_seconds=int(sniffer_raw.get("stop_timeout_seconds", 10))),
         selection=SelectionSettings(random_seed=random_seed, remove_initial_parent=remove_initial_parent),
         variant=variant_raw,
-        name_prefix="fast-attach-ucast-32",
+        name_prefix="fast-attach-ucast-1",
         max_router_number=max_router_number,
     )
 
@@ -445,10 +446,10 @@ def load_settings(args: argparse.Namespace) -> Settings:
 def config_path(settings: Settings, name: str) -> Path:
     runtime_dir = ensure_runtime_configs_dir(settings)
     if name == "child":
-        file_name = FAST_ATTACH_UCAST_32_CHILD_CONFIG
+        file_name = FAST_ATTACH_UCAST_1_CHILD_CONFIG
     elif name.startswith("router"):
         router_index = name.removeprefix("router")
-        file_name = f"{FAST_ATTACH_UCAST_32_ROUTER_PREFIX}_{router_index}.yaml"
+        file_name = f"{FAST_ATTACH_UCAST_1_ROUTER_PREFIX}_{router_index}.yaml"
     else:
         file_name = CONFIG_NAMES[name]
     path = runtime_dir / file_name
@@ -1253,7 +1254,7 @@ def write_manifest(settings: Settings, manifest: list[dict[str, Any]], *, dry_ru
     return path
 
 
-def verify_fast_attach_ucast_32_runtime_evidence(
+def verify_fast_attach_ucast_1_runtime_evidence(
     manifest: list[dict[str, Any]], child_log: Path | None, device_logs: dict[str, Path]
 ) -> tuple[bool, dict[str, Any]]:
     decision = next(
@@ -1267,21 +1268,21 @@ def verify_fast_attach_ucast_32_runtime_evidence(
     diagnostics = [
         {key: int(value) for key, value in match.groupdict().items()}
         for match in re.finditer(
-            r"FAST_ATTACH_UCAST_32 unicast=(?P<unicast>\d+) active_routers=(?P<active_routers>\d+) "
+            r"FAST_ATTACH_UCAST_1 unicast=(?P<unicast>\d+) active_routers=(?P<active_routers>\d+) "
             r"effective_routers=(?P<effective_routers>\d+) max_delay_ms=(?P<max_delay_ms>\d+) "
             r"delay_ms=(?P<delay_ms>\d+)",
             router_text,
         )
     ]
     valid_diagnostics = [item for item in diagnostics if item["unicast"] == 1
-                         and item["effective_routers"] == 1 and item["max_delay_ms"] == 32
-                         and 1 <= item["delay_ms"] <= 32]
+                         and item["effective_routers"] == 1 and item["max_delay_ms"] == 1
+                         and item["delay_ms"] == 1]
     required_child_events = (
-        "FAST_ATTACH_UCAST_32 event=requested",
-        "FAST_ATTACH_UCAST_32 event=parent_request_started",
-        "FAST_ATTACH_UCAST_32 event=target_response",
-        "FAST_ATTACH_UCAST_32 event=child_id_request_started",
-        "FAST_ATTACH_UCAST_32 event=succeeded",
+        "FAST_ATTACH_UCAST_1 event=requested",
+        "FAST_ATTACH_UCAST_1 event=parent_request_started",
+        "FAST_ATTACH_UCAST_1 event=target_response",
+        "FAST_ATTACH_UCAST_1 event=child_id_request_started",
+        "FAST_ATTACH_UCAST_1 event=succeeded",
     )
     evidence = {
         "target_selected": decision is not None,
@@ -1292,7 +1293,7 @@ def verify_fast_attach_ucast_32_runtime_evidence(
         "pcap_protocol_validation_required": True,
     }
     valid = bool(decision) and all(evidence["required_child_events"].values()) and bool(valid_diagnostics)
-    manifest.append({"time_utc": now_utc_iso(), "type": "fast_attach_ucast_32_runtime_evidence",
+    manifest.append({"time_utc": now_utc_iso(), "type": "fast_attach_ucast_1_runtime_evidence",
                      "valid": valid, **evidence})
     return valid, evidence
 
@@ -1377,7 +1378,7 @@ def main(argv: list[str]) -> int:
     if args.runs < 1:
         raise SystemExit("--runs must be at least 1.")
     if args.config is None:
-        args.config = FAST_ATTACH_UCAST_32_DEFAULT_CONFIG
+        args.config = FAST_ATTACH_UCAST_1_DEFAULT_CONFIG
     settings = load_settings(args)
     set_batch_log(settings.logs_dir / f"{settings.logs_dir.name}.log" if use_batch_layout(args.runs) else None)
 
@@ -1417,7 +1418,7 @@ def main(argv: list[str]) -> int:
         try:
             child_log, device_logs, sniffer_log, sniffer_remote_pcap, sniffer_local_pcap, status = run_timed_sequence(settings, dry_run=args.dry_run, manifest=manifest, run_index=run_index)
             if status == "completed" and not args.dry_run:
-                valid, _ = verify_fast_attach_ucast_32_runtime_evidence(manifest, child_log, device_logs)
+                valid, _ = verify_fast_attach_ucast_1_runtime_evidence(manifest, child_log, device_logs)
                 if not valid:
                     status = "failed"
         finally:

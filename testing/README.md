@@ -7,6 +7,7 @@ parent-switch variants:
 * `ucast`: directed preferred-parent switching using a unicast Parent Request.
 * `fast-attach`: stock-like parent removal using OpenThread PR #13121 Fast Attach during recovery.
 * `fast-attach-ucast-32`: proactive selected-parent handoff using unicast Fast Attach and a 32 ms response ceiling.
+* `fast-attach-ucast-1`: proactive selected-parent handoff using unicast Fast Attach and a fixed 1 ms response delay.
 
 The runners support two, three, or four ESP32-C6 routers plus one child. The
 device-specific TOML files map those roles to serial ports and configure test
@@ -40,6 +41,13 @@ Fast Attach unicast 32:
 ```bash
 cd testing
 ./run_fast_attach_ucast_32_test.sh --config fast_attach_ucast_32_test_devices_4routers.toml
+```
+
+Fast Attach unicast 1:
+
+```bash
+cd testing
+./run_fast_attach_ucast_1_test.sh --config fast_attach_ucast_1_test_devices_4routers.toml
 ```
 
 Common runner options include:
@@ -91,6 +99,11 @@ Fast Attach unicast 32 firmware:
 * `configs/fast_attach_ucast_32_child.yaml`
 * `configs/fast_attach_ucast_32_router_1.yaml` through `configs/fast_attach_ucast_32_router_4.yaml`
 
+Fast Attach unicast 1 firmware:
+
+* `configs/fast_attach_ucast_1_child.yaml`
+* `configs/fast_attach_ucast_1_router_1.yaml` through `configs/fast_attach_ucast_1_router_4.yaml`
+
 The preferred-parent component always uses targeted unicast discovery. Both
 variants disable OpenThread's default periodic MTD parent search so it cannot
 interfere with the experiment.
@@ -104,6 +117,7 @@ testing/.platformio-core/stock/
 testing/.platformio-core/ucast/
 testing/.platformio-core/fast-attach/
 testing/.platformio-core/fast-attach-ucast-32/
+testing/.platformio-core/fast-attach-ucast-1/
 ```
 
 Packages are kept inside the selected core. This prevents framework state from
