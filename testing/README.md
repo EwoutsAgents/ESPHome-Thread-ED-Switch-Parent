@@ -4,6 +4,7 @@ This directory contains the automated hardware tests for the supported
 parent-switch variants:
 
 * `stock`: natural OpenThread recovery after the current parent is removed.
+* `stock-low-power`: stock recovery with routers 1–2 at 0 dBm and routers 3–4 at -15 dBm.
 * `ucast`: directed preferred-parent switching using a unicast Parent Request.
 * `fast-attach`: stock-like parent removal using OpenThread PR #13121 Fast Attach during recovery.
 * `fast-attach-ucast-32`: proactive selected-parent handoff using unicast Fast Attach and a 32 ms response ceiling.
@@ -20,6 +21,13 @@ Stock:
 ```bash
 cd testing
 ./run_stock_test.sh --config stock_test_devices_4routers.toml
+```
+
+Stock low power:
+
+```bash
+cd testing
+./run_stock_low_power_test.sh --config stock_low_power_test_devices_4routers.toml
 ```
 
 Unicast:
@@ -84,6 +92,11 @@ Stock firmware:
 * `configs/stock_child.yaml`
 * `configs/stock_router_1.yaml` through `configs/stock_router_4.yaml`
 
+Stock low-power firmware:
+
+* `configs/stock_low_power_child.yaml`
+* `configs/stock_low_power_router_1.yaml` through `configs/stock_low_power_router_4.yaml`
+
 Unicast firmware:
 
 * `configs/ucast_child.yaml`
@@ -114,6 +127,7 @@ Each runner uses a variant-specific PlatformIO core by default:
 
 ```text
 testing/.platformio-core/stock/
+testing/.platformio-core/stock-low-power/
 testing/.platformio-core/ucast/
 testing/.platformio-core/fast-attach/
 testing/.platformio-core/fast-attach-ucast-32/
@@ -130,6 +144,7 @@ Repeated runs are written under:
 
 ```text
 logs/stock-<n>router-<runs>runs-<timestamp>/
+logs/stock-low-power-<n>router-<runs>runs-<timestamp>/
 logs/ucast-<n>router-<runs>runs-<timestamp>/
 ```
 
@@ -148,6 +163,8 @@ Use `scripts/pcap_to_csv.py` to regenerate packet exports from a capture.
 
 * [README_STOCK_TEST.md](README_STOCK_TEST.md) defines the stock/reference
   procedure and validity criteria.
+* [README_STOCK_LOW_POWER_TEST.md](README_STOCK_LOW_POWER_TEST.md) defines the
+  asymmetric-power stock procedure and expected high-power parent behavior.
 * [README_UCAST_TEST.md](README_UCAST_TEST.md) defines the directed unicast
   procedure and target-selection criteria.
 * [README_FAST_ATTACH_TEST.md](README_FAST_ATTACH_TEST.md) defines the isolated
