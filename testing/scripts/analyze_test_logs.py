@@ -448,6 +448,105 @@ def manifest_labels(manifest: dict[str, Any] | None) -> list[str]:
     return labels
 
 
+def stock_low_power_classification(
+    manifest: dict[str, Any] | None,
+    sequences: list[dict[str, Any]],
+) -> dict[str, Any] | None:
+    """Classify the intended high-power -> high-power stock-low-power path."""
+    if not manifest:
+        return None
+    environment = manifest.get("firmware_environment") or {}
+    variant = manifest.get("test_variant") or environment.get("variant")
+    if variant != "stock-low-power":
+        return None
+
+    removal = next(
+        (
+            event
+            for event in reversed(manifest.get("events", []))
+            if isinstance(event, dict)
+            and event.get("type") == "parent_removal_decision"
+            and event.get("action") == "removed"
+        ),
+        None,
+    )
+    if removal is None:
+        return {
+            "classification": "parent_not_removed",
+            "expected_sequence_met": False,
+            "initial_parent_is_high_power": None,
+            "replacement_parent_is_high_power": None,
+            "replacement_matches_expected_high_power": None,
+        }
+
+    power_map = removal.get("router_output_power_dbm") or environment.get("router_output_power_dbm") or {}
+    router_map = removal.get("router_extaddrs") or {}
+    extaddr_to_router = {
+        compact_extaddr(extaddr): details.get("logical_name")
+        for extaddr, details in router_map.items()
+        if isinstance(details, dict)
+    }
+
+    initial_extaddr = compact_extaddr(removal.get("detected_parent_extaddr"))
+    initial_router = removal.get("parent_logical_name") or extaddr_to_router.get(initial_extaddr)
+    initial_power = power_map.get(initial_router)
+    expected_router = removal.get("expected_replacement_high_power_router")
+
+    replacement_sequence = next(
+        (
+            sequence
+            for sequence in reversed(sequences)
+            if compact_extaddr(sequence.get("parent_extaddr")) not in {None, initial_extaddr}
+        ),
+        None,
+    )
+    replacement_extaddr = (
+        compact_extaddr(replacement_sequence.get("parent_extaddr")) if replacement_sequence else None
+    )
+    replacement_router = extaddr_to_router.get(replacement_extaddr)
+    replacement_power = power_map.get(replacement_router)
+    initial_is_high = initial_power == 0 if initial_power is not None else None
+    replacement_is_high = replacement_power == 0 if replacement_power is not None else None
+    replacement_matches = (
+        replacement_router == expected_router
+        if replacement_router is not None and expected_router is not None
+        else None
+    )
+    expected_sequence_met = initial_is_high is True and replacement_matches is True
+
+    if initial_router is None or initial_power is None:
+        classification = "initial_parent_unresolved"
+    elif not initial_is_high:
+        classification = "initial_parent_low_power"
+    elif replacement_extaddr is None:
+        classification = "replacement_not_observed"
+    elif replacement_router is None or replacement_power is None:
+        classification = "replacement_parent_unmapped"
+    elif replacement_matches:
+        classification = "expected_high_power_replacement"
+    elif replacement_is_high:
+        classification = "unexpected_high_power_replacement"
+    else:
+        classification = "low_power_replacement"
+
+    return {
+        "classification": classification,
+        "expected_sequence_met": expected_sequence_met,
+        "router_output_power_dbm": power_map,
+        "initial_parent_extaddr": initial_extaddr,
+        "initial_parent_router": initial_router,
+        "initial_parent_output_power_dbm": initial_power,
+        "initial_parent_is_high_power": initial_is_high,
+        "removed_parent_router": initial_router,
+        "expected_replacement_router": expected_router,
+        "replacement_parent_extaddr": replacement_extaddr,
+        "replacement_parent_router": replacement_router,
+        "replacement_parent_output_power_dbm": replacement_power,
+        "replacement_parent_is_high_power": replacement_is_high,
+        "replacement_matches_expected_high_power": replacement_matches,
+    }
+
+
 def parent_response_delay_events(manifest: dict[str, Any]) -> list[ParentResponseDelayEvent]:
     events: list[ParentResponseDelayEvent] = []
     manifest_path = Path(manifest.get("_manifest_path", ".")).resolve()
@@ -1281,6 +1380,7 @@ def analyze_log(
     completed = [seq for seq in raw_sequences if seq.has_complete_pcap_attach()]
     not_counted = [seq for seq in raw_sequences if not seq.has_complete_pcap_attach()]
 
+    completed_summaries = [seq.to_summary() for seq in completed]
     return {
         "group": log_group_name(path),
         "batch_dir": batch_dir_name(path),
@@ -1293,7 +1393,8 @@ def analyze_log(
         "child_extaddr": child_extaddr,
         "switch_targets": switch_targets,
         "parent_response_random_delay_subtraction": subtract_parent_response_random_delay,
-        "attach_sequences": [seq.to_summary() for seq in completed],
+        "attach_sequences": completed_summaries,
+        "stock_low_power": stock_low_power_classification(manifest, completed_summaries),
         "log_only_or_partial_sequences": [seq.to_summary() for seq in not_counted],
         "failed_tx": asdict(failed),
         "warnings": warnings,
@@ -1459,11 +1560,48 @@ def group_summary(group_results: list[dict[str, Any]]) -> dict[str, Any]:
     failed_mean, failed_stdev = mean_and_stdev(failed_tx_values)
     partial_counts = [len(result.get("log_only_or_partial_sequences", [])) for result in group_results]
     partial_mean, partial_stdev = mean_and_stdev(partial_counts)
+    stock_low_power_results = [
+        result["stock_low_power"]
+        for result in group_results
+        if result.get("stock_low_power") is not None
+    ]
+    stock_low_power_summary = None
+    if stock_low_power_results:
+        classifications: dict[str, int] = {}
+        manifest_statuses: dict[str, int] = {}
+        for result in stock_low_power_results:
+            name = result["classification"]
+            classifications[name] = classifications.get(name, 0) + 1
+        for item in group_results:
+            if item.get("stock_low_power") is None:
+                continue
+            status = str(item.get("manifest_status") or "missing")
+            manifest_statuses[status] = manifest_statuses.get(status, 0) + 1
+        initial_high = sum(result.get("initial_parent_is_high_power") is True for result in stock_low_power_results)
+        initial_low = sum(result.get("initial_parent_is_high_power") is False for result in stock_low_power_results)
+        replacement_high = sum(result.get("replacement_parent_is_high_power") is True for result in stock_low_power_results)
+        replacement_low = sum(result.get("replacement_parent_is_high_power") is False for result in stock_low_power_results)
+        expected = sum(result.get("expected_sequence_met") is True for result in stock_low_power_results)
+        total = len(stock_low_power_results)
+        stock_low_power_summary = {
+            "runs": total,
+            "manifest_statuses": manifest_statuses,
+            "classifications": classifications,
+            "initial_parent_high_power": initial_high,
+            "initial_parent_low_power": initial_low,
+            "initial_parent_unresolved": total - initial_high - initial_low,
+            "replacement_parent_high_power": replacement_high,
+            "replacement_parent_low_power": replacement_low,
+            "replacement_parent_unresolved": total - replacement_high - replacement_low,
+            "expected_sequence_met": expected,
+            "expected_sequence_rate": expected / total if total else None,
+        }
     return {
         "attaches": attach_summaries,
         "timing_labels": timing_labels,
         "failed_tx_attempts": (failed_mean, failed_stdev, len(failed_tx_values)),
         "log_only_or_partial_sequences": (partial_mean, partial_stdev, len(partial_counts)),
+        "stock_low_power": stock_low_power_summary,
     }
 
 
@@ -1561,6 +1699,21 @@ def render_markdown_report(
         out.append(f"| Failed TX Attempts per Log | {format_mean_sd(failed[0], failed[1])} | {failed[2]} |")
         out.append(f"| Log-only or Partial Sequences per Log | {format_mean_sd(partial[0], partial[1])} | {partial[2]} |")
         out.append("")
+        low_power_summary = summary.get("stock_low_power")
+        if low_power_summary:
+            rate = low_power_summary["expected_sequence_rate"]
+            out.extend(
+                [
+                    "### Stock-low-power parent-selection summary",
+                    "",
+                    f"- expected 0 dBm → other 0 dBm sequence: **{low_power_summary['expected_sequence_met']}/{low_power_summary['runs']}** ({rate * 100:.1f}%)",
+                    f"- initial parent: **{low_power_summary['initial_parent_high_power']} high-power**, **{low_power_summary['initial_parent_low_power']} low-power**, **{low_power_summary['initial_parent_unresolved']} unresolved**",
+                    f"- replacement parent: **{low_power_summary['replacement_parent_high_power']} high-power**, **{low_power_summary['replacement_parent_low_power']} low-power**, **{low_power_summary['replacement_parent_unresolved']} unresolved**",
+                    f"- classifications: `{json.dumps(low_power_summary['classifications'], sort_keys=True)}`",
+                    f"- manifest statuses: `{json.dumps(low_power_summary['manifest_statuses'], sort_keys=True)}`",
+                    "",
+                ]
+            )
         if summary_only:
             continue
         for result in group_items:
@@ -1584,6 +1737,21 @@ def render_markdown_report(
                         f"- terminal controller event: `{terminal.get('event')}` "
                         f"(result `{terminal.get('result')}`, error `{terminal.get('error')}`)"
                     )
+            low_power = result.get("stock_low_power")
+            if low_power:
+                out.append(f"- stock-low-power classification: `{low_power['classification']}`")
+                out.append(f"- expected 0 dBm → other 0 dBm sequence: **{low_power['expected_sequence_met']}**")
+                out.append(
+                    f"- initial parent: `{format_optional(low_power.get('initial_parent_router'))}` "
+                    f"(`{format_optional(low_power.get('initial_parent_output_power_dbm'))} dBm`)"
+                )
+                out.append(
+                    f"- replacement parent: `{format_optional(low_power.get('replacement_parent_router'))}` "
+                    f"(`{format_optional(low_power.get('replacement_parent_output_power_dbm'))} dBm`)"
+                )
+                out.append(
+                    f"- expected replacement router: `{format_optional(low_power.get('expected_replacement_router'))}`"
+                )
             out.append("")
             out.extend(["#### Firmware Provenance", ""])
             out.extend(render_firmware_provenance_lines(result.get("firmware_environment")))
