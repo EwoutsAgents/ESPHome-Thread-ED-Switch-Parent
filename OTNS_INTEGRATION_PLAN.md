@@ -1,11 +1,14 @@
 # OTNS integration scope
 
-The native OTNS integration mirrors the two supported hardware variants:
+The native OTNS integration mirrors the supported hardware variants:
 
 | Variant | Child behavior | Router behavior |
 | --- | --- | --- |
 | `stock` | Ordinary OpenThread attachment and recovery | Ordinary OpenThread FTD |
 | `ucast` | Directed selected-parent discovery using unicast | Ordinary OpenThread FTD |
+| `fast-attach` | PR #13121 Fast Attach recovery | Fast Attach-aware FTD |
+| `fast-attach-ucast-32` | Directed unicast Fast Attach | Fast Attach-aware FTD with a 32 ms response ceiling |
+| `fast-attach-ucast-1` | Directed unicast Fast Attach | Fast Attach-aware FTD with a fixed 1 ms response delay |
 
 No separate router-response variant is built. Both variants use normal
 OpenThread Parent Response scheduling on routers.
@@ -19,6 +22,12 @@ artifacts/stock-mtd-pps-off/ot-cli-mtd
 artifacts/preferred-parent-mtd-pps-off/ot-cli-mtd
 artifacts/stock-ftd/ot-cli-ftd
 artifacts/stock-ftd-delay-diagnostic/ot-cli-ftd
+artifacts/fast-attach-mtd-pps-off/ot-cli-mtd
+artifacts/fast-attach-ftd/ot-cli-ftd
+artifacts/fast-attach-ucast-32-mtd-pps-off/ot-cli-mtd
+artifacts/fast-attach-ucast-32-ftd/ot-cli-ftd
+artifacts/fast-attach-ucast-1-mtd-pps-off/ot-cli-mtd
+artifacts/fast-attach-ucast-1-ftd/ot-cli-ftd
 ```
 
 The preferred-parent MTD exposes only targeted unicast switching through its
@@ -35,6 +44,11 @@ The native selected-parent build applies:
 The diagnostic stock FTD applies only:
 
 1. `patches/canonical/parent-response-delay-diagnostic.patch`
+
+Fast Attach uses the isolated PR #13121 backport. The two combined directed
+profiles use generated native patches under `patches/otns/`; these compose the
+preferred-parent controller, Fast Attach backport, response-delay policy, and
+native CLI adapter into one patch that applies cleanly to the pinned revision.
 
 All patches target OpenThread commit
 `a12ff0d0f54fd41954b45047fcdd08f302731c5f`.
@@ -54,8 +68,9 @@ stock and ucast-compatible artifacts listed above.
 
 ## Scenario requirements
 
-OTNS-MAPS scenarios should retain matching two-, three-, and four-router stock
-and ucast cases. Ucast cases must:
+OTNS-MAPS scenarios should retain matching two-, three-, and four-router cases
+for stock, ucast, Fast Attach, and the 32 ms and 1 ms combined variants. Directed
+cases must:
 
 * identify a target router that is not the current parent;
 * direct the Parent Request to that target;

@@ -39,7 +39,18 @@ artifacts/stock-mtd-pps-off/ot-cli-mtd
 artifacts/preferred-parent-mtd-pps-off/ot-cli-mtd
 artifacts/stock-ftd/ot-cli-ftd
 artifacts/stock-ftd-delay-diagnostic/ot-cli-ftd
+artifacts/fast-attach-mtd-pps-off/ot-cli-mtd
+artifacts/fast-attach-ftd/ot-cli-ftd
+artifacts/fast-attach-ucast-32-mtd-pps-off/ot-cli-mtd
+artifacts/fast-attach-ucast-32-ftd/ot-cli-ftd
+artifacts/fast-attach-ucast-1-mtd-pps-off/ot-cli-mtd
+artifacts/fast-attach-ucast-1-ftd/ot-cli-ftd
 ```
 
 The delay-diagnostic FTD changes logging only. It is behaviorally a stock
 router and can be used when exact randomized-delay subtraction is required.
+
+`fast-attach-ucast-32-native.patch` and `fast-attach-ucast-1-native.patch`
+are native compositions of the corresponding ESPHome/OpenThread patch stacks.
+They include the preferred-parent CLI adapter used by OTNS-MAPS and avoid
+order-dependent patch conflicts in `mle.cpp`.
