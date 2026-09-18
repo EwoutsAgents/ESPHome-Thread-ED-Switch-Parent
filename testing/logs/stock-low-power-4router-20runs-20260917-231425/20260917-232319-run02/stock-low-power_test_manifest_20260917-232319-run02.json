@@ -1,0 +1,1470 @@
+{
+  "created_utc": "2026-09-17T21:31:33+00:00",
+  "dry_run": false,
+  "config_file": "/home/ewout/.openclaw/workspace-softwaredeveloper/ESPHome-Thread-ED-Switch-Parent/testing/stock_low_power_test_devices_4routers.toml",
+  "testing_dir": "/home/ewout/.openclaw/workspace-softwaredeveloper/ESPHome-Thread-ED-Switch-Parent/testing",
+  "configs_dir": "/home/ewout/.openclaw/workspace-softwaredeveloper/ESPHome-Thread-ED-Switch-Parent/testing/configs",
+  "logs_dir": "/home/ewout/.openclaw/workspace-softwaredeveloper/ESPHome-Thread-ED-Switch-Parent/testing/logs/stock-low-power-4router-20runs-20260917-231425",
+  "run_logs_dir": "/home/ewout/.openclaw/workspace-softwaredeveloper/ESPHome-Thread-ED-Switch-Parent/testing/logs/stock-low-power-4router-20runs-20260917-231425/20260917-232319-run02",
+  "run_number": 2,
+  "total_runs": 20,
+  "status": "completed",
+  "current_step": "completed",
+  "abort_reason": null,
+  "abort_traceback": null,
+  "esphome_bin": "/home/ewout/.openclaw/workspace-softwaredeveloper/ESPHome-Thread-ED-Switch-Parent/.venv/bin/esphome",
+  "esptool_bin": "/home/ewout/.openclaw/workspace-softwaredeveloper/ESPHome-Thread-ED-Switch-Parent/.venv/bin/esptool.py",
+  "precompile": true,
+  "clean_before_compile": false,
+  "platformio_packages_dir": "/home/ewout/.openclaw/workspace-softwaredeveloper/ESPHome-Thread-ED-Switch-Parent/testing/.platformio-core/stock-low-power/packages",
+  "reset_platformio_packages": false,
+  "test_variant": "stock-low-power",
+  "firmware_configs": {
+    "empty": "empty.yaml",
+    "router1": "stock_low_power_router_1.yaml",
+    "child": "stock_low_power_child.yaml",
+    "router2": "stock_low_power_router_2.yaml",
+    "router3": "stock_low_power_router_3.yaml",
+    "router4": "stock_low_power_router_4.yaml"
+  },
+  "devices": {
+    "router1": "/dev/serial/by-id/usb-Espressif_USB_JTAG_serial_debug_unit_58:8C:81:5D:B0:C4-if00",
+    "child": "/dev/serial/by-id/usb-Espressif_USB_JTAG_serial_debug_unit_58:8C:81:5D:B0:E0-if00",
+    "router2": "/dev/serial/by-id/usb-Espressif_USB_JTAG_serial_debug_unit_58:8C:81:5D:B1:54-if00",
+    "unused1": "/dev/serial/by-id/usb-Espressif_USB_JTAG_serial_debug_unit_58:8C:81:5F:D8:C4-if00",
+    "unused2": "/dev/serial/by-id/usb-Espressif_USB_JTAG_serial_debug_unit_58:8C:81:5F:D9:28-if00"
+  },
+  "timing": {
+    "sniffer_lead_in_seconds": 5,
+    "router_settling_seconds": 180,
+    "child_attach_seconds": 5,
+    "after_parent_removed_seconds": 255
+  },
+  "max_router_number": 4,
+  "firmware_environment": {
+    "phase": "runtime",
+    "variant": "stock-low-power",
+    "platformio_core_dir": "/home/ewout/.openclaw/workspace-softwaredeveloper/ESPHome-Thread-ED-Switch-Parent/testing/.platformio-core/stock-low-power",
+    "platformio_packages_dir": "/home/ewout/.openclaw/workspace-softwaredeveloper/ESPHome-Thread-ED-Switch-Parent/testing/.platformio-core/stock-low-power/packages",
+    "router_output_power_dbm": {
+      "router1": 0,
+      "router2": 0,
+      "router3": -15,
+      "router4": -15
+    }
+  },
+  "additional_router_assignments": [
+    {
+      "device_role": "unused1",
+      "firmware_name": "router3"
+    },
+    {
+      "device_role": "unused2",
+      "firmware_name": "router4"
+    }
+  ],
+  "device_assignments": [
+    {
+      "logical_name": "router1",
+      "config_name": "router1",
+      "device_role": "router1",
+      "device_port": "/dev/serial/by-id/usb-Espressif_USB_JTAG_serial_debug_unit_58:8C:81:5D:B0:C4-if00"
+    },
+    {
+      "logical_name": "child",
+      "config_name": "child",
+      "device_role": "child",
+      "device_port": "/dev/serial/by-id/usb-Espressif_USB_JTAG_serial_debug_unit_58:8C:81:5D:B0:E0-if00"
+    },
+    {
+      "logical_name": "router2",
+      "config_name": "router2",
+      "device_role": "router2",
+      "device_port": "/dev/serial/by-id/usb-Espressif_USB_JTAG_serial_debug_unit_58:8C:81:5D:B1:54-if00"
+    },
+    {
+      "logical_name": "router3",
+      "config_name": "router3",
+      "device_role": "unused1",
+      "device_port": "/dev/serial/by-id/usb-Espressif_USB_JTAG_serial_debug_unit_58:8C:81:5F:D8:C4-if00"
+    },
+    {
+      "logical_name": "router4",
+      "config_name": "router4",
+      "device_role": "unused2",
+      "device_port": "/dev/serial/by-id/usb-Espressif_USB_JTAG_serial_debug_unit_58:8C:81:5F:D9:28-if00"
+    }
+  ],
+  "detected_parent_extaddr": "aa:95:13:12:f4:32:6a:61",
+  "detected_parent_source": "child_log_explicit_parent_extaddr",
+  "removed_parent_logical_name": "router1",
+  "removed_parent_role": "router1",
+  "parent_removal_decision": {
+    "time_utc": "2026-09-17T21:27:15+00:00",
+    "type": "parent_removal_decision",
+    "action": "removed",
+    "reason": "REMOVED_CHILD_CURRENT_PARENT",
+    "detected_parent_extaddr": "aa:95:13:12:f4:32:6a:61",
+    "detected_parent_source": "child_log_explicit_parent_extaddr",
+    "router_extaddrs": {
+      "aa951312f4326a61": {
+        "logical_name": "router1",
+        "extaddr": "aa:95:13:12:f4:32:6a:61",
+        "own_extaddr": "aa951312f4326a61",
+        "own_extaddr_source": "own_thread_extaddr",
+        "role": "leader",
+        "role_source": "[23:23:59.811][I][esp-idf:000][ot_main]: [N] Mle-----------: Role detached -> leader",
+        "rloc16": "d000",
+        "rloc16_source": "[23:23:59.810][I][esp-idf:000][ot_main]: [N] Mle-----------: RLOC16 fffe -> d000",
+        "log_path": "/home/ewout/.openclaw/workspace-softwaredeveloper/ESPHome-Thread-ED-Switch-Parent/testing/logs/stock-low-power-4router-20runs-20260917-231425/20260917-232319-run02/stock-low-power_router1_20260917-232319-run02.log"
+      },
+      "c22b3f6fb7957301": {
+        "logical_name": "router2",
+        "extaddr": "c2:2b:3f:6f:b7:95:73:01",
+        "own_extaddr": "c22b3f6fb7957301",
+        "own_extaddr_source": "own_thread_extaddr",
+        "role": "router",
+        "role_source": "[23:25:32.084][I][esp-idf:000][ot_main]: [N] Mle-----------: Role child -> router",
+        "rloc16": "a800",
+        "rloc16_source": "[23:25:32.081][I][esp-idf:000][ot_main]: [N] Mle-----------: RLOC16 d001 -> a800",
+        "log_path": "/home/ewout/.openclaw/workspace-softwaredeveloper/ESPHome-Thread-ED-Switch-Parent/testing/logs/stock-low-power-4router-20runs-20260917-231425/20260917-232319-run02/stock-low-power_router2_20260917-232319-run02.log"
+      },
+      "722a81cdfdd97992": {
+        "logical_name": "router3",
+        "extaddr": "72:2a:81:cd:fd:d9:79:92",
+        "own_extaddr": "722a81cdfdd97992",
+        "own_extaddr_source": "own_thread_extaddr",
+        "role": "router",
+        "role_source": "[23:25:47.712][I][esp-idf:000][ot_main]: [N] Mle-----------: Role child -> router",
+        "rloc16": "d400",
+        "rloc16_source": "[23:25:47.710][I][esp-idf:000][ot_main]: [N] Mle-----------: RLOC16 d002 -> d400",
+        "log_path": "/home/ewout/.openclaw/workspace-softwaredeveloper/ESPHome-Thread-ED-Switch-Parent/testing/logs/stock-low-power-4router-20runs-20260917-231425/20260917-232319-run02/stock-low-power_router3_20260917-232319-run02.log"
+      },
+      "662106342d9f34d6": {
+        "logical_name": "router4",
+        "extaddr": "66:21:06:34:2d:9f:34:d6",
+        "own_extaddr": "662106342d9f34d6",
+        "own_extaddr_source": "own_thread_extaddr",
+        "role": "router",
+        "role_source": "[23:25:32.110][I][esp-idf:000][ot_main]: [N] Mle-----------: Role child -> router",
+        "rloc16": "0400",
+        "rloc16_source": "[23:25:32.107][I][esp-idf:000][ot_main]: [N] Mle-----------: RLOC16 d003 -> 0400",
+        "log_path": "/home/ewout/.openclaw/workspace-softwaredeveloper/ESPHome-Thread-ED-Switch-Parent/testing/logs/stock-low-power-4router-20runs-20260917-231425/20260917-232319-run02/stock-low-power_router4_20260917-232319-run02.log"
+      }
+    },
+    "router_output_power_dbm": {
+      "router1": 0,
+      "router2": 0,
+      "router3": -15,
+      "router4": -15
+    },
+    "detected_parent_output_power_dbm": 0,
+    "initial_parent_matches_expected_high_power": true,
+    "parent_logical_name": "router1",
+    "parent_config_name": "router1",
+    "parent_device_role": "router1",
+    "parent_device_port": "/dev/serial/by-id/usb-Espressif_USB_JTAG_serial_debug_unit_58:8C:81:5D:B0:C4-if00",
+    "expected_replacement_high_power_router": "router2",
+    "parent_log_path": "/home/ewout/.openclaw/workspace-softwaredeveloper/ESPHome-Thread-ED-Switch-Parent/testing/logs/stock-low-power-4router-20runs-20260917-231425/20260917-232319-run02/stock-low-power_router1_20260917-232319-run02.log",
+    "parent_thread_role": "leader",
+    "parent_thread_role_source": "[23:23:59.811][I][esp-idf:000][ot_main]: [N] Mle-----------: Role detached -> leader",
+    "router_thread_roles": {
+      "router1": {
+        "role": "leader",
+        "source": "[23:23:59.811][I][esp-idf:000][ot_main]: [N] Mle-----------: Role detached -> leader",
+        "log_path": "/home/ewout/.openclaw/workspace-softwaredeveloper/ESPHome-Thread-ED-Switch-Parent/testing/logs/stock-low-power-4router-20runs-20260917-231425/20260917-232319-run02/stock-low-power_router1_20260917-232319-run02.log"
+      },
+      "router2": {
+        "role": "router",
+        "source": "[23:25:32.084][I][esp-idf:000][ot_main]: [N] Mle-----------: Role child -> router",
+        "log_path": "/home/ewout/.openclaw/workspace-softwaredeveloper/ESPHome-Thread-ED-Switch-Parent/testing/logs/stock-low-power-4router-20runs-20260917-231425/20260917-232319-run02/stock-low-power_router2_20260917-232319-run02.log"
+      },
+      "router3": {
+        "role": "router",
+        "source": "[23:25:47.712][I][esp-idf:000][ot_main]: [N] Mle-----------: Role child -> router",
+        "log_path": "/home/ewout/.openclaw/workspace-softwaredeveloper/ESPHome-Thread-ED-Switch-Parent/testing/logs/stock-low-power-4router-20runs-20260917-231425/20260917-232319-run02/stock-low-power_router3_20260917-232319-run02.log"
+      },
+      "router4": {
+        "role": "router",
+        "source": "[23:25:32.110][I][esp-idf:000][ot_main]: [N] Mle-----------: Role child -> router",
+        "log_path": "/home/ewout/.openclaw/workspace-softwaredeveloper/ESPHome-Thread-ED-Switch-Parent/testing/logs/stock-low-power-4router-20runs-20260917-231425/20260917-232319-run02/stock-low-power_router4_20260917-232319-run02.log"
+      }
+    },
+    "leader_logical_names": [
+      "router1"
+    ],
+    "leader_check": "parent_is_leader"
+  },
+  "child_log": "/home/ewout/.openclaw/workspace-softwaredeveloper/ESPHome-Thread-ED-Switch-Parent/testing/logs/stock-low-power-4router-20runs-20260917-231425/20260917-232319-run02/stock-low-power_child_20260917-232319-run02.log",
+  "router1_log": "/home/ewout/.openclaw/workspace-softwaredeveloper/ESPHome-Thread-ED-Switch-Parent/testing/logs/stock-low-power-4router-20runs-20260917-231425/20260917-232319-run02/stock-low-power_router1_20260917-232319-run02.log",
+  "router2_log": "/home/ewout/.openclaw/workspace-softwaredeveloper/ESPHome-Thread-ED-Switch-Parent/testing/logs/stock-low-power-4router-20runs-20260917-231425/20260917-232319-run02/stock-low-power_router2_20260917-232319-run02.log",
+  "device_logs": {
+    "child": "/home/ewout/.openclaw/workspace-softwaredeveloper/ESPHome-Thread-ED-Switch-Parent/testing/logs/stock-low-power-4router-20runs-20260917-231425/20260917-232319-run02/stock-low-power_child_20260917-232319-run02.log",
+    "router1": "/home/ewout/.openclaw/workspace-softwaredeveloper/ESPHome-Thread-ED-Switch-Parent/testing/logs/stock-low-power-4router-20runs-20260917-231425/20260917-232319-run02/stock-low-power_router1_20260917-232319-run02.log",
+    "router2": "/home/ewout/.openclaw/workspace-softwaredeveloper/ESPHome-Thread-ED-Switch-Parent/testing/logs/stock-low-power-4router-20runs-20260917-231425/20260917-232319-run02/stock-low-power_router2_20260917-232319-run02.log",
+    "router3": "/home/ewout/.openclaw/workspace-softwaredeveloper/ESPHome-Thread-ED-Switch-Parent/testing/logs/stock-low-power-4router-20runs-20260917-231425/20260917-232319-run02/stock-low-power_router3_20260917-232319-run02.log",
+    "router4": "/home/ewout/.openclaw/workspace-softwaredeveloper/ESPHome-Thread-ED-Switch-Parent/testing/logs/stock-low-power-4router-20runs-20260917-231425/20260917-232319-run02/stock-low-power_router4_20260917-232319-run02.log"
+  },
+  "supervisor_log": "/home/ewout/.openclaw/workspace-softwaredeveloper/ESPHome-Thread-ED-Switch-Parent/testing/logs/stock-low-power-4router-20runs-20260917-231425/20260917-232319-run02/runner_supervisor.log",
+  "sniffer": {
+    "enabled": true,
+    "command": [
+      "ssh",
+      "rpi-802154-sniffer",
+      "~/bin/nrf802154-sniff"
+    ],
+    "stop_timeout_seconds": 10,
+    "log": "/home/ewout/.openclaw/workspace-softwaredeveloper/ESPHome-Thread-ED-Switch-Parent/testing/logs/stock-low-power-4router-20runs-20260917-231425/20260917-232319-run02/stock-low-power_sniffer_20260917-232319-run02.log",
+    "remote_pcap": "/home/ewout/captures/802154/802154-20260917-232340.pcapng",
+    "local_pcap": "/home/ewout/.openclaw/workspace-softwaredeveloper/ESPHome-Thread-ED-Switch-Parent/testing/logs/stock-low-power-4router-20runs-20260917-231425/20260917-232319-run02/stock-low-power_sniffer_20260917-232319-run02.pcapng"
+  },
+  "processes": {
+    "sniffer": {
+      "cmd": [
+        "ssh",
+        "rpi-802154-sniffer",
+        "~/bin/nrf802154-sniff"
+      ],
+      "log_path": "/home/ewout/.openclaw/workspace-softwaredeveloper/ESPHome-Thread-ED-Switch-Parent/testing/logs/stock-low-power-4router-20runs-20260917-231425/20260917-232319-run02/stock-low-power_sniffer_20260917-232319-run02.log",
+      "started_utc": "2026-09-17T21:23:40+00:00",
+      "pid": 1165497,
+      "status": "expected_exit",
+      "process_kind": "sniffer",
+      "ended_utc": "2026-09-17T21:31:33+00:00",
+      "returncode": 255
+    },
+    "router1_log": {
+      "cmd": [
+        "/home/ewout/.openclaw/workspace-softwaredeveloper/ESPHome-Thread-ED-Switch-Parent/.venv/bin/esphome",
+        "logs",
+        "/home/ewout/.openclaw/workspace-softwaredeveloper/ESPHome-Thread-ED-Switch-Parent/testing/.platformio-core/stock-low-power/esphome-configs/stock_low_power_router_1.yaml",
+        "--device",
+        "/dev/serial/by-id/usb-Espressif_USB_JTAG_serial_debug_unit_58:8C:81:5D:B0:C4-if00"
+      ],
+      "log_path": "/home/ewout/.openclaw/workspace-softwaredeveloper/ESPHome-Thread-ED-Switch-Parent/testing/logs/stock-low-power-4router-20runs-20260917-231425/20260917-232319-run02/stock-low-power_router1_20260917-232319-run02.log",
+      "started_utc": "2026-09-17T21:23:52+00:00",
+      "pid": 1165501,
+      "status": "expected_exit",
+      "process_kind": "device_log",
+      "logical_name": "router1",
+      "config_name": "router1",
+      "device_role": "router1",
+      "device_port": "/dev/serial/by-id/usb-Espressif_USB_JTAG_serial_debug_unit_58:8C:81:5D:B0:C4-if00",
+      "ended_utc": "2026-09-17T21:27:15+00:00",
+      "returncode": -15,
+      "signal": 15
+    },
+    "router2_log": {
+      "cmd": [
+        "/home/ewout/.openclaw/workspace-softwaredeveloper/ESPHome-Thread-ED-Switch-Parent/.venv/bin/esphome",
+        "logs",
+        "/home/ewout/.openclaw/workspace-softwaredeveloper/ESPHome-Thread-ED-Switch-Parent/testing/.platformio-core/stock-low-power/esphome-configs/stock_low_power_router_2.yaml",
+        "--device",
+        "/dev/serial/by-id/usb-Espressif_USB_JTAG_serial_debug_unit_58:8C:81:5D:B1:54-if00"
+      ],
+      "log_path": "/home/ewout/.openclaw/workspace-softwaredeveloper/ESPHome-Thread-ED-Switch-Parent/testing/logs/stock-low-power-4router-20runs-20260917-231425/20260917-232319-run02/stock-low-power_router2_20260917-232319-run02.log",
+      "started_utc": "2026-09-17T21:23:57+00:00",
+      "pid": 1165505,
+      "status": "expected_exit",
+      "process_kind": "device_log",
+      "logical_name": "router2",
+      "config_name": "router2",
+      "device_role": "router2",
+      "device_port": "/dev/serial/by-id/usb-Espressif_USB_JTAG_serial_debug_unit_58:8C:81:5D:B1:54-if00",
+      "ended_utc": "2026-09-17T21:31:33+00:00",
+      "returncode": -15,
+      "signal": 15
+    },
+    "router3_log": {
+      "cmd": [
+        "/home/ewout/.openclaw/workspace-softwaredeveloper/ESPHome-Thread-ED-Switch-Parent/.venv/bin/esphome",
+        "logs",
+        "/home/ewout/.openclaw/workspace-softwaredeveloper/ESPHome-Thread-ED-Switch-Parent/testing/.platformio-core/stock-low-power/esphome-configs/stock_low_power_router_3.yaml",
+        "--device",
+        "/dev/serial/by-id/usb-Espressif_USB_JTAG_serial_debug_unit_58:8C:81:5F:D8:C4-if00"
+      ],
+      "log_path": "/home/ewout/.openclaw/workspace-softwaredeveloper/ESPHome-Thread-ED-Switch-Parent/testing/logs/stock-low-power-4router-20runs-20260917-231425/20260917-232319-run02/stock-low-power_router3_20260917-232319-run02.log",
+      "started_utc": "2026-09-17T21:24:02+00:00",
+      "pid": 1165509,
+      "status": "expected_exit",
+      "process_kind": "device_log",
+      "logical_name": "router3",
+      "config_name": "router3",
+      "device_role": "unused1",
+      "device_port": "/dev/serial/by-id/usb-Espressif_USB_JTAG_serial_debug_unit_58:8C:81:5F:D8:C4-if00",
+      "ended_utc": "2026-09-17T21:31:33+00:00",
+      "returncode": -15,
+      "signal": 15
+    },
+    "router4_log": {
+      "cmd": [
+        "/home/ewout/.openclaw/workspace-softwaredeveloper/ESPHome-Thread-ED-Switch-Parent/.venv/bin/esphome",
+        "logs",
+        "/home/ewout/.openclaw/workspace-softwaredeveloper/ESPHome-Thread-ED-Switch-Parent/testing/.platformio-core/stock-low-power/esphome-configs/stock_low_power_router_4.yaml",
+        "--device",
+        "/dev/serial/by-id/usb-Espressif_USB_JTAG_serial_debug_unit_58:8C:81:5F:D9:28-if00"
+      ],
+      "log_path": "/home/ewout/.openclaw/workspace-softwaredeveloper/ESPHome-Thread-ED-Switch-Parent/testing/logs/stock-low-power-4router-20runs-20260917-231425/20260917-232319-run02/stock-low-power_router4_20260917-232319-run02.log",
+      "started_utc": "2026-09-17T21:24:06+00:00",
+      "pid": 1165513,
+      "status": "expected_exit",
+      "process_kind": "device_log",
+      "logical_name": "router4",
+      "config_name": "router4",
+      "device_role": "unused2",
+      "device_port": "/dev/serial/by-id/usb-Espressif_USB_JTAG_serial_debug_unit_58:8C:81:5F:D9:28-if00",
+      "ended_utc": "2026-09-17T21:31:33+00:00",
+      "returncode": -15,
+      "signal": 15
+    },
+    "child_log": {
+      "cmd": [
+        "/home/ewout/.openclaw/workspace-softwaredeveloper/ESPHome-Thread-ED-Switch-Parent/.venv/bin/esphome",
+        "logs",
+        "/home/ewout/.openclaw/workspace-softwaredeveloper/ESPHome-Thread-ED-Switch-Parent/testing/.platformio-core/stock-low-power/esphome-configs/stock_low_power_child.yaml",
+        "--device",
+        "/dev/serial/by-id/usb-Espressif_USB_JTAG_serial_debug_unit_58:8C:81:5D:B0:E0-if00"
+      ],
+      "log_path": "/home/ewout/.openclaw/workspace-softwaredeveloper/ESPHome-Thread-ED-Switch-Parent/testing/logs/stock-low-power-4router-20runs-20260917-231425/20260917-232319-run02/stock-low-power_child_20260917-232319-run02.log",
+      "started_utc": "2026-09-17T21:27:10+00:00",
+      "pid": 1165589,
+      "status": "expected_exit",
+      "process_kind": "device_log",
+      "logical_name": "child",
+      "config_name": "child",
+      "device_role": "child",
+      "device_port": "/dev/serial/by-id/usb-Espressif_USB_JTAG_serial_debug_unit_58:8C:81:5D:B0:E0-if00",
+      "ended_utc": "2026-09-17T21:31:33+00:00",
+      "returncode": -15,
+      "signal": 15
+    }
+  },
+  "events": [
+    {
+      "time_utc": "2026-09-17T21:14:25+00:00",
+      "type": "firmware_environment",
+      "phase": "preflight",
+      "variant": "stock-low-power",
+      "platformio_core_dir": "/home/ewout/.openclaw/workspace-softwaredeveloper/ESPHome-Thread-ED-Switch-Parent/testing/.platformio-core/stock-low-power",
+      "platformio_packages_dir": "/home/ewout/.openclaw/workspace-softwaredeveloper/ESPHome-Thread-ED-Switch-Parent/testing/.platformio-core/stock-low-power/packages",
+      "router_output_power_dbm": {
+        "router1": 0,
+        "router2": 0,
+        "router3": -15,
+        "router4": -15
+      }
+    },
+    {
+      "time_utc": "2026-09-17T21:14:25+00:00",
+      "cmd": [
+        "/home/ewout/.openclaw/workspace-softwaredeveloper/ESPHome-Thread-ED-Switch-Parent/.venv/bin/esphome",
+        "compile",
+        "/home/ewout/.openclaw/workspace-softwaredeveloper/ESPHome-Thread-ED-Switch-Parent/testing/.platformio-core/stock-low-power/esphome-configs/empty.yaml"
+      ],
+      "cwd": "/home/ewout/.openclaw/workspace-softwaredeveloper/ESPHome-Thread-ED-Switch-Parent/testing",
+      "dry_run": false,
+      "env": {
+        "PLATFORMIO_CORE_DIR": "/home/ewout/.openclaw/workspace-softwaredeveloper/ESPHome-Thread-ED-Switch-Parent/testing/.platformio-core/stock-low-power",
+        "PLATFORMIO_PACKAGES_DIR": "/home/ewout/.openclaw/workspace-softwaredeveloper/ESPHome-Thread-ED-Switch-Parent/testing/.platformio-core/stock-low-power/packages"
+      }
+    },
+    {
+      "time_utc": "2026-09-17T21:14:29+00:00",
+      "cmd": [
+        "/home/ewout/.openclaw/workspace-softwaredeveloper/ESPHome-Thread-ED-Switch-Parent/.venv/bin/esphome",
+        "compile",
+        "/home/ewout/.openclaw/workspace-softwaredeveloper/ESPHome-Thread-ED-Switch-Parent/testing/.platformio-core/stock-low-power/esphome-configs/stock_low_power_router_1.yaml"
+      ],
+      "cwd": "/home/ewout/.openclaw/workspace-softwaredeveloper/ESPHome-Thread-ED-Switch-Parent/testing",
+      "dry_run": false,
+      "env": {
+        "PLATFORMIO_CORE_DIR": "/home/ewout/.openclaw/workspace-softwaredeveloper/ESPHome-Thread-ED-Switch-Parent/testing/.platformio-core/stock-low-power",
+        "PLATFORMIO_PACKAGES_DIR": "/home/ewout/.openclaw/workspace-softwaredeveloper/ESPHome-Thread-ED-Switch-Parent/testing/.platformio-core/stock-low-power/packages"
+      }
+    },
+    {
+      "time_utc": "2026-09-17T21:14:35+00:00",
+      "cmd": [
+        "/home/ewout/.openclaw/workspace-softwaredeveloper/ESPHome-Thread-ED-Switch-Parent/.venv/bin/esphome",
+        "compile",
+        "/home/ewout/.openclaw/workspace-softwaredeveloper/ESPHome-Thread-ED-Switch-Parent/testing/.platformio-core/stock-low-power/esphome-configs/stock_low_power_child.yaml"
+      ],
+      "cwd": "/home/ewout/.openclaw/workspace-softwaredeveloper/ESPHome-Thread-ED-Switch-Parent/testing",
+      "dry_run": false,
+      "env": {
+        "PLATFORMIO_CORE_DIR": "/home/ewout/.openclaw/workspace-softwaredeveloper/ESPHome-Thread-ED-Switch-Parent/testing/.platformio-core/stock-low-power",
+        "PLATFORMIO_PACKAGES_DIR": "/home/ewout/.openclaw/workspace-softwaredeveloper/ESPHome-Thread-ED-Switch-Parent/testing/.platformio-core/stock-low-power/packages"
+      }
+    },
+    {
+      "time_utc": "2026-09-17T21:14:41+00:00",
+      "cmd": [
+        "/home/ewout/.openclaw/workspace-softwaredeveloper/ESPHome-Thread-ED-Switch-Parent/.venv/bin/esphome",
+        "compile",
+        "/home/ewout/.openclaw/workspace-softwaredeveloper/ESPHome-Thread-ED-Switch-Parent/testing/.platformio-core/stock-low-power/esphome-configs/stock_low_power_router_2.yaml"
+      ],
+      "cwd": "/home/ewout/.openclaw/workspace-softwaredeveloper/ESPHome-Thread-ED-Switch-Parent/testing",
+      "dry_run": false,
+      "env": {
+        "PLATFORMIO_CORE_DIR": "/home/ewout/.openclaw/workspace-softwaredeveloper/ESPHome-Thread-ED-Switch-Parent/testing/.platformio-core/stock-low-power",
+        "PLATFORMIO_PACKAGES_DIR": "/home/ewout/.openclaw/workspace-softwaredeveloper/ESPHome-Thread-ED-Switch-Parent/testing/.platformio-core/stock-low-power/packages"
+      }
+    },
+    {
+      "time_utc": "2026-09-17T21:14:48+00:00",
+      "cmd": [
+        "/home/ewout/.openclaw/workspace-softwaredeveloper/ESPHome-Thread-ED-Switch-Parent/.venv/bin/esphome",
+        "compile",
+        "/home/ewout/.openclaw/workspace-softwaredeveloper/ESPHome-Thread-ED-Switch-Parent/testing/.platformio-core/stock-low-power/esphome-configs/stock_low_power_router_3.yaml"
+      ],
+      "cwd": "/home/ewout/.openclaw/workspace-softwaredeveloper/ESPHome-Thread-ED-Switch-Parent/testing",
+      "dry_run": false,
+      "env": {
+        "PLATFORMIO_CORE_DIR": "/home/ewout/.openclaw/workspace-softwaredeveloper/ESPHome-Thread-ED-Switch-Parent/testing/.platformio-core/stock-low-power",
+        "PLATFORMIO_PACKAGES_DIR": "/home/ewout/.openclaw/workspace-softwaredeveloper/ESPHome-Thread-ED-Switch-Parent/testing/.platformio-core/stock-low-power/packages"
+      }
+    },
+    {
+      "time_utc": "2026-09-17T21:14:54+00:00",
+      "cmd": [
+        "/home/ewout/.openclaw/workspace-softwaredeveloper/ESPHome-Thread-ED-Switch-Parent/.venv/bin/esphome",
+        "compile",
+        "/home/ewout/.openclaw/workspace-softwaredeveloper/ESPHome-Thread-ED-Switch-Parent/testing/.platformio-core/stock-low-power/esphome-configs/stock_low_power_router_4.yaml"
+      ],
+      "cwd": "/home/ewout/.openclaw/workspace-softwaredeveloper/ESPHome-Thread-ED-Switch-Parent/testing",
+      "dry_run": false,
+      "env": {
+        "PLATFORMIO_CORE_DIR": "/home/ewout/.openclaw/workspace-softwaredeveloper/ESPHome-Thread-ED-Switch-Parent/testing/.platformio-core/stock-low-power",
+        "PLATFORMIO_PACKAGES_DIR": "/home/ewout/.openclaw/workspace-softwaredeveloper/ESPHome-Thread-ED-Switch-Parent/testing/.platformio-core/stock-low-power/packages"
+      }
+    },
+    {
+      "time_utc": "2026-09-17T21:15:06+00:00",
+      "type": "firmware_environment",
+      "phase": "postcompile",
+      "variant": "stock-low-power",
+      "platformio_core_dir": "/home/ewout/.openclaw/workspace-softwaredeveloper/ESPHome-Thread-ED-Switch-Parent/testing/.platformio-core/stock-low-power",
+      "platformio_packages_dir": "/home/ewout/.openclaw/workspace-softwaredeveloper/ESPHome-Thread-ED-Switch-Parent/testing/.platformio-core/stock-low-power/packages",
+      "router_output_power_dbm": {
+        "router1": 0,
+        "router2": 0,
+        "router3": -15,
+        "router4": -15
+      }
+    },
+    {
+      "time_utc": "2026-09-17T21:23:19+00:00",
+      "type": "step",
+      "step": "reset_all_devices"
+    },
+    {
+      "time_utc": "2026-09-17T21:23:19+00:00",
+      "cmd": [
+        "/home/ewout/.openclaw/workspace-softwaredeveloper/ESPHome-Thread-ED-Switch-Parent/.venv/bin/esptool.py",
+        "--chip",
+        "esp32c6",
+        "--port",
+        "/dev/serial/by-id/usb-Espressif_USB_JTAG_serial_debug_unit_58:8C:81:5D:B0:C4-if00",
+        "erase_flash"
+      ],
+      "cwd": "/home/ewout/.openclaw/workspace-softwaredeveloper/ESPHome-Thread-ED-Switch-Parent/testing",
+      "dry_run": false,
+      "env": {}
+    },
+    {
+      "time_utc": "2026-09-17T21:23:21+00:00",
+      "type": "command_completed",
+      "cmd": [
+        "/home/ewout/.openclaw/workspace-softwaredeveloper/ESPHome-Thread-ED-Switch-Parent/.venv/bin/esptool.py",
+        "--chip",
+        "esp32c6",
+        "--port",
+        "/dev/serial/by-id/usb-Espressif_USB_JTAG_serial_debug_unit_58:8C:81:5D:B0:C4-if00",
+        "erase_flash"
+      ],
+      "returncode": 0
+    },
+    {
+      "time_utc": "2026-09-17T21:23:21+00:00",
+      "cmd": [
+        "/home/ewout/.openclaw/workspace-softwaredeveloper/ESPHome-Thread-ED-Switch-Parent/.venv/bin/esphome",
+        "upload",
+        "/home/ewout/.openclaw/workspace-softwaredeveloper/ESPHome-Thread-ED-Switch-Parent/testing/.platformio-core/stock-low-power/esphome-configs/empty.yaml",
+        "--device",
+        "/dev/serial/by-id/usb-Espressif_USB_JTAG_serial_debug_unit_58:8C:81:5D:B0:C4-if00"
+      ],
+      "cwd": "/home/ewout/.openclaw/workspace-softwaredeveloper/ESPHome-Thread-ED-Switch-Parent/testing",
+      "dry_run": false,
+      "env": {
+        "PLATFORMIO_CORE_DIR": "/home/ewout/.openclaw/workspace-softwaredeveloper/ESPHome-Thread-ED-Switch-Parent/testing/.platformio-core/stock-low-power",
+        "PLATFORMIO_PACKAGES_DIR": "/home/ewout/.openclaw/workspace-softwaredeveloper/ESPHome-Thread-ED-Switch-Parent/testing/.platformio-core/stock-low-power/packages"
+      }
+    },
+    {
+      "time_utc": "2026-09-17T21:23:23+00:00",
+      "type": "command_completed",
+      "cmd": [
+        "/home/ewout/.openclaw/workspace-softwaredeveloper/ESPHome-Thread-ED-Switch-Parent/.venv/bin/esphome",
+        "upload",
+        "/home/ewout/.openclaw/workspace-softwaredeveloper/ESPHome-Thread-ED-Switch-Parent/testing/.platformio-core/stock-low-power/esphome-configs/empty.yaml",
+        "--device",
+        "/dev/serial/by-id/usb-Espressif_USB_JTAG_serial_debug_unit_58:8C:81:5D:B0:C4-if00"
+      ],
+      "returncode": 0
+    },
+    {
+      "time_utc": "2026-09-17T21:23:23+00:00",
+      "cmd": [
+        "/home/ewout/.openclaw/workspace-softwaredeveloper/ESPHome-Thread-ED-Switch-Parent/.venv/bin/esptool.py",
+        "--chip",
+        "esp32c6",
+        "--port",
+        "/dev/serial/by-id/usb-Espressif_USB_JTAG_serial_debug_unit_58:8C:81:5D:B0:E0-if00",
+        "erase_flash"
+      ],
+      "cwd": "/home/ewout/.openclaw/workspace-softwaredeveloper/ESPHome-Thread-ED-Switch-Parent/testing",
+      "dry_run": false,
+      "env": {}
+    },
+    {
+      "time_utc": "2026-09-17T21:23:26+00:00",
+      "type": "command_completed",
+      "cmd": [
+        "/home/ewout/.openclaw/workspace-softwaredeveloper/ESPHome-Thread-ED-Switch-Parent/.venv/bin/esptool.py",
+        "--chip",
+        "esp32c6",
+        "--port",
+        "/dev/serial/by-id/usb-Espressif_USB_JTAG_serial_debug_unit_58:8C:81:5D:B0:E0-if00",
+        "erase_flash"
+      ],
+      "returncode": 0
+    },
+    {
+      "time_utc": "2026-09-17T21:23:26+00:00",
+      "cmd": [
+        "/home/ewout/.openclaw/workspace-softwaredeveloper/ESPHome-Thread-ED-Switch-Parent/.venv/bin/esphome",
+        "upload",
+        "/home/ewout/.openclaw/workspace-softwaredeveloper/ESPHome-Thread-ED-Switch-Parent/testing/.platformio-core/stock-low-power/esphome-configs/empty.yaml",
+        "--device",
+        "/dev/serial/by-id/usb-Espressif_USB_JTAG_serial_debug_unit_58:8C:81:5D:B0:E0-if00"
+      ],
+      "cwd": "/home/ewout/.openclaw/workspace-softwaredeveloper/ESPHome-Thread-ED-Switch-Parent/testing",
+      "dry_run": false,
+      "env": {
+        "PLATFORMIO_CORE_DIR": "/home/ewout/.openclaw/workspace-softwaredeveloper/ESPHome-Thread-ED-Switch-Parent/testing/.platformio-core/stock-low-power",
+        "PLATFORMIO_PACKAGES_DIR": "/home/ewout/.openclaw/workspace-softwaredeveloper/ESPHome-Thread-ED-Switch-Parent/testing/.platformio-core/stock-low-power/packages"
+      }
+    },
+    {
+      "time_utc": "2026-09-17T21:23:27+00:00",
+      "type": "command_completed",
+      "cmd": [
+        "/home/ewout/.openclaw/workspace-softwaredeveloper/ESPHome-Thread-ED-Switch-Parent/.venv/bin/esphome",
+        "upload",
+        "/home/ewout/.openclaw/workspace-softwaredeveloper/ESPHome-Thread-ED-Switch-Parent/testing/.platformio-core/stock-low-power/esphome-configs/empty.yaml",
+        "--device",
+        "/dev/serial/by-id/usb-Espressif_USB_JTAG_serial_debug_unit_58:8C:81:5D:B0:E0-if00"
+      ],
+      "returncode": 0
+    },
+    {
+      "time_utc": "2026-09-17T21:23:27+00:00",
+      "cmd": [
+        "/home/ewout/.openclaw/workspace-softwaredeveloper/ESPHome-Thread-ED-Switch-Parent/.venv/bin/esptool.py",
+        "--chip",
+        "esp32c6",
+        "--port",
+        "/dev/serial/by-id/usb-Espressif_USB_JTAG_serial_debug_unit_58:8C:81:5D:B1:54-if00",
+        "erase_flash"
+      ],
+      "cwd": "/home/ewout/.openclaw/workspace-softwaredeveloper/ESPHome-Thread-ED-Switch-Parent/testing",
+      "dry_run": false,
+      "env": {}
+    },
+    {
+      "time_utc": "2026-09-17T21:23:30+00:00",
+      "type": "command_completed",
+      "cmd": [
+        "/home/ewout/.openclaw/workspace-softwaredeveloper/ESPHome-Thread-ED-Switch-Parent/.venv/bin/esptool.py",
+        "--chip",
+        "esp32c6",
+        "--port",
+        "/dev/serial/by-id/usb-Espressif_USB_JTAG_serial_debug_unit_58:8C:81:5D:B1:54-if00",
+        "erase_flash"
+      ],
+      "returncode": 0
+    },
+    {
+      "time_utc": "2026-09-17T21:23:30+00:00",
+      "cmd": [
+        "/home/ewout/.openclaw/workspace-softwaredeveloper/ESPHome-Thread-ED-Switch-Parent/.venv/bin/esphome",
+        "upload",
+        "/home/ewout/.openclaw/workspace-softwaredeveloper/ESPHome-Thread-ED-Switch-Parent/testing/.platformio-core/stock-low-power/esphome-configs/empty.yaml",
+        "--device",
+        "/dev/serial/by-id/usb-Espressif_USB_JTAG_serial_debug_unit_58:8C:81:5D:B1:54-if00"
+      ],
+      "cwd": "/home/ewout/.openclaw/workspace-softwaredeveloper/ESPHome-Thread-ED-Switch-Parent/testing",
+      "dry_run": false,
+      "env": {
+        "PLATFORMIO_CORE_DIR": "/home/ewout/.openclaw/workspace-softwaredeveloper/ESPHome-Thread-ED-Switch-Parent/testing/.platformio-core/stock-low-power",
+        "PLATFORMIO_PACKAGES_DIR": "/home/ewout/.openclaw/workspace-softwaredeveloper/ESPHome-Thread-ED-Switch-Parent/testing/.platformio-core/stock-low-power/packages"
+      }
+    },
+    {
+      "time_utc": "2026-09-17T21:23:32+00:00",
+      "type": "command_completed",
+      "cmd": [
+        "/home/ewout/.openclaw/workspace-softwaredeveloper/ESPHome-Thread-ED-Switch-Parent/.venv/bin/esphome",
+        "upload",
+        "/home/ewout/.openclaw/workspace-softwaredeveloper/ESPHome-Thread-ED-Switch-Parent/testing/.platformio-core/stock-low-power/esphome-configs/empty.yaml",
+        "--device",
+        "/dev/serial/by-id/usb-Espressif_USB_JTAG_serial_debug_unit_58:8C:81:5D:B1:54-if00"
+      ],
+      "returncode": 0
+    },
+    {
+      "time_utc": "2026-09-17T21:23:32+00:00",
+      "cmd": [
+        "/home/ewout/.openclaw/workspace-softwaredeveloper/ESPHome-Thread-ED-Switch-Parent/.venv/bin/esptool.py",
+        "--chip",
+        "esp32c6",
+        "--port",
+        "/dev/serial/by-id/usb-Espressif_USB_JTAG_serial_debug_unit_58:8C:81:5F:D8:C4-if00",
+        "erase_flash"
+      ],
+      "cwd": "/home/ewout/.openclaw/workspace-softwaredeveloper/ESPHome-Thread-ED-Switch-Parent/testing",
+      "dry_run": false,
+      "env": {}
+    },
+    {
+      "time_utc": "2026-09-17T21:23:34+00:00",
+      "type": "command_completed",
+      "cmd": [
+        "/home/ewout/.openclaw/workspace-softwaredeveloper/ESPHome-Thread-ED-Switch-Parent/.venv/bin/esptool.py",
+        "--chip",
+        "esp32c6",
+        "--port",
+        "/dev/serial/by-id/usb-Espressif_USB_JTAG_serial_debug_unit_58:8C:81:5F:D8:C4-if00",
+        "erase_flash"
+      ],
+      "returncode": 0
+    },
+    {
+      "time_utc": "2026-09-17T21:23:34+00:00",
+      "cmd": [
+        "/home/ewout/.openclaw/workspace-softwaredeveloper/ESPHome-Thread-ED-Switch-Parent/.venv/bin/esphome",
+        "upload",
+        "/home/ewout/.openclaw/workspace-softwaredeveloper/ESPHome-Thread-ED-Switch-Parent/testing/.platformio-core/stock-low-power/esphome-configs/empty.yaml",
+        "--device",
+        "/dev/serial/by-id/usb-Espressif_USB_JTAG_serial_debug_unit_58:8C:81:5F:D8:C4-if00"
+      ],
+      "cwd": "/home/ewout/.openclaw/workspace-softwaredeveloper/ESPHome-Thread-ED-Switch-Parent/testing",
+      "dry_run": false,
+      "env": {
+        "PLATFORMIO_CORE_DIR": "/home/ewout/.openclaw/workspace-softwaredeveloper/ESPHome-Thread-ED-Switch-Parent/testing/.platformio-core/stock-low-power",
+        "PLATFORMIO_PACKAGES_DIR": "/home/ewout/.openclaw/workspace-softwaredeveloper/ESPHome-Thread-ED-Switch-Parent/testing/.platformio-core/stock-low-power/packages"
+      }
+    },
+    {
+      "time_utc": "2026-09-17T21:23:36+00:00",
+      "type": "command_completed",
+      "cmd": [
+        "/home/ewout/.openclaw/workspace-softwaredeveloper/ESPHome-Thread-ED-Switch-Parent/.venv/bin/esphome",
+        "upload",
+        "/home/ewout/.openclaw/workspace-softwaredeveloper/ESPHome-Thread-ED-Switch-Parent/testing/.platformio-core/stock-low-power/esphome-configs/empty.yaml",
+        "--device",
+        "/dev/serial/by-id/usb-Espressif_USB_JTAG_serial_debug_unit_58:8C:81:5F:D8:C4-if00"
+      ],
+      "returncode": 0
+    },
+    {
+      "time_utc": "2026-09-17T21:23:36+00:00",
+      "cmd": [
+        "/home/ewout/.openclaw/workspace-softwaredeveloper/ESPHome-Thread-ED-Switch-Parent/.venv/bin/esptool.py",
+        "--chip",
+        "esp32c6",
+        "--port",
+        "/dev/serial/by-id/usb-Espressif_USB_JTAG_serial_debug_unit_58:8C:81:5F:D9:28-if00",
+        "erase_flash"
+      ],
+      "cwd": "/home/ewout/.openclaw/workspace-softwaredeveloper/ESPHome-Thread-ED-Switch-Parent/testing",
+      "dry_run": false,
+      "env": {}
+    },
+    {
+      "time_utc": "2026-09-17T21:23:38+00:00",
+      "type": "command_completed",
+      "cmd": [
+        "/home/ewout/.openclaw/workspace-softwaredeveloper/ESPHome-Thread-ED-Switch-Parent/.venv/bin/esptool.py",
+        "--chip",
+        "esp32c6",
+        "--port",
+        "/dev/serial/by-id/usb-Espressif_USB_JTAG_serial_debug_unit_58:8C:81:5F:D9:28-if00",
+        "erase_flash"
+      ],
+      "returncode": 0
+    },
+    {
+      "time_utc": "2026-09-17T21:23:38+00:00",
+      "cmd": [
+        "/home/ewout/.openclaw/workspace-softwaredeveloper/ESPHome-Thread-ED-Switch-Parent/.venv/bin/esphome",
+        "upload",
+        "/home/ewout/.openclaw/workspace-softwaredeveloper/ESPHome-Thread-ED-Switch-Parent/testing/.platformio-core/stock-low-power/esphome-configs/empty.yaml",
+        "--device",
+        "/dev/serial/by-id/usb-Espressif_USB_JTAG_serial_debug_unit_58:8C:81:5F:D9:28-if00"
+      ],
+      "cwd": "/home/ewout/.openclaw/workspace-softwaredeveloper/ESPHome-Thread-ED-Switch-Parent/testing",
+      "dry_run": false,
+      "env": {
+        "PLATFORMIO_CORE_DIR": "/home/ewout/.openclaw/workspace-softwaredeveloper/ESPHome-Thread-ED-Switch-Parent/testing/.platformio-core/stock-low-power",
+        "PLATFORMIO_PACKAGES_DIR": "/home/ewout/.openclaw/workspace-softwaredeveloper/ESPHome-Thread-ED-Switch-Parent/testing/.platformio-core/stock-low-power/packages"
+      }
+    },
+    {
+      "time_utc": "2026-09-17T21:23:40+00:00",
+      "type": "command_completed",
+      "cmd": [
+        "/home/ewout/.openclaw/workspace-softwaredeveloper/ESPHome-Thread-ED-Switch-Parent/.venv/bin/esphome",
+        "upload",
+        "/home/ewout/.openclaw/workspace-softwaredeveloper/ESPHome-Thread-ED-Switch-Parent/testing/.platformio-core/stock-low-power/esphome-configs/empty.yaml",
+        "--device",
+        "/dev/serial/by-id/usb-Espressif_USB_JTAG_serial_debug_unit_58:8C:81:5F:D9:28-if00"
+      ],
+      "returncode": 0
+    },
+    {
+      "time_utc": "2026-09-17T21:23:40+00:00",
+      "type": "step",
+      "step": "start_sniffer"
+    },
+    {
+      "time_utc": "2026-09-17T21:23:40+00:00",
+      "type": "sniffer_log_allocated",
+      "log_path": "/home/ewout/.openclaw/workspace-softwaredeveloper/ESPHome-Thread-ED-Switch-Parent/testing/logs/stock-low-power-4router-20runs-20260917-231425/20260917-232319-run02/stock-low-power_sniffer_20260917-232319-run02.log"
+    },
+    {
+      "time_utc": "2026-09-17T21:23:40+00:00",
+      "type": "sniffer_pre_clean",
+      "cmd": [
+        "ssh",
+        "rpi-802154-sniffer",
+        "pkill -f 'nrf802154_sniffer.py|tshark.*802.15.4' >/dev/null 2>&1 || true; sleep 1"
+      ]
+    },
+    {
+      "time_utc": "2026-09-17T21:23:40+00:00",
+      "type": "process_started",
+      "name": "sniffer",
+      "cmd": [
+        "ssh",
+        "rpi-802154-sniffer",
+        "~/bin/nrf802154-sniff"
+      ],
+      "log_path": "/home/ewout/.openclaw/workspace-softwaredeveloper/ESPHome-Thread-ED-Switch-Parent/testing/logs/stock-low-power-4router-20runs-20260917-231425/20260917-232319-run02/stock-low-power_sniffer_20260917-232319-run02.log",
+      "started_utc": "2026-09-17T21:23:40+00:00",
+      "pid": 1165497,
+      "status": "running",
+      "process_kind": "sniffer"
+    },
+    {
+      "time_utc": "2026-09-17T21:23:42+00:00",
+      "sleep_seconds": 5,
+      "reason": "sniffer started; wait before flashing routers",
+      "dry_run": false
+    },
+    {
+      "time_utc": "2026-09-17T21:23:47+00:00",
+      "type": "step",
+      "step": "flash_routers",
+      "router_plan": [
+        {
+          "logical_name": "router1",
+          "config_name": "router1",
+          "device_role": "router1"
+        },
+        {
+          "logical_name": "router2",
+          "config_name": "router2",
+          "device_role": "router2"
+        },
+        {
+          "logical_name": "router3",
+          "config_name": "router3",
+          "device_role": "unused1"
+        },
+        {
+          "logical_name": "router4",
+          "config_name": "router4",
+          "device_role": "unused2"
+        }
+      ]
+    },
+    {
+      "time_utc": "2026-09-17T21:23:47+00:00",
+      "cmd": [
+        "/home/ewout/.openclaw/workspace-softwaredeveloper/ESPHome-Thread-ED-Switch-Parent/.venv/bin/esphome",
+        "upload",
+        "/home/ewout/.openclaw/workspace-softwaredeveloper/ESPHome-Thread-ED-Switch-Parent/testing/.platformio-core/stock-low-power/esphome-configs/stock_low_power_router_1.yaml",
+        "--device",
+        "/dev/serial/by-id/usb-Espressif_USB_JTAG_serial_debug_unit_58:8C:81:5D:B0:C4-if00"
+      ],
+      "cwd": "/home/ewout/.openclaw/workspace-softwaredeveloper/ESPHome-Thread-ED-Switch-Parent/testing",
+      "dry_run": false,
+      "env": {
+        "PLATFORMIO_CORE_DIR": "/home/ewout/.openclaw/workspace-softwaredeveloper/ESPHome-Thread-ED-Switch-Parent/testing/.platformio-core/stock-low-power",
+        "PLATFORMIO_PACKAGES_DIR": "/home/ewout/.openclaw/workspace-softwaredeveloper/ESPHome-Thread-ED-Switch-Parent/testing/.platformio-core/stock-low-power/packages"
+      }
+    },
+    {
+      "time_utc": "2026-09-17T21:23:52+00:00",
+      "type": "command_completed",
+      "cmd": [
+        "/home/ewout/.openclaw/workspace-softwaredeveloper/ESPHome-Thread-ED-Switch-Parent/.venv/bin/esphome",
+        "upload",
+        "/home/ewout/.openclaw/workspace-softwaredeveloper/ESPHome-Thread-ED-Switch-Parent/testing/.platformio-core/stock-low-power/esphome-configs/stock_low_power_router_1.yaml",
+        "--device",
+        "/dev/serial/by-id/usb-Espressif_USB_JTAG_serial_debug_unit_58:8C:81:5D:B0:C4-if00"
+      ],
+      "returncode": 0
+    },
+    {
+      "time_utc": "2026-09-17T21:23:52+00:00",
+      "type": "process_started",
+      "name": "router1_log",
+      "cmd": [
+        "/home/ewout/.openclaw/workspace-softwaredeveloper/ESPHome-Thread-ED-Switch-Parent/.venv/bin/esphome",
+        "logs",
+        "/home/ewout/.openclaw/workspace-softwaredeveloper/ESPHome-Thread-ED-Switch-Parent/testing/.platformio-core/stock-low-power/esphome-configs/stock_low_power_router_1.yaml",
+        "--device",
+        "/dev/serial/by-id/usb-Espressif_USB_JTAG_serial_debug_unit_58:8C:81:5D:B0:C4-if00"
+      ],
+      "log_path": "/home/ewout/.openclaw/workspace-softwaredeveloper/ESPHome-Thread-ED-Switch-Parent/testing/logs/stock-low-power-4router-20runs-20260917-231425/20260917-232319-run02/stock-low-power_router1_20260917-232319-run02.log",
+      "started_utc": "2026-09-17T21:23:52+00:00",
+      "pid": 1165501,
+      "status": "running",
+      "process_kind": "device_log",
+      "logical_name": "router1",
+      "config_name": "router1",
+      "device_role": "router1",
+      "device_port": "/dev/serial/by-id/usb-Espressif_USB_JTAG_serial_debug_unit_58:8C:81:5D:B0:C4-if00"
+    },
+    {
+      "time_utc": "2026-09-17T21:23:52+00:00",
+      "cmd": [
+        "/home/ewout/.openclaw/workspace-softwaredeveloper/ESPHome-Thread-ED-Switch-Parent/.venv/bin/esphome",
+        "upload",
+        "/home/ewout/.openclaw/workspace-softwaredeveloper/ESPHome-Thread-ED-Switch-Parent/testing/.platformio-core/stock-low-power/esphome-configs/stock_low_power_router_2.yaml",
+        "--device",
+        "/dev/serial/by-id/usb-Espressif_USB_JTAG_serial_debug_unit_58:8C:81:5D:B1:54-if00"
+      ],
+      "cwd": "/home/ewout/.openclaw/workspace-softwaredeveloper/ESPHome-Thread-ED-Switch-Parent/testing",
+      "dry_run": false,
+      "env": {
+        "PLATFORMIO_CORE_DIR": "/home/ewout/.openclaw/workspace-softwaredeveloper/ESPHome-Thread-ED-Switch-Parent/testing/.platformio-core/stock-low-power",
+        "PLATFORMIO_PACKAGES_DIR": "/home/ewout/.openclaw/workspace-softwaredeveloper/ESPHome-Thread-ED-Switch-Parent/testing/.platformio-core/stock-low-power/packages"
+      }
+    },
+    {
+      "time_utc": "2026-09-17T21:23:57+00:00",
+      "type": "command_completed",
+      "cmd": [
+        "/home/ewout/.openclaw/workspace-softwaredeveloper/ESPHome-Thread-ED-Switch-Parent/.venv/bin/esphome",
+        "upload",
+        "/home/ewout/.openclaw/workspace-softwaredeveloper/ESPHome-Thread-ED-Switch-Parent/testing/.platformio-core/stock-low-power/esphome-configs/stock_low_power_router_2.yaml",
+        "--device",
+        "/dev/serial/by-id/usb-Espressif_USB_JTAG_serial_debug_unit_58:8C:81:5D:B1:54-if00"
+      ],
+      "returncode": 0
+    },
+    {
+      "time_utc": "2026-09-17T21:23:57+00:00",
+      "type": "process_started",
+      "name": "router2_log",
+      "cmd": [
+        "/home/ewout/.openclaw/workspace-softwaredeveloper/ESPHome-Thread-ED-Switch-Parent/.venv/bin/esphome",
+        "logs",
+        "/home/ewout/.openclaw/workspace-softwaredeveloper/ESPHome-Thread-ED-Switch-Parent/testing/.platformio-core/stock-low-power/esphome-configs/stock_low_power_router_2.yaml",
+        "--device",
+        "/dev/serial/by-id/usb-Espressif_USB_JTAG_serial_debug_unit_58:8C:81:5D:B1:54-if00"
+      ],
+      "log_path": "/home/ewout/.openclaw/workspace-softwaredeveloper/ESPHome-Thread-ED-Switch-Parent/testing/logs/stock-low-power-4router-20runs-20260917-231425/20260917-232319-run02/stock-low-power_router2_20260917-232319-run02.log",
+      "started_utc": "2026-09-17T21:23:57+00:00",
+      "pid": 1165505,
+      "status": "running",
+      "process_kind": "device_log",
+      "logical_name": "router2",
+      "config_name": "router2",
+      "device_role": "router2",
+      "device_port": "/dev/serial/by-id/usb-Espressif_USB_JTAG_serial_debug_unit_58:8C:81:5D:B1:54-if00"
+    },
+    {
+      "time_utc": "2026-09-17T21:23:57+00:00",
+      "cmd": [
+        "/home/ewout/.openclaw/workspace-softwaredeveloper/ESPHome-Thread-ED-Switch-Parent/.venv/bin/esphome",
+        "upload",
+        "/home/ewout/.openclaw/workspace-softwaredeveloper/ESPHome-Thread-ED-Switch-Parent/testing/.platformio-core/stock-low-power/esphome-configs/stock_low_power_router_3.yaml",
+        "--device",
+        "/dev/serial/by-id/usb-Espressif_USB_JTAG_serial_debug_unit_58:8C:81:5F:D8:C4-if00"
+      ],
+      "cwd": "/home/ewout/.openclaw/workspace-softwaredeveloper/ESPHome-Thread-ED-Switch-Parent/testing",
+      "dry_run": false,
+      "env": {
+        "PLATFORMIO_CORE_DIR": "/home/ewout/.openclaw/workspace-softwaredeveloper/ESPHome-Thread-ED-Switch-Parent/testing/.platformio-core/stock-low-power",
+        "PLATFORMIO_PACKAGES_DIR": "/home/ewout/.openclaw/workspace-softwaredeveloper/ESPHome-Thread-ED-Switch-Parent/testing/.platformio-core/stock-low-power/packages"
+      }
+    },
+    {
+      "time_utc": "2026-09-17T21:24:02+00:00",
+      "type": "command_completed",
+      "cmd": [
+        "/home/ewout/.openclaw/workspace-softwaredeveloper/ESPHome-Thread-ED-Switch-Parent/.venv/bin/esphome",
+        "upload",
+        "/home/ewout/.openclaw/workspace-softwaredeveloper/ESPHome-Thread-ED-Switch-Parent/testing/.platformio-core/stock-low-power/esphome-configs/stock_low_power_router_3.yaml",
+        "--device",
+        "/dev/serial/by-id/usb-Espressif_USB_JTAG_serial_debug_unit_58:8C:81:5F:D8:C4-if00"
+      ],
+      "returncode": 0
+    },
+    {
+      "time_utc": "2026-09-17T21:24:02+00:00",
+      "type": "process_started",
+      "name": "router3_log",
+      "cmd": [
+        "/home/ewout/.openclaw/workspace-softwaredeveloper/ESPHome-Thread-ED-Switch-Parent/.venv/bin/esphome",
+        "logs",
+        "/home/ewout/.openclaw/workspace-softwaredeveloper/ESPHome-Thread-ED-Switch-Parent/testing/.platformio-core/stock-low-power/esphome-configs/stock_low_power_router_3.yaml",
+        "--device",
+        "/dev/serial/by-id/usb-Espressif_USB_JTAG_serial_debug_unit_58:8C:81:5F:D8:C4-if00"
+      ],
+      "log_path": "/home/ewout/.openclaw/workspace-softwaredeveloper/ESPHome-Thread-ED-Switch-Parent/testing/logs/stock-low-power-4router-20runs-20260917-231425/20260917-232319-run02/stock-low-power_router3_20260917-232319-run02.log",
+      "started_utc": "2026-09-17T21:24:02+00:00",
+      "pid": 1165509,
+      "status": "running",
+      "process_kind": "device_log",
+      "logical_name": "router3",
+      "config_name": "router3",
+      "device_role": "unused1",
+      "device_port": "/dev/serial/by-id/usb-Espressif_USB_JTAG_serial_debug_unit_58:8C:81:5F:D8:C4-if00"
+    },
+    {
+      "time_utc": "2026-09-17T21:24:02+00:00",
+      "cmd": [
+        "/home/ewout/.openclaw/workspace-softwaredeveloper/ESPHome-Thread-ED-Switch-Parent/.venv/bin/esphome",
+        "upload",
+        "/home/ewout/.openclaw/workspace-softwaredeveloper/ESPHome-Thread-ED-Switch-Parent/testing/.platformio-core/stock-low-power/esphome-configs/stock_low_power_router_4.yaml",
+        "--device",
+        "/dev/serial/by-id/usb-Espressif_USB_JTAG_serial_debug_unit_58:8C:81:5F:D9:28-if00"
+      ],
+      "cwd": "/home/ewout/.openclaw/workspace-softwaredeveloper/ESPHome-Thread-ED-Switch-Parent/testing",
+      "dry_run": false,
+      "env": {
+        "PLATFORMIO_CORE_DIR": "/home/ewout/.openclaw/workspace-softwaredeveloper/ESPHome-Thread-ED-Switch-Parent/testing/.platformio-core/stock-low-power",
+        "PLATFORMIO_PACKAGES_DIR": "/home/ewout/.openclaw/workspace-softwaredeveloper/ESPHome-Thread-ED-Switch-Parent/testing/.platformio-core/stock-low-power/packages"
+      }
+    },
+    {
+      "time_utc": "2026-09-17T21:24:06+00:00",
+      "type": "command_completed",
+      "cmd": [
+        "/home/ewout/.openclaw/workspace-softwaredeveloper/ESPHome-Thread-ED-Switch-Parent/.venv/bin/esphome",
+        "upload",
+        "/home/ewout/.openclaw/workspace-softwaredeveloper/ESPHome-Thread-ED-Switch-Parent/testing/.platformio-core/stock-low-power/esphome-configs/stock_low_power_router_4.yaml",
+        "--device",
+        "/dev/serial/by-id/usb-Espressif_USB_JTAG_serial_debug_unit_58:8C:81:5F:D9:28-if00"
+      ],
+      "returncode": 0
+    },
+    {
+      "time_utc": "2026-09-17T21:24:06+00:00",
+      "type": "process_started",
+      "name": "router4_log",
+      "cmd": [
+        "/home/ewout/.openclaw/workspace-softwaredeveloper/ESPHome-Thread-ED-Switch-Parent/.venv/bin/esphome",
+        "logs",
+        "/home/ewout/.openclaw/workspace-softwaredeveloper/ESPHome-Thread-ED-Switch-Parent/testing/.platformio-core/stock-low-power/esphome-configs/stock_low_power_router_4.yaml",
+        "--device",
+        "/dev/serial/by-id/usb-Espressif_USB_JTAG_serial_debug_unit_58:8C:81:5F:D9:28-if00"
+      ],
+      "log_path": "/home/ewout/.openclaw/workspace-softwaredeveloper/ESPHome-Thread-ED-Switch-Parent/testing/logs/stock-low-power-4router-20runs-20260917-231425/20260917-232319-run02/stock-low-power_router4_20260917-232319-run02.log",
+      "started_utc": "2026-09-17T21:24:06+00:00",
+      "pid": 1165513,
+      "status": "running",
+      "process_kind": "device_log",
+      "logical_name": "router4",
+      "config_name": "router4",
+      "device_role": "unused2",
+      "device_port": "/dev/serial/by-id/usb-Espressif_USB_JTAG_serial_debug_unit_58:8C:81:5F:D9:28-if00"
+    },
+    {
+      "time_utc": "2026-09-17T21:24:06+00:00",
+      "sleep_seconds": 180,
+      "reason": "all stock-low-power routers flashed/logging; fixed router-settling delay before flashing child",
+      "dry_run": false
+    },
+    {
+      "time_utc": "2026-09-17T21:27:06+00:00",
+      "type": "step",
+      "step": "flash_child"
+    },
+    {
+      "time_utc": "2026-09-17T21:27:06+00:00",
+      "cmd": [
+        "/home/ewout/.openclaw/workspace-softwaredeveloper/ESPHome-Thread-ED-Switch-Parent/.venv/bin/esphome",
+        "upload",
+        "/home/ewout/.openclaw/workspace-softwaredeveloper/ESPHome-Thread-ED-Switch-Parent/testing/.platformio-core/stock-low-power/esphome-configs/stock_low_power_child.yaml",
+        "--device",
+        "/dev/serial/by-id/usb-Espressif_USB_JTAG_serial_debug_unit_58:8C:81:5D:B0:E0-if00"
+      ],
+      "cwd": "/home/ewout/.openclaw/workspace-softwaredeveloper/ESPHome-Thread-ED-Switch-Parent/testing",
+      "dry_run": false,
+      "env": {
+        "PLATFORMIO_CORE_DIR": "/home/ewout/.openclaw/workspace-softwaredeveloper/ESPHome-Thread-ED-Switch-Parent/testing/.platformio-core/stock-low-power",
+        "PLATFORMIO_PACKAGES_DIR": "/home/ewout/.openclaw/workspace-softwaredeveloper/ESPHome-Thread-ED-Switch-Parent/testing/.platformio-core/stock-low-power/packages"
+      }
+    },
+    {
+      "time_utc": "2026-09-17T21:27:10+00:00",
+      "type": "command_completed",
+      "cmd": [
+        "/home/ewout/.openclaw/workspace-softwaredeveloper/ESPHome-Thread-ED-Switch-Parent/.venv/bin/esphome",
+        "upload",
+        "/home/ewout/.openclaw/workspace-softwaredeveloper/ESPHome-Thread-ED-Switch-Parent/testing/.platformio-core/stock-low-power/esphome-configs/stock_low_power_child.yaml",
+        "--device",
+        "/dev/serial/by-id/usb-Espressif_USB_JTAG_serial_debug_unit_58:8C:81:5D:B0:E0-if00"
+      ],
+      "returncode": 0
+    },
+    {
+      "time_utc": "2026-09-17T21:27:10+00:00",
+      "type": "process_started",
+      "name": "child_log",
+      "cmd": [
+        "/home/ewout/.openclaw/workspace-softwaredeveloper/ESPHome-Thread-ED-Switch-Parent/.venv/bin/esphome",
+        "logs",
+        "/home/ewout/.openclaw/workspace-softwaredeveloper/ESPHome-Thread-ED-Switch-Parent/testing/.platformio-core/stock-low-power/esphome-configs/stock_low_power_child.yaml",
+        "--device",
+        "/dev/serial/by-id/usb-Espressif_USB_JTAG_serial_debug_unit_58:8C:81:5D:B0:E0-if00"
+      ],
+      "log_path": "/home/ewout/.openclaw/workspace-softwaredeveloper/ESPHome-Thread-ED-Switch-Parent/testing/logs/stock-low-power-4router-20runs-20260917-231425/20260917-232319-run02/stock-low-power_child_20260917-232319-run02.log",
+      "started_utc": "2026-09-17T21:27:10+00:00",
+      "pid": 1165589,
+      "status": "running",
+      "process_kind": "device_log",
+      "logical_name": "child",
+      "config_name": "child",
+      "device_role": "child",
+      "device_port": "/dev/serial/by-id/usb-Espressif_USB_JTAG_serial_debug_unit_58:8C:81:5D:B0:E0-if00"
+    },
+    {
+      "time_utc": "2026-09-17T21:27:10+00:00",
+      "sleep_seconds": 5,
+      "reason": "child flashed/logging; wait for natural stock-low-power attach before detecting current parent",
+      "dry_run": false
+    },
+    {
+      "time_utc": "2026-09-17T21:27:15+00:00",
+      "type": "step",
+      "step": "detect_child_parent"
+    },
+    {
+      "time_utc": "2026-09-17T21:27:15+00:00",
+      "type": "label",
+      "reason": "SKIP_PARENT_IS_LEADER",
+      "detected_parent_extaddr": "aa:95:13:12:f4:32:6a:61",
+      "detected_parent_source": "child_log_explicit_parent_extaddr",
+      "router_extaddrs": {
+        "aa951312f4326a61": {
+          "logical_name": "router1",
+          "extaddr": "aa:95:13:12:f4:32:6a:61",
+          "own_extaddr": "aa951312f4326a61",
+          "own_extaddr_source": "own_thread_extaddr",
+          "role": "leader",
+          "role_source": "[23:23:59.811][I][esp-idf:000][ot_main]: [N] Mle-----------: Role detached -> leader",
+          "rloc16": "d000",
+          "rloc16_source": "[23:23:59.810][I][esp-idf:000][ot_main]: [N] Mle-----------: RLOC16 fffe -> d000",
+          "log_path": "/home/ewout/.openclaw/workspace-softwaredeveloper/ESPHome-Thread-ED-Switch-Parent/testing/logs/stock-low-power-4router-20runs-20260917-231425/20260917-232319-run02/stock-low-power_router1_20260917-232319-run02.log"
+        },
+        "c22b3f6fb7957301": {
+          "logical_name": "router2",
+          "extaddr": "c2:2b:3f:6f:b7:95:73:01",
+          "own_extaddr": "c22b3f6fb7957301",
+          "own_extaddr_source": "own_thread_extaddr",
+          "role": "router",
+          "role_source": "[23:25:32.084][I][esp-idf:000][ot_main]: [N] Mle-----------: Role child -> router",
+          "rloc16": "a800",
+          "rloc16_source": "[23:25:32.081][I][esp-idf:000][ot_main]: [N] Mle-----------: RLOC16 d001 -> a800",
+          "log_path": "/home/ewout/.openclaw/workspace-softwaredeveloper/ESPHome-Thread-ED-Switch-Parent/testing/logs/stock-low-power-4router-20runs-20260917-231425/20260917-232319-run02/stock-low-power_router2_20260917-232319-run02.log"
+        },
+        "722a81cdfdd97992": {
+          "logical_name": "router3",
+          "extaddr": "72:2a:81:cd:fd:d9:79:92",
+          "own_extaddr": "722a81cdfdd97992",
+          "own_extaddr_source": "own_thread_extaddr",
+          "role": "router",
+          "role_source": "[23:25:47.712][I][esp-idf:000][ot_main]: [N] Mle-----------: Role child -> router",
+          "rloc16": "d400",
+          "rloc16_source": "[23:25:47.710][I][esp-idf:000][ot_main]: [N] Mle-----------: RLOC16 d002 -> d400",
+          "log_path": "/home/ewout/.openclaw/workspace-softwaredeveloper/ESPHome-Thread-ED-Switch-Parent/testing/logs/stock-low-power-4router-20runs-20260917-231425/20260917-232319-run02/stock-low-power_router3_20260917-232319-run02.log"
+        },
+        "662106342d9f34d6": {
+          "logical_name": "router4",
+          "extaddr": "66:21:06:34:2d:9f:34:d6",
+          "own_extaddr": "662106342d9f34d6",
+          "own_extaddr_source": "own_thread_extaddr",
+          "role": "router",
+          "role_source": "[23:25:32.110][I][esp-idf:000][ot_main]: [N] Mle-----------: Role child -> router",
+          "rloc16": "0400",
+          "rloc16_source": "[23:25:32.107][I][esp-idf:000][ot_main]: [N] Mle-----------: RLOC16 d003 -> 0400",
+          "log_path": "/home/ewout/.openclaw/workspace-softwaredeveloper/ESPHome-Thread-ED-Switch-Parent/testing/logs/stock-low-power-4router-20runs-20260917-231425/20260917-232319-run02/stock-low-power_router4_20260917-232319-run02.log"
+        }
+      },
+      "router_output_power_dbm": {
+        "router1": 0,
+        "router2": 0,
+        "router3": -15,
+        "router4": -15
+      },
+      "detected_parent_output_power_dbm": 0,
+      "initial_parent_matches_expected_high_power": true,
+      "parent_logical_name": "router1",
+      "parent_config_name": "router1",
+      "parent_device_role": "router1",
+      "parent_device_port": "/dev/serial/by-id/usb-Espressif_USB_JTAG_serial_debug_unit_58:8C:81:5D:B0:C4-if00",
+      "expected_replacement_high_power_router": "router2",
+      "parent_log_path": "/home/ewout/.openclaw/workspace-softwaredeveloper/ESPHome-Thread-ED-Switch-Parent/testing/logs/stock-low-power-4router-20runs-20260917-231425/20260917-232319-run02/stock-low-power_router1_20260917-232319-run02.log",
+      "parent_thread_role": "leader",
+      "parent_thread_role_source": "[23:23:59.811][I][esp-idf:000][ot_main]: [N] Mle-----------: Role detached -> leader",
+      "router_thread_roles": {
+        "router1": {
+          "role": "leader",
+          "source": "[23:23:59.811][I][esp-idf:000][ot_main]: [N] Mle-----------: Role detached -> leader",
+          "log_path": "/home/ewout/.openclaw/workspace-softwaredeveloper/ESPHome-Thread-ED-Switch-Parent/testing/logs/stock-low-power-4router-20runs-20260917-231425/20260917-232319-run02/stock-low-power_router1_20260917-232319-run02.log"
+        },
+        "router2": {
+          "role": "router",
+          "source": "[23:25:32.084][I][esp-idf:000][ot_main]: [N] Mle-----------: Role child -> router",
+          "log_path": "/home/ewout/.openclaw/workspace-softwaredeveloper/ESPHome-Thread-ED-Switch-Parent/testing/logs/stock-low-power-4router-20runs-20260917-231425/20260917-232319-run02/stock-low-power_router2_20260917-232319-run02.log"
+        },
+        "router3": {
+          "role": "router",
+          "source": "[23:25:47.712][I][esp-idf:000][ot_main]: [N] Mle-----------: Role child -> router",
+          "log_path": "/home/ewout/.openclaw/workspace-softwaredeveloper/ESPHome-Thread-ED-Switch-Parent/testing/logs/stock-low-power-4router-20runs-20260917-231425/20260917-232319-run02/stock-low-power_router3_20260917-232319-run02.log"
+        },
+        "router4": {
+          "role": "router",
+          "source": "[23:25:32.110][I][esp-idf:000][ot_main]: [N] Mle-----------: Role child -> router",
+          "log_path": "/home/ewout/.openclaw/workspace-softwaredeveloper/ESPHome-Thread-ED-Switch-Parent/testing/logs/stock-low-power-4router-20runs-20260917-231425/20260917-232319-run02/stock-low-power_router4_20260917-232319-run02.log"
+        }
+      },
+      "leader_logical_names": [
+        "router1"
+      ],
+      "leader_check": "parent_is_leader",
+      "classification_note": "The detected child parent is the current Thread leader. The run continues, but it keeps the SKIP_PARENT_IS_LEADER label because parent removal also disrupts the current leader."
+    },
+    {
+      "time_utc": "2026-09-17T21:27:15+00:00",
+      "type": "parent_removal_decision",
+      "action": "removed",
+      "reason": "REMOVED_CHILD_CURRENT_PARENT",
+      "detected_parent_extaddr": "aa:95:13:12:f4:32:6a:61",
+      "detected_parent_source": "child_log_explicit_parent_extaddr",
+      "router_extaddrs": {
+        "aa951312f4326a61": {
+          "logical_name": "router1",
+          "extaddr": "aa:95:13:12:f4:32:6a:61",
+          "own_extaddr": "aa951312f4326a61",
+          "own_extaddr_source": "own_thread_extaddr",
+          "role": "leader",
+          "role_source": "[23:23:59.811][I][esp-idf:000][ot_main]: [N] Mle-----------: Role detached -> leader",
+          "rloc16": "d000",
+          "rloc16_source": "[23:23:59.810][I][esp-idf:000][ot_main]: [N] Mle-----------: RLOC16 fffe -> d000",
+          "log_path": "/home/ewout/.openclaw/workspace-softwaredeveloper/ESPHome-Thread-ED-Switch-Parent/testing/logs/stock-low-power-4router-20runs-20260917-231425/20260917-232319-run02/stock-low-power_router1_20260917-232319-run02.log"
+        },
+        "c22b3f6fb7957301": {
+          "logical_name": "router2",
+          "extaddr": "c2:2b:3f:6f:b7:95:73:01",
+          "own_extaddr": "c22b3f6fb7957301",
+          "own_extaddr_source": "own_thread_extaddr",
+          "role": "router",
+          "role_source": "[23:25:32.084][I][esp-idf:000][ot_main]: [N] Mle-----------: Role child -> router",
+          "rloc16": "a800",
+          "rloc16_source": "[23:25:32.081][I][esp-idf:000][ot_main]: [N] Mle-----------: RLOC16 d001 -> a800",
+          "log_path": "/home/ewout/.openclaw/workspace-softwaredeveloper/ESPHome-Thread-ED-Switch-Parent/testing/logs/stock-low-power-4router-20runs-20260917-231425/20260917-232319-run02/stock-low-power_router2_20260917-232319-run02.log"
+        },
+        "722a81cdfdd97992": {
+          "logical_name": "router3",
+          "extaddr": "72:2a:81:cd:fd:d9:79:92",
+          "own_extaddr": "722a81cdfdd97992",
+          "own_extaddr_source": "own_thread_extaddr",
+          "role": "router",
+          "role_source": "[23:25:47.712][I][esp-idf:000][ot_main]: [N] Mle-----------: Role child -> router",
+          "rloc16": "d400",
+          "rloc16_source": "[23:25:47.710][I][esp-idf:000][ot_main]: [N] Mle-----------: RLOC16 d002 -> d400",
+          "log_path": "/home/ewout/.openclaw/workspace-softwaredeveloper/ESPHome-Thread-ED-Switch-Parent/testing/logs/stock-low-power-4router-20runs-20260917-231425/20260917-232319-run02/stock-low-power_router3_20260917-232319-run02.log"
+        },
+        "662106342d9f34d6": {
+          "logical_name": "router4",
+          "extaddr": "66:21:06:34:2d:9f:34:d6",
+          "own_extaddr": "662106342d9f34d6",
+          "own_extaddr_source": "own_thread_extaddr",
+          "role": "router",
+          "role_source": "[23:25:32.110][I][esp-idf:000][ot_main]: [N] Mle-----------: Role child -> router",
+          "rloc16": "0400",
+          "rloc16_source": "[23:25:32.107][I][esp-idf:000][ot_main]: [N] Mle-----------: RLOC16 d003 -> 0400",
+          "log_path": "/home/ewout/.openclaw/workspace-softwaredeveloper/ESPHome-Thread-ED-Switch-Parent/testing/logs/stock-low-power-4router-20runs-20260917-231425/20260917-232319-run02/stock-low-power_router4_20260917-232319-run02.log"
+        }
+      },
+      "router_output_power_dbm": {
+        "router1": 0,
+        "router2": 0,
+        "router3": -15,
+        "router4": -15
+      },
+      "detected_parent_output_power_dbm": 0,
+      "initial_parent_matches_expected_high_power": true,
+      "parent_logical_name": "router1",
+      "parent_config_name": "router1",
+      "parent_device_role": "router1",
+      "parent_device_port": "/dev/serial/by-id/usb-Espressif_USB_JTAG_serial_debug_unit_58:8C:81:5D:B0:C4-if00",
+      "expected_replacement_high_power_router": "router2",
+      "parent_log_path": "/home/ewout/.openclaw/workspace-softwaredeveloper/ESPHome-Thread-ED-Switch-Parent/testing/logs/stock-low-power-4router-20runs-20260917-231425/20260917-232319-run02/stock-low-power_router1_20260917-232319-run02.log",
+      "parent_thread_role": "leader",
+      "parent_thread_role_source": "[23:23:59.811][I][esp-idf:000][ot_main]: [N] Mle-----------: Role detached -> leader",
+      "router_thread_roles": {
+        "router1": {
+          "role": "leader",
+          "source": "[23:23:59.811][I][esp-idf:000][ot_main]: [N] Mle-----------: Role detached -> leader",
+          "log_path": "/home/ewout/.openclaw/workspace-softwaredeveloper/ESPHome-Thread-ED-Switch-Parent/testing/logs/stock-low-power-4router-20runs-20260917-231425/20260917-232319-run02/stock-low-power_router1_20260917-232319-run02.log"
+        },
+        "router2": {
+          "role": "router",
+          "source": "[23:25:32.084][I][esp-idf:000][ot_main]: [N] Mle-----------: Role child -> router",
+          "log_path": "/home/ewout/.openclaw/workspace-softwaredeveloper/ESPHome-Thread-ED-Switch-Parent/testing/logs/stock-low-power-4router-20runs-20260917-231425/20260917-232319-run02/stock-low-power_router2_20260917-232319-run02.log"
+        },
+        "router3": {
+          "role": "router",
+          "source": "[23:25:47.712][I][esp-idf:000][ot_main]: [N] Mle-----------: Role child -> router",
+          "log_path": "/home/ewout/.openclaw/workspace-softwaredeveloper/ESPHome-Thread-ED-Switch-Parent/testing/logs/stock-low-power-4router-20runs-20260917-231425/20260917-232319-run02/stock-low-power_router3_20260917-232319-run02.log"
+        },
+        "router4": {
+          "role": "router",
+          "source": "[23:25:32.110][I][esp-idf:000][ot_main]: [N] Mle-----------: Role child -> router",
+          "log_path": "/home/ewout/.openclaw/workspace-softwaredeveloper/ESPHome-Thread-ED-Switch-Parent/testing/logs/stock-low-power-4router-20runs-20260917-231425/20260917-232319-run02/stock-low-power_router4_20260917-232319-run02.log"
+        }
+      },
+      "leader_logical_names": [
+        "router1"
+      ],
+      "leader_check": "parent_is_leader"
+    },
+    {
+      "time_utc": "2026-09-17T21:27:15+00:00",
+      "type": "step",
+      "step": "remove_child_parent",
+      "detected_parent_extaddr": "aa:95:13:12:f4:32:6a:61",
+      "detected_parent_source": "child_log_explicit_parent_extaddr",
+      "router_extaddrs": {
+        "aa951312f4326a61": {
+          "logical_name": "router1",
+          "extaddr": "aa:95:13:12:f4:32:6a:61",
+          "own_extaddr": "aa951312f4326a61",
+          "own_extaddr_source": "own_thread_extaddr",
+          "role": "leader",
+          "role_source": "[23:23:59.811][I][esp-idf:000][ot_main]: [N] Mle-----------: Role detached -> leader",
+          "rloc16": "d000",
+          "rloc16_source": "[23:23:59.810][I][esp-idf:000][ot_main]: [N] Mle-----------: RLOC16 fffe -> d000",
+          "log_path": "/home/ewout/.openclaw/workspace-softwaredeveloper/ESPHome-Thread-ED-Switch-Parent/testing/logs/stock-low-power-4router-20runs-20260917-231425/20260917-232319-run02/stock-low-power_router1_20260917-232319-run02.log"
+        },
+        "c22b3f6fb7957301": {
+          "logical_name": "router2",
+          "extaddr": "c2:2b:3f:6f:b7:95:73:01",
+          "own_extaddr": "c22b3f6fb7957301",
+          "own_extaddr_source": "own_thread_extaddr",
+          "role": "router",
+          "role_source": "[23:25:32.084][I][esp-idf:000][ot_main]: [N] Mle-----------: Role child -> router",
+          "rloc16": "a800",
+          "rloc16_source": "[23:25:32.081][I][esp-idf:000][ot_main]: [N] Mle-----------: RLOC16 d001 -> a800",
+          "log_path": "/home/ewout/.openclaw/workspace-softwaredeveloper/ESPHome-Thread-ED-Switch-Parent/testing/logs/stock-low-power-4router-20runs-20260917-231425/20260917-232319-run02/stock-low-power_router2_20260917-232319-run02.log"
+        },
+        "722a81cdfdd97992": {
+          "logical_name": "router3",
+          "extaddr": "72:2a:81:cd:fd:d9:79:92",
+          "own_extaddr": "722a81cdfdd97992",
+          "own_extaddr_source": "own_thread_extaddr",
+          "role": "router",
+          "role_source": "[23:25:47.712][I][esp-idf:000][ot_main]: [N] Mle-----------: Role child -> router",
+          "rloc16": "d400",
+          "rloc16_source": "[23:25:47.710][I][esp-idf:000][ot_main]: [N] Mle-----------: RLOC16 d002 -> d400",
+          "log_path": "/home/ewout/.openclaw/workspace-softwaredeveloper/ESPHome-Thread-ED-Switch-Parent/testing/logs/stock-low-power-4router-20runs-20260917-231425/20260917-232319-run02/stock-low-power_router3_20260917-232319-run02.log"
+        },
+        "662106342d9f34d6": {
+          "logical_name": "router4",
+          "extaddr": "66:21:06:34:2d:9f:34:d6",
+          "own_extaddr": "662106342d9f34d6",
+          "own_extaddr_source": "own_thread_extaddr",
+          "role": "router",
+          "role_source": "[23:25:32.110][I][esp-idf:000][ot_main]: [N] Mle-----------: Role child -> router",
+          "rloc16": "0400",
+          "rloc16_source": "[23:25:32.107][I][esp-idf:000][ot_main]: [N] Mle-----------: RLOC16 d003 -> 0400",
+          "log_path": "/home/ewout/.openclaw/workspace-softwaredeveloper/ESPHome-Thread-ED-Switch-Parent/testing/logs/stock-low-power-4router-20runs-20260917-231425/20260917-232319-run02/stock-low-power_router4_20260917-232319-run02.log"
+        }
+      },
+      "router_output_power_dbm": {
+        "router1": 0,
+        "router2": 0,
+        "router3": -15,
+        "router4": -15
+      },
+      "detected_parent_output_power_dbm": 0,
+      "initial_parent_matches_expected_high_power": true,
+      "parent_logical_name": "router1",
+      "parent_config_name": "router1",
+      "parent_device_role": "router1",
+      "parent_device_port": "/dev/serial/by-id/usb-Espressif_USB_JTAG_serial_debug_unit_58:8C:81:5D:B0:C4-if00",
+      "expected_replacement_high_power_router": "router2",
+      "parent_log_path": "/home/ewout/.openclaw/workspace-softwaredeveloper/ESPHome-Thread-ED-Switch-Parent/testing/logs/stock-low-power-4router-20runs-20260917-231425/20260917-232319-run02/stock-low-power_router1_20260917-232319-run02.log",
+      "parent_thread_role": "leader",
+      "parent_thread_role_source": "[23:23:59.811][I][esp-idf:000][ot_main]: [N] Mle-----------: Role detached -> leader",
+      "router_thread_roles": {
+        "router1": {
+          "role": "leader",
+          "source": "[23:23:59.811][I][esp-idf:000][ot_main]: [N] Mle-----------: Role detached -> leader",
+          "log_path": "/home/ewout/.openclaw/workspace-softwaredeveloper/ESPHome-Thread-ED-Switch-Parent/testing/logs/stock-low-power-4router-20runs-20260917-231425/20260917-232319-run02/stock-low-power_router1_20260917-232319-run02.log"
+        },
+        "router2": {
+          "role": "router",
+          "source": "[23:25:32.084][I][esp-idf:000][ot_main]: [N] Mle-----------: Role child -> router",
+          "log_path": "/home/ewout/.openclaw/workspace-softwaredeveloper/ESPHome-Thread-ED-Switch-Parent/testing/logs/stock-low-power-4router-20runs-20260917-231425/20260917-232319-run02/stock-low-power_router2_20260917-232319-run02.log"
+        },
+        "router3": {
+          "role": "router",
+          "source": "[23:25:47.712][I][esp-idf:000][ot_main]: [N] Mle-----------: Role child -> router",
+          "log_path": "/home/ewout/.openclaw/workspace-softwaredeveloper/ESPHome-Thread-ED-Switch-Parent/testing/logs/stock-low-power-4router-20runs-20260917-231425/20260917-232319-run02/stock-low-power_router3_20260917-232319-run02.log"
+        },
+        "router4": {
+          "role": "router",
+          "source": "[23:25:32.110][I][esp-idf:000][ot_main]: [N] Mle-----------: Role child -> router",
+          "log_path": "/home/ewout/.openclaw/workspace-softwaredeveloper/ESPHome-Thread-ED-Switch-Parent/testing/logs/stock-low-power-4router-20runs-20260917-231425/20260917-232319-run02/stock-low-power_router4_20260917-232319-run02.log"
+        }
+      },
+      "leader_logical_names": [
+        "router1"
+      ],
+      "leader_check": "parent_is_leader"
+    },
+    {
+      "time_utc": "2026-09-17T21:27:15+00:00",
+      "type": "process_exited",
+      "name": "router1_log",
+      "expected": true,
+      "returncode": -15,
+      "signal": 15,
+      "log_path": "/home/ewout/.openclaw/workspace-softwaredeveloper/ESPHome-Thread-ED-Switch-Parent/testing/logs/stock-low-power-4router-20runs-20260917-231425/20260917-232319-run02/stock-low-power_router1_20260917-232319-run02.log"
+    },
+    {
+      "time_utc": "2026-09-17T21:27:15+00:00",
+      "cmd": [
+        "/home/ewout/.openclaw/workspace-softwaredeveloper/ESPHome-Thread-ED-Switch-Parent/.venv/bin/esphome",
+        "upload",
+        "/home/ewout/.openclaw/workspace-softwaredeveloper/ESPHome-Thread-ED-Switch-Parent/testing/.platformio-core/stock-low-power/esphome-configs/empty.yaml",
+        "--device",
+        "/dev/serial/by-id/usb-Espressif_USB_JTAG_serial_debug_unit_58:8C:81:5D:B0:C4-if00"
+      ],
+      "cwd": "/home/ewout/.openclaw/workspace-softwaredeveloper/ESPHome-Thread-ED-Switch-Parent/testing",
+      "dry_run": false,
+      "env": {
+        "PLATFORMIO_CORE_DIR": "/home/ewout/.openclaw/workspace-softwaredeveloper/ESPHome-Thread-ED-Switch-Parent/testing/.platformio-core/stock-low-power",
+        "PLATFORMIO_PACKAGES_DIR": "/home/ewout/.openclaw/workspace-softwaredeveloper/ESPHome-Thread-ED-Switch-Parent/testing/.platformio-core/stock-low-power/packages"
+      }
+    },
+    {
+      "time_utc": "2026-09-17T21:27:18+00:00",
+      "type": "command_completed",
+      "cmd": [
+        "/home/ewout/.openclaw/workspace-softwaredeveloper/ESPHome-Thread-ED-Switch-Parent/.venv/bin/esphome",
+        "upload",
+        "/home/ewout/.openclaw/workspace-softwaredeveloper/ESPHome-Thread-ED-Switch-Parent/testing/.platformio-core/stock-low-power/esphome-configs/empty.yaml",
+        "--device",
+        "/dev/serial/by-id/usb-Espressif_USB_JTAG_serial_debug_unit_58:8C:81:5D:B0:C4-if00"
+      ],
+      "returncode": 0
+    },
+    {
+      "time_utc": "2026-09-17T21:27:18+00:00",
+      "sleep_seconds": 255,
+      "reason": "child's detected current parent removed; keep recording child and remaining routers",
+      "dry_run": false
+    },
+    {
+      "time_utc": "2026-09-17T21:31:33+00:00",
+      "type": "step",
+      "step": "stop_sniffer"
+    },
+    {
+      "time_utc": "2026-09-17T21:31:33+00:00",
+      "type": "process_exited",
+      "name": "sniffer",
+      "expected": true,
+      "returncode": 255,
+      "log_path": "/home/ewout/.openclaw/workspace-softwaredeveloper/ESPHome-Thread-ED-Switch-Parent/testing/logs/stock-low-power-4router-20runs-20260917-231425/20260917-232319-run02/stock-low-power_sniffer_20260917-232319-run02.log"
+    },
+    {
+      "time_utc": "2026-09-17T21:31:33+00:00",
+      "cmd": [
+        "scp",
+        "rpi-802154-sniffer:/home/ewout/captures/802154/802154-20260917-232340.pcapng",
+        "/home/ewout/.openclaw/workspace-softwaredeveloper/ESPHome-Thread-ED-Switch-Parent/testing/logs/stock-low-power-4router-20runs-20260917-231425/20260917-232319-run02/stock-low-power_sniffer_20260917-232319-run02.pcapng"
+      ],
+      "remote_pcap_path": "/home/ewout/captures/802154/802154-20260917-232340.pcapng",
+      "local_pcap_path": "/home/ewout/.openclaw/workspace-softwaredeveloper/ESPHome-Thread-ED-Switch-Parent/testing/logs/stock-low-power-4router-20runs-20260917-231425/20260917-232319-run02/stock-low-power_sniffer_20260917-232319-run02.pcapng",
+      "dry_run": false
+    },
+    {
+      "time_utc": "2026-09-17T21:31:33+00:00",
+      "type": "step",
+      "step": "timed_sequence_complete"
+    },
+    {
+      "time_utc": "2026-09-17T21:31:33+00:00",
+      "type": "process_exited",
+      "name": "router2_log",
+      "expected": true,
+      "returncode": -15,
+      "signal": 15,
+      "log_path": "/home/ewout/.openclaw/workspace-softwaredeveloper/ESPHome-Thread-ED-Switch-Parent/testing/logs/stock-low-power-4router-20runs-20260917-231425/20260917-232319-run02/stock-low-power_router2_20260917-232319-run02.log"
+    },
+    {
+      "time_utc": "2026-09-17T21:31:33+00:00",
+      "type": "process_exited",
+      "name": "router3_log",
+      "expected": true,
+      "returncode": -15,
+      "signal": 15,
+      "log_path": "/home/ewout/.openclaw/workspace-softwaredeveloper/ESPHome-Thread-ED-Switch-Parent/testing/logs/stock-low-power-4router-20runs-20260917-231425/20260917-232319-run02/stock-low-power_router3_20260917-232319-run02.log"
+    },
+    {
+      "time_utc": "2026-09-17T21:31:33+00:00",
+      "type": "process_exited",
+      "name": "router4_log",
+      "expected": true,
+      "returncode": -15,
+      "signal": 15,
+      "log_path": "/home/ewout/.openclaw/workspace-softwaredeveloper/ESPHome-Thread-ED-Switch-Parent/testing/logs/stock-low-power-4router-20runs-20260917-231425/20260917-232319-run02/stock-low-power_router4_20260917-232319-run02.log"
+    },
+    {
+      "time_utc": "2026-09-17T21:31:33+00:00",
+      "type": "process_exited",
+      "name": "child_log",
+      "expected": true,
+      "returncode": -15,
+      "signal": 15,
+      "log_path": "/home/ewout/.openclaw/workspace-softwaredeveloper/ESPHome-Thread-ED-Switch-Parent/testing/logs/stock-low-power-4router-20runs-20260917-231425/20260917-232319-run02/stock-low-power_child_20260917-232319-run02.log"
+    },
+    {
+      "time_utc": "2026-09-17T21:31:33+00:00",
+      "type": "step",
+      "step": "completed"
+    }
+  ]
+}

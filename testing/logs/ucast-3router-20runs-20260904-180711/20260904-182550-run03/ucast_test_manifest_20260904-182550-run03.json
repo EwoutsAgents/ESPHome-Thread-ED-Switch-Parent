@@ -1,0 +1,779 @@
+{
+  "created_utc": "2026-09-04T16:33:56+00:00",
+  "status": "completed",
+  "dry_run": false,
+  "variant": "ucast",
+  "config_file": "/home/ewout/.openclaw/workspace-softwaredeveloper/ESPHome-Thread-ED-Switch-Parent/testing/ucast_test_devices_3routers.toml",
+  "testing_dir": "/home/ewout/.openclaw/workspace-softwaredeveloper/ESPHome-Thread-ED-Switch-Parent/testing",
+  "configs_dir": "/home/ewout/.openclaw/workspace-softwaredeveloper/ESPHome-Thread-ED-Switch-Parent/testing/configs",
+  "logs_dir": "/home/ewout/.openclaw/workspace-softwaredeveloper/ESPHome-Thread-ED-Switch-Parent/testing/logs/ucast-3router-20runs-20260904-180711",
+  "run_logs_dir": "/home/ewout/.openclaw/workspace-softwaredeveloper/ESPHome-Thread-ED-Switch-Parent/testing/logs/ucast-3router-20runs-20260904-180711/20260904-182550-run03",
+  "esphome_bin": "/home/ewout/.openclaw/workspace-softwaredeveloper/ESPHome-Thread-ED-Switch-Parent/.venv/bin/esphome",
+  "esptool_bin": "/home/ewout/.openclaw/workspace-softwaredeveloper/ESPHome-Thread-ED-Switch-Parent/.venv/bin/esptool.py",
+  "precompile": true,
+  "clean_before_compile": false,
+  "platformio_core_dir": "/home/ewout/.openclaw/workspace-softwaredeveloper/ESPHome-Thread-ED-Switch-Parent/testing/.platformio-core/ucast",
+  "platformio_packages_dir": "/home/ewout/.openclaw/workspace-softwaredeveloper/ESPHome-Thread-ED-Switch-Parent/testing/.platformio-core/ucast/packages",
+  "platformio_packages_dirs": {
+    "utility": "/home/ewout/.openclaw/workspace-softwaredeveloper/ESPHome-Thread-ED-Switch-Parent/testing/.platformio-core/ucast/packages/utility",
+    "child": "/home/ewout/.openclaw/workspace-softwaredeveloper/ESPHome-Thread-ED-Switch-Parent/testing/.platformio-core/ucast/packages/child",
+    "routers": "/home/ewout/.openclaw/workspace-softwaredeveloper/ESPHome-Thread-ED-Switch-Parent/testing/.platformio-core/ucast/packages/routers"
+  },
+  "reset_platformio_packages": false,
+  "devices": {
+    "router1": "/dev/serial/by-id/usb-Espressif_USB_JTAG_serial_debug_unit_58:8C:81:5D:B0:C4-if00",
+    "child": "/dev/serial/by-id/usb-Espressif_USB_JTAG_serial_debug_unit_58:8C:81:5D:B0:E0-if00",
+    "router2": "/dev/serial/by-id/usb-Espressif_USB_JTAG_serial_debug_unit_58:8C:81:5D:B1:54-if00",
+    "unused1": "/dev/serial/by-id/usb-Espressif_USB_JTAG_serial_debug_unit_58:8C:81:5F:D8:C4-if00",
+    "unused2": "/dev/serial/by-id/usb-Espressif_USB_JTAG_serial_debug_unit_58:8C:81:5F:D9:28-if00"
+  },
+  "timing": {
+    "sniffer_lead_in_seconds": 5,
+    "router_settling_seconds": 180,
+    "child_attach_seconds": 5,
+    "after_parent_removed_seconds": 255
+  },
+  "selection": {
+    "random_seed": null,
+    "remove_initial_parent": false
+  },
+  "n_routers": 3,
+  "firmware_environment": {
+    "phase": "final",
+    "variant": "ucast",
+    "platformio_core_dir": "/home/ewout/.openclaw/workspace-softwaredeveloper/ESPHome-Thread-ED-Switch-Parent/testing/.platformio-core/ucast",
+    "platformio_packages_dir": "/home/ewout/.openclaw/workspace-softwaredeveloper/ESPHome-Thread-ED-Switch-Parent/testing/.platformio-core/ucast/packages/child",
+    "parent_response_delay_diagnostic": "ParentResponseDelay delay_ms=N scan_mask=0xNN child=EXTADDR"
+  },
+  "firmware_environments": {
+    "empty": {
+      "phase": "final",
+      "variant": "ucast",
+      "platformio_core_dir": "/home/ewout/.openclaw/workspace-softwaredeveloper/ESPHome-Thread-ED-Switch-Parent/testing/.platformio-core/ucast",
+      "platformio_packages_dir": "/home/ewout/.openclaw/workspace-softwaredeveloper/ESPHome-Thread-ED-Switch-Parent/testing/.platformio-core/ucast/packages/utility",
+      "parent_response_delay_diagnostic": "ParentResponseDelay delay_ms=N scan_mask=0xNN child=EXTADDR"
+    },
+    "child": {
+      "phase": "final",
+      "variant": "ucast",
+      "platformio_core_dir": "/home/ewout/.openclaw/workspace-softwaredeveloper/ESPHome-Thread-ED-Switch-Parent/testing/.platformio-core/ucast",
+      "platformio_packages_dir": "/home/ewout/.openclaw/workspace-softwaredeveloper/ESPHome-Thread-ED-Switch-Parent/testing/.platformio-core/ucast/packages/child",
+      "parent_response_delay_diagnostic": "ParentResponseDelay delay_ms=N scan_mask=0xNN child=EXTADDR"
+    },
+    "router1": {
+      "phase": "final",
+      "variant": "ucast",
+      "platformio_core_dir": "/home/ewout/.openclaw/workspace-softwaredeveloper/ESPHome-Thread-ED-Switch-Parent/testing/.platformio-core/ucast",
+      "platformio_packages_dir": "/home/ewout/.openclaw/workspace-softwaredeveloper/ESPHome-Thread-ED-Switch-Parent/testing/.platformio-core/ucast/packages/routers",
+      "parent_response_delay_diagnostic": "ParentResponseDelay delay_ms=N scan_mask=0xNN child=EXTADDR"
+    },
+    "router2": {
+      "phase": "final",
+      "variant": "ucast",
+      "platformio_core_dir": "/home/ewout/.openclaw/workspace-softwaredeveloper/ESPHome-Thread-ED-Switch-Parent/testing/.platformio-core/ucast",
+      "platformio_packages_dir": "/home/ewout/.openclaw/workspace-softwaredeveloper/ESPHome-Thread-ED-Switch-Parent/testing/.platformio-core/ucast/packages/routers",
+      "parent_response_delay_diagnostic": "ParentResponseDelay delay_ms=N scan_mask=0xNN child=EXTADDR"
+    },
+    "router3": {
+      "phase": "final",
+      "variant": "ucast",
+      "platformio_core_dir": "/home/ewout/.openclaw/workspace-softwaredeveloper/ESPHome-Thread-ED-Switch-Parent/testing/.platformio-core/ucast",
+      "platformio_packages_dir": "/home/ewout/.openclaw/workspace-softwaredeveloper/ESPHome-Thread-ED-Switch-Parent/testing/.platformio-core/ucast/packages/routers",
+      "parent_response_delay_diagnostic": "ParentResponseDelay delay_ms=N scan_mask=0xNN child=EXTADDR"
+    }
+  },
+  "additional_router_assignments": [
+    {
+      "device_role": "unused1",
+      "firmware_name": "router3"
+    }
+  ],
+  "child_log": "/home/ewout/.openclaw/workspace-softwaredeveloper/ESPHome-Thread-ED-Switch-Parent/testing/logs/ucast-3router-20runs-20260904-180711/20260904-182550-run03/ucast_child_20260904-182550-run03.log",
+  "device_logs": {
+    "child": "/home/ewout/.openclaw/workspace-softwaredeveloper/ESPHome-Thread-ED-Switch-Parent/testing/logs/ucast-3router-20runs-20260904-180711/20260904-182550-run03/ucast_child_20260904-182550-run03.log",
+    "router1": "/home/ewout/.openclaw/workspace-softwaredeveloper/ESPHome-Thread-ED-Switch-Parent/testing/logs/ucast-3router-20runs-20260904-180711/20260904-182550-run03/ucast_router1_20260904-182550-run03.log",
+    "router2": "/home/ewout/.openclaw/workspace-softwaredeveloper/ESPHome-Thread-ED-Switch-Parent/testing/logs/ucast-3router-20runs-20260904-180711/20260904-182550-run03/ucast_router2_20260904-182550-run03.log",
+    "router3": "/home/ewout/.openclaw/workspace-softwaredeveloper/ESPHome-Thread-ED-Switch-Parent/testing/logs/ucast-3router-20runs-20260904-180711/20260904-182550-run03/ucast_router3_20260904-182550-run03.log"
+  },
+  "sniffer": {
+    "enabled": true,
+    "command": [
+      "ssh",
+      "rpi-802154-sniffer",
+      "~/bin/nrf802154-sniff"
+    ],
+    "stop_timeout_seconds": 10,
+    "log": "/home/ewout/.openclaw/workspace-softwaredeveloper/ESPHome-Thread-ED-Switch-Parent/testing/logs/ucast-3router-20runs-20260904-180711/20260904-182550-run03/ucast_sniffer_20260904-182550-run03.log",
+    "remote_pcap": "/home/ewout/captures/802154/802154-20260904-182610.pcapng",
+    "local_pcap": "/home/ewout/.openclaw/workspace-softwaredeveloper/ESPHome-Thread-ED-Switch-Parent/testing/logs/ucast-3router-20runs-20260904-180711/20260904-182550-run03/ucast_sniffer_20260904-182550-run03.pcapng"
+  },
+  "events": [
+    {
+      "time_utc": "2026-09-04T16:07:11+00:00",
+      "type": "firmware_environment",
+      "firmware_name": "empty",
+      "phase": "preflight",
+      "variant": "ucast",
+      "platformio_core_dir": "/home/ewout/.openclaw/workspace-softwaredeveloper/ESPHome-Thread-ED-Switch-Parent/testing/.platformio-core/ucast",
+      "platformio_packages_dir": "/home/ewout/.openclaw/workspace-softwaredeveloper/ESPHome-Thread-ED-Switch-Parent/testing/.platformio-core/ucast/packages/utility",
+      "parent_response_delay_diagnostic": "ParentResponseDelay delay_ms=N scan_mask=0xNN child=EXTADDR"
+    },
+    {
+      "time_utc": "2026-09-04T16:07:11+00:00",
+      "cmd": [
+        "/home/ewout/.openclaw/workspace-softwaredeveloper/ESPHome-Thread-ED-Switch-Parent/.venv/bin/esphome",
+        "compile",
+        "/home/ewout/.openclaw/workspace-softwaredeveloper/ESPHome-Thread-ED-Switch-Parent/testing/.platformio-core/ucast/esphome-configs/empty.yaml"
+      ],
+      "cwd": "/home/ewout/.openclaw/workspace-softwaredeveloper/ESPHome-Thread-ED-Switch-Parent/testing",
+      "dry_run": false,
+      "env": {
+        "PLATFORMIO_CORE_DIR": "/home/ewout/.openclaw/workspace-softwaredeveloper/ESPHome-Thread-ED-Switch-Parent/testing/.platformio-core/ucast",
+        "PLATFORMIO_PACKAGES_DIR": "/home/ewout/.openclaw/workspace-softwaredeveloper/ESPHome-Thread-ED-Switch-Parent/testing/.platformio-core/ucast/packages/utility"
+      }
+    },
+    {
+      "time_utc": "2026-09-04T16:07:17+00:00",
+      "type": "firmware_environment",
+      "firmware_name": "empty",
+      "phase": "postcompile",
+      "variant": "ucast",
+      "platformio_core_dir": "/home/ewout/.openclaw/workspace-softwaredeveloper/ESPHome-Thread-ED-Switch-Parent/testing/.platformio-core/ucast",
+      "platformio_packages_dir": "/home/ewout/.openclaw/workspace-softwaredeveloper/ESPHome-Thread-ED-Switch-Parent/testing/.platformio-core/ucast/packages/utility",
+      "parent_response_delay_diagnostic": "ParentResponseDelay delay_ms=N scan_mask=0xNN child=EXTADDR"
+    },
+    {
+      "time_utc": "2026-09-04T16:07:17+00:00",
+      "type": "firmware_environment",
+      "firmware_name": "router1",
+      "phase": "preflight",
+      "variant": "ucast",
+      "platformio_core_dir": "/home/ewout/.openclaw/workspace-softwaredeveloper/ESPHome-Thread-ED-Switch-Parent/testing/.platformio-core/ucast",
+      "platformio_packages_dir": "/home/ewout/.openclaw/workspace-softwaredeveloper/ESPHome-Thread-ED-Switch-Parent/testing/.platformio-core/ucast/packages/routers",
+      "parent_response_delay_diagnostic": "ParentResponseDelay delay_ms=N scan_mask=0xNN child=EXTADDR"
+    },
+    {
+      "time_utc": "2026-09-04T16:07:17+00:00",
+      "cmd": [
+        "/home/ewout/.openclaw/workspace-softwaredeveloper/ESPHome-Thread-ED-Switch-Parent/.venv/bin/esphome",
+        "compile",
+        "/home/ewout/.openclaw/workspace-softwaredeveloper/ESPHome-Thread-ED-Switch-Parent/testing/.platformio-core/ucast/esphome-configs/stock_router_1.yaml"
+      ],
+      "cwd": "/home/ewout/.openclaw/workspace-softwaredeveloper/ESPHome-Thread-ED-Switch-Parent/testing",
+      "dry_run": false,
+      "env": {
+        "PLATFORMIO_CORE_DIR": "/home/ewout/.openclaw/workspace-softwaredeveloper/ESPHome-Thread-ED-Switch-Parent/testing/.platformio-core/ucast",
+        "PLATFORMIO_PACKAGES_DIR": "/home/ewout/.openclaw/workspace-softwaredeveloper/ESPHome-Thread-ED-Switch-Parent/testing/.platformio-core/ucast/packages/routers"
+      }
+    },
+    {
+      "time_utc": "2026-09-04T16:07:41+00:00",
+      "type": "firmware_environment",
+      "firmware_name": "router1",
+      "phase": "postcompile",
+      "variant": "ucast",
+      "platformio_core_dir": "/home/ewout/.openclaw/workspace-softwaredeveloper/ESPHome-Thread-ED-Switch-Parent/testing/.platformio-core/ucast",
+      "platformio_packages_dir": "/home/ewout/.openclaw/workspace-softwaredeveloper/ESPHome-Thread-ED-Switch-Parent/testing/.platformio-core/ucast/packages/routers",
+      "parent_response_delay_diagnostic": "ParentResponseDelay delay_ms=N scan_mask=0xNN child=EXTADDR"
+    },
+    {
+      "time_utc": "2026-09-04T16:07:41+00:00",
+      "type": "firmware_environment",
+      "firmware_name": "child",
+      "phase": "preflight",
+      "variant": "ucast",
+      "platformio_core_dir": "/home/ewout/.openclaw/workspace-softwaredeveloper/ESPHome-Thread-ED-Switch-Parent/testing/.platformio-core/ucast",
+      "platformio_packages_dir": "/home/ewout/.openclaw/workspace-softwaredeveloper/ESPHome-Thread-ED-Switch-Parent/testing/.platformio-core/ucast/packages/child",
+      "parent_response_delay_diagnostic": "ParentResponseDelay delay_ms=N scan_mask=0xNN child=EXTADDR"
+    },
+    {
+      "time_utc": "2026-09-04T16:07:41+00:00",
+      "cmd": [
+        "/home/ewout/.openclaw/workspace-softwaredeveloper/ESPHome-Thread-ED-Switch-Parent/.venv/bin/esphome",
+        "compile",
+        "/home/ewout/.openclaw/workspace-softwaredeveloper/ESPHome-Thread-ED-Switch-Parent/testing/.platformio-core/ucast/esphome-configs/ucast_child.yaml"
+      ],
+      "cwd": "/home/ewout/.openclaw/workspace-softwaredeveloper/ESPHome-Thread-ED-Switch-Parent/testing",
+      "dry_run": false,
+      "env": {
+        "PLATFORMIO_CORE_DIR": "/home/ewout/.openclaw/workspace-softwaredeveloper/ESPHome-Thread-ED-Switch-Parent/testing/.platformio-core/ucast",
+        "PLATFORMIO_PACKAGES_DIR": "/home/ewout/.openclaw/workspace-softwaredeveloper/ESPHome-Thread-ED-Switch-Parent/testing/.platformio-core/ucast/packages/child"
+      }
+    },
+    {
+      "time_utc": "2026-09-04T16:08:04+00:00",
+      "type": "firmware_environment",
+      "firmware_name": "child",
+      "phase": "postcompile",
+      "variant": "ucast",
+      "platformio_core_dir": "/home/ewout/.openclaw/workspace-softwaredeveloper/ESPHome-Thread-ED-Switch-Parent/testing/.platformio-core/ucast",
+      "platformio_packages_dir": "/home/ewout/.openclaw/workspace-softwaredeveloper/ESPHome-Thread-ED-Switch-Parent/testing/.platformio-core/ucast/packages/child",
+      "parent_response_delay_diagnostic": "ParentResponseDelay delay_ms=N scan_mask=0xNN child=EXTADDR"
+    },
+    {
+      "time_utc": "2026-09-04T16:08:04+00:00",
+      "type": "firmware_environment",
+      "firmware_name": "router2",
+      "phase": "preflight",
+      "variant": "ucast",
+      "platformio_core_dir": "/home/ewout/.openclaw/workspace-softwaredeveloper/ESPHome-Thread-ED-Switch-Parent/testing/.platformio-core/ucast",
+      "platformio_packages_dir": "/home/ewout/.openclaw/workspace-softwaredeveloper/ESPHome-Thread-ED-Switch-Parent/testing/.platformio-core/ucast/packages/routers",
+      "parent_response_delay_diagnostic": "ParentResponseDelay delay_ms=N scan_mask=0xNN child=EXTADDR"
+    },
+    {
+      "time_utc": "2026-09-04T16:08:04+00:00",
+      "cmd": [
+        "/home/ewout/.openclaw/workspace-softwaredeveloper/ESPHome-Thread-ED-Switch-Parent/.venv/bin/esphome",
+        "compile",
+        "/home/ewout/.openclaw/workspace-softwaredeveloper/ESPHome-Thread-ED-Switch-Parent/testing/.platformio-core/ucast/esphome-configs/stock_router_2.yaml"
+      ],
+      "cwd": "/home/ewout/.openclaw/workspace-softwaredeveloper/ESPHome-Thread-ED-Switch-Parent/testing",
+      "dry_run": false,
+      "env": {
+        "PLATFORMIO_CORE_DIR": "/home/ewout/.openclaw/workspace-softwaredeveloper/ESPHome-Thread-ED-Switch-Parent/testing/.platformio-core/ucast",
+        "PLATFORMIO_PACKAGES_DIR": "/home/ewout/.openclaw/workspace-softwaredeveloper/ESPHome-Thread-ED-Switch-Parent/testing/.platformio-core/ucast/packages/routers"
+      }
+    },
+    {
+      "time_utc": "2026-09-04T16:08:29+00:00",
+      "type": "firmware_environment",
+      "firmware_name": "router2",
+      "phase": "postcompile",
+      "variant": "ucast",
+      "platformio_core_dir": "/home/ewout/.openclaw/workspace-softwaredeveloper/ESPHome-Thread-ED-Switch-Parent/testing/.platformio-core/ucast",
+      "platformio_packages_dir": "/home/ewout/.openclaw/workspace-softwaredeveloper/ESPHome-Thread-ED-Switch-Parent/testing/.platformio-core/ucast/packages/routers",
+      "parent_response_delay_diagnostic": "ParentResponseDelay delay_ms=N scan_mask=0xNN child=EXTADDR"
+    },
+    {
+      "time_utc": "2026-09-04T16:08:29+00:00",
+      "type": "firmware_environment",
+      "firmware_name": "router3",
+      "phase": "preflight",
+      "variant": "ucast",
+      "platformio_core_dir": "/home/ewout/.openclaw/workspace-softwaredeveloper/ESPHome-Thread-ED-Switch-Parent/testing/.platformio-core/ucast",
+      "platformio_packages_dir": "/home/ewout/.openclaw/workspace-softwaredeveloper/ESPHome-Thread-ED-Switch-Parent/testing/.platformio-core/ucast/packages/routers",
+      "parent_response_delay_diagnostic": "ParentResponseDelay delay_ms=N scan_mask=0xNN child=EXTADDR"
+    },
+    {
+      "time_utc": "2026-09-04T16:08:29+00:00",
+      "cmd": [
+        "/home/ewout/.openclaw/workspace-softwaredeveloper/ESPHome-Thread-ED-Switch-Parent/.venv/bin/esphome",
+        "compile",
+        "/home/ewout/.openclaw/workspace-softwaredeveloper/ESPHome-Thread-ED-Switch-Parent/testing/.platformio-core/ucast/esphome-configs/stock_router_3.yaml"
+      ],
+      "cwd": "/home/ewout/.openclaw/workspace-softwaredeveloper/ESPHome-Thread-ED-Switch-Parent/testing",
+      "dry_run": false,
+      "env": {
+        "PLATFORMIO_CORE_DIR": "/home/ewout/.openclaw/workspace-softwaredeveloper/ESPHome-Thread-ED-Switch-Parent/testing/.platformio-core/ucast",
+        "PLATFORMIO_PACKAGES_DIR": "/home/ewout/.openclaw/workspace-softwaredeveloper/ESPHome-Thread-ED-Switch-Parent/testing/.platformio-core/ucast/packages/routers"
+      }
+    },
+    {
+      "time_utc": "2026-09-04T16:09:39+00:00",
+      "type": "firmware_environment",
+      "firmware_name": "router3",
+      "phase": "postcompile",
+      "variant": "ucast",
+      "platformio_core_dir": "/home/ewout/.openclaw/workspace-softwaredeveloper/ESPHome-Thread-ED-Switch-Parent/testing/.platformio-core/ucast",
+      "platformio_packages_dir": "/home/ewout/.openclaw/workspace-softwaredeveloper/ESPHome-Thread-ED-Switch-Parent/testing/.platformio-core/ucast/packages/routers",
+      "parent_response_delay_diagnostic": "ParentResponseDelay delay_ms=N scan_mask=0xNN child=EXTADDR"
+    },
+    {
+      "time_utc": "2026-09-04T16:25:50+00:00",
+      "type": "step",
+      "step": "reset_all_devices"
+    },
+    {
+      "time_utc": "2026-09-04T16:25:50+00:00",
+      "cmd": [
+        "/home/ewout/.openclaw/workspace-softwaredeveloper/ESPHome-Thread-ED-Switch-Parent/.venv/bin/esptool.py",
+        "--chip",
+        "esp32c6",
+        "--port",
+        "/dev/serial/by-id/usb-Espressif_USB_JTAG_serial_debug_unit_58:8C:81:5D:B0:C4-if00",
+        "erase_flash"
+      ],
+      "cwd": "/home/ewout/.openclaw/workspace-softwaredeveloper/ESPHome-Thread-ED-Switch-Parent/testing",
+      "dry_run": false,
+      "env": {}
+    },
+    {
+      "time_utc": "2026-09-04T16:25:52+00:00",
+      "cmd": [
+        "/home/ewout/.openclaw/workspace-softwaredeveloper/ESPHome-Thread-ED-Switch-Parent/.venv/bin/esphome",
+        "upload",
+        "/home/ewout/.openclaw/workspace-softwaredeveloper/ESPHome-Thread-ED-Switch-Parent/testing/.platformio-core/ucast/esphome-configs/empty.yaml",
+        "--device",
+        "/dev/serial/by-id/usb-Espressif_USB_JTAG_serial_debug_unit_58:8C:81:5D:B0:C4-if00"
+      ],
+      "cwd": "/home/ewout/.openclaw/workspace-softwaredeveloper/ESPHome-Thread-ED-Switch-Parent/testing",
+      "dry_run": false,
+      "env": {
+        "PLATFORMIO_CORE_DIR": "/home/ewout/.openclaw/workspace-softwaredeveloper/ESPHome-Thread-ED-Switch-Parent/testing/.platformio-core/ucast",
+        "PLATFORMIO_PACKAGES_DIR": "/home/ewout/.openclaw/workspace-softwaredeveloper/ESPHome-Thread-ED-Switch-Parent/testing/.platformio-core/ucast/packages/utility"
+      }
+    },
+    {
+      "time_utc": "2026-09-04T16:25:54+00:00",
+      "cmd": [
+        "/home/ewout/.openclaw/workspace-softwaredeveloper/ESPHome-Thread-ED-Switch-Parent/.venv/bin/esptool.py",
+        "--chip",
+        "esp32c6",
+        "--port",
+        "/dev/serial/by-id/usb-Espressif_USB_JTAG_serial_debug_unit_58:8C:81:5D:B0:E0-if00",
+        "erase_flash"
+      ],
+      "cwd": "/home/ewout/.openclaw/workspace-softwaredeveloper/ESPHome-Thread-ED-Switch-Parent/testing",
+      "dry_run": false,
+      "env": {}
+    },
+    {
+      "time_utc": "2026-09-04T16:25:56+00:00",
+      "cmd": [
+        "/home/ewout/.openclaw/workspace-softwaredeveloper/ESPHome-Thread-ED-Switch-Parent/.venv/bin/esphome",
+        "upload",
+        "/home/ewout/.openclaw/workspace-softwaredeveloper/ESPHome-Thread-ED-Switch-Parent/testing/.platformio-core/ucast/esphome-configs/empty.yaml",
+        "--device",
+        "/dev/serial/by-id/usb-Espressif_USB_JTAG_serial_debug_unit_58:8C:81:5D:B0:E0-if00"
+      ],
+      "cwd": "/home/ewout/.openclaw/workspace-softwaredeveloper/ESPHome-Thread-ED-Switch-Parent/testing",
+      "dry_run": false,
+      "env": {
+        "PLATFORMIO_CORE_DIR": "/home/ewout/.openclaw/workspace-softwaredeveloper/ESPHome-Thread-ED-Switch-Parent/testing/.platformio-core/ucast",
+        "PLATFORMIO_PACKAGES_DIR": "/home/ewout/.openclaw/workspace-softwaredeveloper/ESPHome-Thread-ED-Switch-Parent/testing/.platformio-core/ucast/packages/utility"
+      }
+    },
+    {
+      "time_utc": "2026-09-04T16:25:58+00:00",
+      "cmd": [
+        "/home/ewout/.openclaw/workspace-softwaredeveloper/ESPHome-Thread-ED-Switch-Parent/.venv/bin/esptool.py",
+        "--chip",
+        "esp32c6",
+        "--port",
+        "/dev/serial/by-id/usb-Espressif_USB_JTAG_serial_debug_unit_58:8C:81:5D:B1:54-if00",
+        "erase_flash"
+      ],
+      "cwd": "/home/ewout/.openclaw/workspace-softwaredeveloper/ESPHome-Thread-ED-Switch-Parent/testing",
+      "dry_run": false,
+      "env": {}
+    },
+    {
+      "time_utc": "2026-09-04T16:26:01+00:00",
+      "cmd": [
+        "/home/ewout/.openclaw/workspace-softwaredeveloper/ESPHome-Thread-ED-Switch-Parent/.venv/bin/esphome",
+        "upload",
+        "/home/ewout/.openclaw/workspace-softwaredeveloper/ESPHome-Thread-ED-Switch-Parent/testing/.platformio-core/ucast/esphome-configs/empty.yaml",
+        "--device",
+        "/dev/serial/by-id/usb-Espressif_USB_JTAG_serial_debug_unit_58:8C:81:5D:B1:54-if00"
+      ],
+      "cwd": "/home/ewout/.openclaw/workspace-softwaredeveloper/ESPHome-Thread-ED-Switch-Parent/testing",
+      "dry_run": false,
+      "env": {
+        "PLATFORMIO_CORE_DIR": "/home/ewout/.openclaw/workspace-softwaredeveloper/ESPHome-Thread-ED-Switch-Parent/testing/.platformio-core/ucast",
+        "PLATFORMIO_PACKAGES_DIR": "/home/ewout/.openclaw/workspace-softwaredeveloper/ESPHome-Thread-ED-Switch-Parent/testing/.platformio-core/ucast/packages/utility"
+      }
+    },
+    {
+      "time_utc": "2026-09-04T16:26:03+00:00",
+      "cmd": [
+        "/home/ewout/.openclaw/workspace-softwaredeveloper/ESPHome-Thread-ED-Switch-Parent/.venv/bin/esptool.py",
+        "--chip",
+        "esp32c6",
+        "--port",
+        "/dev/serial/by-id/usb-Espressif_USB_JTAG_serial_debug_unit_58:8C:81:5F:D8:C4-if00",
+        "erase_flash"
+      ],
+      "cwd": "/home/ewout/.openclaw/workspace-softwaredeveloper/ESPHome-Thread-ED-Switch-Parent/testing",
+      "dry_run": false,
+      "env": {}
+    },
+    {
+      "time_utc": "2026-09-04T16:26:05+00:00",
+      "cmd": [
+        "/home/ewout/.openclaw/workspace-softwaredeveloper/ESPHome-Thread-ED-Switch-Parent/.venv/bin/esphome",
+        "upload",
+        "/home/ewout/.openclaw/workspace-softwaredeveloper/ESPHome-Thread-ED-Switch-Parent/testing/.platformio-core/ucast/esphome-configs/empty.yaml",
+        "--device",
+        "/dev/serial/by-id/usb-Espressif_USB_JTAG_serial_debug_unit_58:8C:81:5F:D8:C4-if00"
+      ],
+      "cwd": "/home/ewout/.openclaw/workspace-softwaredeveloper/ESPHome-Thread-ED-Switch-Parent/testing",
+      "dry_run": false,
+      "env": {
+        "PLATFORMIO_CORE_DIR": "/home/ewout/.openclaw/workspace-softwaredeveloper/ESPHome-Thread-ED-Switch-Parent/testing/.platformio-core/ucast",
+        "PLATFORMIO_PACKAGES_DIR": "/home/ewout/.openclaw/workspace-softwaredeveloper/ESPHome-Thread-ED-Switch-Parent/testing/.platformio-core/ucast/packages/utility"
+      }
+    },
+    {
+      "time_utc": "2026-09-04T16:26:06+00:00",
+      "cmd": [
+        "/home/ewout/.openclaw/workspace-softwaredeveloper/ESPHome-Thread-ED-Switch-Parent/.venv/bin/esptool.py",
+        "--chip",
+        "esp32c6",
+        "--port",
+        "/dev/serial/by-id/usb-Espressif_USB_JTAG_serial_debug_unit_58:8C:81:5F:D9:28-if00",
+        "erase_flash"
+      ],
+      "cwd": "/home/ewout/.openclaw/workspace-softwaredeveloper/ESPHome-Thread-ED-Switch-Parent/testing",
+      "dry_run": false,
+      "env": {}
+    },
+    {
+      "time_utc": "2026-09-04T16:26:08+00:00",
+      "cmd": [
+        "/home/ewout/.openclaw/workspace-softwaredeveloper/ESPHome-Thread-ED-Switch-Parent/.venv/bin/esphome",
+        "upload",
+        "/home/ewout/.openclaw/workspace-softwaredeveloper/ESPHome-Thread-ED-Switch-Parent/testing/.platformio-core/ucast/esphome-configs/empty.yaml",
+        "--device",
+        "/dev/serial/by-id/usb-Espressif_USB_JTAG_serial_debug_unit_58:8C:81:5F:D9:28-if00"
+      ],
+      "cwd": "/home/ewout/.openclaw/workspace-softwaredeveloper/ESPHome-Thread-ED-Switch-Parent/testing",
+      "dry_run": false,
+      "env": {
+        "PLATFORMIO_CORE_DIR": "/home/ewout/.openclaw/workspace-softwaredeveloper/ESPHome-Thread-ED-Switch-Parent/testing/.platformio-core/ucast",
+        "PLATFORMIO_PACKAGES_DIR": "/home/ewout/.openclaw/workspace-softwaredeveloper/ESPHome-Thread-ED-Switch-Parent/testing/.platformio-core/ucast/packages/utility"
+      }
+    },
+    {
+      "time_utc": "2026-09-04T16:26:10+00:00",
+      "type": "step",
+      "step": "start_sniffer"
+    },
+    {
+      "time_utc": "2026-09-04T16:26:10+00:00",
+      "cmd": [
+        "ssh",
+        "rpi-802154-sniffer",
+        "~/bin/nrf802154-sniff"
+      ],
+      "sniffer_log_path": "/home/ewout/.openclaw/workspace-softwaredeveloper/ESPHome-Thread-ED-Switch-Parent/testing/logs/ucast-3router-20runs-20260904-180711/20260904-182550-run03/ucast_sniffer_20260904-182550-run03.log",
+      "dry_run": false
+    },
+    {
+      "time_utc": "2026-09-04T16:26:10+00:00",
+      "cmd": [
+        "ssh",
+        "rpi-802154-sniffer",
+        "pkill -f 'nrf802154_sniffer.py|tshark.*802.15.4' >/dev/null 2>&1 || true; sleep 1"
+      ],
+      "purpose": "sniffer-pre-clean",
+      "dry_run": false
+    },
+    {
+      "time_utc": "2026-09-04T16:26:12+00:00",
+      "sleep_seconds": 5,
+      "reason": "sniffer started; wait before flashing routers",
+      "dry_run": false
+    },
+    {
+      "time_utc": "2026-09-04T16:26:17+00:00",
+      "type": "step",
+      "step": "flash_routers",
+      "router_plan": [
+        {
+          "logical_name": "router1",
+          "config_name": "router1",
+          "device_role": "router1"
+        },
+        {
+          "logical_name": "router2",
+          "config_name": "router2",
+          "device_role": "router2"
+        },
+        {
+          "logical_name": "router3",
+          "config_name": "router3",
+          "device_role": "unused1"
+        }
+      ]
+    },
+    {
+      "time_utc": "2026-09-04T16:26:17+00:00",
+      "cmd": [
+        "/home/ewout/.openclaw/workspace-softwaredeveloper/ESPHome-Thread-ED-Switch-Parent/.venv/bin/esphome",
+        "upload",
+        "/home/ewout/.openclaw/workspace-softwaredeveloper/ESPHome-Thread-ED-Switch-Parent/testing/.platformio-core/ucast/esphome-configs/stock_router_1.yaml",
+        "--device",
+        "/dev/serial/by-id/usb-Espressif_USB_JTAG_serial_debug_unit_58:8C:81:5D:B0:C4-if00"
+      ],
+      "cwd": "/home/ewout/.openclaw/workspace-softwaredeveloper/ESPHome-Thread-ED-Switch-Parent/testing",
+      "dry_run": false,
+      "env": {
+        "PLATFORMIO_CORE_DIR": "/home/ewout/.openclaw/workspace-softwaredeveloper/ESPHome-Thread-ED-Switch-Parent/testing/.platformio-core/ucast",
+        "PLATFORMIO_PACKAGES_DIR": "/home/ewout/.openclaw/workspace-softwaredeveloper/ESPHome-Thread-ED-Switch-Parent/testing/.platformio-core/ucast/packages/routers"
+      }
+    },
+    {
+      "time_utc": "2026-09-04T16:26:22+00:00",
+      "cmd": [
+        "/home/ewout/.openclaw/workspace-softwaredeveloper/ESPHome-Thread-ED-Switch-Parent/.venv/bin/esphome",
+        "logs",
+        "/home/ewout/.openclaw/workspace-softwaredeveloper/ESPHome-Thread-ED-Switch-Parent/testing/.platformio-core/ucast/esphome-configs/stock_router_1.yaml",
+        "--device",
+        "/dev/serial/by-id/usb-Espressif_USB_JTAG_serial_debug_unit_58:8C:81:5D:B0:C4-if00"
+      ],
+      "env": {
+        "PLATFORMIO_CORE_DIR": "/home/ewout/.openclaw/workspace-softwaredeveloper/ESPHome-Thread-ED-Switch-Parent/testing/.platformio-core/ucast",
+        "PLATFORMIO_PACKAGES_DIR": "/home/ewout/.openclaw/workspace-softwaredeveloper/ESPHome-Thread-ED-Switch-Parent/testing/.platformio-core/ucast/packages/routers"
+      },
+      "log_path": "/home/ewout/.openclaw/workspace-softwaredeveloper/ESPHome-Thread-ED-Switch-Parent/testing/logs/ucast-3router-20runs-20260904-180711/20260904-182550-run03/ucast_router1_20260904-182550-run03.log",
+      "logical_name": "router1",
+      "config_name": "router1",
+      "device_role": "router1",
+      "dry_run": false
+    },
+    {
+      "time_utc": "2026-09-04T16:26:22+00:00",
+      "cmd": [
+        "/home/ewout/.openclaw/workspace-softwaredeveloper/ESPHome-Thread-ED-Switch-Parent/.venv/bin/esphome",
+        "upload",
+        "/home/ewout/.openclaw/workspace-softwaredeveloper/ESPHome-Thread-ED-Switch-Parent/testing/.platformio-core/ucast/esphome-configs/stock_router_2.yaml",
+        "--device",
+        "/dev/serial/by-id/usb-Espressif_USB_JTAG_serial_debug_unit_58:8C:81:5D:B1:54-if00"
+      ],
+      "cwd": "/home/ewout/.openclaw/workspace-softwaredeveloper/ESPHome-Thread-ED-Switch-Parent/testing",
+      "dry_run": false,
+      "env": {
+        "PLATFORMIO_CORE_DIR": "/home/ewout/.openclaw/workspace-softwaredeveloper/ESPHome-Thread-ED-Switch-Parent/testing/.platformio-core/ucast",
+        "PLATFORMIO_PACKAGES_DIR": "/home/ewout/.openclaw/workspace-softwaredeveloper/ESPHome-Thread-ED-Switch-Parent/testing/.platformio-core/ucast/packages/routers"
+      }
+    },
+    {
+      "time_utc": "2026-09-04T16:26:27+00:00",
+      "cmd": [
+        "/home/ewout/.openclaw/workspace-softwaredeveloper/ESPHome-Thread-ED-Switch-Parent/.venv/bin/esphome",
+        "logs",
+        "/home/ewout/.openclaw/workspace-softwaredeveloper/ESPHome-Thread-ED-Switch-Parent/testing/.platformio-core/ucast/esphome-configs/stock_router_2.yaml",
+        "--device",
+        "/dev/serial/by-id/usb-Espressif_USB_JTAG_serial_debug_unit_58:8C:81:5D:B1:54-if00"
+      ],
+      "env": {
+        "PLATFORMIO_CORE_DIR": "/home/ewout/.openclaw/workspace-softwaredeveloper/ESPHome-Thread-ED-Switch-Parent/testing/.platformio-core/ucast",
+        "PLATFORMIO_PACKAGES_DIR": "/home/ewout/.openclaw/workspace-softwaredeveloper/ESPHome-Thread-ED-Switch-Parent/testing/.platformio-core/ucast/packages/routers"
+      },
+      "log_path": "/home/ewout/.openclaw/workspace-softwaredeveloper/ESPHome-Thread-ED-Switch-Parent/testing/logs/ucast-3router-20runs-20260904-180711/20260904-182550-run03/ucast_router2_20260904-182550-run03.log",
+      "logical_name": "router2",
+      "config_name": "router2",
+      "device_role": "router2",
+      "dry_run": false
+    },
+    {
+      "time_utc": "2026-09-04T16:26:27+00:00",
+      "cmd": [
+        "/home/ewout/.openclaw/workspace-softwaredeveloper/ESPHome-Thread-ED-Switch-Parent/.venv/bin/esphome",
+        "upload",
+        "/home/ewout/.openclaw/workspace-softwaredeveloper/ESPHome-Thread-ED-Switch-Parent/testing/.platformio-core/ucast/esphome-configs/stock_router_3.yaml",
+        "--device",
+        "/dev/serial/by-id/usb-Espressif_USB_JTAG_serial_debug_unit_58:8C:81:5F:D8:C4-if00"
+      ],
+      "cwd": "/home/ewout/.openclaw/workspace-softwaredeveloper/ESPHome-Thread-ED-Switch-Parent/testing",
+      "dry_run": false,
+      "env": {
+        "PLATFORMIO_CORE_DIR": "/home/ewout/.openclaw/workspace-softwaredeveloper/ESPHome-Thread-ED-Switch-Parent/testing/.platformio-core/ucast",
+        "PLATFORMIO_PACKAGES_DIR": "/home/ewout/.openclaw/workspace-softwaredeveloper/ESPHome-Thread-ED-Switch-Parent/testing/.platformio-core/ucast/packages/routers"
+      }
+    },
+    {
+      "time_utc": "2026-09-04T16:26:31+00:00",
+      "cmd": [
+        "/home/ewout/.openclaw/workspace-softwaredeveloper/ESPHome-Thread-ED-Switch-Parent/.venv/bin/esphome",
+        "logs",
+        "/home/ewout/.openclaw/workspace-softwaredeveloper/ESPHome-Thread-ED-Switch-Parent/testing/.platformio-core/ucast/esphome-configs/stock_router_3.yaml",
+        "--device",
+        "/dev/serial/by-id/usb-Espressif_USB_JTAG_serial_debug_unit_58:8C:81:5F:D8:C4-if00"
+      ],
+      "env": {
+        "PLATFORMIO_CORE_DIR": "/home/ewout/.openclaw/workspace-softwaredeveloper/ESPHome-Thread-ED-Switch-Parent/testing/.platformio-core/ucast",
+        "PLATFORMIO_PACKAGES_DIR": "/home/ewout/.openclaw/workspace-softwaredeveloper/ESPHome-Thread-ED-Switch-Parent/testing/.platformio-core/ucast/packages/routers"
+      },
+      "log_path": "/home/ewout/.openclaw/workspace-softwaredeveloper/ESPHome-Thread-ED-Switch-Parent/testing/logs/ucast-3router-20runs-20260904-180711/20260904-182550-run03/ucast_router3_20260904-182550-run03.log",
+      "logical_name": "router3",
+      "config_name": "router3",
+      "device_role": "unused1",
+      "dry_run": false
+    },
+    {
+      "time_utc": "2026-09-04T16:26:31+00:00",
+      "sleep_seconds": 180,
+      "reason": "routers flashed; wait before adding child",
+      "dry_run": false
+    },
+    {
+      "time_utc": "2026-09-04T16:29:31+00:00",
+      "type": "step",
+      "step": "flash_child"
+    },
+    {
+      "time_utc": "2026-09-04T16:29:31+00:00",
+      "cmd": [
+        "/home/ewout/.openclaw/workspace-softwaredeveloper/ESPHome-Thread-ED-Switch-Parent/.venv/bin/esphome",
+        "upload",
+        "/home/ewout/.openclaw/workspace-softwaredeveloper/ESPHome-Thread-ED-Switch-Parent/testing/.platformio-core/ucast/esphome-configs/ucast_child.yaml",
+        "--device",
+        "/dev/serial/by-id/usb-Espressif_USB_JTAG_serial_debug_unit_58:8C:81:5D:B0:E0-if00"
+      ],
+      "cwd": "/home/ewout/.openclaw/workspace-softwaredeveloper/ESPHome-Thread-ED-Switch-Parent/testing",
+      "dry_run": false,
+      "env": {
+        "PLATFORMIO_CORE_DIR": "/home/ewout/.openclaw/workspace-softwaredeveloper/ESPHome-Thread-ED-Switch-Parent/testing/.platformio-core/ucast",
+        "PLATFORMIO_PACKAGES_DIR": "/home/ewout/.openclaw/workspace-softwaredeveloper/ESPHome-Thread-ED-Switch-Parent/testing/.platformio-core/ucast/packages/child"
+      }
+    },
+    {
+      "time_utc": "2026-09-04T16:29:35+00:00",
+      "cmd": [
+        "/home/ewout/.openclaw/workspace-softwaredeveloper/ESPHome-Thread-ED-Switch-Parent/.venv/bin/esphome",
+        "logs",
+        "/home/ewout/.openclaw/workspace-softwaredeveloper/ESPHome-Thread-ED-Switch-Parent/testing/.platformio-core/ucast/esphome-configs/ucast_child.yaml",
+        "--device",
+        "/dev/serial/by-id/usb-Espressif_USB_JTAG_serial_debug_unit_58:8C:81:5D:B0:E0-if00"
+      ],
+      "env": {
+        "PLATFORMIO_CORE_DIR": "/home/ewout/.openclaw/workspace-softwaredeveloper/ESPHome-Thread-ED-Switch-Parent/testing/.platformio-core/ucast",
+        "PLATFORMIO_PACKAGES_DIR": "/home/ewout/.openclaw/workspace-softwaredeveloper/ESPHome-Thread-ED-Switch-Parent/testing/.platformio-core/ucast/packages/child"
+      },
+      "log_path": "/home/ewout/.openclaw/workspace-softwaredeveloper/ESPHome-Thread-ED-Switch-Parent/testing/logs/ucast-3router-20runs-20260904-180711/20260904-182550-run03/ucast_child_20260904-182550-run03.log",
+      "logical_name": "child",
+      "config_name": "child",
+      "device_role": "child",
+      "dry_run": false
+    },
+    {
+      "time_utc": "2026-09-04T16:29:35+00:00",
+      "sleep_seconds": 5,
+      "reason": "child flashed; wait for natural attach",
+      "dry_run": false
+    },
+    {
+      "time_utc": "2026-09-04T16:29:40+00:00",
+      "type": "directed_switch_decision",
+      "action": "will_switch_preserving_parent",
+      "reason": "TARGET_SELECTED",
+      "child_parent_extaddr": "92:c1:97:b0:02:67:59:fa",
+      "child_parent_source": "child_rloc16_parent_id child=0x2001 parent=0x2000; [18:29:36.926][I][esp-idf:000][ot_main]: [N] Mle-----------: RLOC16 fffe -> 2001",
+      "parent_key": "92c197b0026759fa",
+      "parent_match": {
+        "logical_name": "router2",
+        "extaddr": "92:c1:97:b0:02:67:59:fa",
+        "own_extaddr": "92c197b0026759fa",
+        "own_extaddr_source": "own_thread_extaddr",
+        "role": "router",
+        "role_source": "[18:27:36.870][I][esp-idf:000][ot_main]: [N] Mle-----------: Role child -> router",
+        "rloc16": "2000",
+        "rloc16_source": "[18:27:36.868][I][esp-idf:000][ot_main]: [N] Mle-----------: RLOC16 a801 -> 2000",
+        "log_path": "/home/ewout/.openclaw/workspace-softwaredeveloper/ESPHome-Thread-ED-Switch-Parent/testing/logs/ucast-3router-20runs-20260904-180711/20260904-182550-run03/ucast_router2_20260904-182550-run03.log"
+      },
+      "router_extaddrs": {
+        "4ab5df87adb95c4a": {
+          "logical_name": "router1",
+          "extaddr": "4a:b5:df:87:ad:b9:5c:4a",
+          "own_extaddr": "4ab5df87adb95c4a",
+          "own_extaddr_source": "own_thread_extaddr",
+          "role": "leader",
+          "role_source": "[18:26:29.931][I][esp-idf:000][ot_main]: [N] Mle-----------: Role detached -> leader",
+          "rloc16": "a800",
+          "rloc16_source": "[18:26:29.929][I][esp-idf:000][ot_main]: [N] Mle-----------: RLOC16 fffe -> a800",
+          "log_path": "/home/ewout/.openclaw/workspace-softwaredeveloper/ESPHome-Thread-ED-Switch-Parent/testing/logs/ucast-3router-20runs-20260904-180711/20260904-182550-run03/ucast_router1_20260904-182550-run03.log"
+        },
+        "92c197b0026759fa": {
+          "logical_name": "router2",
+          "extaddr": "92:c1:97:b0:02:67:59:fa",
+          "own_extaddr": "92c197b0026759fa",
+          "own_extaddr_source": "own_thread_extaddr",
+          "role": "router",
+          "role_source": "[18:27:36.870][I][esp-idf:000][ot_main]: [N] Mle-----------: Role child -> router",
+          "rloc16": "2000",
+          "rloc16_source": "[18:27:36.868][I][esp-idf:000][ot_main]: [N] Mle-----------: RLOC16 a801 -> 2000",
+          "log_path": "/home/ewout/.openclaw/workspace-softwaredeveloper/ESPHome-Thread-ED-Switch-Parent/testing/logs/ucast-3router-20runs-20260904-180711/20260904-182550-run03/ucast_router2_20260904-182550-run03.log"
+        },
+        "fad38db44b5d289d": {
+          "logical_name": "router3",
+          "extaddr": "fa:d3:8d:b4:4b:5d:28:9d",
+          "own_extaddr": "fad38db44b5d289d",
+          "own_extaddr_source": "own_thread_extaddr",
+          "role": "router",
+          "role_source": "[18:26:48.569][I][esp-idf:000][ot_main]: [N] Mle-----------: Role child -> router",
+          "rloc16": "bc00",
+          "rloc16_source": "[18:26:48.566][I][esp-idf:000][ot_main]: [N] Mle-----------: RLOC16 a802 -> bc00",
+          "log_path": "/home/ewout/.openclaw/workspace-softwaredeveloper/ESPHome-Thread-ED-Switch-Parent/testing/logs/ucast-3router-20runs-20260904-180711/20260904-182550-run03/ucast_router3_20260904-182550-run03.log"
+        }
+      },
+      "parent_logical_name": "router2",
+      "parent_log_path": "/home/ewout/.openclaw/workspace-softwaredeveloper/ESPHome-Thread-ED-Switch-Parent/testing/logs/ucast-3router-20runs-20260904-180711/20260904-182550-run03/ucast_router2_20260904-182550-run03.log",
+      "parent_thread_role": "router",
+      "parent_thread_role_source": "[18:27:36.870][I][esp-idf:000][ot_main]: [N] Mle-----------: Role child -> router",
+      "target_parent": {
+        "logical_name": "router3",
+        "extaddr": "fa:d3:8d:b4:4b:5d:28:9d",
+        "own_extaddr": "fad38db44b5d289d",
+        "own_extaddr_source": "own_thread_extaddr",
+        "role": "router",
+        "role_source": "[18:26:48.569][I][esp-idf:000][ot_main]: [N] Mle-----------: Role child -> router",
+        "rloc16": "bc00",
+        "rloc16_source": "[18:26:48.566][I][esp-idf:000][ot_main]: [N] Mle-----------: RLOC16 a802 -> bc00",
+        "log_path": "/home/ewout/.openclaw/workspace-softwaredeveloper/ESPHome-Thread-ED-Switch-Parent/testing/logs/ucast-3router-20runs-20260904-180711/20260904-182550-run03/ucast_router3_20260904-182550-run03.log"
+      },
+      "target_parent_logical_name": "router3",
+      "target_parent_extaddr": "fa:d3:8d:b4:4b:5d:28:9d",
+      "target_selection": "random_non_current_parent",
+      "random_seed": null,
+      "removed_parent_device_role": "router2"
+    },
+    {
+      "time_utc": "2026-09-04T16:29:40+00:00",
+      "event": "send_child_switch_command",
+      "port": "/dev/serial/by-id/usb-Espressif_USB_JTAG_serial_debug_unit_58:8C:81:5D:B0:E0-if00",
+      "command": "extaddr fad38db44b5d289d",
+      "target_extaddr": "fa:d3:8d:b4:4b:5d:28:9d",
+      "dry_run": false
+    },
+    {
+      "time_utc": "2026-09-04T16:29:40+00:00",
+      "sleep_seconds": 255,
+      "reason": "targeted switch requested with initial parent preserved; keep recording",
+      "dry_run": false
+    },
+    {
+      "time_utc": "2026-09-04T16:33:55+00:00",
+      "cmd": [
+        "scp",
+        "rpi-802154-sniffer:/home/ewout/captures/802154/802154-20260904-182610.pcapng",
+        "/home/ewout/.openclaw/workspace-softwaredeveloper/ESPHome-Thread-ED-Switch-Parent/testing/logs/ucast-3router-20runs-20260904-180711/20260904-182550-run03/ucast_sniffer_20260904-182550-run03.pcapng"
+      ],
+      "remote_pcap_path": "/home/ewout/captures/802154/802154-20260904-182610.pcapng",
+      "local_pcap_path": "/home/ewout/.openclaw/workspace-softwaredeveloper/ESPHome-Thread-ED-Switch-Parent/testing/logs/ucast-3router-20runs-20260904-180711/20260904-182550-run03/ucast_sniffer_20260904-182550-run03.pcapng",
+      "dry_run": false
+    },
+    {
+      "time_utc": "2026-09-04T16:33:56+00:00",
+      "type": "ucast_parent_response_delay_evidence",
+      "valid": true,
+      "target_router": "router3",
+      "target_log": "/home/ewout/.openclaw/workspace-softwaredeveloper/ESPHome-Thread-ED-Switch-Parent/testing/logs/ucast-3router-20runs-20260904-180711/20260904-182550-run03/ucast_router3_20260904-182550-run03.log",
+      "child_extaddr": "ba65c206e910addf",
+      "target_router_diagnostics": [
+        {
+          "delay_ms": 248,
+          "scan_mask": 128,
+          "child_extaddr": "ba65c206e910addf"
+        },
+        {
+          "delay_ms": 87,
+          "scan_mask": 128,
+          "child_extaddr": "ba65c206e910addf"
+        }
+      ],
+      "matching_diagnostics": [
+        {
+          "delay_ms": 248,
+          "scan_mask": 128,
+          "child_extaddr": "ba65c206e910addf"
+        },
+        {
+          "delay_ms": 87,
+          "scan_mask": 128,
+          "child_extaddr": "ba65c206e910addf"
+        }
+      ]
+    }
+  ]
+}

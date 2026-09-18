@@ -1,0 +1,90 @@
+# Command: /home/ewout/.openclaw/workspace-softwaredeveloper/ESPHome-Thread-ED-Switch-Parent/.venv/bin/esphome logs /home/ewout/.openclaw/workspace-softwaredeveloper/ESPHome-Thread-ED-Switch-Parent/testing/.platformio-core/fast-attach/esphome-configs/fast_attach_child.yaml --device /dev/serial/by-id/usb-Espressif_USB_JTAG_serial_debug_unit_58:8C:81:5D:B0:E0-if00
+# Started UTC: 2026-09-10T19:29:04+00:00
+INFO ESPHome 2026.4.5
+INFO Reading configuration /home/ewout/.openclaw/workspace-softwaredeveloper/ESPHome-Thread-ED-Switch-Parent/testing/.platformio-core/fast-attach/esphome-configs/fast_attach_child.yaml...
+INFO Starting log output from /dev/serial/by-id/usb-Espressif_USB_JTAG_serial_debug_unit_58:8C:81:5D:B0:E0-if00 with baud rate 115200
+[21:29:05.010]I (141) esp_image: segment 3: paddr=0009e94c vaddr=40808854 size[I][logger:120]: Log initialized
+[21:29:05.010][I][app:067]: Running through setup()
+[21:29:05.023][I][openthread:153][ot_main]: Activating dataset...
+[21:29:05.027][I][esp-idf:000][ot_main]: I(414) OPENTHREAD:
+[21:29:05.028][I][esp-idf:000][ot_main]: [N] Mle-----------: Role disabled -> detached
+[21:29:05.029][I][esp-idf:000][ot_main]: 
+[21:29:05.036][I][esp-idf:000][ot_main]: I (422) OT_STATE: netif up
+[21:29:05.042][I][thread_fast_attach:018]: FAST_ATTACH variant=fast-attach compile_enabled=1 arm_after_parent_loss=1
+[21:29:05.043][I][app:123]: setup() finished successfully!
+[21:29:05.044][I][esp-idf:000][main]: I (342) main_task: Returned from app_main()
+[21:29:05.045][I][esp-idf:000][ot_main]: I (345) OPENTHREAD: Host connection mode none
+[21:29:05.047][I][esp-idf:000][ot_main]: I (345) phy_init: phy_version 343,b513b46,Nov 14 2025,16:34:12
+[21:29:05.048][I][esp-idf:000][ot_main]: W (345) phy_init: failed to load RF calibration data (0x1102), falling back to full calibration
+[21:29:05.050][I][esp-idf:000][ot_main]: I (391) phy_init: Saving new calibration data due to checksum failure or outdated calibration data, mode(2)
+[21:29:05.051][I][esp-idf:000][ot_main]: I (400) phy: libbtbb version: c493933, Nov 14 2025, 16:34:25
+[21:29:05.052][I][esp-idf:000][ot_main]: I (409) OPENTHREAD: OpenThread attached to netif
+[21:29:05.053][I][app:154]: ESPHome version 2026.4.5 compiled on 2026-08-25 19:18:24 +0200
+[21:29:05.054][I][app:161]: ESP32 Chip: ESP32-C6 rev0.2, 1 core(s)
+[21:29:05.308][I][main:197]: Own Thread ExtAddr: 96887837e06949b9
+[21:29:05.502][I][esp-idf:000][ot_main]: I(885) OPENTHREAD:
+[21:29:05.504][I][esp-idf:000][ot_main]: [N] Mle-----------: Attach attempt 1, AnyPartition reattaching with Active Dataset
+[21:29:05.504][I][esp-idf:000][ot_main]: 
+[21:29:06.284][I][esp-idf:000][ot_main]: I(1663) OPENTHREAD:
+[21:29:06.285][I][esp-idf:000][ot_main]: [N] Mle-----------: RLOC16 fffe -> 0c01
+[21:29:06.285][I][esp-idf:000][ot_main]: 
+[21:29:06.286][I][esp-idf:000][ot_main]: I(1663) OPENTHREAD:
+[21:29:06.287][I][esp-idf:000][ot_main]: [N] Mle-----------: Role detached -> child
+[21:29:06.288][I][esp-idf:000][ot_main]: 
+[21:29:06.693][I][stock_child_parent:064]: Current parent ExtAddr: e6435e797b815b65
+[21:33:02.402][I][esp-idf:000][ot_main]: [N] MeshForwarder-:     dst:[fe80:0:0:0:e443:5e79:7b81:5b65]:19788
+[21:33:02.404][I][esp-idf:000][ot_main]: I(237788) OPENTHREAD:
+[21:33:02.406][I][esp-idf:000][ot_main]: [N] MeshForwarder-: Failed to send IPv6 UDP msg, len:98, chksum:f221, ecn:no, to:e6435e797b815b65, sec:no, error:NoAck, prio:net
+[21:33:02.406][I][esp-idf:000][ot_main]: 
+[21:33:02.407][I][esp-idf:000][ot_main]: I(237788) OPENTHREAD:
+[21:33:02.409][I][esp-idf:000][ot_main]: [N] MeshForwarder-:     src:[fe80:0:0:0:9488:7837:e069:49b9]:19788
+[21:33:02.409][I][esp-idf:000][ot_main]: 
+[21:33:02.410][I][esp-idf:000][ot_main]: I(237788) OPENTHREAD:
+[21:33:02.410][I][esp-idf:000][ot_main]: 
+[21:33:03.404][I][esp-idf:000][ot_main]: I(238789) OPENTHREAD:
+[21:33:03.405][I][esp-idf:000][ot_main]: [N] MeshForwarder-: Failed to send IPv6 UDP msg, len:98, chksum:1e01, ecn:no, to:e6435e797b815b65, sec:no, error:NoAck, prio:net
+[21:33:03.406][I][esp-idf:000][ot_main]: 
+[21:33:03.407][I][esp-idf:000][ot_main]: I(238789) OPENTHREAD:
+[21:33:03.408][I][esp-idf:000][ot_main]: [N] MeshForwarder-:     src:[fe80:0:0:0:9488:7837:e069:49b9]:19788
+[21:33:03.409][I][esp-idf:000][ot_main]: 
+[21:33:03.409][I][esp-idf:000][ot_main]: I(238789) OPENTHREAD:
+[21:33:03.411][I][esp-idf:000][ot_main]: [N] MeshForwarder-:     dst:[fe80:0:0:0:e443:5e79:7b81:5b65]:19788
+[21:33:03.411][I][esp-idf:000][ot_main]: 
+[21:33:04.415][I][esp-idf:000][ot_main]: I(239800) OPENTHREAD:
+[21:33:04.416][I][esp-idf:000][ot_main]: [N] MeshForwarder-: Failed to send IPv6 UDP msg, len:98, chksum:87bd, ecn:no, to:e6435e797b815b65, sec:no, error:NoAck, prio:net
+[21:33:04.417][I][esp-idf:000][ot_main]: 
+[21:33:04.418][I][esp-idf:000][ot_main]: I(239800) OPENTHREAD:
+[21:33:04.419][I][esp-idf:000][ot_main]: [N] MeshForwarder-:     src:[fe80:0:0:0:9488:7837:e069:49b9]:19788
+[21:33:04.420][I][esp-idf:000][ot_main]: 
+[21:33:04.420][I][esp-idf:000][ot_main]: I(239800) OPENTHREAD:
+[21:33:04.422][I][esp-idf:000][ot_main]: [N] MeshForwarder-:     dst:[fe80:0:0:0:e443:5e79:7b81:5b65]:19788
+[21:33:04.422][I][esp-idf:000][ot_main]: 
+[21:33:05.435][I][esp-idf:000][ot_main]: [N] MeshForwarder-:     src:[fe80:0:0:0:9488:7837:e069:49b9]:19788
+[21:33:05.436][I][esp-idf:000][ot_main]: I(240823) OPENTHREAD:
+[21:33:05.438][I][esp-idf:000][ot_main]: [N] MeshForwarder-:     dst:[fe80:0:0:0:e443:5e79:7b81:5b65]:19788
+[21:33:05.440][I][thread_fast_attach:049]: FAST_ATTACH event=arm_after_detach api_error=0 enabled=1
+[21:33:05.441][I][esp-idf:000][ot_main]: I(240820) OPENTHREAD:
+[21:33:05.442][I][esp-idf:000][ot_main]: [N] Mle-----------: Role child -> detached
+[21:33:05.442][I][esp-idf:000][ot_main]: 
+[21:33:05.443][I][esp-idf:000][ot_main]: I(240821) OPENTHREAD:
+[21:33:05.444][I][esp-idf:000][ot_main]: [N] Mle-----------: RLOC16 0c01 -> fffe
+[21:33:05.445][I][esp-idf:000][ot_main]: 
+[21:33:05.445][I][esp-idf:000][ot_main]: I(240821) OPENTHREAD:
+[21:33:05.447][I][esp-idf:000][ot_main]: [N] MeshForwarder-: Failed to send IPv6 UDP msg, len:98, chksum:ee09, ecn:no, to:e6435e797b815b65, sec:no, error:NoAck, prio:net
+[21:33:05.448][I][esp-idf:000][ot_main]: 
+[21:33:05.449][I][esp-idf:000][ot_main]: I(240822) OPENTHREAD:
+[21:33:05.449][I][esp-idf:000][ot_main]: 
+[21:33:05.450][I][esp-idf:000][ot_main]: 
+[21:33:06.155][I][esp-idf:000][ot_main]: I(241538) OPENTHREAD:
+[21:33:06.156][I][esp-idf:000][ot_main]: [N] Mle-----------: Attach attempt 1, AnyPartition 
+[21:33:06.158][I][esp-idf:000][ot_main]: 
+[21:33:06.230][I][esp-idf:000][ot_main]: I(241607) OPENTHREAD:
+[21:33:06.232][I][esp-idf:000][ot_main]: [N] Mle-----------: RLOC16 fffe -> 9802
+[21:33:06.233][I][esp-idf:000][ot_main]: 
+[21:33:06.234][I][esp-idf:000][ot_main]: I(241607) OPENTHREAD:
+[21:33:06.236][I][esp-idf:000][ot_main]: [N] Mle-----------: Role detached -> child
+[21:33:06.236][I][esp-idf:000][ot_main]: 
+[21:33:06.237][I][esp-idf:000][ot_main]: I(241607) OPENTHREAD:
+[21:33:06.238][I][esp-idf:000][ot_main]: [N] Mle-----------: Sending message to inform previous parent 0x0c00
+[21:33:06.239][I][esp-idf:000][ot_main]: 
+# Log reader stopped UTC: 2026-09-10T19:33:27+00:00

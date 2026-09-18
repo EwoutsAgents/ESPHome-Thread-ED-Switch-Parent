@@ -1,0 +1,61 @@
+# Command: /home/ewout/.openclaw/workspace-softwaredeveloper/ESPHome-Thread-ED-Switch-Parent/.venv/bin/esphome logs /home/ewout/.openclaw/workspace-softwaredeveloper/ESPHome-Thread-ED-Switch-Parent/testing/.platformio-core/fast-attach-ucast-32/esphome-configs/fast_attach_ucast_32_child.yaml --device /dev/serial/by-id/usb-Espressif_USB_JTAG_serial_debug_unit_58:8C:81:5D:B0:E0-if00
+# Started UTC: 2026-08-23T05:24:13+00:00
+INFO ESPHome 2026.4.5
+INFO Reading configuration /home/ewout/.openclaw/workspace-softwaredeveloper/ESPHome-Thread-ED-Switch-Parent/testing/.platformio-core/fast-attach-ucast-32/esphome-configs/fast_attach_ucast_32_child.yaml...
+INFO Starting log output from /dev/serial/by-id/usb-Espressif_USB_JTAG_serial_debug_unit_58:8C:81:5D:B0:E0-if00 with baud rate 115200
+[07:24:13.317][I][openthread:153][ot_main]: Activating dataset...
+[07:24:13.321][I][esp-idf:000][ot_main]: I(414) OPENTHREAD:
+[07:24:13.322][I][esp-idf:000][ot_main]: [N] Mle-----------: Role disabled -> detached
+[07:24:13.323][I][esp-idf:000][ot_main]: 
+[07:24:13.330][I][esp-idf:000][ot_main]: I (422) OT_STATE: netif up
+
+[07:24:13.336]Thread parent USB CLI ready.
+[07:24:13.336]Commands:
+[07:24:13.336]  extaddr 00124b0001abcdef
+[07:24:13.336]  extaddr 00:12:4b:00:01:ab:cd:ef
+[07:24:13.336]  00124b0001abcdef
+[07:24:13.337]  switch
+[07:24:13.337]  help
+
+[07:24:13.337][I][app:123]: setup() finished successfully!
+[07:24:13.338][I][esp-idf:000][main]: I (343) main_task: Returned from app_main()
+[07:24:13.339][I][esp-idf:000][ot_main]: I (345) OPENTHREAD: Host connection mode none
+[07:24:13.340][I][esp-idf:000][ot_main]: I (345) phy_init: phy_version 343,b513b46,Nov 14 2025,16:34:12
+[07:24:13.342][I][esp-idf:000][ot_main]: W (346) phy_init: failed to load RF calibration data (0x1102), falling back to full calibration
+[07:24:13.343][I][esp-idf:000][ot_main]: I (392) phy_init: Saving new calibration data due to checksum failure or outdated calibration data, mode(2)
+[07:24:13.344][I][esp-idf:000][ot_main]: I (400) phy: libbtbb version: c493933, Nov 14 2025, 16:34:25
+[07:24:13.345][I][esp-idf:000][ot_main]: I (409) OPENTHREAD: OpenThread attached to netif
+[07:24:13.346][I][app:154]: ESPHome version 2026.4.5 compiled on 2026-08-22 23:11:47 +0200
+[07:24:13.346][I][app:161]: ESP32 Chip: ESP32-C6 rev0.2, 1 core(s)
+[07:24:13.367][I][esp-idf:000][ot_main]: I(456) OPENTHREAD:
+[07:24:13.368][I][esp-idf:000][ot_main]: [N] Mle-----------: Attach attempt 1, AnyPartition reattaching with Active Dataset
+[07:24:13.370][I][esp-idf:000][ot_main]: 
+[07:24:13.374][I][main:341]: Own Thread ExtAddr: 7e3dfd8666d39b99
+[07:24:14.146][I][esp-idf:000][ot_main]: I(1231) OPENTHREAD:
+[07:24:14.147][I][esp-idf:000][ot_main]: [N] Mle-----------: RLOC16 fffe -> b003
+[07:24:14.147][I][esp-idf:000][ot_main]: 
+[07:24:14.148][I][esp-idf:000][ot_main]: I(1232) OPENTHREAD:
+[07:24:14.149][I][esp-idf:000][ot_main]: [N] Mle-----------: Role detached -> child
+[07:24:14.149][I][esp-idf:000][ot_main]: 
+[07:24:18.037]Requested Thread parent switch to ExtAddr dafa5c75bcec2ba2
+[07:24:18.039][I][thread_fast_attach_ucast_32:170][usb_parent_cli]: FAST_ATTACH_UCAST_32 event=requested target=dafa5c75bcec2ba2 mode=unicast
+[07:24:18.257][I][esp-idf:000][ot_main]: I(5345) OPENTHREAD:
+[07:24:18.258][I][esp-idf:000][ot_main]: [N] Mle-----------: Attach attempt 0, BetterParent 
+[07:24:18.258][I][esp-idf:000][ot_main]: 
+[07:24:18.260][I][thread_fast_attach_ucast_32:173][ot_main]: FAST_ATTACH_UCAST_32 event=parent_request_started attempt=1/1
+[07:24:18.294][I][thread_fast_attach_ucast_32:177][ot_main]: FAST_ATTACH_UCAST_32 event=target_response parent=dafa5c75bcec2ba2 rloc16=3800 rssi=-12
+[07:24:18.295][I][thread_fast_attach_ucast_32:181][ot_main]: FAST_ATTACH_UCAST_32 event=child_id_request_started parent=dafa5c75bcec2ba2
+[07:24:18.313][I][esp-idf:000][ot_main]: 
+[07:24:18.315][I][thread_fast_attach_ucast_32:184][ot_main]: FAST_ATTACH_UCAST_32 event=succeeded parent=dafa5c75bcec2ba2
+[07:24:18.324][I][esp-idf:000][ot_main]: I(5405) OPENTHREAD:
+[07:24:18.325][I][esp-idf:000][ot_main]: [N] Mle-----------: Role child -> detached
+[07:24:18.326][I][esp-idf:000][ot_main]: 
+[07:24:18.327][I][esp-idf:000][ot_main]: I(5406) OPENTHREAD:
+[07:24:18.328][I][esp-idf:000][ot_main]: [N] Mle-----------: RLOC16 b003 -> 3801
+[07:24:18.329][I][esp-idf:000][ot_main]: 
+[07:24:18.330][I][esp-idf:000][ot_main]: I(5406) OPENTHREAD:
+[07:24:18.331][I][esp-idf:000][ot_main]: [N] Mle-----------: Role detached -> child
+[07:24:18.331][I][esp-idf:000][ot_main]: 
+[07:24:18.332][I][esp-idf:000][ot_main]: I(5406) OPENTHREAD:
+[07:24:18.333][I][esp-idf:000][ot_main]: [N] Mle-----------: Sending message to inform previous parent 0xb000
+# Log reader stopped UTC: 2026-08-23T05:28:33+00:00
