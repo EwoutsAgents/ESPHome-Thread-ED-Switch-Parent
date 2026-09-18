@@ -52,10 +52,10 @@ index df15ac713..7be6b3797 100644
  target_include_directories(ot-cli-mtd PRIVATE ${COMMON_INCLUDES})
 diff --git a/examples/apps/cli/preferred_parent_cli.cpp b/examples/apps/cli/preferred_parent_cli.cpp
 new file mode 100644
-index 000000000..58dbe0569
+index 000000000..4f71e5396
 --- /dev/null
 +++ b/examples/apps/cli/preferred_parent_cli.cpp
-@@ -0,0 +1,165 @@
+@@ -0,0 +1,166 @@
 +/*
 + * Copyright (c) 2026, The OpenThread Authors.
 + * All rights reserved.
@@ -185,6 +185,7 @@ index 000000000..58dbe0569
 +    config.mMaxAttempts  = 5;
 +    config.mRetryInterval = 8000;
 +    config.mAttachTimeout = 16000;
++    config.mFastAttach    = true;
 +    error = otThreadPreferredParentStart(sInstance, &config);
 +
 +exit:
