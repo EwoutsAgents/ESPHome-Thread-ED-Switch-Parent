@@ -7,7 +7,6 @@ The native OTNS integration mirrors the supported hardware variants:
 | `stock` | Ordinary OpenThread attachment and recovery | Ordinary OpenThread FTD |
 | `ucast` | Directed selected-parent discovery using unicast | Ordinary OpenThread FTD |
 | `fast-attach` | PR #13121 Fast Attach recovery | Fast Attach-aware FTD |
-| `fast-attach-ucast-32` | Directed unicast Fast Attach | Fast Attach-aware FTD with a 32 ms response ceiling |
 | `fast-attach-ucast-1` | Directed unicast Fast Attach | Fast Attach-aware FTD with a fixed 1 ms response delay |
 
 No separate router-response variant is built. Both variants use normal
@@ -24,8 +23,6 @@ artifacts/stock-ftd/ot-cli-ftd
 artifacts/stock-ftd-delay-diagnostic/ot-cli-ftd
 artifacts/fast-attach-mtd-pps-off/ot-cli-mtd
 artifacts/fast-attach-ftd/ot-cli-ftd
-artifacts/fast-attach-ucast-32-mtd-pps-off/ot-cli-mtd
-artifacts/fast-attach-ucast-32-ftd/ot-cli-ftd
 artifacts/fast-attach-ucast-1-mtd-pps-off/ot-cli-mtd
 artifacts/fast-attach-ucast-1-ftd/ot-cli-ftd
 ```
@@ -69,7 +66,7 @@ stock and ucast-compatible artifacts listed above.
 ## Scenario requirements
 
 OTNS-MAPS scenarios should retain matching two-, three-, and four-router cases
-for stock, ucast, Fast Attach, and the 32 ms and 1 ms combined variants. Directed
+for stock, ucast, Fast Attach, and the 1 ms combined variant. Directed
 cases must:
 
 * identify a target router that is not the current parent;

@@ -78,8 +78,6 @@ create_source_variant preferred-parent \
     patches/otns/preferred-parent-cli-adapter.patch
 create_source_variant fast-attach \
     patches/fast-attach/openthread-fast-attach-pr13121.patch
-create_source_variant fast-attach-ucast-32 \
-    patches/otns/fast-attach-ucast-32-native.patch
 create_source_variant fast-attach-ucast-1 \
     patches/otns/fast-attach-ucast-1-native.patch
 
@@ -87,7 +85,6 @@ build_variant stock "${STOCK_DEFINES}" "ot-cli-mtd ot-cli-ftd"
 build_variant stock-delay-diagnostic "${STOCK_DEFINES}" "ot-cli-ftd"
 build_variant preferred-parent "${PREFERRED_DEFINES}" "ot-cli-mtd"
 build_variant fast-attach "${FAST_ATTACH_DEFINES}" "ot-cli-mtd ot-cli-ftd"
-build_variant fast-attach-ucast-32 "${FAST_ATTACH_PREFERRED_DEFINES}" "ot-cli-mtd ot-cli-ftd"
 build_variant fast-attach-ucast-1 "${FAST_ATTACH_PREFERRED_DEFINES}" "ot-cli-mtd ot-cli-ftd"
 
 install -D -m 0755 \
@@ -102,7 +99,7 @@ install -D -m 0755 \
 install -D -m 0755 \
     "${OTNS_VARIANT_ROOT}/stock-delay-diagnostic/build/bin/ot-cli-ftd" \
     "${OTNS_VARIANT_ROOT}/artifacts/stock-ftd-delay-diagnostic/ot-cli-ftd"
-for profile in fast-attach fast-attach-ucast-32 fast-attach-ucast-1; do
+for profile in fast-attach fast-attach-ucast-1; do
     install -D -m 0755 \
         "${OTNS_VARIANT_ROOT}/${profile}/build/bin/ot-cli-mtd" \
         "${OTNS_VARIANT_ROOT}/artifacts/${profile}-mtd-pps-off/ot-cli-mtd"
@@ -129,8 +126,6 @@ readonly PROVENANCE_FILE="${OTNS_VARIANT_ROOT}/artifacts/PROVENANCE.txt"
     echo "profile=stock-ftd-delay-diagnostic pps=n/a preferred_parent=0 parent_response_delay_diagnostic=1 defines=${STOCK_DEFINES}"
     echo "profile=fast-attach-mtd-pps-off pps=0 preferred_parent=0 fast_attach=1 defines=${FAST_ATTACH_DEFINES}"
     echo "profile=fast-attach-ftd pps=n/a preferred_parent=0 fast_attach=1 defines=${FAST_ATTACH_DEFINES}"
-    echo "profile=fast-attach-ucast-32-mtd-pps-off pps=0 preferred_parent=1 fast_attach=1 response_ceiling_ms=32 defines=${FAST_ATTACH_PREFERRED_DEFINES}"
-    echo "profile=fast-attach-ucast-32-ftd pps=n/a preferred_parent=1 fast_attach=1 response_ceiling_ms=32 defines=${FAST_ATTACH_PREFERRED_DEFINES}"
     echo "profile=fast-attach-ucast-1-mtd-pps-off pps=0 preferred_parent=1 fast_attach=1 response_delay_ms=1 defines=${FAST_ATTACH_PREFERRED_DEFINES}"
     echo "profile=fast-attach-ucast-1-ftd pps=n/a preferred_parent=1 fast_attach=1 response_delay_ms=1 defines=${FAST_ATTACH_PREFERRED_DEFINES}"
     sha256sum \
@@ -138,7 +133,6 @@ readonly PROVENANCE_FILE="${OTNS_VARIANT_ROOT}/artifacts/PROVENANCE.txt"
         "${REPO_ROOT}/patches/otns/preferred-parent-cli-adapter.patch" \
         "${REPO_ROOT}/patches/canonical/parent-response-delay-diagnostic.patch" \
         "${REPO_ROOT}/patches/fast-attach/openthread-fast-attach-pr13121.patch" \
-        "${REPO_ROOT}/patches/otns/fast-attach-ucast-32-native.patch" \
         "${REPO_ROOT}/patches/otns/fast-attach-ucast-1-native.patch"
 } > "${PROVENANCE_FILE}"
 
