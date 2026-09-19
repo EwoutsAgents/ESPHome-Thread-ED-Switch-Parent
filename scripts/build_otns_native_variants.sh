@@ -23,7 +23,7 @@ fi
 
 readonly STOCK_DEFINES="-DOPENTHREAD_CONFIG_PARENT_SEARCH_ENABLE=0 -DOPENTHREAD_CONFIG_EXPERIMENTAL_PREFERRED_PARENT_ENABLE=0"
 readonly PREFERRED_DEFINES="-DOPENTHREAD_CONFIG_PARENT_SEARCH_ENABLE=0 -DOPENTHREAD_CONFIG_EXPERIMENTAL_PREFERRED_PARENT_ENABLE=1"
-readonly FAST_ATTACH_DEFINES="-DOPENTHREAD_CONFIG_PARENT_SEARCH_ENABLE=0 -DOPENTHREAD_CONFIG_EXPERIMENTAL_PREFERRED_PARENT_ENABLE=0 -DOPENTHREAD_CONFIG_MLE_FAST_ATTACH_ENABLE=1"
+readonly FAST_ATTACH_DEFINES="-DOPENTHREAD_CONFIG_PARENT_SEARCH_ENABLE=0 -DOPENTHREAD_CONFIG_EXPERIMENTAL_PREFERRED_PARENT_ENABLE=0 -DOPENTHREAD_CONFIG_MLE_FAST_ATTACH_ENABLE=1 -DOPENTHREAD_CONFIG_MLE_FAST_ATTACH_AUTO_ARM_AFTER_DETACH_ENABLE=1"
 readonly FAST_ATTACH_PREFERRED_DEFINES="-DOPENTHREAD_CONFIG_PARENT_SEARCH_ENABLE=0 -DOPENTHREAD_CONFIG_EXPERIMENTAL_PREFERRED_PARENT_ENABLE=1 -DOPENTHREAD_CONFIG_MLE_FAST_ATTACH_ENABLE=1"
 
 if [[ -e "${OTNS_VARIANT_ROOT}" ]]; then
@@ -77,7 +77,8 @@ create_source_variant preferred-parent \
     patches/canonical/openthread-preferred-parent-controller.patch \
     patches/otns/preferred-parent-cli-adapter.patch
 create_source_variant fast-attach \
-    patches/fast-attach/openthread-fast-attach-pr13121.patch
+    patches/fast-attach/openthread-fast-attach-pr13121.patch \
+    patches/otns/plain-fast-attach-native-adapter.patch
 create_source_variant fast-attach-ucast-1 \
     patches/otns/fast-attach-ucast-1-native.patch
 
@@ -124,7 +125,7 @@ readonly PROVENANCE_FILE="${OTNS_VARIANT_ROOT}/artifacts/PROVENANCE.txt"
     echo "profile=preferred-parent-mtd-pps-off pps=0 preferred_parent=1 defines=${PREFERRED_DEFINES}"
     echo "profile=stock-ftd pps=n/a preferred_parent=0 defines=${STOCK_DEFINES}"
     echo "profile=stock-ftd-delay-diagnostic pps=n/a preferred_parent=0 parent_response_delay_diagnostic=1 defines=${STOCK_DEFINES}"
-    echo "profile=fast-attach-mtd-pps-off pps=0 preferred_parent=0 fast_attach=1 defines=${FAST_ATTACH_DEFINES}"
+    echo "profile=fast-attach-mtd-pps-off pps=0 preferred_parent=0 fast_attach=1 auto_arm_after_detach=1 defines=${FAST_ATTACH_DEFINES}"
     echo "profile=fast-attach-ftd pps=n/a preferred_parent=0 fast_attach=1 defines=${FAST_ATTACH_DEFINES}"
     echo "profile=fast-attach-ucast-1-mtd-pps-off pps=0 preferred_parent=1 fast_attach=1 response_delay_ms=1 defines=${FAST_ATTACH_PREFERRED_DEFINES}"
     echo "profile=fast-attach-ucast-1-ftd pps=n/a preferred_parent=1 fast_attach=1 response_delay_ms=1 defines=${FAST_ATTACH_PREFERRED_DEFINES}"
@@ -133,6 +134,7 @@ readonly PROVENANCE_FILE="${OTNS_VARIANT_ROOT}/artifacts/PROVENANCE.txt"
         "${REPO_ROOT}/patches/otns/preferred-parent-cli-adapter.patch" \
         "${REPO_ROOT}/patches/canonical/parent-response-delay-diagnostic.patch" \
         "${REPO_ROOT}/patches/fast-attach/openthread-fast-attach-pr13121.patch" \
+        "${REPO_ROOT}/patches/otns/plain-fast-attach-native-adapter.patch" \
         "${REPO_ROOT}/patches/otns/fast-attach-ucast-1-native.patch"
 } > "${PROVENANCE_FILE}"
 
